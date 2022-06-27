@@ -21,9 +21,28 @@ target 'goldencalclite' do
   #
   # Note that if you have use_frameworks! enabled, Flipper will not work and
   # you should disable the next line.
-  use_flipper!()
+  # use_flipper!()
 
   post_install do |installer|
     react_native_post_install(installer)
+
+    # For Mac Catalyst we need to modify Development team to have a successful build
+		installer.pods_project.targets.each do |target|
+			# Fix bundle targets' 'Signing Certificate' to 'Sign to Run Locally'
+			if target.respond_to?(:product_type) and target.product_type == "koreniuk.goldencalclite"
+				target.build_configurations.each do |config|
+					config.build_settings['CODE_SIGN_IDENTITY[sdk=macosx*]'] = '-'
+				end
+			end
+		end
+		# For Mac Catalyst release build. XCode v13, ReactNative v0.64
+		installer.aggregate_targets.each do |aggregate_target|
+			aggregate_target.user_project.native_targets.each do |target|
+				target.build_configurations.each do |config|
+				config.build_settings['LIBRARY_SEARCH_PATHS'] = ['$(SDKROOT)/usr/lib/swift', '$(inherited)']
+				end
+			end
+			aggregate_target.user_project.save
+		end
   end
 end

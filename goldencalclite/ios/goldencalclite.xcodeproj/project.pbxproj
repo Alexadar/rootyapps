@@ -8,21 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		00E356F31AD99517003FC87E /* goldencalcliteTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E356F21AD99517003FC87E /* goldencalcliteTests.m */; };
-		132D927195F342EF79634BA3 /* libPods-goldencalclite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 130343575E0F3A197BE2E651 /* libPods-goldencalclite.a */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.m */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		16B238BB5909421687743B63 /* Octicons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EA6C9B5C57B34D23B8F287A9 /* Octicons.ttf */; };
-		1ABDB46CA61C9CDCB649C0FA /* libPods-goldencalclite-goldencalcliteTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5EE446D4F3BC92709D9DB621 /* libPods-goldencalclite-goldencalcliteTests.a */; };
 		25A66255BD4F4A3DBE4A1A44 /* AntDesign.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 30274477C13C4CD5AD95C219 /* AntDesign.ttf */; };
 		2619B138BEF84AC499C757F9 /* SimpleLineIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A0D84FB3454A476292ECB46C /* SimpleLineIcons.ttf */; };
 		27BB18A81FF742D084437DB6 /* Ionicons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 819AB80ED33C4B4C99D3838A /* Ionicons.ttf */; };
 		300D848B777742EFB59D5D00 /* MaterialCommunityIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3F8B53F133904ED59951F0C1 /* MaterialCommunityIcons.ttf */; };
 		31BC4C00BF5742F481C1D179 /* MaterialIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B25D642B922E4BEEAE0D2443 /* MaterialIcons.ttf */; };
 		367A5EBD283A4DE88AE28582 /* rubicon-icon-font.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 25126B1EDFA94C3CABC045BA /* rubicon-icon-font.ttf */; };
+		3696D626B6F78CAFC1E8FEE0 /* libPods-goldencalclite-goldencalcliteTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 89DE8BA53DA5B923F209F8FA /* libPods-goldencalclite-goldencalcliteTests.a */; };
 		3F324026C01F45DD8D89D2B6 /* FontAwesome5_Brands.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8F4BF7A6154641ABB8BF25FF /* FontAwesome5_Brands.ttf */; };
 		4129D00212DF4793A4682B59 /* FontAwesome5_Solid.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4D5CA17CEFCB41D68C0829C6 /* FontAwesome5_Solid.ttf */; };
 		4797D00BD45046DBA6A3AB09 /* FontAwesome5_Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B762A2F27E914D64A579B460 /* FontAwesome5_Regular.ttf */; };
+		55E24266DAA876BCA455E802 /* libPods-goldencalclite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FC197B54C9E3DD04EBD14380 /* libPods-goldencalclite.a */; };
 		55E41EFDBFE84611A7CFC519 /* FontAwesome.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 10080D5615D54C13B873FE43 /* FontAwesome.ttf */; };
 		70E5AAD7253847ECA20AD99B /* Foundation.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D344F3A6587A4182BBB612C7 /* Foundation.ttf */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
@@ -50,7 +50,7 @@
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00E356F21AD99517003FC87E /* goldencalcliteTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = goldencalcliteTests.m; sourceTree = "<group>"; };
 		10080D5615D54C13B873FE43 /* FontAwesome.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome.ttf; path = "../node_modules/native-base/Fonts/FontAwesome.ttf"; sourceTree = "<group>"; };
-		130343575E0F3A197BE2E651 /* libPods-goldencalclite.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-goldencalclite.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		11111D96286A1D2400E93513 /* goldencalclite.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = goldencalclite.entitlements; path = goldencalclite/goldencalclite.entitlements; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* goldencalclite.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = goldencalclite.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = goldencalclite/AppDelegate.h; sourceTree = "<group>"; };
 		13B07FB01A68108700A75B9A /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AppDelegate.m; path = goldencalclite/AppDelegate.m; sourceTree = "<group>"; };
@@ -63,13 +63,16 @@
 		3F8B53F133904ED59951F0C1 /* MaterialCommunityIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = MaterialCommunityIcons.ttf; path = "../node_modules/native-base/Fonts/MaterialCommunityIcons.ttf"; sourceTree = "<group>"; };
 		4D5CA17CEFCB41D68C0829C6 /* FontAwesome5_Solid.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome5_Solid.ttf; path = "../node_modules/native-base/Fonts/FontAwesome5_Solid.ttf"; sourceTree = "<group>"; };
 		5552EE8790014FE9B59B239B /* Fontisto.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Fontisto.ttf; path = "../node_modules/native-base/Fonts/Fontisto.ttf"; sourceTree = "<group>"; };
-		5EE446D4F3BC92709D9DB621 /* libPods-goldencalclite-goldencalcliteTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-goldencalclite-goldencalcliteTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		76037C3257C0EC2967DB8923 /* Pods-goldencalclite.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-goldencalclite.release.xcconfig"; path = "Target Support Files/Pods-goldencalclite/Pods-goldencalclite.release.xcconfig"; sourceTree = "<group>"; };
 		819AB80ED33C4B4C99D3838A /* Ionicons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Ionicons.ttf; path = "../node_modules/native-base/Fonts/Ionicons.ttf"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = goldencalclite/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		831EBF95BFEF75A3403B5A35 /* Pods-goldencalclite-goldencalcliteTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-goldencalclite-goldencalcliteTests.release.xcconfig"; path = "Target Support Files/Pods-goldencalclite-goldencalcliteTests/Pods-goldencalclite-goldencalcliteTests.release.xcconfig"; sourceTree = "<group>"; };
 		85790B3B564E4688B73BAA64 /* Roboto_medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Roboto_medium.ttf; path = "../node_modules/native-base/Fonts/Roboto_medium.ttf"; sourceTree = "<group>"; };
+		89DE8BA53DA5B923F209F8FA /* libPods-goldencalclite-goldencalcliteTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-goldencalclite-goldencalcliteTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8AF6CF71DF2B417699A6BB51 /* Feather.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Feather.ttf; path = "../node_modules/native-base/Fonts/Feather.ttf"; sourceTree = "<group>"; };
+		8B3141E37E6A8ED8B8894853 /* Pods-goldencalclite.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-goldencalclite.debug.xcconfig"; path = "Target Support Files/Pods-goldencalclite/Pods-goldencalclite.debug.xcconfig"; sourceTree = "<group>"; };
 		8F4BF7A6154641ABB8BF25FF /* FontAwesome5_Brands.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome5_Brands.ttf; path = "../node_modules/native-base/Fonts/FontAwesome5_Brands.ttf"; sourceTree = "<group>"; };
-		94905EC1834537F5F9E75418 /* Pods-goldencalclite-goldencalcliteTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-goldencalclite-goldencalcliteTests.release.xcconfig"; path = "Target Support Files/Pods-goldencalclite-goldencalcliteTests/Pods-goldencalclite-goldencalcliteTests.release.xcconfig"; sourceTree = "<group>"; };
+		973E17F6135FBBA9111AE74E /* Pods-goldencalclite-goldencalcliteTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-goldencalclite-goldencalcliteTests.debug.xcconfig"; path = "Target Support Files/Pods-goldencalclite-goldencalcliteTests/Pods-goldencalclite-goldencalcliteTests.debug.xcconfig"; sourceTree = "<group>"; };
 		A0D84FB3454A476292ECB46C /* SimpleLineIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = SimpleLineIcons.ttf; path = "../node_modules/native-base/Fonts/SimpleLineIcons.ttf"; sourceTree = "<group>"; };
 		AB0F0078D89942BD82BDA76A /* EvilIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = EvilIcons.ttf; path = "../node_modules/native-base/Fonts/EvilIcons.ttf"; sourceTree = "<group>"; };
 		B25D642B922E4BEEAE0D2443 /* MaterialIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = MaterialIcons.ttf; path = "../node_modules/native-base/Fonts/MaterialIcons.ttf"; sourceTree = "<group>"; };
@@ -77,11 +80,9 @@
 		C0A4E854155B4DD3A4A354FC /* Roboto.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Roboto.ttf; path = "../node_modules/native-base/Fonts/Roboto.ttf"; sourceTree = "<group>"; };
 		C48A383F891B4422AAD33A35 /* Zocial.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Zocial.ttf; path = "../node_modules/native-base/Fonts/Zocial.ttf"; sourceTree = "<group>"; };
 		D344F3A6587A4182BBB612C7 /* Foundation.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Foundation.ttf; path = "../node_modules/native-base/Fonts/Foundation.ttf"; sourceTree = "<group>"; };
-		DE26FAA1E2E25ACD319DBDB4 /* Pods-goldencalclite.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-goldencalclite.release.xcconfig"; path = "Target Support Files/Pods-goldencalclite/Pods-goldencalclite.release.xcconfig"; sourceTree = "<group>"; };
-		E7F09F217AAD229CB6C61874 /* Pods-goldencalclite.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-goldencalclite.debug.xcconfig"; path = "Target Support Files/Pods-goldencalclite/Pods-goldencalclite.debug.xcconfig"; sourceTree = "<group>"; };
 		EA6C9B5C57B34D23B8F287A9 /* Octicons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Octicons.ttf; path = "../node_modules/native-base/Fonts/Octicons.ttf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F2A764987D4A1B9D55A4B844 /* Pods-goldencalclite-goldencalcliteTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-goldencalclite-goldencalcliteTests.debug.xcconfig"; path = "Target Support Files/Pods-goldencalclite-goldencalcliteTests/Pods-goldencalclite-goldencalcliteTests.debug.xcconfig"; sourceTree = "<group>"; };
+		FC197B54C9E3DD04EBD14380 /* libPods-goldencalclite.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-goldencalclite.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -89,7 +90,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1ABDB46CA61C9CDCB649C0FA /* libPods-goldencalclite-goldencalcliteTests.a in Frameworks */,
+				3696D626B6F78CAFC1E8FEE0 /* libPods-goldencalclite-goldencalcliteTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -97,7 +98,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				132D927195F342EF79634BA3 /* libPods-goldencalclite.a in Frameworks */,
+				55E24266DAA876BCA455E802 /* libPods-goldencalclite.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -124,6 +125,7 @@
 		13B07FAE1A68108700A75B9A /* goldencalclite */ = {
 			isa = PBXGroup;
 			children = (
+				11111D96286A1D2400E93513 /* goldencalclite.entitlements */,
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
 				13B07FB01A68108700A75B9A /* AppDelegate.m */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
@@ -138,8 +140,8 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				130343575E0F3A197BE2E651 /* libPods-goldencalclite.a */,
-				5EE446D4F3BC92709D9DB621 /* libPods-goldencalclite-goldencalcliteTests.a */,
+				FC197B54C9E3DD04EBD14380 /* libPods-goldencalclite.a */,
+				89DE8BA53DA5B923F209F8FA /* libPods-goldencalclite-goldencalcliteTests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -179,10 +181,10 @@
 		8536BB13D8C20171AA028547 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				E7F09F217AAD229CB6C61874 /* Pods-goldencalclite.debug.xcconfig */,
-				DE26FAA1E2E25ACD319DBDB4 /* Pods-goldencalclite.release.xcconfig */,
-				F2A764987D4A1B9D55A4B844 /* Pods-goldencalclite-goldencalcliteTests.debug.xcconfig */,
-				94905EC1834537F5F9E75418 /* Pods-goldencalclite-goldencalcliteTests.release.xcconfig */,
+				8B3141E37E6A8ED8B8894853 /* Pods-goldencalclite.debug.xcconfig */,
+				76037C3257C0EC2967DB8923 /* Pods-goldencalclite.release.xcconfig */,
+				973E17F6135FBBA9111AE74E /* Pods-goldencalclite-goldencalcliteTests.debug.xcconfig */,
+				831EBF95BFEF75A3403B5A35 /* Pods-goldencalclite-goldencalcliteTests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -220,12 +222,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 00E357021AD99517003FC87E /* Build configuration list for PBXNativeTarget "goldencalcliteTests" */;
 			buildPhases = (
-				1CB0728EC4A95227E4A8FECD /* [CP] Check Pods Manifest.lock */,
+				1D7B43F94A8D89C369B21ACF /* [CP] Check Pods Manifest.lock */,
 				00E356EA1AD99517003FC87E /* Sources */,
 				00E356EB1AD99517003FC87E /* Frameworks */,
 				00E356EC1AD99517003FC87E /* Resources */,
-				E328B2E22DE660C62B747670 /* [CP] Embed Pods Frameworks */,
-				8FD980422203E946F274609D /* [CP] Copy Pods Resources */,
+				7CE42B2BA2495ADABD1343C2 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -241,14 +242,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "goldencalclite" */;
 			buildPhases = (
-				E36CA0A23EF4A486367E9814 /* [CP] Check Pods Manifest.lock */,
+				06A81687CF4B5FA458D9B208 /* [CP] Check Pods Manifest.lock */,
 				FD10A7F022414F080027D42C /* Start Packager */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				E8537B11DBBF6BDBCD4F5CD7 /* [CP] Embed Pods Frameworks */,
-				BDACE0B3FC838B49ED7ECCA2 /* [CP] Copy Pods Resources */,
+				2D1C77938252BF0DC6E3A88E /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -348,80 +348,7 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nexport NODE_BINARY=node\n../node_modules/react-native/scripts/react-native-xcode.sh\n";
 		};
-		1CB0728EC4A95227E4A8FECD /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-goldencalclite-goldencalcliteTests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		8FD980422203E946F274609D /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-goldencalclite-goldencalcliteTests/Pods-goldencalclite-goldencalcliteTests-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-goldencalclite-goldencalcliteTests/Pods-goldencalclite-goldencalcliteTests-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-goldencalclite-goldencalcliteTests/Pods-goldencalclite-goldencalcliteTests-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		BDACE0B3FC838B49ED7ECCA2 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-goldencalclite/Pods-goldencalclite-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-goldencalclite/Pods-goldencalclite-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-goldencalclite/Pods-goldencalclite-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		E328B2E22DE660C62B747670 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-goldencalclite-goldencalcliteTests/Pods-goldencalclite-goldencalcliteTests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-goldencalclite-goldencalcliteTests/Pods-goldencalclite-goldencalcliteTests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-goldencalclite-goldencalcliteTests/Pods-goldencalclite-goldencalcliteTests-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		E36CA0A23EF4A486367E9814 /* [CP] Check Pods Manifest.lock */ = {
+		06A81687CF4B5FA458D9B208 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -443,21 +370,60 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		E8537B11DBBF6BDBCD4F5CD7 /* [CP] Embed Pods Frameworks */ = {
+		1D7B43F94A8D89C369B21ACF /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-goldencalclite/Pods-goldencalclite-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			name = "[CP] Embed Pods Frameworks";
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-goldencalclite/Pods-goldencalclite-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-goldencalclite-goldencalcliteTests-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-goldencalclite/Pods-goldencalclite-frameworks.sh\"\n";
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		2D1C77938252BF0DC6E3A88E /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-goldencalclite/Pods-goldencalclite-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-goldencalclite/Pods-goldencalclite-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-goldencalclite/Pods-goldencalclite-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		7CE42B2BA2495ADABD1343C2 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-goldencalclite-goldencalcliteTests/Pods-goldencalclite-goldencalcliteTests-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-goldencalclite-goldencalcliteTests/Pods-goldencalclite-goldencalcliteTests-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-goldencalclite-goldencalcliteTests/Pods-goldencalclite-goldencalcliteTests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		FD10A7F022414F080027D42C /* Start Packager */ = {
@@ -512,7 +478,7 @@
 /* Begin XCBuildConfiguration section */
 		00E356F61AD99517003FC87E /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = F2A764987D4A1B9D55A4B844 /* Pods-goldencalclite-goldencalcliteTests.debug.xcconfig */;
+			baseConfigurationReference = 973E17F6135FBBA9111AE74E /* Pods-goldencalclite-goldencalcliteTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -525,6 +491,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(SDKROOT)/usr/lib/swift",
+					"$(inherited)",
 				);
 				OTHER_LDFLAGS = (
 					"-ObjC",
@@ -539,7 +509,7 @@
 		};
 		00E356F71AD99517003FC87E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 94905EC1834537F5F9E75418 /* Pods-goldencalclite-goldencalcliteTests.release.xcconfig */;
+			baseConfigurationReference = 831EBF95BFEF75A3403B5A35 /* Pods-goldencalclite-goldencalcliteTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
@@ -549,6 +519,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(SDKROOT)/usr/lib/swift",
+					"$(inherited)",
 				);
 				OTHER_LDFLAGS = (
 					"-ObjC",
@@ -563,10 +537,11 @@
 		};
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = E7F09F217AAD229CB6C61874 /* Pods-goldencalclite.debug.xcconfig */;
+			baseConfigurationReference = 8B3141E37E6A8ED8B8894853 /* Pods-goldencalclite.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = goldencalclite/goldencalclite.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = LSKNNBG94G;
 				ENABLE_BITCODE = NO;
@@ -574,6 +549,10 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(SDKROOT)/usr/lib/swift",
+					"$(inherited)",
 				);
 				MARKETING_VERSION = 1.1;
 				OTHER_LDFLAGS = (
@@ -583,6 +562,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = koreniuk.goldencalclite;
 				PRODUCT_NAME = goldencalclite;
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -592,16 +572,21 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = DE26FAA1E2E25ACD319DBDB4 /* Pods-goldencalclite.release.xcconfig */;
+			baseConfigurationReference = 76037C3257C0EC2967DB8923 /* Pods-goldencalclite.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = goldencalclite/goldencalclite.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = LSKNNBG94G;
 				INFOPLIST_FILE = goldencalclite/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(SDKROOT)/usr/lib/swift",
+					"$(inherited)",
 				);
 				MARKETING_VERSION = 1.1;
 				OTHER_LDFLAGS = (
@@ -611,6 +596,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = koreniuk.goldencalclite;
 				PRODUCT_NAME = goldencalclite;
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
