@@ -1,0 +1,14 @@
+{
+  "info" : {
+    "author" : "rooroogames",
+    "version" : 1
+  },
+  "layers" : [
+    {
+      "filename" : "Layer-0.imagestacklayer"
+    },
+    {
+      "filename" : "Layer-1.imagestacklayer"
+    }
+  ]
+}
