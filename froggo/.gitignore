@@ -74,3 +74,21 @@ crashlytics-build.properties
 /TempBuilds
 /SimulatorBuilds
 /ReleaseBuilds
+
+# Large build artifacts and frameworks
+**/Frameworks/UnityPlayer.dylib
+**/Libraries/libiPhone-lib.a
+**/Libraries/*.a
+
+# Large media files
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.wmv
+*.flv
+
+# macOS and iOS build directories
+/mac/
+/ios/
+/tvos/
