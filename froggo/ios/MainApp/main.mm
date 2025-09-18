@@ -1,4 +1,4 @@
-#include <UnityFramework/UnityFramework.h>
+#import <UnityFramework/UnityFramework.h>
 
 UnityFramework* UnityFrameworkLoad()
 {

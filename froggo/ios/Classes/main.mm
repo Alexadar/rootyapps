@@ -1,7 +1,8 @@
 #include "RegisterFeatures.h"
 #include <csignal>
 #include "UnityInterface.h"
-#include "../UnityFramework/UnityFramework.h"
+#import <UnityFramework/UnityFramework.h>
+#include "UI/Keyboard.h"
 
 void UnityInitTrampoline();
 
@@ -35,6 +36,11 @@ UnityFramework* _gUnityFramework = nil;
 - (UnityAppController*)appController
 {
     return GetAppController();
+}
+
+- (UITextField*)keyboardTextField
+{
+    return KeyboardDelegate.Instance.getTextField;
 }
 
 - (void)setExecuteHeader:(const MachHeader*)header
@@ -149,10 +155,20 @@ if([obj respondsToSelector:sel])                        \
     UnityPause(pause);
 }
 
+- (void)setAbsoluteURL:(const char *)url
+{
+    UnitySetAbsoluteURL(url);
+}
+
+- (int)shouldRunInBackground
+{
+    return UnityShouldRunInBackground();
+}
+
 @end
 
 
-#if TARGET_IPHONE_SIMULATOR && TARGET_TVOS_SIMULATOR
+#if TARGET_OS_SIMULATOR
 #include <pthread.h>
 
 extern "C" int pthread_cond_init$UNIX2003(pthread_cond_t *cond, const pthread_condattr_t *attr)
@@ -165,4 +181,4 @@ extern "C" int pthread_cond_timedwait$UNIX2003(pthread_cond_t *cond, pthread_mut
     const struct timespec *abstime)
 { return pthread_cond_timedwait(cond, mutex, abstime); }
 
-#endif // TARGET_IPHONE_SIMULATOR && TARGET_TVOS_SIMULATOR
+#endif // TARGET_OS_SIMULATOR

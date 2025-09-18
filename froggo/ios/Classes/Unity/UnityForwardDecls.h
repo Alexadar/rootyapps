@@ -4,38 +4,40 @@
 #include "UnitySharedDecls.h"
 
 #ifdef __OBJC__
+@class NSArray;
+@class NSBundle;
+@class NSData;
+@class NSDictionary;
+@class NSError;
+@class NSSet;
+@class NSString;
+@class UIEvent;
+@class UIKeyCommand;
 @class UIScreen;
-@class UIWindow;
+@class UITouch;
 @class UIView;
 @class UIViewController;
-@class UIEvent;
-@class UILocalNotification;
-@class NSString;
-@class NSDictionary;
-@class NSArray;
-@class NSSet;
-@class NSData;
-@class NSError;
-@class NSBundle;
-@class UIKeyCommand;
+@class UIWindow;
 
+@class UnityView;
 @class UnityViewControllerBase;
 #else
+typedef struct objc_object NSArray;
+typedef struct objc_object NSBundle;
+typedef struct objc_object NSData;
+typedef struct objc_object NSDictionary;
+typedef struct objc_object NSError;
+typedef struct objc_object NSSet;
+typedef struct objc_object NSString;
+typedef struct objc_object UIEvent;
+typedef struct objc_object UIKeyCommand;
 typedef struct objc_object UIScreen;
-typedef struct objc_object UIWindow;
+typedef struct objc_object UITouch;
 typedef struct objc_object UIView;
 typedef struct objc_object UIViewController;
-typedef struct objc_object UIEvent;
-typedef struct objc_object UILocalNotification;
-typedef struct objc_object NSString;
-typedef struct objc_object NSDictionary;
-typedef struct objc_object NSArray;
-typedef struct objc_object NSSet;
-typedef struct objc_object NSError;
-typedef struct objc_object NSData;
-typedef struct objc_object NSBundle;
-typedef struct objc_object UIKeyCommand;
+typedef struct objc_object UIWindow;
 
+typedef struct objc_object UnityView;
 typedef struct objc_object UnityViewControllerBase;
 #endif
 
@@ -136,5 +138,8 @@ extern "C" {
     bool UnityiOS112orNewer();
     bool UnityiOS130orNewer();
     bool UnityiOS140orNewer();
+    bool UnityiOS150orNewer();
+    bool UnityiOS160orNewer();
+    bool UnityiOSVersionIsAtLeast(uint32_t major, uint32_t minor = 0);
 }
 #endif

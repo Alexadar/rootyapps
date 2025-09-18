@@ -2,17 +2,47 @@
 
 #import <QuartzCore/CADisplayLink.h>
 
-#include "RenderPluginDelegate.h"
+// we want to use CAMetalDisplayLink if it is available
+// if CADisplayLink is always preferred, this can be changed to #define UNITY_USES_METAL_DISPLAY_LINK 0
+// further, shouldUseMetalDisplayLink method can be overriden/tweaked to disable metal display link at runtime
+//   e.g. you might want to use old display link on slower devices where stable frametime cannot be guaranteed
+#define UNITY_USES_METAL_DISPLAY_LINK (UNITY_HAS_IOSSDK_17_0 || UNITY_HAS_TVOSSDK_17_0)
+#if UNITY_USES_METAL_DISPLAY_LINK
+    #import <QuartzCore/CAMetalDisplayLink.h>
+#endif
+
+#import <UnityFramework/RenderPluginDelegate.h>
 
 @class UnityView;
 @class UnityViewControllerBase;
 @class DisplayConnection;
+
+typedef enum
+{
+    kUnityEngineLoadStateNotStarted = 0,
+    // Minimal initialization done, allowing limited API use, such as reporting URL app was launched with
+    kUnityEngineLoadStateMinimal = 1,
+    // Core of Unity engine is loaded, but no graphics or first scene yet
+    kUnityEngineLoadStateCoreInitialized = 2,
+    // Rendering was initialized, nothing related to rendering should be touched before this state
+    kUnityEngineLoadStateRenderingInitialized = 3,
+    // Unity is fully initialized, it's not safe to call Unity APIs before this state
+    kUnityEngineLoadStateAppReady = 4,
+} UnityEngineLoadState;
 
 __attribute__ ((visibility("default")))
 @interface UnityAppController : NSObject<UIApplicationDelegate>
 {
     UnityView*          _unityView;
     CADisplayLink*      _displayLink;
+#if UNITY_USES_METAL_DISPLAY_LINK
+    CAMetalDisplayLink* _metalDisplayLink API_AVAILABLE(ios(17.0), tvos(17.0));
+#endif
+    // since we can have CAMetalDisplayLink not available both at runtime (old ios) and at compile time (old xcode)
+    //   and we can have it disabled completely (not all applications need it)
+    // the code supporting both CAMetalDisplayLink and CADisplayLink can easily become very convoluted
+    // hence we add a boolean to check CAMetalDisplayLink usage without checks for @available and preprocessor ifdefs
+    BOOL                _usesMetalDisplayLink;
 
     UIWindow*           _window;
     UIView*             _rootView;
@@ -40,10 +70,17 @@ __attribute__ ((visibility("default")))
 // override it to register plugins, tweak UI etc
 - (void)preStartUnity;
 
-// this one is called at first applicationDidBecomeActive
-// NB: it will be started with delay 0, so it will run on next run loop iteration
-// this is done to make sure that activity indicator animation starts before blocking loading
+// this one is called at at the very end of didFinishLaunchingWithOptions:
+// it will start showing unity view and rendering unity content
 - (void)startUnity:(UIApplication*)application;
+
+// override it if you want to have custom logic for the decision to use CAMetalDisplayLink or not
+// in any case, CAMetalDisplayLink will be used only if actually supported by the device
+// this will be called once on startup, before any rendering but after initializing unity
+- (BOOL)shouldUseMetalDisplayLink;
+
+- (BOOL)advanceEngineLoadState:(UnityEngineLoadState)newState;
+- (BOOL)downgradeEngineLoadState:(UnityEngineLoadState)newState;
 
 // this is a part of UIApplicationDelegate protocol starting with ios5
 // setter will be generated empty
@@ -51,6 +88,11 @@ __attribute__ ((visibility("default")))
 
 @property (readonly, copy, nonatomic) UnityView*            unityView;
 @property (readonly, copy, nonatomic) CADisplayLink*        unityDisplayLink;
+@property (readonly, nonatomic) BOOL                        unityUsesMetalDisplayLink;
+
+#if UNITY_USES_METAL_DISPLAY_LINK
+@property (readonly, copy, nonatomic) CAMetalDisplayLink*   unityMetalDisplayLink API_AVAILABLE(ios(17.0), tvos(17.0));
+#endif
 
 @property (readonly, copy, nonatomic) UIView*               rootView;
 @property (readonly, copy, nonatomic) UIViewController*     rootViewController;
@@ -60,6 +102,8 @@ __attribute__ ((visibility("default")))
 @property (readonly, nonatomic) UIInterfaceOrientation      interfaceOrientation;
 #endif
 
+@property (readonly) UnityEngineLoadState                   engineLoadState;
+@property (readonly) bool                                   didResignActive;
 @property (nonatomic, retain) id                            renderDelegate;
 @property (nonatomic, copy)                                 void (^quitHandler)(void);
 

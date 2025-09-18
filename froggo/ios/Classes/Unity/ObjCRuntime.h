@@ -7,7 +7,7 @@
 // simulator and device differ in how they want objc_msgSendXXX to be called:
 // device wants objc_msgSendXXX to be casted to proper type (same as selector we want to call)
 // while simulator wants to call them directly
-#if TARGET_IPHONE_SIMULATOR || TARGET_TVOS_SIMULATOR
+#if TARGET_OS_SIMULATOR
     #define UNITY_OBJC_SEND_MSG(selectorType, msgSendFunc) msgSendFunc
 #else
     #define UNITY_OBJC_SEND_MSG(selectorType, msgSendFunc) ((selectorType)msgSendFunc)

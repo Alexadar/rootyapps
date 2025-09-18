@@ -17,6 +17,7 @@
 - (id)initWithFrame:(CGRect)frame scaleFactor:(CGFloat)scale;
 - (id)initWithFrame:(CGRect)frame;
 - (id)initFromMainScreen;
+- (void)resumeRendering;
 
 // in here we will go through subviews and call onUnityUpdateViewLayout selector (if present)
 // that allows to handle simple overlay child view layout without doing view controller magic
@@ -27,6 +28,7 @@
 
 // will match script-side Screen.orientation
 @property (nonatomic, readonly) ScreenOrientation contentOrientation;
+@property BOOL skipRendering;
 
 @end
 
@@ -40,12 +42,14 @@
 @end
 
 @interface UnityView (UnityAppController)
-// if we know that unity view bounds have changed but need to update unity-side size/orientation immediately
-// otherwise the update will be delayed to next layoutSubviews
-- (void)boundsUpdated;
+- (void)boundsUpdated __deprecated_msg("use updateUnityBackbufferSize instead.");
+// if we know that unity view bounds have changed but we need to update unity-side size/orientation immediately
+- (void)updateUnityBackbufferSize;
+// update layer's drawableSize from bounds size: needed when bounds are changed (either by iOS or by us)
+- (void)updateLayerDrawableSizeFromBounds;
 @end
 
-#if PLATFORM_IOS
+#if PLATFORM_IOS || PLATFORM_VISIONOS
     #include "UnityView+iOS.h"
 #elif PLATFORM_TVOS
     #include "UnityView+tvOS.h"

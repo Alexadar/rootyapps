@@ -6,6 +6,10 @@
 #include "UnityForwardDecls.h"
 #include "UnityRendering.h"
 
+#ifdef __OBJC__
+#import "Foundation/Foundation.h"
+#endif
+
 // unity plugin functions
 
 // audio plugin api
@@ -43,19 +47,29 @@ void    UnityInitApplicationGraphics(void);
 void    UnityCleanup(void);
 void    UnityLoadApplication(void);
 void    UnityLoadApplicationFromSceneLessState(void);
-void    UnityPlayerLoop(void);              // normal player loop
-void    UnityBatchPlayerLoop(void);         // batch mode like player loop, without rendering (usable for background processing)
 void    UnitySetPlayerFocus(int focused);   // send OnApplicationFocus() message to scripts
 void    UnityLowMemory(void);
 void    UnityPause(int pause);
 void    UnitySuppressPauseMessage(void);
 int     UnityIsPaused(void);                // 0 if player is running, 1 if paused
+int     UnityIsFocused(void);               // 1 if player is focused, 0 if in the background
 void    UnityWillPause(void);               // send the message that app will pause
 void    UnityWillResume(void);              // send the message that app will resume
 void    UnityDeliverUIEvents(void);         // unity processing impacting UI will be called in there
 void    UnityWaitForFrame();
 
 void    UnityInputProcess(void);            // no longer used, will be removed soon
+
+// player loop handling:
+// normal player loop
+void    UnityPlayerLoopWithBackbuffer(UnityRenderBufferHandle color, UnityRenderBufferHandle depth);
+// just render, without actually running player loop (used for CAMetalDisplayLink callback when unity is paused)
+void    UnityRenderWithoutPlayerLoopWithBackbuffer(UnityRenderBufferHandle color, UnityRenderBufferHandle depth);
+// batchmode player loop: no rendering to view (useful for background processing)
+void    UnityBatchPlayerLoop(void);
+// these are deprecated (we do not call them anymore from the trampoline, but we keep them around for the possible plugins usage)
+void    UnityPlayerLoop(void) __attribute__((deprecated("Use UnityPlayerLoopWithBackbuffer instead of UnityPlayerLoop")));
+void    UnityRenderWithoutPlayerLoop(void) __attribute__((deprecated("Use UnityRenderWithoutPlayerLoopWithBackbuffer instead of UnityRenderWithoutPlayerLoop")));
 
 
 // rendering
@@ -74,7 +88,6 @@ int     UnityIsCaptureScreenshotRequested(void);
 void    UnityCaptureScreenshot(void);
 void    UnitySendMessage(const char* obj, const char* method, const char* msg);
 void    UnityUpdateMuteState(int mute);
-void    UnityUpdateAudioOutputState(void);
 int     UnityShouldMuteOtherAudioSources(void);
 int     UnityShouldPrepareForIOSRecording(void);
 int     UnityIsAudioManagerAvailableAndEnabled(void);
@@ -89,7 +102,8 @@ void    UnitySetLogEntryHandler(LogEntryHandler newHandler);
 // WARNING: old UnityRegisterRenderingPlugin will become obsolete soon
 void    UnityRegisterRenderingPlugin(UnityPluginSetGraphicsDeviceFunc setDevice, UnityPluginRenderMarkerFunc renderMarker);
 
-void    UnityRegisterRenderingPluginV5(UnityPluginLoadFunc loadPlugin, UnityPluginUnloadFunc unloadPlugin);
+void    UnityRegisterRenderingPluginV5(UnityPluginLoadFunc loadPlugin, UnityPluginUnloadFunc unloadPlugin) __attribute__((deprecated("Renamed to UnityRegisterPlugin", "UnityRegisterPlugin")));
+void    UnityRegisterPlugin(UnityPluginLoadFunc loadPlugin, UnityPluginUnloadFunc unloadPlugin);
 void    UnityRegisterAudioPlugin(UnityPluginGetAudioEffectDefinitionsFunc getAudioEffectDefinitions);
 
 
@@ -112,7 +126,10 @@ void    UnityOrientationRequestWasCommitted(void);
 int     UnityReportResizeView(unsigned w, unsigned h, unsigned /*ScreenOrientation*/ contentOrientation);   // returns ScreenOrientation
 void    UnityReportSafeAreaChange(float x, float y, float w, float h);
 void    UnityReportBackbufferChange(UnityRenderBufferHandle colorBB, UnityRenderBufferHandle depthBB);
+#if !PLATFORM_VISIONOS
 float   UnityCalculateScalingFactorFromTargetDPI(UIScreen* screen);
+int     UnityResolutionScalingFixedDPIFactorChanged(void);
+#endif
 void    UnityReportDisplayCutouts(const float* x, const float* y, const float* width, const float* height, int count);
 
 // player settings
@@ -122,6 +139,8 @@ int     UnityUseAnimatedAutorotation(void);
 int     UnityGetDesiredMSAASampleCount(int defaultSampleCount);
 int     UnityGetSRGBRequested(void);
 int     UnityGetWideColorRequested(void);
+void    UnitySetEDRValues(float maxEDRValue, float currentEDRValue);
+void    UnitySetHDRMode(int hdrMode);
 int     UnityGetHDRModeRequested(void);
 int     UnityGetShowActivityIndicatorOnLoading(void);
 int     UnityGetAccelerometerFrequency(void);
@@ -137,18 +156,6 @@ int     UnityMetalMemorylessDepth(void);
 int     UnityPreserveFramebufferAlpha(void);
 void    UnitySetTargetFPS(int targetFPS);
 void    UnitySetAbsoluteURL(const char* url);
-
-// push notifications
-#if !PLATFORM_TVOS
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-void    UnitySendLocalNotification(UILocalNotification* notification);
-#pragma clang pop
-#endif
-
-void    UnitySendRemoteNotification(NSDictionary* notification);
-void    UnitySendDeviceToken(NSData* deviceToken);
-void    UnitySendRemoteNotificationError(NSError* error);
 
 // native events
 
@@ -175,7 +182,7 @@ void    UnitySetJoystickPosition(int joyNum, int axis, float pos);
 int     UnityStringToKey(const char *name);
 void    UnitySetKeyState(int key, int /*bool*/ state);
 void    UnitySetKeyboardKeyState(int key, int /*bool*/ state);
-void    UnitySendKeyboardCommand(UIKeyCommand* command);
+void    UnitySendKeyboardCommand(UIKeyCommand* command, int code);
 
 // UnityWebRequest handling
 
@@ -217,6 +224,7 @@ void    UnitySendTouchesBegin(NSSet* touches, UIEvent* event);
 void    UnitySendTouchesEnded(NSSet* touches, UIEvent* event);
 void    UnitySendTouchesCancelled(NSSet* touches, UIEvent* event);
 void    UnitySendTouchesMoved(NSSet* touches, UIEvent* event);
+void    UnitySendTouchesUnfiltered(NSSet* touches, NSSet* allTouches);
 
 void    UnityCancelTouches(void);
 
@@ -236,11 +244,14 @@ extern "C" {
 // UnityAppController.mm
 UIViewController*       UnityGetGLViewController(void);
 UIView*                 UnityGetGLView(void);
+UnityView*              UnityGetUnityView(void);
 UIWindow*               UnityGetMainWindow(void);
 enum ScreenOrientation  UnityCurrentOrientation(void);
 
 // Unity/DisplayManager.mm
+#if !PLATFORM_VISIONOS
 float                   UnityScreenScaleFactor(UIScreen* screen);
+#endif
 
 // Unity/DeviceSettings.mm
 int                     UnityDeviceHasCutout(void);
@@ -277,13 +288,18 @@ void            UnityGetNiceKeyname(int key, char* buffer, int maxLen);
 void            UnityGfxInitedCallback(void);
 void            UnityPresentContextCallback(struct UnityFrameStats const* frameStats);
 void            UnityFramerateChangeCallback(int targetFPS);
+void            UnitySelectRenderingAPI(void);
 int             UnitySelectedRenderingAPI(void);
+int             UnityIsBatchmode(void);
+int             UnityShouldRunInBackground(void);
 
 NSBundle*           UnityGetMetalBundle(void);
 MTLDeviceRef        UnityGetMetalDevice(void);
 MTLCommandQueueRef  UnityGetMetalCommandQueue(void);
-MTLCommandQueueRef  UnityGetMetalDrawableCommandQueue(void);
 int UnityCommandQueueMaxCommandBufferCountMTL(void);
+
+// deprecated, soon to be removed
+MTLCommandQueueRef  UnityGetMetalDrawableCommandQueue(void);
 
 UnityRenderBufferHandle UnityBackbufferColor(void);
 UnityRenderBufferHandle UnityBackbufferDepth(void);
@@ -369,12 +385,6 @@ const char*     UnityDocumentsDir(void);
 const char*     UnityLibraryDir(void);
 const char*     UnityCachesDir(void);
 int             UnityUpdateNoBackupFlag(const char* path, int setFlag); // Returns 1 if successful, otherwise 0
-
-// Unity/WWWConnection.mm
-void*           UnityStartWWWConnectionGet(void* udata, const void* headerDict, const char* url);
-void*           UnityStartWWWConnectionPost(void* udata, const void* headerDict, const char* url, const void* data, unsigned length);
-void            UnityDestroyWWWConnection(void* connection);
-void            UnityShouldCancelWWW(const void* connection);
 
 // Unity/FullScreenVideoPlayer.mm
 int             UnityIsFullScreenPlaying(void);

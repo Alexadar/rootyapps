@@ -2,100 +2,174 @@
 #include "UnityAppController+ViewHandling.h"
 
 #include "Unity/InternalProfiler.h"
-#include "Unity/UnityMetalSupport.h"
 #include "Unity/DisplayManager.h"
 
 #include "UI/UnityView.h"
 
 #include <dlfcn.h>
 
-// On some devices presenting render buffer may sporadically take long time to complete even with very simple scenes.
-// In these cases display link still fires at steady frame rate but input processing becomes stuttering.
-// As a workaround this switch disables display link during rendering a frame.
-// If you are running a GPU bound scene and experience frame drop you may want to disable this switch.
-#define ENABLE_DISPLAY_LINK_PAUSING 1
-#define ENABLE_RUNLOOP_ACCEPT_INPUT 1
+#import <Metal/Metal.h>
 
-// _glesContextCreated was renamed to _renderingInited
-extern bool _renderingInited;
-extern bool _unityAppReady;
 extern bool _skipPresent;
 extern bool _didResignActive;
 
 static int _renderingAPI = 0;
-static int SelectRenderingAPIImpl();
+static void SelectRenderingAPIImpl();
 
-static bool _enableRunLoopAcceptInput = false;
 
 @implementation UnityAppController (Rendering)
 
-- (void)createDisplayLink
+#if !PLATFORM_VISIONOS
+- (BOOL)usingCompositorLayer
+{
+    return NO;
+}
+#endif
+
+- (void)createCADisplayLink
 {
     _displayLink = [CADisplayLink displayLinkWithTarget: self selector: @selector(repaintDisplayLink)];
     [self callbackFramerateChange: -1];
     [_displayLink addToRunLoop: [NSRunLoop currentRunLoop] forMode: NSRunLoopCommonModes];
+
+    printf_console("CADisplayLink created\n");
+}
+
+#if UNITY_USES_METAL_DISPLAY_LINK
+- (void)createMetalDisplayLink
+{
+    if (@available(iOS 17.0, tvOS 17.0, *))
+    {
+        _usesMetalDisplayLink = YES;
+
+        _metalDisplayLink = [[CAMetalDisplayLink alloc] initWithMetalLayer:(CAMetalLayer*)_unityView.layer];
+        _metalDisplayLink.preferredFrameLatency = 2;
+        _metalDisplayLink.paused = NO;
+        _metalDisplayLink.delegate = self;
+
+        [self callbackFramerateChange: -1];
+        [_metalDisplayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+
+        printf_console("CAMetalDisplayLink created\n");
+    }
+}
+#endif
+
+- (void)createDisplayLink
+{
+    _usesMetalDisplayLink = NO; // we will set it to YES inside createMetalDisplayLink
+
+#if UNITY_USES_METAL_DISPLAY_LINK
+    if(self.renderingAPI == apiMetal && [self shouldUseMetalDisplayLink])
+        [self createMetalDisplayLink];
+#endif
+
+    if (!_usesMetalDisplayLink)
+        [self createCADisplayLink];
 }
 
 - (void)destroyDisplayLink
 {
     [_displayLink invalidate];
     _displayLink = nil;
-}
 
-- (void)processTouchEvents
-{
-    // On multicore devices running at 60 FPS some touch event delivery isn't properly interleaved with graphical frames.
-    // Running additional run loop here improves event handling in those cases.
-    // Passing here an NSDate from the past invokes run loop only once.
-#if ENABLE_RUNLOOP_ACCEPT_INPUT
-    // We get "NSInternalInconsistencyException: unexpected start state" exception if there are events queued and app is
-    // going to background at the same time. This happens when we render additional frame after receiving
-    // applicationWillResignActive. So check if we are supposed to ignore input.
-    bool ignoreInput = [[UIApplication sharedApplication] isIgnoringInteractionEvents];
-    if (!ignoreInput && _enableRunLoopAcceptInput)
+#if UNITY_USES_METAL_DISPLAY_LINK
+    if (@available(iOS 17.0, tvOS 17.0, *))
     {
-        static NSDate* past = [NSDate dateWithTimeIntervalSince1970: 0]; // the oldest date we can get
-        [[NSRunLoop currentRunLoop] acceptInputForMode: NSDefaultRunLoopMode beforeDate: past];
+        [_metalDisplayLink invalidate];
+        _metalDisplayLink = nil;
     }
 #endif
 }
 
 - (void)repaintDisplayLink
 {
-#if ENABLE_DISPLAY_LINK_PAUSING
-    _displayLink.paused = YES;
-#endif
-    if (!_didResignActive)
+    if (self.usingCompositorLayer == NO)
     {
         UnityDisplayLinkCallback(_displayLink.timestamp);
         [self repaint];
-        [self processTouchEvents];
     }
-
-#if ENABLE_DISPLAY_LINK_PAUSING
-    _displayLink.paused = NO;
-#endif
+    else
+    {
+        [self repaintCompositorLayer];
+    }
 }
+
+#if UNITY_USES_METAL_DISPLAY_LINK
+- (void)metalDisplayLink:(CAMetalDisplayLink*)link needsUpdate:(CAMetalDisplayLinkUpdate*)update
+{
+    UnityDisplayLinkCallback(0);
+
+    UnityDisplaySurfaceMTL* displaySurface = (UnityDisplaySurfaceMTL*)_mainDisplay.surface;
+    displaySurface->swapchain.nextDrawable = update.drawable;
+    [self repaint];
+}
+#endif
 
 - (void)repaint
 {
+    if (_unityView.skipRendering)
+        return;
+
 #if UNITY_SUPPORT_ROTATION
     [self checkOrientationRequest];
 #endif
+
     [_unityView recreateRenderingSurfaceIfNeeded];
     [_unityView processKeyboard];
     UnityDeliverUIEvents();
 
-    if (!UnityIsPaused())
+    // we want to support both CADisplayLink and CAMetalDisplayLink
+    // the major complication is that they work quite differently under the hood
+    // CADisplayLink: you can consider this a simple timer-based callback
+    //   so if we get this while in background - we might be not allowed to render at all
+    //   and before we were having an explicit check to repain only if we are not paused
+    // CAMetalDisplayLink: unlike CADisplayLink (where we query drawable from view),
+    //   the callback comes when we are asked explicitly to render view contents (we are given drawable)
+    //   and we cannot bypass rendering when asked at all
+
+    if(UnityIsPaused())
+    {
+        if(self.unityUsesMetalDisplayLink)
+            UnityRenderWithoutPlayerLoopWithBackbuffer(GetMainDisplaySurface()->unityColorBuffer, GetMainDisplaySurface()->unityDepthBuffer);
+    }
+    else
+    {
         UnityRepaint();
+    }
+
+#if !PLATFORM_VISIONOS
+    if (UnityResolutionScalingFixedDPIFactorChanged())
+    {
+        // note that changing contentScaleFactor below would trigger drawableSize change
+        // if we are still rendering AND using delayed drawable acquisition, we can get "out of sync"
+        // NOTE: moving this to happen before rendering won't help since we can be still processing
+        // NOTE:   rendering commands in threaded rendering
+        // NOTE: there might be a way to do it nicer, but since it is needed only on CADisplayLink
+        // NOTE:   and we do not expect dpi scaling to change frequently, this is fine
+        if(!self.unityUsesMetalDisplayLink)
+            UnityFinishRendering();
+
+        _unityView.contentScaleFactor = UnityScreenScaleFactor([UIScreen mainScreen]);
+    }
+#endif
 }
+
+#if !PLATFORM_VISIONOS
+- (void)repaintCompositorLayer
+{
+}
+#endif
 
 - (void)callbackGfxInited
 {
+    assert(self.engineLoadState < kUnityEngineLoadStateRenderingInitialized && "Graphics should not have been initialized at this point");
     InitRendering();
-    _renderingInited = true;
+    [self advanceEngineLoadState: kUnityEngineLoadStateRenderingInitialized];
 
     [self shouldAttachRenderDelegate];
+    [_unityView updateUnityBackbufferSize];
+    [_unityView updateLayerDrawableSizeFromBounds];
     [_unityView recreateRenderingSurface];
     [_renderDelegate mainDisplayInited: _mainDisplay.surface];
 
@@ -104,18 +178,18 @@ static bool _enableRunLoopAcceptInput = false;
 
 - (void)callbackPresent:(const UnityFrameStats*)frameStats
 {
-    if (_skipPresent || _didResignActive)
+    if (_skipPresent)
         return;
 
     // metal needs special processing, because in case of airplay we need extra command buffers to present non-main screen drawables
     if (UnitySelectedRenderingAPI() == apiMetal)
     {
-    #if UNITY_CAN_USE_METAL
         [[DisplayManager Instance].mainDisplay present];
+#if !PLATFORM_VISIONOS
         [[DisplayManager Instance] enumerateNonMainDisplaysWithBlock:^(DisplayConnection* conn) {
             PreparePresentNonMainScreenMTL((UnityDisplaySurfaceMTL*)conn.surface);
         }];
-    #endif
+#endif
     }
     else
     {
@@ -127,30 +201,46 @@ static bool _enableRunLoopAcceptInput = false;
 
 - (void)callbackFramerateChange:(int)targetFPS
 {
-    int maxFPS = (int)[UIScreen mainScreen].maximumFramesPerSecond;
     if (targetFPS <= 0)
         targetFPS = UnityGetTargetFPS();
-    if (targetFPS > maxFPS)
+
+    // on tvos it is possible to start application without a screen attached
+    // alas, mainScreen is set in this case, but the values provided are bogus
+    //   and in the case of maxFPS = 0 we will end up in endless recursion
+#if !PLATFORM_VISIONOS
+    const int maxFPS = (int)[UIScreen mainScreen].maximumFramesPerSecond;
+#else
+    // no UIScreen on VisionOS
+    const int maxFPS = 90;
+#endif
+    if (maxFPS > 0 && targetFPS > maxFPS)
     {
         targetFPS = maxFPS;
+        // note that this changes FPS, resulting in UnityFramerateChangeCallback call, calling this method recursively recursively
         UnitySetTargetFPS(targetFPS);
         return;
     }
 
-    _enableRunLoopAcceptInput = (targetFPS == maxFPS && UnityDeviceCPUCount() > 1);
-
-#if UNITY_HAS_IOSSDK_15_0 && UNITY_HAS_TVOSSDK_15_0
-    if (@available(iOS 15.0, tvOS 15.0, *))
-        _displayLink.preferredFrameRateRange = CAFrameRateRangeMake(targetFPS, targetFPS, targetFPS);
+    if(_usesMetalDisplayLink)
+    {
+    #if UNITY_USES_METAL_DISPLAY_LINK
+        if (@available(iOS 17.0, tvOS 17.0, *))
+            _metalDisplayLink.preferredFrameRateRange = CAFrameRateRangeMake(targetFPS, targetFPS, targetFPS);
+    #endif
+    }
     else
-#endif
-    _displayLink.preferredFramesPerSecond = targetFPS;
+    {
+        if (@available(iOS 15.0, tvOS 15.0, *))
+            _displayLink.preferredFrameRateRange = CAFrameRateRangeMake(targetFPS, targetFPS, targetFPS);
+        else
+            _displayLink.preferredFramesPerSecond = targetFPS;
+    }
 }
 
 - (void)selectRenderingAPI
 {
     NSAssert(_renderingAPI == 0, @"[UnityAppController selectRenderingApi] called twice");
-    _renderingAPI = SelectRenderingAPIImpl();
+    SelectRenderingAPIImpl();
 }
 
 - (UnityRenderingAPI)renderingAPI
@@ -177,49 +267,34 @@ extern "C" void UnityFramerateChangeCallback(int targetFPS)
     [GetAppController() callbackFramerateChange: targetFPS];
 }
 
-static NSBundle*        _MetalBundle    = nil;
-static id<MTLDevice>    _MetalDevice    = nil;
+static NSBundle*            _MetalBundle        = nil;
+static id<MTLDevice>        _MetalDevice        = nil;
+static id<MTLCommandQueue>  _MetalCommandQueue  = nil;
 
-static bool IsMetalSupported(int /*api*/)
+static void SelectRenderingAPIImpl()
 {
-    _MetalBundle = [NSBundle bundleWithPath: @"/System/Library/Frameworks/Metal.framework"];
-    if (_MetalBundle)
+    assert(_renderingAPI == 0 && "Rendering API selection was done twice");
+
+    _renderingAPI = UnityGetRenderingAPI();
+    if (_renderingAPI == apiMetal)
     {
-        [_MetalBundle load];
-        _MetalDevice = ((MTLCreateSystemDefaultDeviceFunc)::dlsym(dlopen(0, RTLD_LOCAL | RTLD_LAZY), "MTLCreateSystemDefaultDevice"))();
-        if (_MetalDevice)
-            return true;
+        _MetalBundle        = [NSBundle bundleWithPath: @"/System/Library/Frameworks/Metal.framework"];
+        _MetalDevice        = MTLCreateSystemDefaultDevice();
+        _MetalCommandQueue  = [_MetalDevice newCommandQueueWithMaxCommandBufferCount: UnityCommandQueueMaxCommandBufferCountMTL()];
+
+        assert(_MetalDevice != nil && _MetalCommandQueue != nil && "Could not initialize Metal.");
     }
-
-    [_MetalBundle unload];
-    return false;
 }
 
-static int SelectRenderingAPIImpl()
-{
-    const int api = UnityGetRenderingAPI();
-    if (api == apiMetal && IsMetalSupported(0))
-        return api;
-
-#if TARGET_IPHONE_SIMULATOR || TARGET_TVOS_SIMULATOR
-    printf_console("On Simulator, Metal is supported only from iOS 13, and it requires at least macOS 10.15 and Xcode 11. Setting no graphics device.\n");
-    return apiNoGraphics;
-#else
-    assert(false);
-    return 0;
-#endif
-}
-
-extern "C" NSBundle*            UnityGetMetalBundle()
-{
-    return _MetalBundle;
-}
-
+extern "C" NSBundle*            UnityGetMetalBundle()       { return _MetalBundle; }
 extern "C" MTLDeviceRef         UnityGetMetalDevice()       { return _MetalDevice; }
-extern "C" MTLCommandQueueRef   UnityGetMetalCommandQueue() { return ((UnityDisplaySurfaceMTL*)GetMainDisplaySurface())->commandQueue; }
-extern "C" MTLCommandQueueRef   UnityGetMetalDrawableCommandQueue() { return ((UnityDisplaySurfaceMTL*)GetMainDisplaySurface())->drawableCommandQueue; }
-
+extern "C" MTLCommandQueueRef   UnityGetMetalCommandQueue() { return _MetalCommandQueue; }
 extern "C" int                  UnitySelectedRenderingAPI() { return _renderingAPI; }
+extern "C" void                 UnitySelectRenderingAPI()   { SelectRenderingAPIImpl(); }
+
+// deprecated and no longer used by unity itself (will soon be removed)
+extern "C" MTLCommandQueueRef   UnityGetMetalDrawableCommandQueue() { return UnityGetMetalCommandQueue(); }
+
 
 extern "C" UnityRenderBufferHandle  UnityBackbufferColor()      { return GetMainDisplaySurface()->unityColorBuffer; }
 extern "C" UnityRenderBufferHandle  UnityBackbufferDepth()      { return GetMainDisplaySurface()->unityDepthBuffer; }
@@ -233,7 +308,10 @@ extern "C" void UnityRepaint()
     @autoreleasepool
     {
         Profiler_FrameStart();
-        UnityPlayerLoop();
+        if (UnityIsBatchmode())
+            UnityBatchPlayerLoop();
+        else
+            UnityPlayerLoopWithBackbuffer(GetMainDisplaySurface()->unityColorBuffer, GetMainDisplaySurface()->unityDepthBuffer);
         Profiler_FrameEnd();
     }
 }

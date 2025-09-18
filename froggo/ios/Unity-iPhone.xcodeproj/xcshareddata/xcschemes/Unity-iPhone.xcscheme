@@ -63,7 +63,8 @@
       enableGPUValidationMode = "1"
       allowLocationSimulation = "YES"
       queueDebuggingEnabled = "No"
-      GPUProfilerEnabled = "No">
+      GPUProfilerEnabled = "No"
+      disablePerformanceAntipatternChecker = "YES">
       <BuildableProductRunnable
          runnableDebuggingMode = "0">
          <BuildableReference

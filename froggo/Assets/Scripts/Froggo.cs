@@ -166,7 +166,7 @@ public class Froggo : MonoBehaviour
         {
             if (!game.over)
             {
-                rigidbody.velocity = new Vector2(0, 0);
+                rigidbody.linearVelocity = new Vector2(0, 0);
                 rigidbody.gravityScale = 0.0f;
                 audioSource.clip = frogDieAudio;
                 Settings.play(audioSource);

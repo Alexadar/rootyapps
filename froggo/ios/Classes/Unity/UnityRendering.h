@@ -3,14 +3,6 @@
 #include <stdint.h>
 
 #ifdef __OBJC__
-@class CAEAGLLayer;
-@class EAGLContext;
-#else
-typedef struct objc_object CAEAGLLayer;
-typedef struct objc_object EAGLContext;
-#endif
-
-#ifdef __OBJC__
 @class CAMetalLayer;
 @protocol CAMetalDrawable;
 @protocol MTLDrawable;
@@ -101,6 +93,20 @@ typedef struct UnityDisplaySurfaceBase
     int                 api;                    // [UnityRenderingAPI]
 } UnityDisplaySurfaceBase;
 
+typedef struct UnityViewSwapchain
+{
+    OBJC_OBJECT_PTR CAMetalLayer*       layer;
+
+    // drawable handling:
+    // CADisplayLink: we will call [CAMetalLayer nextDrawable] first time we need to use "backbuffer"
+    // CAMetalDisplayLink: we are getting drawable to render to from the callback
+    //   alas it might happen that we get next callback while still using current drawable (as in - while rendering previous frame)
+    //   thus we will "mimic" the logic for the old display link, by setting "next drawable to use" in callback
+    //   and "acquiring" drawable on first draw to the backbuffer just updates current drawable to the stored one
+    OBJC_OBJECT_PTR CAMetalDrawableRef  drawable;
+    OBJC_OBJECT_PTR CAMetalDrawableRef  nextDrawable;
+    OBJC_OBJECT_PTR MTLTextureRef       drawableTexture;
+} UnityViewSwapchain;
 
 // START_STRUCT confuse clang c compiler (though it is idiomatic c code that works)
 #pragma clang diagnostic push
@@ -117,24 +123,28 @@ typedef struct UnityDisplaySurfaceBase
     #define kUnityNumOffscreenSurfaces 1
 #endif
 
+// if this is set, then variables that there were moved from UnityDisplaySurfaceMTL to swapchain
+//   will be still updated when acquiring drawable.
+// NOTE: in this case we assume that all the UnityViewSwapchain pointers passed to unity players are coming from UnityDisplaySurfaceMTL
+#if !defined(UNITY_DISPLAY_SURFACE_MTL_BACKWARD_COMPATIBILITY) && UNITY_TRAMPOLINE_IN_USE
+    #define UNITY_DISPLAY_SURFACE_MTL_BACKWARD_COMPATIBILITY 1
+#endif
+
 // Metal display surface
 START_STRUCT(UnityDisplaySurfaceMTL, UnityDisplaySurfaceBase)
-OBJC_OBJECT_PTR CAMetalLayer *       layer;
-OBJC_OBJECT_PTR MTLDeviceRef         device;
+UnityViewSwapchain                  swapchain;
+OBJC_OBJECT_PTR MTLDeviceRef        device;
 
-OBJC_OBJECT_PTR MTLCommandQueueRef  commandQueue;
-OBJC_OBJECT_PTR MTLCommandQueueRef  drawableCommandQueue;
-OBJC_OBJECT_PTR MTLCommandBufferRef presentCB;
-
-OBJC_OBJECT_PTR CAMetalDrawableRef  drawable;
 
 OBJC_OBJECT_PTR MTLTextureRef       drawableProxyRT[kUnityNumOffscreenSurfaces];
+UnityRenderBufferHandle             drawableProxyRS[kUnityNumOffscreenSurfaces];
 
 // This is used on a Mac with drawableProxyRT when off-screen rendering is used
 int                                 proxySwaps;         // Counts times proxy RTs have swapped since surface recreated
 int                                 proxyReady;         // [bool] Proxy RT has swapped since last present; frame ended
+int                                 calledPresentDrawable; // Tracks presenting for editor.
+int                                 vsync;              // Is vsync enabled or not
 
-OBJC_OBJECT_PTR MTLTextureRef       systemColorRB;
 OBJC_OBJECT_PTR MTLTextureRef       targetColorRT;
 OBJC_OBJECT_PTR MTLTextureRef       targetAAColorRT;
 
@@ -144,6 +154,20 @@ OBJC_OBJECT_PTR MTLTextureRef       stencilRB;
 unsigned                            colorFormat;        // [MTLPixelFormat]
 unsigned                            depthFormat;        // [MTLPixelFormat]
 int                                 framebufferOnly;
+
+// these were moved to a separate structure. to simplify the lives of plugin writers we are keeping them here for some time
+// if these need to be updated XXX need to be defined: we will try to update these, but please move on from using them
+#if UNITY_DISPLAY_SURFACE_MTL_BACKWARD_COMPATIBILITY
+OBJC_OBJECT_PTR CAMetalLayer*       layer           __attribute__((deprecated));
+OBJC_OBJECT_PTR CAMetalDrawableRef  nextDrawable    __attribute__((deprecated));
+OBJC_OBJECT_PTR CAMetalDrawableRef  drawable        __attribute__((deprecated));
+OBJC_OBJECT_PTR MTLTextureRef       drawableTex     __attribute__((deprecated));
+
+// these are no longer used, and should have never been used before - we still keep them around but they stay zero-inited
+OBJC_OBJECT_PTR MTLTextureRef       systemColorRB __attribute__((deprecated));
+int                                 drawableProxyNeedsClear[kUnityNumOffscreenSurfaces] __attribute__((deprecated));
+#endif
+
 END_STRUCT(UnityDisplaySurfaceMTL)
 
 // START_STRUCT confuse clang c compiler (though it is idiomatic c code that works)
@@ -206,15 +230,16 @@ void PreparePresentMTL(UnityDisplaySurfaceMTL* surface);
 void PresentMTL(UnityDisplaySurfaceMTL* surface);
 
 // Acquires CAMetalDrawable resource for the surface and returns the drawable texture
+// AcquireDrawableMTL is deprecated and not used from unity side anymore
+//   we keep it here only to avoid breaking native plugins that might have used it
 MTLTextureRef AcquireDrawableMTL(UnityDisplaySurfaceMTL* surface);
+MTLTextureRef AcquireSwapchainDrawable(UnityViewSwapchain* swapchain);
 
 unsigned UnityHDRSurfaceDepth(void);
 
 // starting with ios11 apple insists on having just one presentDrawable per command buffer
 // hence we keep normal processing for main screen, but when airplay is used we will create extra command buffers
 void PreparePresentNonMainScreenMTL(UnityDisplaySurfaceMTL* surface);
-
-void SetDrawableSizeMTL(UnityDisplaySurfaceMTL* surface, int width, int height);
 
 #ifdef __cplusplus
 } // extern "C"
@@ -257,6 +282,40 @@ UnityRenderBufferHandle UnityCreateExternalDepthSurfaceMTL(UnityRenderBufferHand
 // creates "dummy" surface - will indicate "missing" buffer (e.g. depth-only RT will have color as dummy)
 UnityRenderBufferHandle UnityCreateDummySurface(UnityRenderBufferHandle surf, int isColor, const UnityRenderBufferDesc* desc);
 
+// external render surfaces and textures are "out of scope" for memory profiler, hence we add means to register them separately
+// the separate mechanism is needed because unity cannot know what manages the lifetime of textures in this case
+//   specifically since we allow external render surfaces and textures to share metal textures
+void UnityRegisterExternalRenderSurfaceTextureForMemoryProfiler(MTLTextureRef tex);
+void UnityRegisterExternalTextureForMemoryProfiler(MTLTextureRef tex);
+void UnityUnregisterMetalTextureForMemoryProfiler(MTLTextureRef tex);
+
+// handling of unity "backbuffer"
+// internally we still pretend that backbuffer has depth, can have MSAA, or extents different from the window/view size
+// we had UnityCreateExternal* api before that was slightly too "wordy" to use, and was also using UnityDisplaySurfaceMTL
+//   which is wrong, and introduced to big a coupling
+// now, we have two things happening (with different velocities), triggering the need to update API
+//   even if this is not (might be not) the final form
+// first of all we are working on introducing swift trampoline, where we can simplify rendering logic;
+//   but also we do not want to drag in the whole UnityDisplaySurfaceMTL (it doesn't make sense nowadays)
+// thus we introduce intermediate explicit "swapchain" structure
+// this also plays nicely with moving towards having explicit "swapchain" concept internally,
+//   where (not matching view) resolution, MSAA, etc will be handled separately from "here is the connection to window to give to compositor"
+// hence we introduce the api using new UnityViewSwapchain structure (with minimal connection to view internals)
+// alas we are not yet ready to fully switch to have only swapchain in the platform layer (trampoline)
+//   thus we still keep the possibility to create "AA backbuffer that will be resolved to swapchain" or even custom resolution (copied to actual drawable)
+// another thing to note is that we are still bound to support "old" CADisplayLink, thus we need to be able to delay acquiring drawable
+//   so we still need to make sure we have RenderBuffer connecting to a "swapchain" to do the magic when we want to render to it
+// and that's why we have such a big api surface instead of simple "here is your swapchain, please render to it"
+//   but this will hopefully change soon
+// NOTE: as you see depth "backbuffer" creation was moved to happen internally, this is on purpose, see above for a "swapchain" discussion
+// NOTE: hence such a "weird" api for depth backbuffer (note that we need to manage possible resolution change and AA)
+
+UnityRenderBufferHandle UnityCreateBackbufferFromSwapchain(UnityRenderBufferHandle renderBuffer, UnityViewSwapchain* swapchain);
+UnityRenderBufferHandle UnityCreateBackbufferFromTexture2D(UnityRenderBufferHandle renderBuffer, MTLTextureRef tex);
+UnityRenderBufferHandle UnityCreateAABackbufferResolveToSwapchain(UnityRenderBufferHandle renderBuffer, MTLTextureRef tex, UnityViewSwapchain* swapchain);
+UnityRenderBufferHandle UnityCreateAABackbufferFromTexture2D(UnityRenderBufferHandle renderBuffer, MTLTextureRef tex, MTLTextureRef texResolveTo);
+UnityRenderBufferHandle UnityCreateDepthForBackbuffer(UnityRenderBufferHandle renderBuffer, UnityRenderBufferHandle backbuffer);
+
 // disable rendering to render buffers (all Cameras that were rendering to one of buffers would be reset to use backbuffer)
 void    UnityDisableRenderBuffers(UnityRenderBufferHandle color, UnityRenderBufferHandle depth);
 // destroys render buffer
@@ -275,8 +334,6 @@ void MetalUpdateDisplaySync(void);
 UnityRenderBufferHandle UnityNativeRenderBufferFromHandle(void *rb);
 
 MTLCommandBufferRef UnityCurrentMTLCommandBuffer(void);
-
-void UnityUpdateDrawableSize(UnityDisplaySurfaceMTL* surface);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -49,17 +49,9 @@ extern "C" const char* UnityCachesDir()
 
 extern "C" int UnityUpdateNoBackupFlag(const char* path, int setFlag)
 {
-    int result;
-    if (setFlag)
-    {
-        u_int8_t b = 1;
-        result = ::setxattr(path, "com.apple.MobileBackup", &b, 1, 0, 0);
-    }
-    else
-    {
-        result = ::removexattr(path, "com.apple.MobileBackup", 0);
-    }
-    return result == 0 ? 1 : 0;
+    NSURL* url = [NSURL fileURLWithPath: [NSString stringWithUTF8String: path]];
+    NSError* err = nil;
+    return [url setResourceValue: (setFlag ? @YES : @NO) forKey: NSURLIsExcludedFromBackupKey error: &err] == YES ? 1 : 0;
 }
 
 extern "C" const char* const* UnityFontFallbacks()
