@@ -127,6 +127,136 @@ class Api {
     return unsub
   }
 
+  // User methods
+  func getMe() async throws -> FantasticUser {
+    let (data, _) = try await performRequest(url: "me", method: "GET")
+    let decoder = JSONDecoder()
+    return try decoder.decode(FantasticUser.self, from: data)
+  }
+  
+  // Task operations
+  func postDiffuseTask(_ task: FantasticTask, quantity: Int) async throws {
+    let body: [String: Any] = [
+      "task": [
+        "type": task.type.rawValue,
+        "aiArtist": task.aiArtist.rawValue,
+        "details": [
+          "prompt": task.details.prompt,
+          "neg_prompt": task.details.neg_prompt,
+          "w": task.details.w,
+          "h": task.details.h,
+          "cfg": task.details.cfg,
+          "steps": task.details.steps,
+          "baseimage": task.details.baseimage
+        ]
+      ],
+      "quantity": quantity
+    ]
+    let _ = try await performRequest(url: "diffuse", method: "POST", body: body)
+  }
+  
+  func postRepaintTask(_ task: FantasticTask, quantity: Int) async throws {
+    let body: [String: Any] = [
+      "task": [
+        "type": task.type.rawValue,
+        "aiArtist": task.aiArtist.rawValue,
+        "details": [
+          "prompt": task.details.prompt,
+          "neg_prompt": task.details.neg_prompt,
+          "w": task.details.w,
+          "h": task.details.h,
+          "cfg": task.details.cfg,
+          "steps": task.details.steps,
+          "baseimage": task.details.resultUrl
+        ]
+      ],
+      "quantity": quantity
+    ]
+    let _ = try await performRequest(url: "repaint", method: "POST", body: body)
+  }
+  
+  func postUpscaleTask(_ task: FantasticTask) async throws {
+    let body: [String: Any] = [
+      "task": [
+        "type": "upscale",
+        "details": [
+          "baseimage": task.details.resultUrl
+        ]
+      ]
+    ]
+    let _ = try await performRequest(url: "upscale", method: "POST", body: body)
+  }
+  
+  func deleteTasks(_ taskIds: [Int]) async throws {
+    let body: [String: Any] = ["taskIds": taskIds]
+    let _ = try await performRequest(url: "tasks/delete", method: "POST", body: body)
+  }
+  
+  func getTasksByIds(_ taskIds: [Int]) async throws -> GetTaskResponse {
+    let body: [String: Any] = ["taskIds": taskIds]
+    let (data, _) = try await performRequest(url: "tasks/by_ids", method: "POST", body: body)
+    let decoder = JSONDecoder()
+    return try decoder.decode(GetTaskResponse.self, from: data)
+  }
+  
+  // Packs and pricing
+  public class GetPacksResponse: Decodable {
+    var packs: [CreditsPack] = []
+    var prices: Prices = Prices()
+  }
+  
+  func getPacks() async throws -> GetPacksResponse {
+    let (data, _) = try await performRequest(url: "packs", method: "GET")
+    let decoder = JSONDecoder()
+    return try decoder.decode(GetPacksResponse.self, from: data)
+  }
+  
+  func getCheckoutUrl(_ packId: Int) async throws -> String {
+    let body: [String: Any] = ["packId": packId]
+    let (data, _) = try await performRequest(url: "checkout", method: "POST", body: body)
+    if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+       let url = json["checkoutUrl"] as? String {
+      return url
+    }
+    throw NSError(domain: "APIError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid checkout response"])
+  }
+  
+  func getLatestPurchase() async throws -> [String: Any] {
+    let (data, _) = try await performRequest(url: "purchase/latest", method: "GET")
+    if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+      return json
+    }
+    throw NSError(domain: "APIError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid purchase response"])
+  }
+  
+  // Chat methods
+  func getChatMessages() async throws -> [ChatRecord] {
+    let (data, _) = try await performRequest(url: "chat/messages", method: "GET")
+    let decoder = JSONDecoder()
+    return try decoder.decode([ChatRecord].self, from: data)
+  }
+  
+  func sendChatMessage(_ message: String) async throws -> [ChatRecord] {
+    let body: [String: Any] = ["message": message]
+    let (data, _) = try await performRequest(url: "chat/send", method: "POST", body: body)
+    let decoder = JSONDecoder()
+    return try decoder.decode([ChatRecord].self, from: data)
+  }
+  
+  // Document methods
+  func getDoc(_ docName: String) async throws -> String {
+    let (data, _) = try await performRequest(url: "docs/\(docName)", method: "GET")
+    return String(data: data, encoding: .utf8) ?? ""
+  }
+  
+  func acceptEULA() async throws {
+    let _ = try await performRequest(url: "accept/eula", method: "POST")
+  }
+  
+  func acceptGDPR() async throws {
+    let _ = try await performRequest(url: "accept/gdpr", method: "POST")
+  }
+
   //codes
 
   enum ServerErrorCodes: Int {
@@ -135,6 +265,7 @@ class Api {
     case notEnoughCredit = 2
     case validationError = 3
     case chatbotMessageProcessing = 401
+    case promptContainsProfanity = 402
   }
 
   func extractErrorCode(resp: Error) -> ServerErrorCodes {
