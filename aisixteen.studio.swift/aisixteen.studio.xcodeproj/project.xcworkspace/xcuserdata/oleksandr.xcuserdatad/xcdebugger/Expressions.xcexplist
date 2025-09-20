@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "closure #1 in TopBar.body.getter:TopBar.swift">
+         <PersistentStrings>
+            <PersistentString
+               value = "geometry.safeAreaInsets">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "AppView.fetchData():AppView.swift">
+         <PersistentStrings>
+            <PersistentString
+               value = "(error as DecodingError)">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "closure #1 in SignInWithAppleViewModel.firebaseAuth(appleIDCredential:):SignInWithAppleViewModel.swift">
+      </ContextState>
+      <ContextState
+         contextName = "Api.getTasks(page:pageSize:):Api.swift">
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>
