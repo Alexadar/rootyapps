@@ -59,11 +59,20 @@ struct ContentView: View {
                     
                     Spacer()
                     
+                    // QWERTY Keyboard
+                    QwertyKeyboardView(
+                        currentChar: typingMill.currentCharacter
+                    ) { character in
+                        typingMill.processKeyPress(character)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
+                    
                     // Instructions
-                    Text("Type the characters as they appear")
+                    Text("Type the characters as they appear or use the keyboard below")
                         .foregroundColor(.gray)
                         .font(.system(size: 16))
-                        .padding(.bottom, 50)
+                        .padding(.bottom, 30)
                 }
             }
         }
