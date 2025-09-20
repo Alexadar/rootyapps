@@ -14,12 +14,17 @@ class TypingMill: ObservableObject {
     @Published var currentDifficulty: Int = 1
     @Published var isAnimating: Bool = false
     @Published var currentElementIndex: Int = 0
+    @Published var currentCharacter: Character? = nil
     
     private var textGenerator = TextGenerator()
     private var cancellables = Set<AnyCancellable>()
     
     init() {
         changeDifficulty(1)
+        // Ensure current character is set after initialization
+        DispatchQueue.main.async {
+            self.updateCurrentCharacter()
+        }
     }
     
     func changeDifficulty(_ difficulty: Int) {
@@ -60,6 +65,11 @@ class TypingMill: ObservableObject {
             for element in millElements {
                 element.isFadedOut = false
             }
+        }
+        
+        // Update current character after animation setup
+        DispatchQueue.main.async {
+            self.updateCurrentCharacter()
         }
     }
     
@@ -107,8 +117,23 @@ class TypingMill: ObservableObject {
                         self.currentElementIndex = max(0, self.currentElementIndex - 2)
                     }
                 }
+                
+                // Update current character after any changes
+                self.updateCurrentCharacter()
             }
         }
+    }
+    
+    func getCurrentCharacter() -> Character? {
+        guard !isAnimating,
+              currentElementIndex < millElements.count else { return nil }
+        
+        let currentElement = millElements[currentElementIndex]
+        return currentElement.currentChar
+    }
+    
+    private func updateCurrentCharacter() {
+        currentCharacter = getCurrentCharacter()
     }
     
 }
