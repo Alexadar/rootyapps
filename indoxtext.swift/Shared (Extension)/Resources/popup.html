@@ -6,6 +6,17 @@
     <script type="module" src="popup.js"></script>
 </head>
 <body>
-    <strong>Hello World!</strong>
+    <div id="beginSumm" class="container containerHidden">
+      <button id="btnSumm" class="btn" >
+         Summarize text
+      </button>
+    </div>
+    <div id="progressSumm" class="container containerHidden">
+      <p class="header" id="progressSummHeader">Summarizing</p>
+      <div class="percentage">
+        <div id="percentageVal"></div>
+      </div>
+      <button id="btnCancel" class="btn btnLink">Cancel</button>
+    </div>
 </body>
 </html>

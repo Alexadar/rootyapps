@@ -1,0 +1,88 @@
+.indox-modal {
+  position: fixed!important;
+  z-index: 99999999999999999999;
+  width: 100vw!important;
+  height: 100vh!important;
+  opacity: 0!important;
+  visibility: hidden!important;
+  transition: all 0.3s ease!important;
+  top: 0!important;
+  left: 0!important;
+  display: flex!important;
+  align-items: center!important;
+  justify-content: center!important;
+  overflow: scroll;
+}
+
+.indox-modal-open {
+  visibility: visible!important;
+  opacity: 1!important;
+  transition-delay: 0s!important;
+}
+
+.indox-modal-bg {
+  position: absolute!important;
+  background: white!important;
+  width: 100%!important;
+  height: 100%!important;
+}
+
+.indox-modal-container {
+  border-radius: 10px!important;
+  background: #F4F4F5!important;
+  position: relative!important;
+  width: 90%!important;
+  overflow: scroll !important;
+  padding: 16px!important;
+  border-radius: 10px;
+  max-width: 778px;
+  margin: auto;
+}
+
+.indox-summary-result-header {
+  font-size: 16px!important;
+  color: black!important;
+  width: 100%;
+  text-align: center;
+}
+
+.indox-summary-result-content {
+  color: black!important;
+  padding: 5px!important;
+  font-size: 18px!important;
+  text-align: justify!important;
+}
+
+.indox-modal-close {
+  position: absolute!important;
+  right: 15px!important;
+  top: 15px!important;
+  outline: none!important;
+  appearance: none!important;
+  color: #6F6F70!important;
+  background: none!important;
+  border: 0px!important;
+  cursor: pointer!important;
+  font-size: 14px;
+}
+
+.indox-modal-bottom-buttons {
+  display: flex;
+  width: 100%;
+  margin-top: 40px;
+  margin-bottom: 80px;
+}
+
+.indox-modal-copycb {
+  margin-left: auto;
+  margin-right: auto;
+
+  height: 44px;
+  width: 135px;
+  border-radius: 10px;
+  border: 0;
+  font-size: 14px;
+  background: #08B7D6;
+  color: white;
+  cursor: pointer;
+}

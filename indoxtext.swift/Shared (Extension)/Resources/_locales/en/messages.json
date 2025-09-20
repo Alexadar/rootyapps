@@ -1,10 +1,8 @@
 {
     "extension_name": {
-        "message": "indoxtext.safari",
-        "description": "The display name for the extension."
+        "message": "Indox Browser"
     },
     "extension_description": {
-        "message": "This is indoxtext.safari. You should tell us what your extension does here.",
-        "description": "Description of what the extension does."
+        "message": "AI-powered text summarization for web pages"
     }
 }
