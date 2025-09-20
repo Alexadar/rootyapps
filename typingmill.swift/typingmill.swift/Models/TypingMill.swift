@@ -13,11 +13,9 @@ class TypingMill: ObservableObject {
     @Published var millElements: [MillElement] = []
     @Published var currentDifficulty: Int = 1
     @Published var isAnimating: Bool = false
-    @Published var scrollOffset: CGFloat = 0
+    @Published var currentElementIndex: Int = 0
     
     private var textGenerator = TextGenerator()
-    private var currentElementIndex: Int = 0
-    private let speedMultiplier: CGFloat = 24
     private var cancellables = Set<AnyCancellable>()
     
     init() {
@@ -45,10 +43,9 @@ class TypingMill: ObservableObject {
     private func initiateText() {
         millElements.removeAll()
         currentElementIndex = 0
-        scrollOffset = 0
         
         // Generate initial text elements
-        for _ in 0..<10 { // Generate enough elements to fill screen
+        for _ in 0..<30 { // Generate many more elements to ensure text extends far to the right
             generateNextElement()
         }
         
@@ -84,43 +81,34 @@ class TypingMill: ObservableObject {
         let currentElement = millElements[currentElementIndex]
         
         if currentElement.isCurrentChar(character) {
-            currentElement.shiftText()
-            
-            if currentElement.isCompleted {
-                // Move to next element
-                currentElement.isCurrent = false
-                currentElementIndex += 1
+            // Defer all state changes to avoid publishing during view updates
+            DispatchQueue.main.async {
+                currentElement.shiftText()
                 
-                // Generate more elements if needed
-                if currentElementIndex >= millElements.count - 5 {
-                    generateNextElement()
-                }
-                
-                // Set next element as current
-                if currentElementIndex < millElements.count {
-                    millElements[currentElementIndex].isCurrent = true
-                }
-                
-                // Remove old elements to prevent memory issues
-                if millElements.count > 20 {
-                    millElements.removeFirst(2) // Remove word + space pair
-                    currentElementIndex -= 2
+                if currentElement.isCompleted {
+                    // Move to next element
+                    currentElement.isCurrent = false
+                    self.currentElementIndex += 1
+                    
+                    // Generate more elements if needed - wait until much closer to the end
+                    if self.currentElementIndex >= self.millElements.count - 15 {
+                        self.generateNextElement()
+                    }
+                    
+                    // Set next element as current with bounds checking
+                    if self.currentElementIndex >= 0 && self.currentElementIndex < self.millElements.count {
+                        self.millElements[self.currentElementIndex].isCurrent = true
+                    }
+                    
+                    // Remove old elements to prevent memory issues, but only after we have enough elements
+                    // and only if we're far enough into the typing to maintain continuity
+                    if self.millElements.count > 50 && self.currentElementIndex > 20 {
+                        self.millElements.removeFirst(2) // Remove word + space pair
+                        self.currentElementIndex = max(0, self.currentElementIndex - 2)
+                    }
                 }
             }
         }
     }
     
-    func updateScrolling() {
-        guard currentElementIndex < millElements.count else { return }
-        
-        let currentElement = millElements[currentElementIndex]
-        // Calculate scroll offset based on current element position
-        // This is a simplified version - in a real implementation you'd calculate
-        // based on actual text width and positioning
-        let targetOffset = CGFloat(currentElementIndex) * 50 // Approximate width per element
-        
-        withAnimation(.linear(duration: 0.1)) {
-            scrollOffset = targetOffset
-        }
-    }
 }

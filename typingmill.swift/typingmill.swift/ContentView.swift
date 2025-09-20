@@ -35,16 +35,27 @@ struct ContentView: View {
                     Spacer()
                     
                     // Main typing area
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 0) {
-                            ForEach(typingMill.millElements) { element in
-                                MillElementView(element: element)
+                    ScrollViewReader { proxy in
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 0) {
+                                ForEach(typingMill.millElements) { element in
+                                    MillElementView(element: element)
+                                        .id(element.id)
+                                }
+                            }
+                            .padding(.horizontal, geometry.size.width / 2)
+                        }
+                        .frame(height: 100)
+                        .clipped()
+                        .onChange(of: typingMill.currentElementIndex) { _, newIndex in
+                            // Add bounds checking to prevent crashes
+                            guard newIndex >= 0 && newIndex < typingMill.millElements.count else { return }
+                            let currentElement = typingMill.millElements[newIndex]
+                            withAnimation(.linear(duration: 0.1)) {
+                                proxy.scrollTo(currentElement.id, anchor: .center)
                             }
                         }
-                        .padding(.horizontal, geometry.size.width / 2)
                     }
-                    .frame(height: 100)
-                    .clipped()
                     
                     Spacer()
                     
@@ -60,7 +71,6 @@ struct ContentView: View {
         .onKeyPress { keyPress in
             if let character = keyPress.characters.first {
                 typingMill.processKeyPress(character)
-                typingMill.updateScrolling()
             }
             return .handled
         }
