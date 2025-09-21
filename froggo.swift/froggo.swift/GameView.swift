@@ -129,8 +129,8 @@ class GameScene: SKScene {
         frog.position = CGPoint(x: 0, y: 100)
         addChild(frog)
         
-        // Add trajectory line to scene
-        if let trajectoryLine = frog.trajectoryLine {
+        // Add trajectory line to scene above everything
+        if let trajectoryLine = frog.trajectoryLine, trajectoryLine.parent == nil {
             addChild(trajectoryLine)
         }
         
@@ -163,8 +163,7 @@ class GameScene: SKScene {
         for node in bgNodes { node.position.y = camera.position.y }
 
         // Reposition nodes when camera moves right
-        let leftEdge = camera.position.x - size.width / 2
-        let rightEdge = camera.position.x + size.width / 2
+    let leftEdge = camera.position.x - size.width / 2
 
         // If leftmost tile entirely left of view, move it to the right end
         if let firstNode = bgNodes.first, firstNode.position.x + tileWidth / 2 < leftEdge {

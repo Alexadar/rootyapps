@@ -42,6 +42,9 @@ class Frog: SKSpriteNode {
         
         super.init(texture: idleTexture, color: .green, size: CGSize(width: 40, height: 40))
         
+        // Important: enable event handling for touches/mouse
+        isUserInteractionEnabled = true
+
         setupPhysics()
         setupTrajectoryLine()
         
@@ -58,6 +61,8 @@ class Frog: SKSpriteNode {
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    // Note: SKSpriteNode doesn’t have didMove(to parent:), so we rely on GameScene to add trajectoryLine.
     
     private func setupPhysics() {
         physicsBody = SKPhysicsBody(rectangleOf: size)
@@ -74,8 +79,9 @@ class Frog: SKSpriteNode {
         trajectoryLine?.strokeColor = .white
         trajectoryLine?.lineWidth = 3
         trajectoryLine?.alpha = 0.7
-        trajectoryLine?.zPosition = 10
-        // Will add to parent when parent is available
+        trajectoryLine?.zPosition = 1000
+        // Add to scene when available
+        if let parent = self.parent, let line = trajectoryLine { parent.addChild(line) }
     }
     
     private func checkIfOnRoof() {
@@ -103,6 +109,8 @@ class Frog: SKSpriteNode {
                 texture = jumpTexture
                 isOnRoof = false
             }
+            // Clear line while in air
+            hideTrajectoryLine()
         }
     }
     
@@ -187,10 +195,9 @@ class Frog: SKSpriteNode {
         
         var direction = CGPoint(x: dragEndPoint.x - dragStartPoint.x, y: dragEndPoint.y - dragStartPoint.y)
         
-        // Only allow forward jumps (positive x direction)
-        if direction.x < 0 {
-            direction.x = 0
-        }
+        // Only forward: in Unity, you drag backwards (left) to jump forward (right).
+        // Clamp any rightward drag (positive x) to zero so it doesn't create backward force.
+        if direction.x > 0 { direction.x = 0 }
         
         // Limit magnitude
         let magnitude = sqrt(direction.x * direction.x + direction.y * direction.y)
@@ -219,10 +226,8 @@ class Frog: SKSpriteNode {
         
         var direction = CGPoint(x: dragEndPoint.x - dragStartPoint.x, y: dragEndPoint.y - dragStartPoint.y)
         
-        // Only allow forward jumps
-        if direction.x < 0 {
-            direction.x = 0
-        }
+        // Only forward: clamp positive x drag to zero
+        if direction.x > 0 { direction.x = 0 }
         
         let magnitude = sqrt(direction.x * direction.x + direction.y * direction.y)
         let forceCoefficient = min(magnitude / jumpMagnitudeMax, 1.0)

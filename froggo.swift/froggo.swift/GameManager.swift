@@ -40,7 +40,7 @@ class GameManager {
     
     func generateInitialCity() {
         // Generate initial skyscrapers
-        for i in 0..<initialSkyscrapers {
+        for _ in 0..<initialSkyscrapers {
             spawnScraper(useExisting: false)
         }
         
@@ -67,7 +67,10 @@ class GameManager {
             // Create new scraper
             let width = scaleX + CGFloat.random(in: 0...scraperWidthDeviation)
             let height = scaleY
-            scraper = Skyscraper(width: width, height: height)
+            // Tile density tuned to match the original look
+            let tileX: CGFloat = 8.0
+            let tileY: CGFloat = 6.0
+            scraper = Skyscraper(width: width, height: height, tileX: tileX, tileY: tileY)
             scene.addChild(scraper)
         }
         
