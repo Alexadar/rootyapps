@@ -15,9 +15,13 @@ class TypingMill: ObservableObject {
     @Published var isAnimating: Bool = false
     @Published var currentElementIndex: Int = 0
     @Published var currentCharacter: Character? = nil
+    @Published var typingSpeed: Double = 0 // characters per minute
     
     private var textGenerator = TextGenerator()
     private var cancellables = Set<AnyCancellable>()
+    private var typingStartTime: Date?
+    private var totalCharactersTyped: Int = 0
+    private var lastSpeedUpdate: Date = Date()
     
     init() {
         changeDifficulty(1)
@@ -91,6 +95,9 @@ class TypingMill: ObservableObject {
         let currentElement = millElements[currentElementIndex]
         
         if currentElement.isCurrentChar(character) {
+            // Track typing speed
+            updateTypingSpeed()
+            
             // Defer all state changes to avoid publishing during view updates
             DispatchQueue.main.async {
                 currentElement.shiftText()
@@ -121,6 +128,29 @@ class TypingMill: ObservableObject {
                 // Update current character after any changes
                 self.updateCurrentCharacter()
             }
+        }
+    }
+    
+    private func updateTypingSpeed() {
+        let now = Date()
+        
+        // Initialize typing start time on first keypress
+        if typingStartTime == nil {
+            typingStartTime = now
+            lastSpeedUpdate = now
+        }
+        
+        totalCharactersTyped += 1
+        
+        // Update speed every second or so
+        if now.timeIntervalSince(lastSpeedUpdate) >= 1.0 {
+            if let startTime = typingStartTime {
+                let totalTime = now.timeIntervalSince(startTime)
+                if totalTime > 0 {
+                    typingSpeed = Double(totalCharactersTyped) / totalTime * 60 // characters per minute
+                }
+            }
+            lastSpeedUpdate = now
         }
     }
     

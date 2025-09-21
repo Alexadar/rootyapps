@@ -1,4 +1,4 @@
-//
+ //
 //  ContentView.swift
 //  typingmill.swift
 //
@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var typingMill = TypingMill()
     @State private var keyMonitor: Any?
+    @State private var isAnimationEnabled: Bool = true
     
     var body: some View {
         GeometryReader { geometry in
@@ -18,19 +19,54 @@ struct ContentView: View {
                 Color.black
                     .ignoresSafeArea()
                 
+                // Background Animation
+                BackgroundAnimationView(
+                    isEnabled: isAnimationEnabled,
+                    typingChar: typingMill.currentCharacter,
+                    typingSpeed: typingMill.typingSpeed,
+                    difficulty: typingMill.currentDifficulty
+                )
+                .ignoresSafeArea()
+                
                 VStack(spacing: 0) {
-                    // Difficulty buttons at the top
-                    HStack(spacing: 20) {
-                        ForEach(1...4, id: \.self) { difficulty in
-                            DifficultyButton(
-                                difficulty: difficulty,
-                                isPressed: typingMill.currentDifficulty == difficulty
-                            ) {
-                                typingMill.changeDifficulty(difficulty)
+                    // Top controls
+                    HStack {
+                        // Difficulty buttons
+                        HStack(spacing: 20) {
+                            ForEach(1...4, id: \.self) { difficulty in
+                                DifficultyButton(
+                                    difficulty: difficulty,
+                                    isPressed: typingMill.currentDifficulty == difficulty
+                                ) {
+                                    typingMill.changeDifficulty(difficulty)
+                                }
                             }
                         }
+                        
+                        Spacer()
+                        
+                        // Animation toggle button
+                        Button(action: {
+                            isAnimationEnabled.toggle()
+                        }) {
+                            Image(systemName: isAnimationEnabled ? "eye" : "eye.slash")
+                                .foregroundColor(.white)
+                                .font(.system(size: 18))
+                                .frame(width: 40, height: 40)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(isAnimationEnabled ? Color.blue.opacity(0.3) : Color.gray.opacity(0.3))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(isAnimationEnabled ? Color.blue : Color.gray, lineWidth: 1)
+                                        )
+                                )
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
+                    .padding(.horizontal, 20)
                     .padding(.top, 50)
+                    
                     
                     Spacer()
                     
