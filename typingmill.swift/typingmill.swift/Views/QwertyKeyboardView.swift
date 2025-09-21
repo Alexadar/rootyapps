@@ -23,9 +23,10 @@ struct QwertyKeyboardView: View {
             // Top row
             HStack(spacing: 6) {
                 ForEach(keyboardRows[0], id: \.self) { key in
+                    let lowerCurrent = currentChar.map { String($0).lowercased() }
                     KeyButton(
                         key: key,
-                        isHighlighted: shouldHighlight(key),
+                        isHighlighted: lowerCurrent == key.lowercased(),
                         onPress: { onKeyPress(Character(key.lowercased())) }
                     )
                 }
@@ -34,9 +35,10 @@ struct QwertyKeyboardView: View {
             // Middle row
             HStack(spacing: 6) {
                 ForEach(keyboardRows[1], id: \.self) { key in
+                    let lowerCurrent = currentChar.map { String($0).lowercased() }
                     KeyButton(
                         key: key,
-                        isHighlighted: shouldHighlight(key),
+                        isHighlighted: lowerCurrent == key.lowercased(),
                         onPress: { onKeyPress(Character(key.lowercased())) }
                     )
                 }
@@ -45,9 +47,10 @@ struct QwertyKeyboardView: View {
             // Bottom row
             HStack(spacing: 6) {
                 ForEach(keyboardRows[2], id: \.self) { key in
+                    let lowerCurrent = currentChar.map { String($0).lowercased() }
                     KeyButton(
                         key: key,
-                        isHighlighted: shouldHighlight(key),
+                        isHighlighted: lowerCurrent == key.lowercased(),
                         onPress: { onKeyPress(Character(key.lowercased())) }
                     )
                 }
@@ -72,6 +75,7 @@ struct QwertyKeyboardView: View {
         guard let currentChar = currentChar else { return false }
         return key.lowercased() == String(currentChar).lowercased()
     }
+    // Removed helper; computed inline to avoid any accidental side-effects
 }
 
 struct KeyButton: View {

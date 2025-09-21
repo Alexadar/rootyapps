@@ -24,28 +24,16 @@ struct ContentView: View {
                     isEnabled: isAnimationEnabled,
                     typingChar: typingMill.currentCharacter,
                     typingSpeed: typingMill.typingSpeed,
-                    difficulty: typingMill.currentDifficulty
+                    difficulty: typingMill.currentDifficulty,
+                    correctKeystroke: typingMill.correctKeystroke
                 )
                 .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     // Top controls
                     HStack {
-                        // Difficulty buttons
-                        HStack(spacing: 20) {
-                            ForEach(1...4, id: \.self) { difficulty in
-                                DifficultyButton(
-                                    difficulty: difficulty,
-                                    isPressed: typingMill.currentDifficulty == difficulty
-                                ) {
-                                    typingMill.changeDifficulty(difficulty)
-                                }
-                            }
-                        }
-                        
                         Spacer()
-                        
-                        // Animation toggle button
+                        // Animation toggle button (top-right)
                         Button(action: {
                             isAnimationEnabled.toggle()
                         }) {
@@ -84,22 +72,47 @@ struct ContentView: View {
                         .frame(height: 100)
                         .clipped()
                         .onChange(of: typingMill.currentElementIndex) { _, newIndex in
-                            // Add bounds checking to prevent crashes
-                            guard newIndex >= 0 && newIndex < typingMill.millElements.count else { return }
-                            let currentElement = typingMill.millElements[newIndex]
-                            withAnimation(.linear(duration: 0.1)) {
-                                proxy.scrollTo(currentElement.id, anchor: .center)
+                            // Defer to next runloop to avoid interfering with update cycle
+                            DispatchQueue.main.async {
+                                // Add bounds checking to prevent crashes
+                                guard newIndex >= 0 && newIndex < typingMill.millElements.count else { return }
+                                let currentElement = typingMill.millElements[newIndex]
+                                withAnimation(.linear(duration: 0.1)) {
+                                    proxy.scrollTo(currentElement.id, anchor: .center)
+                                }
                             }
                         }
                     }
                     
                     Spacer()
+
+                    // Difficulty controls (bottom)
+                    HStack(spacing: 20) {
+                        Text("Difficulty")
+                            .foregroundColor(.white)
+                            .font(.system(size: 34, weight: .regular, design: .monospaced))
+                            .kerning(4)
+                        ForEach(1...4, id: \.self) { difficulty in
+                            DifficultyButton(
+                                difficulty: difficulty,
+                                isPressed: typingMill.currentDifficulty == difficulty
+                            ) {
+                                DispatchQueue.main.async {
+                                    typingMill.changeDifficulty(difficulty)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.bottom, 16)
                     
                     // QWERTY Keyboard
                     QwertyKeyboardView(
                         currentChar: typingMill.currentCharacter
                     ) { character in
-                        typingMill.processKeyPress(character)
+                        // Defer mutations to next runloop to avoid publishing during view updates
+                        DispatchQueue.main.async {
+                            typingMill.processKeyPress(character)
+                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 20)
@@ -116,7 +129,9 @@ struct ContentView: View {
         .focusEffectDisabled()
         .onKeyPress { keyPress in
             if let character = keyPress.characters.first {
-                typingMill.processKeyPress(character)
+                DispatchQueue.main.async {
+                    typingMill.processKeyPress(character)
+                }
             }
             return .handled
         }

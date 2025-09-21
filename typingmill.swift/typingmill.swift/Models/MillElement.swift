@@ -14,6 +14,7 @@ enum MillElementType {
     case space
 }
 
+@MainActor
 class MillElement: ObservableObject, Identifiable {
     let id = UUID()
     let type: MillElementType

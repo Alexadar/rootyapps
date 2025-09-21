@@ -9,6 +9,7 @@ import Foundation
 import SwiftUI
 import Combine
 
+@MainActor
 class TypingMill: ObservableObject {
     @Published var millElements: [MillElement] = []
     @Published var currentDifficulty: Int = 1
@@ -16,6 +17,7 @@ class TypingMill: ObservableObject {
     @Published var currentElementIndex: Int = 0
     @Published var currentCharacter: Character? = nil
     @Published var typingSpeed: Double = 0 // characters per minute
+    @Published var correctKeystroke: Bool = false // Signal for correct keystrokes
     
     private var textGenerator = TextGenerator()
     private var cancellables = Set<AnyCancellable>()
@@ -26,9 +28,7 @@ class TypingMill: ObservableObject {
     init() {
         changeDifficulty(1)
         // Ensure current character is set after initialization
-        DispatchQueue.main.async {
-            self.updateCurrentCharacter()
-        }
+        updateCurrentCharacter()
     }
     
     func changeDifficulty(_ difficulty: Int) {
@@ -72,9 +72,7 @@ class TypingMill: ObservableObject {
         }
         
         // Update current character after animation setup
-        DispatchQueue.main.async {
-            self.updateCurrentCharacter()
-        }
+        updateCurrentCharacter()
     }
     
     private func generateNextElement() {
@@ -95,38 +93,46 @@ class TypingMill: ObservableObject {
         let currentElement = millElements[currentElementIndex]
         
         if currentElement.isCurrentChar(character) {
+            // Signal correct keystroke for animations
+            correctKeystroke = true
+            
             // Track typing speed
             updateTypingSpeed()
             
-            // Defer all state changes to avoid publishing during view updates
-            DispatchQueue.main.async {
-                currentElement.shiftText()
+            currentElement.shiftText()
+            
+            if currentElement.isCompleted {
+                // Move to next element
+                currentElement.isCurrent = false
+                currentElementIndex += 1
                 
-                if currentElement.isCompleted {
-                    // Move to next element
-                    currentElement.isCurrent = false
-                    self.currentElementIndex += 1
-                    
-                    // Generate more elements if needed - wait until much closer to the end
-                    if self.currentElementIndex >= self.millElements.count - 15 {
-                        self.generateNextElement()
-                    }
-                    
-                    // Set next element as current with bounds checking
-                    if self.currentElementIndex >= 0 && self.currentElementIndex < self.millElements.count {
-                        self.millElements[self.currentElementIndex].isCurrent = true
-                    }
-                    
-                    // Remove old elements to prevent memory issues, but only after we have enough elements
-                    // and only if we're far enough into the typing to maintain continuity
-                    if self.millElements.count > 50 && self.currentElementIndex > 20 {
-                        self.millElements.removeFirst(2) // Remove word + space pair
-                        self.currentElementIndex = max(0, self.currentElementIndex - 2)
-                    }
+                // Generate more elements if needed - wait until much closer to the end
+                if currentElementIndex >= millElements.count - 15 {
+                    generateNextElement()
                 }
                 
-                // Update current character after any changes
-                self.updateCurrentCharacter()
+                // Set next element as current with bounds checking
+                if currentElementIndex >= 0 && currentElementIndex < millElements.count {
+                    millElements[currentElementIndex].isCurrent = true
+                }
+                
+                // Remove old elements to prevent memory issues, but only after we have enough elements
+                // and only if we're far enough into the typing to maintain continuity
+                if millElements.count > 50 && currentElementIndex > 20 {
+                    millElements.removeFirst(2) // Remove word + space pair
+                    currentElementIndex = max(0, currentElementIndex - 2)
+                }
+            }
+            
+            // Update current character after any changes
+            updateCurrentCharacter()
+            
+            // Reset the signal after a brief moment using a task
+            Task {
+                try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+                await MainActor.run {
+                    self.correctKeystroke = false
+                }
             }
         }
     }
