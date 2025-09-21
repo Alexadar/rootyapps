@@ -11,8 +11,10 @@ class Skyscraper: SKSpriteNode {
     var index: Int = 0
     
     init(width: CGFloat, height: CGFloat) {
-        let texture = SKTexture(imageNamed: "skyscraper") // Will fallback to colored rectangle
+    let texture = SKTexture(imageNamed: "scraper")
         super.init(texture: texture, color: .gray, size: CGSize(width: width, height: height))
+    // Attempt to reduce edge stretching by using centerRect (9-slice). Assumes texture has margins.
+    self.centerRect = CGRect(x: 0.45, y: 0.45, width: 0.1, height: 0.1)
         
         setupPhysics()
     }

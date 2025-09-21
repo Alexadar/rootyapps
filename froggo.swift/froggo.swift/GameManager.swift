@@ -57,8 +57,8 @@ class GameManager {
     private func spawnScraper(useExisting: Bool = true) {
         guard let scene = scene else { return }
         
-        let scraper: Skyscraper
-        let index = skyscrapers.last?.index ?? -1 + 1
+    let scraper: Skyscraper
+    let index = (skyscrapers.last?.index ?? -1) + 1
         
         if useExisting && !skyscrapers.isEmpty {
             // Reuse first scraper (move it to the end)

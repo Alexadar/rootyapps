@@ -10,7 +10,7 @@ import SpriteKit
 class Fly: SKSpriteNode {
     private var isFlying = false
     private var spawnTimer: Timer?
-    private let spawnTime: TimeInterval = 10.0 // Spawn every 10 seconds
+    private let spawnTime: TimeInterval = 60.0 // Match Unity spawn every 60 seconds
     private let flySpeed: CGFloat = 2.0
     private let hidePosition = CGPoint(x: -1000, y: 1000)
     
@@ -23,8 +23,9 @@ class Fly: SKSpriteNode {
     
     init() {
         // Create simple colored textures for animation
-        fly1Texture = SKTexture(imageNamed: "fly1") // Will fallback to colored rectangle
-        fly2Texture = SKTexture(imageNamed: "fly2") // Will fallback to colored rectangle
+    // Match Unity asset names
+    fly1Texture = SKTexture(imageNamed: "fly_1")
+    fly2Texture = SKTexture(imageNamed: "fly_2")
         
         super.init(texture: fly1Texture, color: .black, size: CGSize(width: 15, height: 15))
         
@@ -57,14 +58,14 @@ class Fly: SKSpriteNode {
         
         print("Fly spawned")
         
-        // Get screen dimensions relative to camera
-        let screenWidth: CGFloat = 800 // Approximate screen width in game units
-        let screenHeight: CGFloat = 600 // Approximate screen height in game units
+    // Get screen dimensions relative to scene
+    let screenWidth: CGFloat = gameScene.size.width
+    let screenHeight: CGFloat = gameScene.size.height
         
         // Spawn fly to the left of the frog
         let frogPosition = gameScene.frog.position
         let positionX = frogPosition.x - screenWidth / 2
-        let positionY = frogPosition.y + CGFloat.random(in: 50...200)
+    let positionY = frogPosition.y + (screenHeight - frogPosition.y) * CGFloat.random(in: 0.1...0.45)
         
         position = CGPoint(x: positionX, y: positionY)
         isFlying = true
@@ -96,7 +97,7 @@ class Fly: SKSpriteNode {
         
         // Check if fly has moved off screen
         let frogPosition = gameScene.frog.position
-        let screenWidth: CGFloat = 800
+    let screenWidth: CGFloat = gameScene.size.width
         
         if position.x > frogPosition.x + screenWidth {
             die()

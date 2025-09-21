@@ -36,9 +36,9 @@ class Frog: SKSpriteNode {
     private let jumpTexture: SKTexture
     
     init() {
-        // Create simple colored textures for idle and jump states
-        idleTexture = SKTexture(imageNamed: "frog_idle") // Will fallback to colored rectangle
-        jumpTexture = SKTexture(imageNamed: "frog_jump") // Will fallback to colored rectangle
+    // Use Unity-equivalent asset names (idle_frog, jump_frog)
+    idleTexture = SKTexture(imageNamed: "idle_frog")
+    jumpTexture = SKTexture(imageNamed: "jump_frog")
         
         super.init(texture: idleTexture, color: .green, size: CGSize(width: 40, height: 40))
         
@@ -94,6 +94,7 @@ class Frog: SKSpriteNode {
                 if !isOnRoof {
                     texture = idleTexture
                     isOnRoof = true
+                    SoundManager.shared.playLandSound()
                 }
             }
         } else {
@@ -247,6 +248,6 @@ class Frog: SKSpriteNode {
         texture = jumpTexture
         
         // Play jump sound (placeholder)
-        print("Frog jumps!")
+        SoundManager.shared.playJumpSound()
     }
 }

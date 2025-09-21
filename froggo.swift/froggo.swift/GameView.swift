@@ -36,12 +36,15 @@ class GameScene: SKScene {
     
     // Game state
     var isGameOver = false
-    var score = 0
+    var score = 0 {
+        didSet { scoreLabel?.text = "\(score)" }
+    }
     var gameCamera: SKCameraNode!
     
     // UI elements
     var scoreLabel: SKLabelNode!
     var tutorialLabel: SKLabelNode!
+    private var bgNodes: [SKSpriteNode] = []
     
     // Bindings for SwiftUI integration
     var gameStateBinding: Binding<GameState>?
@@ -50,16 +53,19 @@ class GameScene: SKScene {
     // Constants
     let pitHeight: CGFloat = -500
     let initialSkyscrapers = 20
+    private let bgTileWidth: CGFloat = 512 // approximate; will be set from texture size
+    private let bgZ: CGFloat = -10
     
     override func didMove(to view: SKView) {
         setupScene()
         setupCamera()
         setupUI()
+        setupBackground()
         setupGame()
     }
     
     private func setupScene() {
-        backgroundColor = SKColor.cyan
+        backgroundColor = SKColor.black
         physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
         physicsWorld.contactDelegate = self
     }
@@ -89,6 +95,31 @@ class GameScene: SKScene {
         tutorialLabel.zPosition = 100
         camera?.addChild(tutorialLabel)
     }
+
+    private func setupBackground() {
+        // Create horizontally tiling background similar to Unity scene
+        let texture = SKTexture(imageNamed: "NightSky")
+        guard texture.size() != .zero else { return }
+
+        // Determine number of tiles to cover view width x2
+        let worldHeight = size.height
+        let scale = worldHeight / texture.size().height
+        let tileWidth = texture.size().width * scale
+
+        let tilesNeeded = Int(ceil((size.width * 2) / tileWidth)) + 2
+        var totalWidth: CGFloat = 0
+
+        for i in 0..<tilesNeeded {
+            let node = SKSpriteNode(texture: texture)
+            node.setScale(scale)
+            node.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+            node.zPosition = bgZ
+            addChild(node)
+            bgNodes.append(node)
+            node.position = CGPoint(x: CGFloat(i) * tileWidth - size.width, y: 0)
+            totalWidth += tileWidth
+        }
+    }
     
     private func setupGame() {
         gameManager = GameManager(scene: self)
@@ -115,10 +146,34 @@ class GameScene: SKScene {
     func focusOnFrog() {
         camera?.position = frog.position
         updateUI()
+        updateBackground()
     }
     
     private func updateUI() {
         scoreLabel.text = "\(score)"
+    }
+
+    private func updateBackground() {
+        guard let camera = camera, let first = bgNodes.first, let texture = first.texture else { return }
+        let worldHeight = size.height
+        let scale = worldHeight / texture.size().height
+        let tileWidth = texture.size().width * scale
+
+        // Keep backgrounds centered vertically on camera
+        for node in bgNodes { node.position.y = camera.position.y }
+
+        // Reposition nodes when camera moves right
+        let leftEdge = camera.position.x - size.width / 2
+        let rightEdge = camera.position.x + size.width / 2
+
+        // If leftmost tile entirely left of view, move it to the right end
+        if let firstNode = bgNodes.first, firstNode.position.x + tileWidth / 2 < leftEdge {
+            if let lastNode = bgNodes.last {
+                firstNode.position.x = lastNode.position.x + tileWidth
+                bgNodes.removeFirst()
+                bgNodes.append(firstNode)
+            }
+        }
     }
     
     func gameOver() {
@@ -131,6 +186,7 @@ class GameScene: SKScene {
         
         // Update final score and transition to game over screen
         finalScoreBinding?.wrappedValue = score
+    SoundManager.shared.playGameOverSound()
         
         // Show game over after delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
