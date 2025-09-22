@@ -1,6 +1,10 @@
 import Foundation
 import SpriteKit
+#if os(macOS)
 import AppKit
+#else
+import UIKit
+#endif
 
 /// Monster base class (moved out of GameScene for separation of concerns).
 class Monster {
@@ -14,7 +18,7 @@ class Monster {
 
     /// Default setup: simple colored placeholder (kept for safety)
     func setup(at position: CGPoint, targetPosition: CGPoint) {
-        sprite = SKSpriteNode(color: NSColor(red: 0.8, green: 0.2, blue: 0.2, alpha: 1.0), size: boxSize)
+        sprite = SKSpriteNode(color: SKColor(red: 0.8, green: 0.2, blue: 0.2, alpha: 1.0), size: boxSize)
         sprite.position = position
         sprite.zPosition = 8
         sprite.name = "monster"
@@ -87,10 +91,17 @@ class Monster {
         }
 
         for p in sortedPaths {
+#if os(macOS)
             if let img = NSImage(contentsOfFile: p) {
                 let tex = SKTexture(image: img)
                 textures.append(tex)
             }
+#else
+            if let uiImg = UIImage(contentsOfFile: p) {
+                let tex = SKTexture(image: uiImg)
+                textures.append(tex)
+            }
+#endif
         }
 
         return textures
@@ -133,9 +144,9 @@ class Berserker: Monster {
         // Use first walk frame as initial texture if available
         if let first = walkFrames.first {
             sprite = SKSpriteNode(texture: first, size: boxSize)
-        } else {
+            } else {
             // fallback visual
-            sprite = SKSpriteNode(color: NSColor(red: 0.6, green: 0.1, blue: 0.1, alpha: 1.0), size: boxSize)
+            sprite = SKSpriteNode(color: SKColor(red: 0.6, green: 0.1, blue: 0.1, alpha: 1.0), size: boxSize)
             print("Berserker: no walk frames found, using fallback colored sprite")
         }
 

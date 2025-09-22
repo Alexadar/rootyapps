@@ -1,6 +1,10 @@
 import Foundation
 import SpriteKit
+#if os(macOS)
 import AppKit
+#else
+import UIKit
+#endif
 
 /// Wrapper around the player sprite and movement logic.
 /// Provides a small API so GameScene doesn't manipulate raw SKSpriteNode internals everywhere.

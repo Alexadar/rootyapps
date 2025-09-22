@@ -1,6 +1,10 @@
 import Foundation
 import SpriteKit
+#if os(macOS)
 import AppKit
+#else
+import UIKit
+#endif
 
 /// Lightweight wrapper for bullet nodes and creation utility.
 class Bullet {
@@ -15,11 +19,24 @@ class Bullet {
         // Try to load bullet texture from weapons spritesheet
         var bulletNode: SKSpriteNode
         if let name = weaponsImageName,
-           let path = Bundle.main.path(forResource: name.replacingOccurrences(of: ".png", with: ""), ofType: "png"),
-           let nsImage = NSImage(contentsOfFile: path) {
-            let texture = SKTexture(image: nsImage)
-            bulletNode = SKSpriteNode(texture: texture)
-            bulletNode.size = CGSize(width: 8, height: 8)
+           let path = Bundle.main.path(forResource: name.replacingOccurrences(of: ".png", with: ""), ofType: "png") {
+            #if os(macOS)
+            if let nsImage = NSImage(contentsOfFile: path) {
+                let texture = SKTexture(image: nsImage)
+                bulletNode = SKSpriteNode(texture: texture)
+                bulletNode.size = CGSize(width: 8, height: 8)
+            } else {
+                bulletNode = SKSpriteNode(color: .yellow, size: CGSize(width: 6, height: 6))
+            }
+            #else
+            if let uiImage = UIImage(contentsOfFile: path) {
+                let texture = SKTexture(image: uiImage)
+                bulletNode = SKSpriteNode(texture: texture)
+                bulletNode.size = CGSize(width: 8, height: 8)
+            } else {
+                bulletNode = SKSpriteNode(color: .yellow, size: CGSize(width: 6, height: 6))
+            }
+            #endif
         } else {
             bulletNode = SKSpriteNode(color: .yellow, size: CGSize(width: 6, height: 6))
         }

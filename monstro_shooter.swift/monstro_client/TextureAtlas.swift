@@ -1,6 +1,10 @@
 import Foundation
 import SpriteKit
+#if os(macOS)
 import AppKit
+#else
+import UIKit
+#endif
 
 struct SpriteFrame {
     let name: String
@@ -15,9 +19,22 @@ class TextureAtlas {
 
     init?(atlasImagePath: String, xmlPath: String) {
         // Load the base texture
-        if let imagePath = Bundle.main.path(forResource: atlasImagePath.replacingOccurrences(of: ".png", with: ""), ofType: "png"),
-           let nsImage = NSImage(contentsOfFile: imagePath) {
-            self.baseTexture = SKTexture(image: nsImage)
+        if let imagePath = Bundle.main.path(forResource: atlasImagePath.replacingOccurrences(of: ".png", with: ""), ofType: "png") {
+            #if os(macOS)
+            if let nsImage = NSImage(contentsOfFile: imagePath) {
+                self.baseTexture = SKTexture(image: nsImage)
+            } else {
+                print("Failed to load base texture: \(atlasImagePath)")
+                return nil
+            }
+            #else
+            if let uiImage = UIImage(contentsOfFile: imagePath) {
+                self.baseTexture = SKTexture(image: uiImage)
+            } else {
+                print("Failed to load base texture: \(atlasImagePath)")
+                return nil
+            }
+            #endif
         } else {
             print("Failed to load base texture: \(atlasImagePath)")
             return nil
