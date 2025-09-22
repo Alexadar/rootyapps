@@ -34,11 +34,21 @@ class GameScene: SKScene {
         setupPhysics()
         setupDebugLabel()
 
-        // Enable mouse tracking and hide system cursor
+        // Enable mouse tracking and set custom cursor
         DispatchQueue.main.async { [weak self] in
-            guard let window = self?.view?.window else { return }
+            guard let window = self?.view?.window, let view = self?.view else { return }
             window.acceptsMouseMovedEvents = true
             window.makeFirstResponder(self)
+
+            // Set up tracking area for mouse enter/exit events
+            let trackingArea = NSTrackingArea(
+                rect: view.bounds,
+                options: [.activeAlways, .mouseEnteredAndExited, .mouseMoved],
+                owner: self,
+                userInfo: nil
+            )
+            view.addTrackingArea(trackingArea)
+            // Hide system cursor
             NSCursor.hide()
         }
     }
@@ -657,3 +667,4 @@ class Berserker: Monster {
         sprite.physicsBody?.collisionBitMask = 0
     }
 }
+
