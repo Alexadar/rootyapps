@@ -9,6 +9,7 @@ class GameScene: SKScene {
     private var bullets: [SKSpriteNode] = []
     private var monsters: [Monster] = []
     private var crosshair: SKSpriteNode!
+    private var trackingArea: NSTrackingArea?
 
     // MARK: - Game Settings
     private let playerSpeed: CGFloat = 300.0
@@ -36,20 +37,20 @@ class GameScene: SKScene {
 
         // Enable mouse tracking and set custom cursor
         DispatchQueue.main.async { [weak self] in
-            guard let window = self?.view?.window, let view = self?.view else { return }
+            guard let strongSelf = self, let window = strongSelf.view?.window, let view = strongSelf.view else { return }
             window.acceptsMouseMovedEvents = true
-            window.makeFirstResponder(self)
+            window.makeFirstResponder(strongSelf)
 
             // Set up tracking area for mouse enter/exit events
             let trackingArea = NSTrackingArea(
                 rect: view.bounds,
-                options: [.activeAlways, .mouseEnteredAndExited, .mouseMoved],
-                owner: self,
+                options: [.activeAlways, .mouseEnteredAndExited, .mouseMoved, .inVisibleRect],
+                owner: strongSelf,
                 userInfo: nil
             )
             view.addTrackingArea(trackingArea)
-            // Hide system cursor
-            NSCursor.hide()
+            strongSelf.trackingArea = trackingArea
+            print("GameScene: tracking area added; view.bounds = \\(view.bounds)")
         }
     }
 
@@ -160,6 +161,37 @@ class GameScene: SKScene {
         debugRotationLabel.text = "R: \(debugRotationEnabled ? "ON" : "OFF")  Offset: \(String(format: "%.2f", debugRotationOffset))  (Q/E adjust, R toggle)"
     }
 
+    // Handle window focus loss and cleanup
+    @objc private func windowDidResignKey(_ notification: Notification) {
+        // Ensure default cursor is active when the window loses focus.
+        // Use unhide() first to balance any prior hide() calls, then set the arrow.
+        NSCursor.unhide()
+        NSCursor.arrow.set()
+    }
+
+    override func willMove(from view: SKView?) {
+        // Some SKScene APIs expect a non-optional SKView at the super call.
+        // Safely unwrap when available; otherwise call with a temporary SKView to satisfy the API.
+        if let v = view {
+            super.willMove(from: v)
+        } else {
+            super.willMove(from: SKView())
+        }
+        // Restore system cursor and remove our tracking area when the scene is removed.
+        // Call unhide() to ensure we balance any prior hide() state, then set arrow.
+        NSCursor.unhide()
+        NSCursor.arrow.set()
+        if let ta = trackingArea, let v = view {
+            v.removeTrackingArea(ta)
+            trackingArea = nil
+        }
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     // MARK: - Input Handling
     override func keyDown(with event: NSEvent) {
         // Standard movement keys still recorded
@@ -212,13 +244,19 @@ class GameScene: SKScene {
     }
 
     override func mouseEntered(with event: NSEvent) {
-        NSCursor.hide()
+        print("GameScene: mouseEntered")
+        // Keep behavior simple: do not hide or modify system cursor.
         crosshair.isHidden = false
     }
 
     override func mouseExited(with event: NSEvent) {
+        print("GameScene: mouseExited")
+        // Ensure system cursor is visible when leaving the view.
+        // Call unhide() first to recover from any unmatched hide() calls, then set arrow.
         NSCursor.unhide()
-        crosshair.isHidden = true
+        NSCursor.arrow.set()
+        // Keep crosshair visible so the player retains aim
+        crosshair.isHidden = false
     }
 
     private func aimPlayerToward(point: CGPoint) {
@@ -340,6 +378,18 @@ class GameScene: SKScene {
             deltaTime = 0
         }
         lastUpdateTime = currentTime
+
+        // Diagnostic fallback: if the mouse is actually outside the SKView bounds but the system cursor
+        // has been hidden accidentally, restore it. This runs every frame as a safety net.
+        if let win = view?.window, let v = view {
+            let global = NSEvent.mouseLocation
+            let windowPoint = win.convertPoint(fromScreen: global)
+            let pointInView = v.convert(windowPoint, from: nil)
+            if !v.bounds.contains(pointInView) {
+                NSCursor.unhide()
+                NSCursor.arrow.set()
+            }
+        }
 
         handlePlayerMovement(deltaTime)
         updateMonsters(deltaTime)
@@ -667,4 +717,3 @@ class Berserker: Monster {
         sprite.physicsBody?.collisionBitMask = 0
     }
 }
-
