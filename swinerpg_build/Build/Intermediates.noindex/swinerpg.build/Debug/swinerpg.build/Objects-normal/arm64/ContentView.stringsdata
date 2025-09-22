@@ -1,0 +1,88 @@
+{
+  "source": "/Users/oleksandr/Projects/rootyapps/swinerpg.swift/swinerpg/ContentView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Attack",
+        "location": {
+          "startingColumn": 49,
+          "startingLine": 402
+        }
+      },
+      {
+        "comment": "",
+        "key": "⚔️",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 396
+        }
+      },
+      {
+        "comment": "",
+        "key": "➕🐗",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 408
+        }
+      },
+      {
+        "comment": "",
+        "key": "🐷 Swift Emoji RPG",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 422
+        }
+      },
+      {
+        "comment": "",
+        "key": "Controls: Tap D-Pad to step, ⚔️ to attack. Defeat 🐗, collect 🍎.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 424
+        }
+      },
+      {
+        "comment": "",
+        "key": "⬆️",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 439
+        }
+      },
+      {
+        "comment": "",
+        "key": "⬅️",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 443
+        }
+      },
+      {
+        "comment": "",
+        "key": "◻️",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 446
+        }
+      },
+      {
+        "comment": "",
+        "key": "➡️",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 449
+        }
+      },
+      {
+        "comment": "",
+        "key": "⬇️",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 453
+        }
+      }
+    ]
+  },
+  "version": 1
+}
