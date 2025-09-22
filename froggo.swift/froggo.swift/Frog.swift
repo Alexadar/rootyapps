@@ -26,7 +26,7 @@ class Frog: SKSpriteNode {
     private var previousPosition: CGPoint = .zero
     
     // Constants
-    private let jumpPower: CGFloat = 600
+    private let jumpPower: CGFloat = 60
     private let flyEatenMultiplier: CGFloat = 1.5
     private let jumpMagnitudeMax: CGFloat = 200
     private let stabilityChecks = 5

@@ -1,0 +1,72 @@
+{
+  "source": "/Users/oleksandr/Projects/rootyapps/mojirows.swift/mojirows.swift/ContentView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "🌌🍬🍭  ➰  3️⃣➖in➖a➖row  ➰  🎯✨",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 243
+        }
+      },
+      {
+        "comment": "",
+        "key": "👆➡️👆 Tap a tile, then an adjacent tile to swap",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 312
+        }
+      },
+      {
+        "comment": "",
+        "key": "💯",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 254
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 255
+        }
+      },
+      {
+        "comment": "",
+        "key": "🔁",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 270
+        }
+      },
+      {
+        "comment": "",
+        "key": "NEW",
+        "location": {
+          "startingColumn": 53,
+          "startingLine": 270
+        }
+      },
+      {
+        "comment": "",
+        "key": "✨",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 281
+        }
+      },
+      {
+        "comment": "",
+        "key": "",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 339
+        }
+      }
+    ]
+  },
+  "version": 1
+}
