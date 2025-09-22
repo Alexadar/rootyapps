@@ -90,3 +90,7 @@ monstro_client/
 5. Basic AI (monsters only chase player directly)
 
 This port successfully demonstrates the core gameplay loop of the original Monster Shooter game with modern Swift/SpriteKit technology, providing a solid foundation for further development.
+
+## important
+old_shooter - EXCLUDE FROM INDEX
+old_shooter/src/trunk/SourceFiles/Client/MonsterShooterApplication contains previous macromedia flash source from where gam is being ported
