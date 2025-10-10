@@ -8,11 +8,12 @@ import UIKit
 class GameScene: SKScene {
 
     // MARK: - Game Objects
-    private var playerEntity: Player!
-    private var gameMap: SKSpriteNode!
+    // Make player optional and guard uses so the scene won't crash if something initialized out-of-order.
+    private var playerEntity: Player?
+    private var gameMap: SKSpriteNode?
     private var bullets: [Bullet] = []
     private var monsters: [Monster] = []
-    private var crosshair: SKSpriteNode!
+    private var crosshair: SKSpriteNode?
 #if os(macOS)
     private var trackingArea: NSTrackingArea?
 #endif
@@ -25,11 +26,16 @@ class GameScene: SKScene {
     private var debugAimMarker: SKNode?
 
     // Input controller (abstracted for future mobile controls)
-    private var inputController: InputController!
+    private var inputController: InputController?
+    // Optional external input (e.g. AI) that overrides automatic selection for menu scripting.
+    var externalInput: InputController?
+    // When true the touch debug regions are shown even if the active input is not TouchInput.
+    // Useful for the animated main-menu where we want touch regions visible as an overlay.
+    var showTouchDebug: Bool = false
 
     // MARK: - Game Settings
     private let bulletSpeed: CGFloat = 800.0
-    private let monsterSpawnInterval: TimeInterval = 2.0
+    private var monsterSpawnInterval: TimeInterval = 2.0
 
     // MARK: - Input / Timing State
     private var lastMonsterSpawn: TimeInterval = 0
@@ -38,7 +44,7 @@ class GameScene: SKScene {
     private var debugRotationEnabled: Bool = false
     private var debugRotationOffset: CGFloat = 0.0
     private let debugRotationStep: CGFloat = .pi / 8
-    private var debugRotationLabel: SKLabelNode!
+    private var debugRotationLabel: SKLabelNode?
 
     // MARK: - Scene Setup
     override func didMove(to view: SKView) {
@@ -53,6 +59,22 @@ class GameScene: SKScene {
         // Enable multitouch so movement and shooting can work simultaneously on mobile.
         view.isMultipleTouchEnabled = true
         #endif
+
+        // If externalInput is present we treat this scene as the animated main menu:
+        // - speed up monster spawn rate
+        // - pre-spawn a few monsters so the AI has immediate targets
+        // - reset AI internal timers
+        if externalInput != nil {
+            monsterSpawnInterval = 1.0
+            for _ in 0..<3 { spawnMonster() }
+            if let ai = externalInput as? AIInput {
+                ai.reset()
+                // if player already created, ensure AI knows the player node (setupPlayer runs before didMove child additions)
+                if let p = playerEntity {
+                    ai.setPlayerNode(p.sprite)
+                }
+            }
+        }
 
         // Pause rendering when app goes to background to avoid Metal GPU errors
         #if !os(macOS)
@@ -81,8 +103,26 @@ class GameScene: SKScene {
         }
         #endif
     }
-
+    
+    /// Prepare the scene to run as an animated main menu (start AI scripting, spawn targets).
+    /// Call this after the SpriteView / scene is presented.
+    func startMenuScripting() {
+        // Speed up spawns and give AI immediate targets.
+        monsterSpawnInterval = 1.0
+        lastMonsterSpawn = 0
+        for _ in 0..<3 { spawnMonster() }
+        if let ai = externalInput as? AIInput {
+            ai.reset()
+            if let p = playerEntity {
+                ai.setPlayerNode(p.sprite)
+            }
+        }
+    }
+    
     private func setupScene() {
+        // Use center anchor to avoid visible shifting when the SpriteView resizes.
+        // This restores the scene coordinate origin to the visual center of the view.
+        self.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         backgroundColor = .black
         scaleMode = .resizeFill
     }
@@ -113,10 +153,53 @@ class GameScene: SKScene {
             gameMap = SKSpriteNode(color: .darkGray, size: size)
         }
 
-        gameMap.position = CGPoint(x: size.width/2, y: size.height/2)
-        gameMap.size = size
-        gameMap.zPosition = -10
-        addChild(gameMap)
+        if let gm = gameMap {
+            gm.position = CGPoint.zero
+            gm.size = size
+            gm.zPosition = -10
+            addChild(gm)
+        }
+    }
+
+    override func didChangeSize(_ oldSize: CGSize) {
+        // Ensure background and debug UI match the new scene size (SpriteView may resize the scene).
+        // Guard against early calls where setupMap / other setup methods haven't run yet.
+        if let gm = gameMap {
+            gm.size = size
+            gm.position = CGPoint.zero
+        }
+
+        // Update debug regions and visuals if they exist
+        let regionHeight = size.height * 0.25
+        if let left = debugLeftRegion {
+            left.size = CGSize(width: size.width/2, height: regionHeight)
+            // left region anchored at bottom-left of scene coordinates (scene center anchor means origin is at center)
+            left.position = CGPoint(x: -size.width/2, y: -size.height/2)
+            if let leftStroke = left.children.first as? SKShapeNode {
+                leftStroke.path = CGPath(rect: CGRect(origin: .zero, size: left.size), transform: nil)
+            }
+        }
+
+        if let right = debugRightRegion {
+            right.size = CGSize(width: size.width/2, height: regionHeight)
+            right.position = CGPoint(x: 0, y: -size.height/2)
+            if let rightStroke = right.children.first as? SKShapeNode {
+                rightStroke.path = CGPath(rect: CGRect(origin: .zero, size: right.size), transform: nil)
+            }
+        }
+
+        if let knob = debugJoystickKnob, let left = debugLeftRegion {
+            knob.position = CGPoint(x: left.position.x + left.size.width * 0.5, y: left.position.y + left.size.height * 0.5)
+        }
+
+        if let aim = debugAimMarker, let right = debugRightRegion {
+            aim.position = CGPoint(x: right.position.x + right.size.width * 0.5, y: right.position.y + right.size.height * 0.5)
+        }
+
+        // Keep crosshair centered if needed
+        if let ch = crosshair {
+            ch.position = CGPoint.zero
+        }
     }
 
     private func setupPlayer() {
@@ -128,41 +211,49 @@ class GameScene: SKScene {
             playerEntity = Player(initialPosition: initialPos)
         }
         // Name the player node so touch input can locate it without depending on Player type.
-        playerEntity.sprite.name = "player"
-        addChild(playerEntity.sprite)
+        if let p = playerEntity {
+            p.sprite.name = "player"
+            addChild(p.sprite)
+            // If an external input (like AI) is provided, give it the player node so it can aim/move.
+            if let ai = externalInput as? AIInput {
+                ai.setPlayerNode(p.sprite)
+            }
+        }
     }
 
     private func setupCrosshair() {
-        crosshair = SKSpriteNode()
-        crosshair.zPosition = 100 // Always on top
+        // Create crosshair locally then store into optional property once configured.
+        let ch = SKSpriteNode()
+        ch.zPosition = 100 // Always on top
 
         let horizontalLine = SKSpriteNode(color: .white, size: CGSize(width: 20, height: 2))
         horizontalLine.position = CGPoint.zero
-        crosshair.addChild(horizontalLine)
+        ch.addChild(horizontalLine)
 
         let verticalLine = SKSpriteNode(color: .white, size: CGSize(width: 2, height: 20))
         verticalLine.position = CGPoint.zero
-        crosshair.addChild(verticalLine)
+        ch.addChild(verticalLine)
 
         let centerDot = SKSpriteNode(color: .red, size: CGSize(width: 3, height: 3))
         centerDot.position = CGPoint.zero
-        crosshair.addChild(centerDot)
+        ch.addChild(centerDot)
 
         let outlineH = SKSpriteNode(color: .black, size: CGSize(width: 22, height: 4))
         outlineH.position = CGPoint.zero
         outlineH.zPosition = -1
-        crosshair.addChild(outlineH)
+        ch.addChild(outlineH)
 
         let outlineV = SKSpriteNode(color: .black, size: CGSize(width: 4, height: 22))
         outlineV.position = CGPoint.zero
         outlineV.zPosition = -1
-        crosshair.addChild(outlineV)
+        ch.addChild(outlineV)
 
-        crosshair.position = CGPoint(x: size.width/2, y: size.height/2)
-        addChild(crosshair)
+        ch.position = CGPoint(x: size.width/2, y: size.height/2)
+        addChild(ch)
+        crosshair = ch
         #if !os(macOS)
         // On mobile we don't use the mouse-driven crosshair; keep it hidden and use touch aim marker instead.
-        crosshair.isHidden = true
+        crosshair?.isHidden = true
         #endif
     }
 
@@ -172,26 +263,34 @@ class GameScene: SKScene {
     }
 
     private func setupDebugLabel() {
-        debugRotationLabel = SKLabelNode(fontNamed: "Menlo")
-        debugRotationLabel.fontSize = 12
-        debugRotationLabel.fontColor = .white
-        debugRotationLabel.horizontalAlignmentMode = .left
-        debugRotationLabel.verticalAlignmentMode = .top
-        debugRotationLabel.position = CGPoint(x: 10, y: size.height - 10)
-        debugRotationLabel.zPosition = 200
-        addChild(debugRotationLabel)
+        let label = SKLabelNode(fontNamed: "Menlo")
+        label.fontSize = 12
+        label.fontColor = .white
+        label.horizontalAlignmentMode = .left
+        label.verticalAlignmentMode = .top
+        label.position = CGPoint(x: -size.width/2 + 10, y: size.height/2 - 10)
+        label.zPosition = 200
+        debugRotationLabel = label
+        addChild(label)
         updateDebugLabel()
     }
 
     private func updateDebugLabel() {
-        debugRotationLabel.text = "R: \(debugRotationEnabled ? "ON" : "OFF")  Offset: \(String(format: "%.2f", debugRotationOffset))  (Q/E adjust, R toggle)"
+        debugRotationLabel?.text = "R: \(debugRotationEnabled ? "ON" : "OFF")  Offset: \(String(format: "%.2f", debugRotationOffset))  (Q/E adjust, R toggle)"
     }
 
     private func setupInput() {
-        #if os(macOS)
-        inputController = KeyboardMouseInput()
-        #else
-        inputController = TouchInput(scene: self)
+        // Allow external input (AI) to override default platform input.
+        if let ext = externalInput {
+            inputController = ext
+            // still prepare touch debug visuals for completeness (no-op if macOS)
+        } else {
+            #if os(macOS)
+            inputController = KeyboardMouseInput()
+            #else
+            inputController = TouchInput(scene: self)
+            #endif
+        }
 
         // Debug visual regions to verify where touch controls are active (left/right halves).
         debugLeftRegion?.removeFromParent()
@@ -242,23 +341,28 @@ class GameScene: SKScene {
         knobShape.fillColor = SKColor.white.withAlphaComponent(0.06)
         knobShape.zPosition = 251
         // Place knob initially at left region center
-        knobShape.position = CGPoint(x: leftRegion.size.width * 0.5, y: leftRegion.size.height * 0.5)
-        knobShape.isHidden = false
+        knobShape.position = CGPoint(x: leftRegion.position.x + leftRegion.size.width * 0.5, y: leftRegion.position.y + leftRegion.size.height * 0.5)
+        // Show touch debug visuals only when running with touch input (mobile player actively playing).
+        #if !os(macOS)
+        let showDebugNow = (inputController is TouchInput)
+        #else
+        let showDebugNow = false
+        #endif
+        knobShape.isHidden = !showDebugNow
         addChild(knobShape)
         debugJoystickKnob = knobShape
 
         // Aim marker as a single SKShapeNode to avoid any accidental square sprite artifacts.
-        // Always present and centered in right region when no touch.
+        // Initially visible only when touch input is active.
         let aimCircle = SKShapeNode(circleOfRadius: 16)
         aimCircle.strokeColor = .red
         aimCircle.lineWidth = 2
         aimCircle.fillColor = SKColor.red.withAlphaComponent(0.12)
         aimCircle.zPosition = 251
-        aimCircle.isHidden = false
-        aimCircle.position = CGPoint(x: rightRegion.position.x + rightRegion.size.width * 0.5, y: rightRegion.size.height * 0.5)
+        aimCircle.isHidden = !showDebugNow
+        aimCircle.position = CGPoint(x: rightRegion.position.x + rightRegion.size.width * 0.5, y: rightRegion.position.y + rightRegion.size.height * 0.5)
         addChild(aimCircle)
         debugAimMarker = aimCircle
-        #endif
     }
 
     // MARK: - Window / focus handling
@@ -344,9 +448,10 @@ class GameScene: SKScene {
 
     override func mouseMoved(with event: NSEvent) {
         let location = event.location(in: self)
-        crosshair.position = location
+        crosshair?.position = location
         (inputController as? KeyboardMouseInput)?.mouseMoved(to: location)
-        playerEntity.aimToward(point: location)
+        // Safe call: only aim if player exists.
+        playerEntity?.aimToward(point: location)
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -354,13 +459,13 @@ class GameScene: SKScene {
     }
 
     override func mouseEntered(with event: NSEvent) {
-        crosshair.isHidden = false
+        crosshair?.isHidden = false
     }
 
     override func mouseExited(with event: NSEvent) {
         NSCursor.unhide()
         NSCursor.arrow.set()
-        crosshair.isHidden = false
+        crosshair?.isHidden = false
     }
 #else
     // Touch handling on iOS/tvOS: forward to TouchInput
@@ -391,6 +496,9 @@ class GameScene: SKScene {
 
     // MARK: - Shooting
     private func shoot(toward point: CGPoint) {
+        // Guard player presence.
+        guard let playerEntity = playerEntity else { return }
+
         // Compute normalized direction and velocity
         let dx = point.x - playerEntity.sprite.position.x
         let dy = point.y - playerEntity.sprite.position.y
@@ -407,6 +515,9 @@ class GameScene: SKScene {
 
     // MARK: - Monster Management
     private func spawnMonster() {
+        // Guard player — monsters need a target; skip spawning if player missing.
+        guard let playerEntity = playerEntity else { return }
+
         let monster = Berserker()
         // Spawn at random edge of screen
         let spawnSide = Int.random(in: 0...3)
@@ -429,6 +540,9 @@ class GameScene: SKScene {
     }
 
     private func updateMonsters(_ deltaTime: TimeInterval) {
+        // Guard player presence before updating monsters that target the player.
+        guard let playerEntity = playerEntity else { return }
+
         for monster in monsters {
             if debugRotationEnabled {
                 monster.rotationOffset = debugRotationOffset
@@ -459,6 +573,9 @@ class GameScene: SKScene {
         }
         lastUpdateTime = currentTime
 
+        // Safety: if player isn't ready yet (scene not fully initialized) skip this frame.
+        guard let playerEntity = playerEntity else { return }
+
         // Safety: restore cursor if outside view bounds
 #if os(macOS)
         if let win = view?.window, let v = view {
@@ -473,11 +590,17 @@ class GameScene: SKScene {
 #endif
 
         // Handle player movement via input controller
-        let moveVec = inputController.movementVector()
+        let moveVec = inputController?.movementVector() ?? CGVector(dx: 0, dy: 0)
         playerEntity.move(by: moveVec, deltaTime: deltaTime, sceneSize: size)
+
+        // If using AI input, update it with current monster nodes so AI can aim/shoot.
+        if let ai = inputController as? AIInput {
+            ai.updateMonsters(monsters.map { $0.sprite })
+        }
 
         // Update debug visuals for touch controls on mobile (left/right regions + joystick knob + aim marker)
         #if !os(macOS)
+        // Show debug touch regions when using touch input OR when running menu scripting (AI-driven background).
         if inputController is TouchInput {
             // Joystick knob: center in left region and offset by movement vector scaled by joystick radius
             if let knob = debugJoystickKnob, let leftRegion = debugLeftRegion {
@@ -510,8 +633,8 @@ class GameScene: SKScene {
 
         // Aim and shooting
         #if os(macOS)
-        if let aim = inputController.aimPoint() {
-            crosshair.position = aim
+        if let aim = inputController?.aimPoint() {
+            crosshair?.position = aim
             playerEntity.aimToward(point: aim)
         }
         #else
@@ -521,9 +644,9 @@ class GameScene: SKScene {
         }
         #endif
 
-        if inputController.isShooting() {
+        if inputController?.isShooting() ?? false {
             // Prefer aim point if available; on mobile aimPoint() is already oriented around the player.
-            let aimPoint = inputController.aimPoint() ?? crosshair.position
+            let aimPoint = inputController?.aimPoint() ?? crosshair?.position ?? CGPoint.zero
             shoot(toward: aimPoint)
         }
 

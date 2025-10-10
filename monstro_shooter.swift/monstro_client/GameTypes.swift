@@ -23,3 +23,24 @@ protocol InputController {
     /// Returns true when a firing action should occur this frame (e.g. mouse down / touch tap / virtual button).
     func isShooting() -> Bool
 }
+
+// Provide default no-op platform event handlers so GameScene can forward events to the active input controller
+// without needing to know the concrete input implementation type. Conforming types may override any of these.
+#if os(macOS)
+import AppKit
+extension InputController {
+    func keyDown(_ event: NSEvent) { }
+    func keyUp(_ event: NSEvent) { }
+    func mouseMoved(to location: CGPoint) { }
+    func requestShoot() { }
+}
+#else
+import UIKit
+extension InputController {
+    // Touch forwarding helpers (scene passed so inputs can convert coordinates)
+    func touchesBegan(_ touches: Set<UITouch>, in scene: SKScene) { }
+    func touchesMoved(_ touches: Set<UITouch>, in scene: SKScene) { }
+    func touchesEnded(_ touches: Set<UITouch>, in scene: SKScene) { }
+    func touchesCancelled(_ touches: Set<UITouch>, in scene: SKScene) { }
+}
+#endif

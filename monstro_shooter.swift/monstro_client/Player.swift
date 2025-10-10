@@ -66,12 +66,23 @@ class Player {
             let newX = sprite.position.x + mv.dx * speed * CGFloat(deltaTime)
             let newY = sprite.position.y + mv.dy * speed * CGFloat(deltaTime)
 
-            // Keep player within bounds
+            // Keep player within bounds.
+            // Scene anchor may be center (0.5,0.5) or bottom-left (0,0). Compute scene origin from anchor,
+            // then clamp using sceneSize so this method works for both coordinate systems.
             let halfWidth = sprite.size.width / 2
             let halfHeight = sprite.size.height / 2
 
-            sprite.position.x = max(halfWidth, min(sceneSize.width - halfWidth, newX))
-            sprite.position.y = max(halfHeight, min(sceneSize.height - halfHeight, newY))
+            let anchorPoint = sprite.scene?.anchorPoint ?? CGPoint.zero
+            let originX = -sceneSize.width * anchorPoint.x
+            let originY = -sceneSize.height * anchorPoint.y
+
+            let minX = originX + halfWidth
+            let maxX = originX + sceneSize.width - halfWidth
+            let minY = originY + halfHeight
+            let maxY = originY + sceneSize.height - halfHeight
+
+            sprite.position.x = max(minX, min(maxX, newX))
+            sprite.position.y = max(minY, min(maxY, newY))
         }
     }
 }
