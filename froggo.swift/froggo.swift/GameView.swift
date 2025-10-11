@@ -50,8 +50,8 @@ class GameScene: SKScene {
     var gameStateBinding: Binding<GameState>?
     var finalScoreBinding: Binding<Int>?
     
-    // Constants
-    let pitHeight: CGFloat = -500
+    // Constants (matched to Unity)
+    let pitHeight: CGFloat = -10 // Unity uses -10
     let initialSkyscrapers = 20
     private let bgTileWidth: CGFloat = 512 // approximate; will be set from texture size
     private let bgZ: CGFloat = -10
@@ -123,24 +123,28 @@ class GameScene: SKScene {
     
     private func setupGame() {
         gameManager = GameManager(scene: self)
-        
+
         // Create frog
         frog = Frog()
         frog.position = CGPoint(x: 0, y: 100)
         addChild(frog)
-        
+
         // Add trajectory line to scene above everything
         if let trajectoryLine = frog.trajectoryLine, trajectoryLine.parent == nil {
             addChild(trajectoryLine)
         }
-        
+
         // Create fly
         fly = Fly()
         fly.gameScene = self
         addChild(fly)
-        
+
         gameManager.generateInitialCity()
         focusOnFrog()
+
+        // Play background music and spawn sound (like Unity's Game.cs Awake)
+        SoundManager.shared.playBackgroundMusic()
+        SoundManager.shared.playSpawnSound()
     }
     
     func focusOnFrog() {
@@ -178,15 +182,16 @@ class GameScene: SKScene {
     func gameOver() {
         guard !isGameOver else { return }
         isGameOver = true
-        
+
         // Stop frog physics
         frog.physicsBody?.velocity = CGVector.zero
         frog.physicsBody?.affectedByGravity = false
-        
+
         // Update final score and transition to game over screen
         finalScoreBinding?.wrappedValue = score
-    SoundManager.shared.playGameOverSound()
-        
+        SoundManager.shared.playGameOverSound()
+        SoundManager.shared.stopBackgroundMusic()
+
         // Show game over after delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.gameStateBinding?.wrappedValue = .gameOver
@@ -198,10 +203,13 @@ class GameScene: SKScene {
         if frog.position.y <= pitHeight && !isGameOver {
             gameOver()
         }
-        
+
+        // Update frog (stability check)
+        frog.update(gameOver: isGameOver)
+
         // Update fly
         fly.update()
-        
+
         // Focus camera on frog
         focusOnFrog()
     }

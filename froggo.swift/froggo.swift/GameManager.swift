@@ -10,15 +10,15 @@ import SpriteKit
 class GameManager {
     weak var scene: GameScene?
     
-    // City generation parameters
+    // City generation parameters (adjusted for solid buildings like menu)
     private let initialSkyscrapers = 20
-    private let scraperSizeYDeviation: CGFloat = 80
-    private let scraperWidthDeviation: CGFloat = 40
+    private let scraperSizeYDeviation: CGFloat = 50 // More height variation
+    private let scraperWidthDeviation: CGFloat = 30 // More width variation for solid buildings
     private let scraperDistanceDeviation: CGFloat = 1.62 // Golden ratio
-    private let initialDeltaBetweenScrapers: CGFloat = 100
-    private let scraperHeight: CGFloat = 100
-    private let scaleY: CGFloat = 200 // Base height for scrapers
-    private let scaleX: CGFloat = 60 // Base width for scrapers
+    private let initialDeltaBetweenScrapers: CGFloat = 80 // More space between solid buildings
+    private let scraperHeight: CGFloat = 100 // Base height from ground
+    private let scaleY: CGFloat = 250 // Taller buildings (like menu: 250-300)
+    private let scaleX: CGFloat = 80 // Wider buildings (like menu: 80-100)
     
     // Game state
     private var cityLength: CGFloat = 0
@@ -32,10 +32,17 @@ class GameManager {
         "When Freddy falls, you lose",
         "Freddy jumps better if he eats flies"
     ]
+    private let tutorialStepKey = "tutorialStep"
     private var currentTutorialStep = 0
     
     init(scene: GameScene) {
         self.scene = scene
+        // Load tutorial progress from UserDefaults (like Unity's PlayerPrefs)
+        currentTutorialStep = UserDefaults.standard.integer(forKey: tutorialStepKey)
+        // Display current tutorial step
+        if currentTutorialStep < tutorialSteps.count {
+            scene.tutorialLabel.text = tutorialSteps[currentTutorialStep]
+        }
     }
     
     func generateInitialCity() {
@@ -108,13 +115,17 @@ class GameManager {
     
     private func updateTutorial() {
         guard let scene = scene else { return }
-        
+
+        currentTutorialStep += 1
+
         if currentTutorialStep < tutorialSteps.count {
             scene.tutorialLabel.text = tutorialSteps[currentTutorialStep]
-            currentTutorialStep += 1
         } else {
             scene.tutorialLabel.text = ""
         }
+
+        // Save tutorial progress (like Unity's PlayerPrefs.SetInt + Save)
+        UserDefaults.standard.set(currentTutorialStep, forKey: tutorialStepKey)
     }
 }
 

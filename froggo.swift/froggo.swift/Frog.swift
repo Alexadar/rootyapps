@@ -25,10 +25,10 @@ class Frog: SKSpriteNode {
     private var stabilityCheck = 0
     private var previousPosition: CGPoint = .zero
     
-    // Constants
-    private let jumpPower: CGFloat = 60
+    // Constants (matched to Unity values)
+    private let jumpPower: CGFloat = 600 // Unity uses 600
     private let flyEatenMultiplier: CGFloat = 1.5
-    private let jumpMagnitudeMax: CGFloat = 200
+    private let jumpMagnitudeMax: CGFloat = 4.0 // Unity uses 4f
     private let stabilityChecks = 5
     
     // Sprites (using colored rectangles for now)
@@ -39,23 +39,14 @@ class Frog: SKSpriteNode {
     // Use Unity-equivalent asset names (idle_frog, jump_frog)
     idleTexture = SKTexture(imageNamed: "idle_frog")
     jumpTexture = SKTexture(imageNamed: "jump_frog")
-        
+
         super.init(texture: idleTexture, color: .green, size: CGSize(width: 40, height: 40))
-        
+
         // Important: enable event handling for touches/mouse
         isUserInteractionEnabled = true
 
         setupPhysics()
         setupTrajectoryLine()
-        
-        // Start stability checking
-        let checkAction = SKAction.repeatForever(
-            SKAction.sequence([
-                SKAction.run(checkIfOnRoof),
-                SKAction.wait(forDuration: 0.1)
-            ])
-        )
-        run(checkAction)
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -84,16 +75,25 @@ class Frog: SKSpriteNode {
         if let parent = self.parent, let line = trajectoryLine { parent.addChild(line) }
     }
     
+    func update(gameOver: Bool) {
+        if gameOver {
+            isOnRoof = false
+            return
+        }
+        checkIfOnRoof()
+    }
+
     private func checkIfOnRoof() {
         guard let physicsBody = physicsBody else { return }
-        
+
         if stabilityCheck == 0 {
             previousPosition = position
         }
-        
+
         let delta = CGPoint(x: position.x - previousPosition.x, y: position.y - previousPosition.y)
-        
-        if abs(delta.x) < 5 && abs(delta.y) < 5 && abs(physicsBody.velocity.dx) < 10 && abs(physicsBody.velocity.dy) < 10 {
+
+        // Match Unity's tolerance: 0.5 units
+        if abs(delta.x) < 0.5 && abs(delta.y) < 0.5 && abs(physicsBody.velocity.dx) < 10 && abs(physicsBody.velocity.dy) < 10 {
             stabilityCheck += 1
             if stabilityCheck >= stabilityChecks {
                 stabilityCheck = stabilityChecks - 1
@@ -115,20 +115,28 @@ class Frog: SKSpriteNode {
     }
     
     func landOnSkyscraper(_ skyscraper: Skyscraper) {
-        // Check if frog landed on top of skyscraper
+        // Match Unity's precise collision detection logic
         let frogBottom = position.y - size.height / 2
         let scraperTop = skyscraper.position.y + skyscraper.size.height / 2
-        
-        let delta = abs(frogBottom - scraperTop)
-        
-        if delta <= 10 { // Tolerance for landing on top
+
+        // Unity uses Math.Round to get delta and checks if it's between 0 and 1
+        let delta = round(frogBottom) - round(scraperTop)
+
+        if delta >= 0 && delta <= 1 {
+            // Successfully landed on top of skyscraper
             isOnRoof = true
             texture = idleTexture
+            SoundManager.shared.playLandSound()
+        } else {
+            // Hit the side, not the top
+            isOnRoof = false
+            texture = jumpTexture
         }
     }
     
     func eatFly() {
         flyEaten = true
+        SoundManager.shared.playFlyEatenSound()
     }
     
     // MARK: - Touch/Mouse Handling
