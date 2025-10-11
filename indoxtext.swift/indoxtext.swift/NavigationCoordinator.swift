@@ -1,7 +1,7 @@
 import SwiftUI
 import Combine
 
-enum NavigationDestination {
+enum NavigationDestination: Hashable {
     case home
     case fromText
     case fromFile

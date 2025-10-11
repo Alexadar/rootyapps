@@ -50,7 +50,10 @@ struct FromTextView: View {
         .onChange(of: summarizerState.state) { state in
             if state == .completed {
                 showingProgressSheet = false
-                navigationCoordinator.navigate(to: .result)
+                // Small delay to ensure sheet is dismissed before navigation
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    navigationCoordinator.navigate(to: .result)
+                }
             }
         }
         .onAppear {

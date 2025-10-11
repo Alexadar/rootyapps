@@ -1,6 +1,7 @@
 'use strict';
 
 var modalInjected = false;
+// Modal CSS is already injected via manifest.json
 
 function fallbackCopyTextToClipboard(text) {
   var textArea = document.createElement('textarea');
@@ -91,12 +92,34 @@ function handleError(error) {
 }
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Content script received message:', request);
+
   if (request.command === 'DoSumm') {
+    console.log('Starting summarization...');
+    console.log('Page HTML length:', document.documentElement.innerHTML.length);
+
     browser.runtime
-      .sendNativeMessage('application.id', {
+      .sendNativeMessage('oleksandr.aisixteen.indoxtext-safari', {
         command: 'DoSumm',
         data: {innerHtml: document.documentElement.innerHTML},
       })
-      .then(handleResponse, handleError);
+      .then(response => {
+        console.log('Native response received:', response);
+        sendResponse({success: true});
+      })
+      .catch(error => {
+        console.error('Native message error:', error);
+        handleError(error);
+        sendResponse({error: error.message});
+      });
+
+    return true; // Keep message channel open for async response
+  }
+
+  if (request.command === 'ShowResult') {
+    console.log('Showing result:', request.synopsys);
+    handleResponse({synopsys: request.synopsys});
+    sendResponse({success: true});
+    return true;
   }
 });

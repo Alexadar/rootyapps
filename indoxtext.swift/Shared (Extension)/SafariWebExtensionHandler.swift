@@ -15,7 +15,7 @@ enum SafariExtensionEventTypes: String {
 }
 
 class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
-    
+
     #if targetEnvironment(macCatalyst) || os(macOS)
     private static var indox = Indox(
         vectorizerThreads: 2,
@@ -35,30 +35,37 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         max_tokenized_sen_len: 64
     )
     #endif
-    
+
     private static var callLock = NSLock()
-    
+    private static var lastSynopsis: String? = nil
+
     private var indox: Indox {
         get {
             return SafariWebExtensionHandler.indox
         }
     }
-    
+
     private var callLock: NSLock {
         get {
             return SafariWebExtensionHandler.callLock
         }
     }
-    
+
     override init() {
         super.init()
     }
-    
+
     private func prepareResponse() -> [String: String] {
-        return [
+        var response: [String: String] = [
             "status": String(self.indox.status.rawValue),
             "percentage": String(self.indox.percentage)
         ]
+
+        if let synopsis = SafariWebExtensionHandler.lastSynopsis {
+            response["synopsys"] = synopsis
+        }
+
+        return response
     }
     
     private func sendResponse(context: NSExtensionContext, responseData: [String: String]) -> Void {
@@ -89,39 +96,45 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         
         let task = messageData["command"] as? String
         let data = messageData["data"] as? [String: Any]
-        var responseData = self.prepareResponse()
-        
+
         self.callLock.lock()
         defer { self.callLock.unlock() }
+
+        let responseData = self.prepareResponse()
         
         switch task {
         case SafariExtensionEventTypes.DoSumm.rawValue:
             if self.indox.status == EngineState.OnIdle {
                 if let htmlData = data?["innerHtml"] as? String {
+                    // Clear previous synopsis
+                    SafariWebExtensionHandler.lastSynopsis = nil
+
                     // Extract text from HTML
                     let extractedText = extractTextFromHTML(htmlData)
-                    
+
                     self.indox.summaryTextStart(
                         textArg: extractedText,
                         onComplete: { result in
-                            responseData["synopsys"] = result
-                            self.sendResponse(context: context, responseData: responseData)
+                            SafariWebExtensionHandler.lastSynopsis = result
                         })
-                } else {
-                    self.sendResponse(context: context, responseData: responseData)
                 }
-            } else {
-                self.sendResponse(context: context, responseData: responseData)
             }
-            
+            self.sendResponse(context: context, responseData: responseData)
+
         case SafariExtensionEventTypes.DoCancel.rawValue:
             if self.indox.status == EngineState.OnWork {
                 self.indox.cancelSummarization()
             }
+            SafariWebExtensionHandler.lastSynopsis = nil
             self.sendResponse(context: context, responseData: responseData)
-            
+
         case SafariExtensionEventTypes.GetStatus.rawValue:
+            // If we just moved to idle and have a synopsis, clear it after sending
+            let shouldClearSynopsis = self.indox.status == EngineState.OnIdle && SafariWebExtensionHandler.lastSynopsis != nil
             self.sendResponse(context: context, responseData: responseData)
+            if shouldClearSynopsis {
+                SafariWebExtensionHandler.lastSynopsis = nil
+            }
             
         default:
             self.sendResponse(context: context, responseData: responseData)

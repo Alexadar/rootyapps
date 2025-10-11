@@ -6,16 +6,29 @@ function getActiveTab() {
 }
 
 function summarize() {
+  console.log('Summarize button clicked');
   getActiveTab().then(tabs => {
-    browser.tabs.sendMessage(tabs[0].id, {
-      command: 'DoSumm',
-    });
+    console.log('Active tabs:', tabs);
+    if (tabs && tabs.length > 0) {
+      console.log('Sending message to tab:', tabs[0].id);
+      browser.tabs.sendMessage(tabs[0].id, {
+        command: 'DoSumm',
+      }).then(response => {
+        console.log('Message sent successfully, response:', response);
+      }).catch(error => {
+        console.error('Error sending message:', error);
+      });
+    } else {
+      console.error('No active tab found');
+    }
+  }).catch(error => {
+    console.error('Error getting active tab:', error);
   });
 }
 
 function cancelSummarize() {
   browser.runtime
-    .sendNativeMessage('application.id', {
+    .sendNativeMessage('oleksandr.aisixteen.indoxtext-safari', {
       command: 'DoCancel',
       data: {},
     })
@@ -45,6 +58,7 @@ var isInProgress = null;
 function handleResponse(message) {
   const statusVal = message.status;
   const percentageVal = message.percentage;
+  const synopsis = message.synopsys;
 
   switch (statusVal) {
     case '0':
@@ -53,6 +67,20 @@ function handleResponse(message) {
       if (isInProgress === true || isInProgress === null) {
         isInProgress = false;
         beginSummMode();
+
+        // If we have a synopsis, send it to the content script
+        if (synopsis) {
+          getActiveTab().then(tabs => {
+            if (tabs && tabs.length > 0) {
+              browser.tabs.sendMessage(tabs[0].id, {
+                command: 'ShowResult',
+                synopsys: synopsis
+              }).catch(error => {
+                console.error('Error sending result to content script:', error);
+              });
+            }
+          });
+        }
       }
       break;
     case '1':
@@ -78,7 +106,7 @@ function handleError(error) {
 
 setInterval(function () {
   browser.runtime
-    .sendNativeMessage('application.id', {
+    .sendNativeMessage('oleksandr.aisixteen.indoxtext-safari', {
       command: 'GetStatus',
       data: {},
     })

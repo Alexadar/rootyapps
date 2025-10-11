@@ -1,14 +1,37 @@
 :root {
     color-scheme: light dark;
+
+    /* Light theme variables */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --text-primary: #000000;
+    --text-secondary: #666666;
+    --accent-color: #007AFF;
+    --button-bg: #08B7D6;
+    --progress-bg: #e0e0e0;
+    --progress-fill: #007AFF;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Dark theme variables */
+        --bg-primary: #1c1c1e;
+        --bg-secondary: #2c2c2e;
+        --text-primary: #ffffff;
+        --text-secondary: #ababab;
+        --accent-color: #0a84ff;
+        --button-bg: #0a84ff;
+        --progress-bg: #48484a;
+        --progress-fill: #0a84ff;
+    }
 }
 
 html {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: white;
+  background-color: var(--bg-primary);
   border: none;
-
   min-width: 310px;
   min-height: 220px;
 }
@@ -16,21 +39,20 @@ html {
 body {
     padding: 0;
     margin: 0;
-    font-family: system-ui;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
     text-align: center;
-
     border: none;
     min-height: 220px;
-    background: white;
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }
- 
+
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 50px;
-
   min-width: 310px;
   min-height: 220px;
 }
@@ -41,42 +63,67 @@ body {
 
 .btn {
   height: 44px;
-  width: 135px;
+  width: 170px;
   border-radius: 10px;
   border: 0;
-  font-size: 14px;
-  background: #08B7D6;
+  font-size: 15px;
+  font-weight: 600;
+  background: var(--button-bg);
   color: white;
   cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn:hover {
+  opacity: 0.8;
+}
+
+.btn:active {
+  opacity: 0.6;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btnLink {
-  background: white;
+  background: transparent;
   border: 0;
-  color: #007AFF;
+  color: var(--accent-color);
   font-size: 17px;
+  font-weight: 400;
+}
+
+.btnLink:hover {
+  opacity: 0.7;
 }
 
 .header {
-  color: black;
+  color: var(--text-primary);
   height: 22px;
   width: 238px;
   font-size: 17px;
   font-weight: 600;
   line-height: 22px;
-  letter-spacing: -0.40799999237060547px;
-  text-align: center;  
+  letter-spacing: -0.408px;
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 .percentage {
-  background: #828282;
+  background: var(--progress-bg);
   width: 240px;
-  margin-top: 45px;
-  margin-bottom: 45px;
+  height: 6px;
+  margin-top: 30px;
+  margin-bottom: 40px;
+  border-radius: 3px;
+  overflow: hidden;
 }
 
 .percentage div {
-  height: 4px;
+  height: 100%;
   width: 0;
-  background: #007AFF;
+  background: var(--progress-fill);
+  transition: width 0.3s ease;
 }

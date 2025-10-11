@@ -2,7 +2,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log("Received request: ", request);
 
     if (request.command) {
-        browser.runtime.sendNativeMessage("application.id", request)
+        browser.runtime.sendNativeMessage("oleksandr.aisixteen.indoxtext-safari", request)
             .then(response => {
                 console.log("Received response: ", response);
                 sendResponse(response);

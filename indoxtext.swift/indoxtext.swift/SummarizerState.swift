@@ -42,7 +42,13 @@ class SummarizerStateManager: ObservableObject {
                     self?.state = .completed
                     self?.progress = 0.0
                 }
-            }
+            },
+            vectorizerThreads: 2,
+            predictThreads: 8,
+            batch_size: 64,
+            min_sen_width: 75,
+            max_queue_count: 100,
+            max_tokenized_sen_len: 253
         )
     }
     

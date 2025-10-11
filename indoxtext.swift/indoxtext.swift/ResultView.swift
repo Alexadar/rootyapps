@@ -19,7 +19,12 @@ struct ResultView: View {
             
             VStack(spacing: 10) {
                 Button(action: {
+                    #if os(macOS)
+                    NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(summarizerState.result, forType: .string)
+                    #else
+                    UIPasteboard.general.string = summarizerState.result
+                    #endif
                     showingCopyAlert = true
                 }) {
                     HStack {
