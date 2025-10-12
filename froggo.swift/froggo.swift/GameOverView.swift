@@ -54,6 +54,9 @@ struct GameOverView: View {
                             )
                     }
                     .buttonStyle(SquaredButtonStyle())
+                    #if os(tvOS)
+                    .buttonBorderShape(.roundedRectangle)
+                    #endif
 
                     // To Menu Button - white/gray squared style
                     Button(action: {
@@ -76,6 +79,9 @@ struct GameOverView: View {
                             )
                     }
                     .buttonStyle(SquaredButtonStyle())
+                    #if os(tvOS)
+                    .buttonBorderShape(.roundedRectangle)
+                    #endif
                 }
 
                 Spacer()

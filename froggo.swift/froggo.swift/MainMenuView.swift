@@ -52,6 +52,9 @@ struct MainMenuView: View {
                             )
                     }
                     .buttonStyle(SquaredButtonStyle())
+                    #if os(tvOS)
+                    .buttonBorderShape(.roundedRectangle)
+                    #endif
 
                     // Mute/Unmute Button - white/gray squared style
                     Button(action: {
@@ -76,6 +79,9 @@ struct MainMenuView: View {
                             )
                     }
                     .buttonStyle(SquaredButtonStyle())
+                    #if os(tvOS)
+                    .buttonBorderShape(.roundedRectangle)
+                    #endif
                 }
 
                 Spacer()

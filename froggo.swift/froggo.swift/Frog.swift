@@ -12,38 +12,47 @@ import AppKit
 import UIKit
 #endif
 
+enum SwipeDirection {
+    case up, down, left, right
+}
+
 class Frog: SKSpriteNode {
     // Drag mechanics
     private var dragStartPoint: CGPoint = .zero
     private var dragEndPoint: CGPoint = .zero
     private var isDragging = false
     var trajectoryLine: SKShapeNode?
-    
+
     // Frog states
     private var isOnRoof = false
     private var flyEaten = false
     private var stabilityCheck = 0
     private var previousPosition: CGPoint = .zero
-    
-    // Constants (matched to Unity values)
-    private let jumpPower: CGFloat = 600 // Unity uses 600
+
+    // Reference to GameManager for parameters
+    private weak var gameManager: GameManager?
+
+    // Constants (tuned values)
     private let flyEatenMultiplier: CGFloat = 1.5
-    private let jumpMagnitudeMax: CGFloat = 4.0 // Unity uses 4f
     private let stabilityChecks = 5
+
+    // tvOS remote input tracking
+    #if os(tvOS)
+    private var remoteAimDirection: CGPoint = CGPoint(x: -1, y: 0) // Default: forward jump
+    private let remoteAimStep: CGFloat = 20 // How much each swipe adjusts aim
+    #endif
     
     // Sprites (using colored rectangles for now)
     private let idleTexture: SKTexture
     private let jumpTexture: SKTexture
     
-    init() {
-    // Use Unity-equivalent asset names (idle_frog, jump_frog)
-    idleTexture = SKTexture(imageNamed: "idle_frog")
-    jumpTexture = SKTexture(imageNamed: "jump_frog")
+    init(gameManager: GameManager) {
+        // Use Unity-equivalent asset names (idle_frog, jump_frog)
+        idleTexture = SKTexture(imageNamed: "idle_frog")
+        jumpTexture = SKTexture(imageNamed: "jump_frog")
+        self.gameManager = gameManager
 
         super.init(texture: idleTexture, color: .green, size: CGSize(width: 40, height: 40))
-
-        // Important: enable event handling for touches/mouse
-        isUserInteractionEnabled = true
 
         setupPhysics()
         setupTrajectoryLine()
@@ -124,9 +133,9 @@ class Frog: SKSpriteNode {
 
         if delta >= 0 && delta <= 1 {
             // Successfully landed on top of skyscraper
-            isOnRoof = true
-            texture = idleTexture
-            SoundManager.shared.playLandSound()
+            // Don't immediately set isOnRoof or change texture - let checkIfOnRoof() handle it
+            // This prevents flickering between jump/idle animations
+            // The sound will be played by checkIfOnRoof() when frog is truly stable
         } else {
             // Hit the side, not the top
             isOnRoof = false
@@ -139,52 +148,107 @@ class Frog: SKSpriteNode {
         SoundManager.shared.playFlyEatenSound()
     }
     
-    // MARK: - Touch/Mouse Handling
-    
+    // MARK: - Touch/Mouse Handling (called from GameScene)
+
     #if os(macOS)
-    override func mouseDown(with event: NSEvent) {
+    func handleMouseDown(at location: CGPoint) {
         guard isOnRoof else { return }
-        
-        let location = event.location(in: parent!)
         startDrag(at: location)
     }
-    
-    override func mouseDragged(with event: NSEvent) {
+
+    func handleMouseDragged(to location: CGPoint) {
         guard isDragging else { return }
-        
-        let location = event.location(in: parent!)
         continueDrag(to: location)
     }
-    
-    override func mouseUp(with event: NSEvent) {
+
+    func handleMouseUp() {
         guard isDragging else { return }
         stopDrag()
     }
-    #else
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard isOnRoof, let touch = touches.first else { return }
-        
-        let location = touch.location(in: parent!)
+    #endif
+
+    #if !os(macOS) && !os(tvOS)
+    // iOS and visionOS touch handling
+    func handleTouchBegan(at location: CGPoint) {
+        guard isOnRoof else { return }
         startDrag(at: location)
     }
-    
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard isDragging, let touch = touches.first else { return }
-        
-        let location = touch.location(in: parent!)
+
+    func handleTouchMoved(to location: CGPoint) {
+        guard isDragging else { return }
         continueDrag(to: location)
     }
-    
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+
+    func handleTouchEnded() {
         guard isDragging else { return }
         stopDrag()
+    }
+    #endif
+
+    // MARK: - tvOS Remote Handling
+    #if os(tvOS)
+    func handleRemoteSwipe(direction: SwipeDirection) {
+        guard isOnRoof else { return }
+
+        // Adjust aim direction based on swipe
+        switch direction {
+        case .left:
+            remoteAimDirection.x -= remoteAimStep
+        case .right:
+            remoteAimDirection.x += remoteAimStep
+        case .up:
+            remoteAimDirection.y += remoteAimStep
+        case .down:
+            remoteAimDirection.y -= remoteAimStep
+        }
+
+        // Update trajectory visualization
+        updateRemoteTrajectory()
+    }
+
+    func handleRemoteJump() {
+        guard isOnRoof else { return }
+
+        // Use accumulated aim direction for jump
+        dragStartPoint = position
+        dragEndPoint = CGPoint(
+            x: position.x + remoteAimDirection.x,
+            y: position.y + remoteAimDirection.y
+        )
+
+        stopDrag()
+
+        // Reset aim for next jump
+        remoteAimDirection = CGPoint(x: -1, y: 0)
+    }
+
+    private func updateRemoteTrajectory() {
+        guard let trajectoryLine = trajectoryLine, let gameManager = gameManager else { return }
+
+        var direction = remoteAimDirection
+
+        // Limit magnitude using GameManager's jumperLength
+        let magnitude = sqrt(direction.x * direction.x + direction.y * direction.y)
+        if magnitude > gameManager.jumperLength {
+            let scale = gameManager.jumperLength / magnitude
+            direction.x *= scale
+            direction.y *= scale
+        }
+
+        // Create trajectory path
+        let path = CGMutablePath()
+        path.move(to: position)
+
+        let endPoint = CGPoint(x: position.x - direction.x, y: position.y - direction.y)
+        path.addLine(to: endPoint)
+
+        trajectoryLine.path = path
     }
     #endif
     
     private func startDrag(at point: CGPoint) {
         dragStartPoint = point
         isDragging = true
-        isUserInteractionEnabled = true
     }
     
     private func continueDrag(to point: CGPoint) {
@@ -199,29 +263,29 @@ class Frog: SKSpriteNode {
     }
     
     private func updateTrajectoryLine() {
-        guard let trajectoryLine = trajectoryLine else { return }
-        
+        guard let trajectoryLine = trajectoryLine, let gameManager = gameManager else { return }
+
         var direction = CGPoint(x: dragEndPoint.x - dragStartPoint.x, y: dragEndPoint.y - dragStartPoint.y)
-        
+
         // Only forward: in Unity, you drag backwards (left) to jump forward (right).
         // Clamp any rightward drag (positive x) to zero so it doesn't create backward force.
         if direction.x > 0 { direction.x = 0 }
-        
-        // Limit magnitude
+
+        // Limit magnitude using GameManager's jumperLength
         let magnitude = sqrt(direction.x * direction.x + direction.y * direction.y)
-        if magnitude > jumpMagnitudeMax {
-            let scale = jumpMagnitudeMax / magnitude
+        if magnitude > gameManager.jumperLength {
+            let scale = gameManager.jumperLength / magnitude
             direction.x *= scale
             direction.y *= scale
         }
-        
+
         // Create trajectory path
         let path = CGMutablePath()
         path.move(to: position)
-        
+
         let endPoint = CGPoint(x: position.x - direction.x, y: position.y - direction.y)
         path.addLine(to: endPoint)
-        
+
         trajectoryLine.path = path
     }
     
@@ -230,36 +294,36 @@ class Frog: SKSpriteNode {
     }
     
     private func jump() {
-        guard let physicsBody = physicsBody else { return }
-        
+        guard let physicsBody = physicsBody, let gameManager = gameManager else { return }
+
         var direction = CGPoint(x: dragEndPoint.x - dragStartPoint.x, y: dragEndPoint.y - dragStartPoint.y)
-        
+
         // Only forward: clamp positive x drag to zero
         if direction.x > 0 { direction.x = 0 }
-        
+
         let magnitude = sqrt(direction.x * direction.x + direction.y * direction.y)
-        let forceCoefficient = min(magnitude / jumpMagnitudeMax, 1.0)
-        
+        let forceCoefficient = min(magnitude / gameManager.jumperLength, 1.0)
+
         // Normalize direction
         if magnitude > 0 {
             direction.x /= magnitude
             direction.y /= magnitude
         }
-        
-        // Apply jump force
+
+        // Apply jump force using GameManager's jumpForce
         let jumpMultiplier = flyEaten ? flyEatenMultiplier : 1.0
         let force = CGVector(
-            dx: -direction.x * jumpPower * forceCoefficient * jumpMultiplier,
-            dy: -direction.y * jumpPower * forceCoefficient * jumpMultiplier
+            dx: -direction.x * gameManager.jumpForce * forceCoefficient * jumpMultiplier,
+            dy: -direction.y * gameManager.jumpForce * forceCoefficient * jumpMultiplier
         )
-        
+
         physicsBody.applyImpulse(force)
-        
+
         // Reset states
         flyEaten = false
         isOnRoof = false
         texture = jumpTexture
-        
+
         // Play jump sound (placeholder)
         SoundManager.shared.playJumpSound()
     }

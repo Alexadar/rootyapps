@@ -8,22 +8,76 @@
 import SwiftUI
 import SpriteKit
 
-struct GameView: View {
-    @Binding var gameState: GameState
-    @Binding var finalScore: Int
-    
-    var body: some View {
-        SpriteView(scene: createGameScene())
-            .ignoresSafeArea()
-    }
-    
-    private func createGameScene() -> GameScene {
+// Helper class to hold and persist the GameScene
+class GameSceneHolder {
+    let scene: GameScene
+
+    init(gameStateBinding: Binding<GameState>, finalScoreBinding: Binding<Int>) {
         let scene = GameScene()
         scene.size = CGSize(width: 800, height: 600)
         scene.scaleMode = .aspectFill
-        scene.gameStateBinding = $gameState
-        scene.finalScoreBinding = $finalScore
-        return scene
+        scene.gameStateBinding = gameStateBinding
+        scene.finalScoreBinding = finalScoreBinding
+        self.scene = scene
+    }
+}
+
+struct GameView: View {
+    @Binding var gameState: GameState
+    @Binding var finalScore: Int
+    @State private var score: Int = 0
+    @State private var tutorialText: String = "Slide down and sideways to help Freddy jump"
+    @State private var sceneHolder: GameSceneHolder
+
+    init(gameState: Binding<GameState>, finalScore: Binding<Int>) {
+        _gameState = gameState
+        _finalScore = finalScore
+        _sceneHolder = State(wrappedValue: GameSceneHolder(gameStateBinding: gameState, finalScoreBinding: finalScore))
+    }
+
+    var body: some View {
+        ZStack {
+            SpriteView(scene: sceneHolder.scene)
+                .ignoresSafeArea()
+
+            // SwiftUI overlay for score and tutorial (like MainMenuView title)
+            VStack {
+                HStack(alignment: .top, spacing: 20) {
+                    // Tutorial text - left side with padding
+                    Text(tutorialText)
+                        .font(.system(size: 18, weight: .regular, design: .default))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.8), radius: 3, x: 2, y: 2)
+                        .multilineTextAlignment(.center)
+                        .padding(.leading, 20)
+                        .frame(maxWidth: .infinity)
+
+                    // Score - right aligned
+                    Text("\(score)")
+                        .font(.system(size: 28, weight: .bold, design: .default))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.8), radius: 3, x: 2, y: 2)
+                        .padding(.trailing, 20)
+                }
+                .padding(.top, 50)
+
+                Spacer()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UpdateScore"))) { notification in
+            if let newScore = notification.object as? Int {
+                score = newScore
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UpdateTutorial"))) { notification in
+            if let text = notification.object as? String {
+                tutorialText = text
+            }
+        }
+        .onAppear {
+            // Initialize tutorial text
+            tutorialText = "Slide down and sideways to help Freddy jump"
+        }
     }
 }
 
@@ -37,13 +91,20 @@ class GameScene: SKScene {
     // Game state
     var isGameOver = false
     var score = 0 {
-        didSet { scoreLabel?.text = "\(score)" }
+        didSet {
+            // Post notification to update SwiftUI overlay
+            NotificationCenter.default.post(name: NSNotification.Name("UpdateScore"), object: score)
+        }
     }
     var gameCamera: SKCameraNode!
-    
-    // UI elements
-    var scoreLabel: SKLabelNode!
-    var tutorialLabel: SKLabelNode!
+
+    // Tutorial text property
+    var tutorialText: String = "" {
+        didSet {
+            // Post notification to update SwiftUI overlay
+            NotificationCenter.default.post(name: NSNotification.Name("UpdateTutorial"), object: tutorialText)
+        }
+    }
     private var bgNodes: [SKSpriteNode] = []
     
     // Bindings for SwiftUI integration
@@ -51,22 +112,22 @@ class GameScene: SKScene {
     var finalScoreBinding: Binding<Int>?
     
     // Constants (matched to Unity)
-    let pitHeight: CGFloat = -10 // Unity uses -10
+    let pitHeight: CGFloat = 600 // Unity uses -10
     let initialSkyscrapers = 20
     private let bgTileWidth: CGFloat = 512 // approximate; will be set from texture size
     private let bgZ: CGFloat = -10
+    private let cameraSmoothing: CGFloat = 0.15 // Lower = smoother, higher = more responsive (0.1-0.3 range)
     
     override func didMove(to view: SKView) {
         setupScene()
         setupCamera()
-        setupUI()
         setupBackground()
         setupGame()
     }
     
     private func setupScene() {
         backgroundColor = SKColor.black
-        physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
+        // Physics world gravity will be set after gameManager is initialized
         physicsWorld.contactDelegate = self
     }
     
@@ -76,25 +137,6 @@ class GameScene: SKScene {
         self.camera = gameCamera
     }
     
-    private func setupUI() {
-        // Score label
-        scoreLabel = SKLabelNode(fontNamed: "Arial-Bold")
-        scoreLabel.fontSize = 24
-        scoreLabel.fontColor = .white
-        scoreLabel.text = "0"
-        scoreLabel.position = CGPoint(x: 0, y: 300)
-        scoreLabel.zPosition = 100
-        camera?.addChild(scoreLabel)
-        
-        // Tutorial label
-        tutorialLabel = SKLabelNode(fontNamed: "Arial")
-        tutorialLabel.fontSize = 16
-        tutorialLabel.fontColor = .white
-        tutorialLabel.text = "Slide down and sideways to help Freddy jump"
-        tutorialLabel.position = CGPoint(x: 0, y: 250)
-        tutorialLabel.zPosition = 100
-        camera?.addChild(tutorialLabel)
-    }
 
     private func setupBackground() {
         // Create horizontally tiling background similar to Unity scene
@@ -124,8 +166,11 @@ class GameScene: SKScene {
     private func setupGame() {
         gameManager = GameManager(scene: self)
 
-        // Create frog
-        frog = Frog()
+        // Set physics world gravity from GameManager
+        physicsWorld.gravity = CGVector(dx: 0, dy: gameManager.gravitation)
+
+        // Create frog and pass gameManager reference
+        frog = Frog(gameManager: gameManager)
         frog.position = CGPoint(x: 0, y: 100)
         addChild(frog)
 
@@ -148,14 +193,22 @@ class GameScene: SKScene {
     }
     
     func focusOnFrog() {
-        camera?.position = frog.position
-        updateUI()
+        guard let camera = camera else { return }
+
+        // Smooth camera movement using linear interpolation (lerp)
+        // This prevents flickering/jittering at high speeds
+        let targetX = frog.position.x
+        let targetY = frog.position.y
+
+        // Interpolate camera position for smooth following
+        let newX = camera.position.x + (targetX - camera.position.x) * cameraSmoothing
+        let newY = camera.position.y + (targetY - camera.position.y) * cameraSmoothing
+
+        camera.position = CGPoint(x: newX, y: newY)
+
         updateBackground()
     }
     
-    private func updateUI() {
-        scoreLabel.text = "\(score)"
-    }
 
     private func updateBackground() {
         guard let camera = camera, let first = bgNodes.first, let texture = first.texture else { return }
@@ -210,9 +263,81 @@ class GameScene: SKScene {
         // Update fly
         fly.update()
 
+        // Update game manager (procedural scraper generation)
+        gameManager.update()
+
         // Focus camera on frog
         focusOnFrog()
     }
+
+    // MARK: - Touch/Mouse handling - forward to frog from anywhere
+
+    #if os(macOS)
+    override func mouseDown(with event: NSEvent) {
+        let location = event.location(in: self)
+        frog.handleMouseDown(at: location)
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        let location = event.location(in: self)
+        frog.handleMouseDragged(to: location)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        frog.handleMouseUp()
+    }
+    #elseif os(tvOS)
+    // tvOS uses remote gestures - swipe to aim, click to jump
+    override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+        for press in presses {
+            guard let key = press.key else { continue }
+
+            // Handle Siri Remote swipes for direction
+            switch key.keyCode {
+            case .keyboardLeftArrow, .keyboardA:
+                frog.handleRemoteSwipe(direction: .left)
+            case .keyboardRightArrow, .keyboardD:
+                frog.handleRemoteSwipe(direction: .right)
+            case .keyboardUpArrow, .keyboardW:
+                frog.handleRemoteSwipe(direction: .up)
+            case .keyboardDownArrow, .keyboardS:
+                frog.handleRemoteSwipe(direction: .down)
+            default:
+                break
+            }
+        }
+        super.pressesBegan(presses, with: event)
+    }
+
+    override func pressesEnded(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+        for press in presses {
+            guard let key = press.key else { continue }
+
+            // Select button triggers jump
+            if key.keyCode == .keyboardSpacebar || key.keyCode == .keyboardReturnOrEnter {
+                frog.handleRemoteJump()
+            }
+        }
+        super.pressesEnded(presses, with: event)
+    }
+    #else
+    // iOS and visionOS use touch/gesture input
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        frog.handleTouchBegan(at: location)
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        frog.handleTouchMoved(to: location)
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        frog.handleTouchEnded()
+    }
+    #endif
 }
 
 extension GameScene: SKPhysicsContactDelegate {

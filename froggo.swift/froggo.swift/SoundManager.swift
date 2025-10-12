@@ -27,8 +27,19 @@ class SoundManager: ObservableObject {
     private var loopingPlayers: Set<String> = []
 
     private init() {
-        // Load mute setting, default to unmuted (true = unmuted in Unity)
-        self.isMuted = !UserDefaults.standard.bool(forKey: "mute")
+        // Load mute setting, default to unmuted
+        // If "mute" key doesn't exist, default is false (unmuted)
+        self.isMuted = UserDefaults.standard.bool(forKey: "mute")
+
+        // Configure audio session for playback (iOS only, not tvOS/visionOS/macOS)
+        #if os(iOS)
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Failed to set up audio session: \(error)")
+        }
+        #endif
     }
 
     func playSound(_ soundName: String, loop: Bool = false) {
