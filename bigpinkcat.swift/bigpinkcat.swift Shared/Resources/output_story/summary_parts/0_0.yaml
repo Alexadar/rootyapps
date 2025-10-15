@@ -1,0 +1,43 @@
+current_option: ''
+current_summary: Astronaut embarks on a solitary mission to unearth mysteries of an
+  alien asteroid. Stumbling upon a big, surreal pink cat, he's taken aback. The cat
+  communicates in riddles, revealing it's a consciousness linked to a nearby galaxy,
+  not a real feline.
+index: 0
+next_options:
+- Astronaut embarks on a solitary mission to unearth mysteries of an alien asteroid.
+  Stumbling upon a big, surreal pink cat, he's taken aback. The cat communicates in
+  riddles, revealing it's a consciousness linked to a nearby galaxy, not a real feline.The
+  astronaut, intrigued by the pink cat's riddles, decides to decipher them in hopes
+  of gaining further knowledge about the galaxy. This leads him on a series of challenges
+  and puzzles, each one revealing more about the mysterious celestial body and its
+  connections to other parts of the universe.
+- Astronaut embarks on a solitary mission to unearth mysteries of an alien asteroid.
+  Stumbling upon a big, surreal pink cat, he's taken aback. The cat communicates in
+  riddles, revealing it's a consciousness linked to a nearby galaxy, not a real feline.The
+  pink cat, satisfied with the astronaut's curiosity, grants him a power or ability
+  to aid him in his exploration of the asteroid. With his newfound strength, the astronaut
+  delves deeper into the unknown areas of the asteroid, uncovering secrets and discoveries
+  beyond his wildest imagination.
+- Astronaut embarks on a solitary mission to unearth mysteries of an alien asteroid.
+  Stumbling upon a big, surreal pink cat, he's taken aback. The cat communicates in
+  riddles, revealing it's a consciousness linked to a nearby galaxy, not a real feline.The
+  pink cat, not being a friendly entity, reveals that it's actually a dormant alien
+  being awoken by the astronaut's presence. The astronaut must then use his knowledge
+  and skills to either appease or defeat the entity, shaping the outcome of his mission
+  and the fate of the galaxy.
+- 'Astronaut embarks on a solitary mission to unearth mysteries of an alien asteroid.
+  Stumbling upon a big, surreal pink cat, he''s taken aback. The cat communicates
+  in riddles, revealing it''s a consciousness linked to a nearby galaxy, not a real
+  feline.The pink cat, being a guardian of the asteroid''s secrets, offers the astronaut
+  a deal: in exchange for protection and care, the astronaut will be granted the knowledge
+  he seeks about the universe. The astronaut must then decide whether to trust the
+  cat with his safety and his mission.'
+next_structs: []
+next_structs_idx:
+- 1
+- 2
+- 3
+- 4
+previous_structure: null
+previous_summary: ''

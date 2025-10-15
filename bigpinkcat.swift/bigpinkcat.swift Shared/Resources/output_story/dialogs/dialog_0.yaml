@@ -1,0 +1,106 @@
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm still trying to wrap my head around the fact that this... creature
+    is a consciousness linked to a nearby galaxy.
+  id: 0
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Ah, the boundaries of reality are but a distant memory for one such
+    as I. Imagine a civilization that defies the constraints of space and time.
+  id: 1
+- character_id: 1
+  character_name: Astronaut
+  character_text: That's a mind-boggling concept. How is this possible?
+  id: 2
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The secrets of the cosmos are not for the faint of heart, Astronaut.
+    Are you prepared to uncover the truth?
+  id: 3
+- character_id: 1
+  character_name: Astronaut
+  character_text: I've come too far to turn back now. What do you want from me?
+  id: 4
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: I sense a kindred spirit in you. Together, we can unlock the mysteries
+    of the universe.
+  id: 5
+- character_id: 1
+  character_name: Astronaut
+  character_text: What do you mean? How can we do that?
+  id: 6
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The riddles I speak are not for the ears of mortals. Are you prepared
+    to listen?
+  id: 7
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm willing to listen, but I need to understand what's going on.
+  id: 8
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Very well. Let us begin. Imagine a world where gravity is but a
+    distant memory...
+  id: 9
+- character_id: 1
+  character_name: Astronaut
+  character_text: That's impossible. Gravity is a fundamental force of nature.
+  id: 10
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Ah, but what if I told you it's not? What if I showed you a way
+    to defy its constraints?
+  id: 11
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'd want to know more. How can I defy gravity?
+  id: 12
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The answer lies in the heart of the galaxy. Are you prepared to
+    take the leap of faith?
+  id: 13
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm not sure. What's at stake?
+  id: 14
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The fate of the universe hangs in the balance. Will you take the
+    risk?
+  id: 15
+- character_id: 1
+  character_name: Astronaut
+  character_text: I need more information before I make a decision. What's the cost
+    of this knowledge?
+  id: 16
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The cost is steep, but the reward is immeasurable. Are you prepared
+    to pay the price?
+  id: 17
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm not sure. What are my options?
+  id: 18
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: You can decipher the riddles for more knowledge, receive power from
+    me, confront the entity that lurks in the shadows, or accept my deal.
+  id: 19
+- character_id: 1
+  character_name: Astronaut
+  character_text: I need to think about this. Can I have some time to consider my
+    options?
+  id: 20
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The clock is ticking, Astronaut. The choice is yours.
+  id: 21
+  options:
+  - option_text: Deciphers riddles for more knowledge
+  - option_text: Receives power from the cat
+  - option_text: Confronts the entity
+  - option_text: Accepts the cat's deal

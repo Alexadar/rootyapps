@@ -1,0 +1,226 @@
+- character_id: 1
+  character_name: Astronaut
+  character_text: I've thought about it, and I'm willing to accept your deal. What
+    do I need to do to receive this knowledge?
+  id: 0
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Ah, the weight of responsibility is settling upon you, Astronaut.
+    You must first prove your worth by facing the trials within the asteroid's heart.
+  id: 1
+- character_id: 1
+  character_name: Astronaut
+  character_text: Trials? What kind of trials?
+  id: 2
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Trials of wit, courage, and curiosity. Are you prepared to face
+    the unknown and uncover the secrets of the universe?
+  id: 3
+- character_id: 1
+  character_name: Astronaut
+  character_text: I've come this far, I'm not turning back now. What's the first trial?
+  id: 4
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The first trial is the Labyrinth of Reflections. Within its walls,
+    you will confront the shadows of your own doubts and fears. Are you prepared to
+    face yourself?
+  id: 5
+- character_id: 1
+  character_name: Astronaut
+  character_text: I've faced my share of challenges before. I'm ready to face whatever
+    lies within.
+  id: 6
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Very well, Astronaut. The Labyrinth awaits. May your journey be
+    enlightening.
+  id: 7
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm ready. Let's get started.
+  id: 8
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Remember, the trials are not just about overcoming obstacles, but
+    also about discovering the truth within yourself.
+  id: 9
+- character_id: 1
+  character_name: Astronaut
+  character_text: I won't forget.
+  id: 10
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Then let us begin. The Labyrinth of Reflections awaits.
+  id: 11
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm entering the Labyrinth. What can I expect to find within?
+  id: 12
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Expect to find the echoes of your past, the whispers of your doubts,
+    and the shadows of your fears. Are you prepared to confront them?
+  id: 13
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm ready to face whatever lies within.
+  id: 14
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Then let the journey begin. May your path be illuminated.
+  id: 15
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm walking through the Labyrinth. It's eerily quiet.
+  id: 16
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The silence is deceiving, Astronaut. The whispers of your doubts
+    are growing louder.
+  id: 17
+- character_id: 1
+  character_name: Astronaut
+  character_text: I can hear them. They're trying to tell me something.
+  id: 18
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Listen closely, Astronaut. The whispers hold the key to unlocking
+    the secrets of the universe.
+  id: 19
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm listening. The whispers are telling me to trust myself.
+  id: 20
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Ah, the wisdom of the Labyrinth. You have passed the first trial,
+    Astronaut.
+  id: 21
+- character_id: 1
+  character_name: Astronaut
+  character_text: What's the next trial?
+  id: 22
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The next trial is the Chamber of Illusions. Within its walls, you
+    will confront the fabric of reality itself.
+  id: 23
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm ready for it.
+  id: 24
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Then let us proceed. The Chamber awaits.
+  id: 25
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm entering the Chamber. What can I expect to find within?
+  id: 26
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Expect to find the distortions of reality, the illusions of the
+    mind, and the fabric of the universe unraveling before your eyes.
+  id: 27
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm seeing strange visions. The fabric of reality is indeed unraveling.
+  id: 28
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The Chamber of Illusions is testing your perception, Astronaut.
+    Are you prepared to see beyond the veil?
+  id: 29
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm trying to make sense of it all. The visions are overwhelming.
+  id: 30
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The visions are a test of your courage, Astronaut. Are you prepared
+    to face the truth?
+  id: 31
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm seeing the truth. The universe is full of mysteries and wonders.
+  id: 32
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Ah, the wisdom of the Chamber. You have passed the second trial,
+    Astronaut.
+  id: 33
+- character_id: 1
+  character_name: Astronaut
+  character_text: What's the final trial?
+  id: 34
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The final trial is the Temple of Knowledge. Within its walls, you
+    will uncover the secrets of the universe.
+  id: 35
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm ready for it.
+  id: 36
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Then let us proceed. The Temple awaits.
+  id: 37
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm entering the Temple. What can I expect to find within?
+  id: 38
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Expect to find the secrets of the universe, the mysteries of the
+    cosmos, and the knowledge you seek.
+  id: 39
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm seeing the secrets of the universe unfold before my eyes.
+  id: 40
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Ah, the wisdom of the Temple. You have uncovered the secrets of
+    the universe, Astronaut.
+  id: 41
+- character_id: 1
+  character_name: Astronaut
+  character_text: I've done it. I've uncovered the secrets of the universe.
+  id: 42
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: You have, Astronaut. You have. The knowledge is yours to keep.
+  id: 43
+- character_id: 1
+  character_name: Astronaut
+  character_text: Thank you, Colossal pink cat. You've been a guide on my journey.
+  id: 44
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The journey is far from over, Astronaut. The knowledge you've gained
+    is but the beginning. The universe holds many more secrets, and it is up to you
+    to uncover them.
+  id: 45
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm ready for the next challenge.
+  id: 46
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Then let us begin anew. The universe awaits.
+  id: 47
+- character_id: 1
+  character_name: Astronaut
+  character_text: Thank you, Colossal pink cat. I will never forget our journey together.
+  id: 48
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Nor will I, Astronaut. May our paths cross again someday.
+  final_words_of_the_story: As the astronaut accepted the pink cat's offer, the secrets
+    of the universe unfolded before him, and he became the guardian of the asteroid's
+    mysteries, forever changed by the surreal encounter.
+  id: 49
+  options: []

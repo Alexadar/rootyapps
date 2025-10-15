@@ -1,0 +1,152 @@
+- character_id: 1
+  character_name: Astronaut
+  character_text: As I pondered the riddles, I began to notice a pattern. The cat's
+    words seemed to be leading me on a path of discovery.
+  id: 0
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Ah, the wheels are turning, Astronaut. You are getting close to
+    unlocking the secrets of the galaxy.
+  id: 1
+- character_id: 1
+  character_name: Astronaut
+  character_text: I feel like I'm on the cusp of something big. What lies ahead?
+  id: 2
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The next challenge awaits. Are you prepared to face it?
+  id: 3
+- character_id: 1
+  character_name: Astronaut
+  character_text: I've come this far, I'm not going to stop now. What do I need to
+    do?
+  id: 4
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Solve the riddle of the celestial spheres. The answer lies within
+    the stars.
+  id: 5
+- character_id: 1
+  character_name: Astronaut
+  character_text: I've studied the stars, but I've never seen anything like this.
+    What am I looking for?
+  id: 6
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Look for the harmony of the spheres. It's the key to unlocking the
+    next level of knowledge.
+  id: 7
+- character_id: 1
+  character_name: Astronaut
+  character_text: I think I see it. The stars are aligning in a specific pattern.
+    Is that what you meant?
+  id: 8
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: You are indeed perceptive, Astronaut. The harmony of the spheres
+    is a powerful tool.
+  id: 9
+- character_id: 1
+  character_name: Astronaut
+  character_text: What can I do with this newfound knowledge?
+  id: 10
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: You can use it to communicate with other celestial bodies. The possibilities
+    are endless.
+  id: 11
+- character_id: 1
+  character_name: Astronaut
+  character_text: I feel like I'm on the verge of a major breakthrough. What's the
+    next step?
+  id: 12
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The next challenge is to confront the entity that lurks in the shadows.
+    Are you prepared to face it?
+  id: 13
+- character_id: 1
+  character_name: Astronaut
+  character_text: I've come too far to turn back now. I'm ready to face whatever lies
+    ahead.
+  id: 14
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Then let us proceed, Astronaut. The fate of the galaxy is in your
+    hands.
+  id: 15
+- character_id: 1
+  character_name: Astronaut
+  character_text: What does the entity want from me?
+  id: 16
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: It wants to share its knowledge with you. Are you prepared to receive
+    it?
+  id: 17
+- character_id: 1
+  character_name: Astronaut
+  character_text: I think I am. What does it have to say?
+  id: 18
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: It says that the secrets of the galaxy are not for the faint of
+    heart. Are you prepared to pay the price?
+  id: 19
+- character_id: 1
+  character_name: Astronaut
+  character_text: I've come too far to turn back now. I'm ready to pay the price.
+  id: 20
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Then let us proceed, Astronaut. The entity awaits.
+  id: 21
+- character_id: 1
+  character_name: Astronaut
+  character_text: What's the final challenge?
+  id: 22
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The final challenge is to use your newfound knowledge to help others.
+    Will you accept the task?
+  id: 23
+- character_id: 1
+  character_name: Astronaut
+  character_text: I accept the task. I'm ready to use my knowledge to help others.
+  id: 24
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Then let us proceed, Astronaut. The fate of the galaxy is in your
+    hands.
+  id: 25
+- character_id: 1
+  character_name: Astronaut
+  character_text: I've done it. I've unlocked the secrets of the galaxy.
+  id: 26
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Congratulations, Astronaut. You have achieved greatness.
+  id: 27
+- character_id: 1
+  character_name: Astronaut
+  character_text: What's next for me?
+  id: 28
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: You will return to Earth as a hero, sharing your knowledge with
+    the world.
+  id: 29
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm ready to go back home. Thank you for your guidance, Colossal
+    pink cat.
+  id: 30
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Farewell, Astronaut. May your journey inspire others to reach for
+    the stars.
+  final_words_of_the_story: With the secrets of the galaxy finally deciphered, the
+    astronaut and the colossal pink cat vanished into the Martian sunset, leaving
+    behind a legacy of wonder and discovery.
+  id: 31
+  options: []

@@ -1,0 +1,109 @@
+- character_id: 1
+  character_name: Astronaut
+  character_text: I've been thinking about your options, and I'm not sure which one
+    to choose. Can you give me more information about the entity lurking in the shadows?
+  id: 0
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Ah, the entity. It is a creature of darkness, born from the very
+    fabric of space itself. It feeds on the energy of the galaxy, and its presence
+    is a harbinger of doom.
+  id: 1
+- character_id: 1
+  character_name: Astronaut
+  character_text: That sounds ominous. What's the purpose of the entity's existence?
+  id: 2
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Its purpose is to consume all in its path, leaving nothing but desolation
+    in its wake. But I can sense that you are not one to back down from a challenge.
+  id: 3
+- character_id: 1
+  character_name: Astronaut
+  character_text: I've come too far to turn back now. I'll face the entity head-on.
+  id: 4
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Very well. But be warned, Astronaut, the entity is a formidable
+    foe. You will need all your wits and cunning to defeat it.
+  id: 5
+- character_id: 1
+  character_name: Astronaut
+  character_text: I'm ready for whatever comes next. Let's get this over with.
+  id: 6
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Then let us proceed. But first, you must prove yourself worthy by
+    facing my trials.
+  id: 7
+- character_id: 1
+  character_name: Astronaut
+  character_text: Trials? What kind of trials?
+  id: 8
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Ah, but that would be telling. You will simply have to face them
+    when the time comes.
+  id: 9
+- character_id: 1
+  character_name: Astronaut
+  character_text: Fine. I'm ready to face whatever comes next. Bring it on.
+  id: 10
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Very well. Let us begin.
+  id: 11
+- character_id: 1
+  character_name: Astronaut
+  character_text: Wait, what's going on? Why is the ship shaking?
+  id: 12
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: The entity is awakening. It senses your presence, and it will not
+    rest until it has consumed you.
+  id: 13
+- character_id: 1
+  character_name: Astronaut
+  character_text: This is insane! We have to get out of here!
+  id: 14
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: But it's too late. The entity is upon us.
+  id: 15
+- character_id: 1
+  character_name: Astronaut
+  character_text: No! This can't be happening!
+  id: 16
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: But it is. And now, you must face the consequences of your actions.
+  id: 17
+- character_id: 1
+  character_name: Astronaut
+  character_text: What do you mean?
+  id: 18
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: You have disturbed the balance of the galaxy. The entity will consume
+    everything in its path, and you will be the first to fall.
+  id: 19
+- character_id: 1
+  character_name: Astronaut
+  character_text: No... this can't be the end.
+  id: 20
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: But it is. Your mission is over. The galaxy is doomed.
+  id: 21
+- character_id: 1
+  character_name: Astronaut
+  character_text: No... please...
+  id: 22
+- character_id: 2
+  character_name: Colossal pink cat
+  character_text: Farewell, Astronaut. May your legacy be one of destruction and despair.
+  final_words_of_the_story: As the astronaut's spaceship vanished into the Martian
+    horizon, the colossal pink cat's ethereal voice whispered, 'The universe holds
+    many secrets, but none as profound as the power of human curiosity.'
+  id: 23
+  options: []

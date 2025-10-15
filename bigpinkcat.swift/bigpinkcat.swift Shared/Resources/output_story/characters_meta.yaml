@@ -1,0 +1,16 @@
+characters:
+- description: Born and raised in a small, rural town, John Doe dreamed of exploring
+    the unknown depths of space from a young age. He spent his childhood building
+    model rockets, devouring every book on astronomy, and joining the school science
+    club. After acing his entrance exams to a prestigious university, John studied
+    aerospace engineering and joined the space program, eventually earning his place
+    as a valued member of a deep space exploration team.
+  id: 1
+  name: Astronaut
+- description: Born in the farthest reaches of the universe, where galaxies clash
+    in brilliant displays of cosmic energy, this majestic creature was a unique and
+    wondrous being. Raised amidst swirling fields of color and sound, the Pink Cat
+    learned from an ancient race of mystic beings to harness the power of the universe.
+    He travels the multiverse, spreading joy and wonder to all that cross his path.
+  id: 2
+  name: Pink Cat

@@ -1,0 +1,31 @@
+characters:
+- name: Astronaut
+  negative_prompt: A short, barefoot figure in tattered cloths squatted on the ground,
+    surrounded by modern technology and tools, with an unhappy expression and no sign
+    of protective clothing or space equipment.
+  prompt: A tall, human figure in a bulky white spacesuit with gold accents, stood
+    with arms crossed, gaze fixed on an unfathomable distance. His helmet held a small
+    oxygen tank, and two solar panels were attached to his back. His face was obscured,
+    but the visor gleamed with the reflection of the sun and the asteroid's terrain.
+    Dust clung to his boots and the suit's creases. In one hand, he held a geological
+    hammer, and in the other, he carried a backpack with various tools.
+- name: Pink Cat
+  negative_prompt: A tiny, dull-gray kitten with empty, lifeless eyes squatted on
+    the ground, with its body devoid of any details and shimmer or patterns, appearing
+    unremarkable and insignificant.
+  prompt: A colossal, otherworldly creature that towered over the asteroid's terrain,
+    its body in the shapes of a cat yet surreal and surreal in every angle, glowed
+    with an ethereal, bubblegum pink aura. Its enormous, feline eyes were as large
+    as moons, reflecting a serene, sentient intelligence. Its thick tail, which spanned
+    as long as the astronaut's height, ended in a swirl with iridescent colors. The
+    cat's body was adorned with constellation-like patterns and shimmering silver
+    fur.
+environment:
+- negative_prompt: A monochromatic, desolate asteroid, where rough rocks and boulders
+    littered the grey ground, an eerie silence echoed throughout, and the lifeless
+    sun shed no warmth or light.
+  prompt: A desolate asteroid, bursting with unreal colors, where otherworldly formations
+    of jagged rocks draped in cascades of shimmering, nebulous liquids, illuminated
+    by a kaleidoscopic sun that casts rainbows onto the landscape. The air shimmers
+    with iridescence, and the atmosphere hums with a barely audible melody, as small,
+    luminous creatures danced and flitted among the rocks.
