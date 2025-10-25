@@ -36,6 +36,7 @@ extension InputController {
 }
 #else
 import UIKit
+import SpriteKit
 extension InputController {
     // Touch forwarding helpers (scene passed so inputs can convert coordinates)
     func touchesBegan(_ touches: Set<UITouch>, in scene: SKScene) { }
