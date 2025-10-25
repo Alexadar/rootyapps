@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct ContentView: View {
     // Golden ratio constants
@@ -13,14 +16,38 @@ struct ContentView: View {
     private let coefB = 0.3819660113
     private let ratio = 1.6180339887
     
+    @StateObject private var model = GoldenRatioModel()
+    @State private var isApplyingModelUpdate: Bool = false
     @State private var valueA: String = ""
     @State private var valueB: String = ""
     @State private var valueC: String = ""
     
+    private enum Field {
+        case a, b, c
+    }
+    @FocusState private var focusedField: Field?
+
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
+        Group {
+            #if os(macOS)
+            NavigationStack {
+                contentView
+            }
+            #else
+            NavigationView {
+                contentView
+            }
+            #endif
+        }
+        #if os(macOS)
+        .frame(minWidth: 430, idealWidth: 430, maxWidth: .infinity,
+               minHeight: 932, idealHeight: 932, maxHeight: .infinity)
+        #endif
+    }
+
+    private var contentView: some View {
+        ScrollView {
+            VStack(spacing: 20) {
                     // Calculator Card
                     VStack(alignment: .leading, spacing: 15) {
                         HStack {
@@ -37,21 +64,101 @@ struct ContentView: View {
                         
                         // Input fields
                         VStack(spacing: 15) {
-                            InputRow(label: "a =", value: $valueA, onValueChange: { val in
-                                calculateFromA(val)
-                            })
-                            
-                            InputRow(label: "b =", value: $valueB, onValueChange: { val in
-                                calculateFromB(val)
-                            })
-                            
-                            InputRow(label: "c =", value: $valueC, onValueChange: { val in
-                                calculateFromC(val)
-                            })
+                            HStack {
+                                Text("a =")
+                                    .frame(width: 30, alignment: .leading)
+                                TextField("Enter value", text: $valueA)
+                                    .focused($focusedField, equals: .a)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .onChange(of: valueA) { newValue in
+                                        if isApplyingModelUpdate { return }
+
+                                        // allow digits, decimal point and minus sign
+                                        let filtered = newValue.filter { $0.isNumber || $0 == "." || $0 == "-" }
+                                        if filtered != newValue {
+                                            valueA = filtered
+                                            return
+                                        }
+
+                                        // Delegate calculation to centralized function which respects focusedField
+                                        calculateFromA()
+                                    }
+                                CopyPasteButtons(value: $valueA, onPaste: {
+                                    // Paste sets the bound value; trigger same handling async to let TextField update
+                                    DispatchQueue.main.async {
+                                        if isApplyingModelUpdate { return }
+                                        let filtered = valueA.filter { $0.isNumber || $0 == "." || $0 == "-" }
+                                        valueA = filtered
+                                        calculateFromA()
+                                    }
+                                })
+                            }
+
+                            HStack {
+                                Text("b =")
+                                    .frame(width: 30, alignment: .leading)
+                                TextField("Enter value", text: $valueB)
+                                    .focused($focusedField, equals: .b)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .onChange(of: valueB) { newValue in
+                                        if isApplyingModelUpdate { return }
+
+                                        // allow digits, decimal point and minus sign
+                                        let filtered = newValue.filter { $0.isNumber || $0 == "." || $0 == "-" }
+                                        if filtered != newValue {
+                                            valueB = filtered
+                                            return
+                                        }
+
+                                        // Delegate calculation to centralized function which respects focusedField
+                                        calculateFromB()
+                                    }
+                                CopyPasteButtons(value: $valueB, onPaste: {
+                                    DispatchQueue.main.async {
+                                        if isApplyingModelUpdate { return }
+                                        let filtered = valueB.filter { $0.isNumber || $0 == "." || $0 == "-" }
+                                        valueB = filtered
+                                        calculateFromB()
+                                    }
+                                })
+                            }
+
+                            HStack {
+                                Text("c =")
+                                    .frame(width: 30, alignment: .leading)
+                                TextField("Enter value", text: $valueC)
+                                    .focused($focusedField, equals: .c)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .onChange(of: valueC) { newValue in
+                                        if isApplyingModelUpdate { return }
+
+                                        // allow digits, decimal point and minus sign
+                                        let filtered = newValue.filter { $0.isNumber || $0 == "." || $0 == "-" }
+                                        if filtered != newValue {
+                                            valueC = filtered
+                                            return
+                                        }
+
+                                        // Delegate calculation to centralized function which respects focusedField
+                                        calculateFromC()
+                                    }
+                                CopyPasteButtons(value: $valueC, onPaste: {
+                                    DispatchQueue.main.async {
+                                        if isApplyingModelUpdate { return }
+                                        let filtered = valueC.filter { $0.isNumber || $0 == "." || $0 == "-" }
+                                        valueC = filtered
+                                        calculateFromC()
+                                    }
+                                })
+                            }
                         }
                     }
                     .padding()
+                    #if os(macOS)
+                    .background(Color(NSColor.controlBackgroundColor))
+                    #else
                     .background(Color(.systemGray6))
+                    #endif
                     .cornerRadius(10)
                     
                     // Constants Card
@@ -70,7 +177,11 @@ struct ContentView: View {
                         }
                     }
                     .padding()
+                    #if os(macOS)
+                    .background(Color(NSColor.controlBackgroundColor))
+                    #else
                     .background(Color(.systemGray6))
+                    #endif
                     .cornerRadius(10)
                     
                     // Math Card
@@ -100,8 +211,13 @@ struct ContentView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
+                    .frame(maxWidth: .infinity)
                     .padding()
+                    #if os(macOS)
+                    .background(Color(NSColor.controlBackgroundColor))
+                    #else
                     .background(Color(.systemGray6))
+                    #endif
                     .cornerRadius(10)
                     
                     // Usage Card
@@ -121,121 +237,140 @@ struct ContentView: View {
                                 .font(.subheadline)
                         }
                     }
+                    .frame(maxWidth: .infinity)
                     .padding()
+                    #if os(macOS)
+                    .background(Color(NSColor.controlBackgroundColor))
+                    #else
                     .background(Color(.systemGray6))
+                    #endif
                     .cornerRadius(10)
-                }
-                .padding()
             }
-            .navigationTitle("Golden Ratio")
-            .navigationBarTitleDisplayMode(.large)
+            .padding()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .navigationTitle("Golden Ratio")
+        #if !os(macOS)
+        .navigationBarTitleDisplayMode(.large)
+        #endif
     }
     
     // MARK: - Calculation Methods
-    
-    private func calculateFromA(_ value: String) {
-        guard let a = Double(value), a != 0 else {
-            resetValues()
-            valueA = value
+
+    // Updated calculation: use GoldenRatioModel and a suppression flag to avoid cascade updates.
+    // Avoid writing back to the currently focused input to prevent cascade/update-of-source-field.
+    private func calculateFromA() {
+        if isApplyingModelUpdate { return }
+        let filtered = valueA.filter { $0.isNumber || $0 == "." || $0 == "-" }
+        // do not reassign source field here to avoid moving cursor while user types
+        guard let a = Float(filtered) else {
+            isApplyingModelUpdate = true
+            if focusedField != .b { valueB = "" }
+            if focusedField != .c { valueC = "" }
+            isApplyingModelUpdate = false
             return
         }
-        
-        let c = a * ratio
-        let b = c * coefB
-        
-        valueA = value
-        valueB = formatNumber(b)
-        valueC = formatNumber(c)
+
+        isApplyingModelUpdate = true
+        let (b, c) = model.calcFromA(a)
+        if focusedField != .b { valueB = formatNumber(Double(b)) }
+        if focusedField != .c { valueC = formatNumber(Double(c)) }
+        isApplyingModelUpdate = false
     }
-    
-    private func calculateFromB(_ value: String) {
-        guard let b = Double(value), b != 0 else {
-            resetValues()
-            valueB = value
+
+    private func calculateFromB() {
+        if isApplyingModelUpdate { return }
+        let filtered = valueB.filter { $0.isNumber || $0 == "." || $0 == "-" }
+        // do not reassign source field here to avoid moving cursor while user types
+        guard let b = Float(filtered) else {
+            isApplyingModelUpdate = true
+            if focusedField != .a { valueA = "" }
+            if focusedField != .c { valueC = "" }
+            isApplyingModelUpdate = false
             return
         }
-        
-        let a = (b / coefB) * coefA
-        let c = a * ratio
-        
-        valueA = formatNumber(a)
-        valueB = value
-        valueC = formatNumber(c)
+
+        isApplyingModelUpdate = true
+        let (a, c) = model.calcFromB(b)
+        if focusedField != .a { valueA = formatNumber(Double(a)) }
+        if focusedField != .c { valueC = formatNumber(Double(c)) }
+        isApplyingModelUpdate = false
     }
-    
-    private func calculateFromC(_ value: String) {
-        guard let c = Double(value), c != 0 else {
-            resetValues()
-            valueC = value
+
+    private func calculateFromC() {
+        if isApplyingModelUpdate { return }
+        let filtered = valueC.filter { $0.isNumber || $0 == "." || $0 == "-" }
+        // do not reassign source field here to avoid moving cursor while user types
+        guard let c = Float(filtered) else {
+            isApplyingModelUpdate = true
+            if focusedField != .a { valueA = "" }
+            if focusedField != .b { valueB = "" }
+            isApplyingModelUpdate = false
             return
         }
-        
-        let a = c * coefA
-        let b = c * coefB
-        
-        valueA = formatNumber(a)
-        valueB = formatNumber(b)
-        valueC = value
+
+        isApplyingModelUpdate = true
+        let (a, b) = model.calcFromC(c)
+        if focusedField != .a { valueA = formatNumber(Double(a)) }
+        if focusedField != .b { valueB = formatNumber(Double(b)) }
+        isApplyingModelUpdate = false
     }
-    
+
     private func resetValues() {
         valueA = ""
         valueB = ""
         valueC = ""
     }
-    
+
     private func formatNumber(_ number: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.maximumFractionDigits = 10
-        formatter.minimumFractionDigits = 0
-        formatter.numberStyle = .decimal
-        return formatter.string(from: NSNumber(value: number)) ?? ""
+        return String(format: "%.10g", number)
     }
 }
 
-struct InputRow: View {
-    let label: String
+struct CopyPasteButtons: View {
     @Binding var value: String
-    let onValueChange: (String) -> Void
-    
+    let onPaste: () -> Void
+
     var body: some View {
-        HStack {
-            Text(label)
-                .frame(width: 30, alignment: .leading)
-            
-            TextField("Enter value", text: $value)
-                .keyboardType(.decimalPad)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .onChange(of: value) { _, newValue in
-                    onValueChange(newValue)
-                }
-            
-            Button(action: {
-                pasteFromClipboard()
-            }) {
-                Image(systemName: "clipboard")
-                    .foregroundColor(.blue)
-            }
-            
-            Button(action: {
-                copyToClipboard(value)
-            }) {
-                Image(systemName: "doc.on.doc")
-                    .foregroundColor(.blue)
-            }
+        Button(action: {
+            pasteFromClipboard()
+        }) {
+            Image(systemName: "clipboard")
+                .foregroundColor(.blue)
+        }
+
+        Button(action: {
+            copyToClipboard(value)
+        }) {
+            Image(systemName: "doc.on.doc")
+                .foregroundColor(.blue)
         }
     }
-    
+
     private func pasteFromClipboard() {
-        if let clipboardString = UIPasteboard.general.string {
-            value = clipboardString
-            onValueChange(clipboardString)
+        #if os(macOS)
+        if let clipboardString = NSPasteboard.general.string(forType: .string) {
+            let filtered = clipboardString.filter { $0.isNumber || $0 == "." || $0 == "-" }
+            value = filtered
+            onPaste()
         }
+        #else
+        if let clipboardString = UIPasteboard.general.string {
+            let filtered = clipboardString.filter { $0.isNumber || $0 == "." || $0 == "-" }
+            value = filtered
+            onPaste()
+        }
+        #endif
     }
-    
+
     private func copyToClipboard(_ text: String) {
+        #if os(macOS)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        #else
         UIPasteboard.general.string = text
+        #endif
     }
 }
 
@@ -257,7 +392,12 @@ struct ConstantRow: View {
     }
     
     private func copyToClipboard(_ text: String) {
+        #if os(macOS)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        #else
         UIPasteboard.general.string = text
+        #endif
     }
 }
 

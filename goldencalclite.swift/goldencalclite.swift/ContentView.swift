@@ -12,81 +12,101 @@ struct ContentView: View {
     @State private var inputValue: String = ""
     @State private var partA: String = "0"
     @State private var partB: String = "0"
-    
+
     // Golden ratio coefficients
     private let coefA: Double = 0.6180339887
     private let coefB: Double = 0.3819660113
     private let ratio: Double = 1.6180339887
-    
+
     var body: some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                // Header section
-                VStack(spacing: 8) {
-                    HStack {
-                        Image(systemName: "function")
-                            .font(.title2)
-                            .foregroundColor(.blue)
-                        Text("Golden ratio values")
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                        Spacer()
-                        Button("Reset") {
-                            resetCalculation()
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                    }
-                    .padding(.horizontal)
-                }
-                
-                // Main card content
-                VStack(spacing: 30) {
-                    // Input section
-                    VStack(spacing: 15) {
-                        Text("Whole is:")
-                            .font(.title2)
-                            .fontWeight(.medium)
-                        
-                        TextField("Enter value", text: $inputValue)
-                            .textFieldStyle(.roundedBorder)
-                            .font(.title)
-                            .multilineTextAlignment(.center)
-                            .onChange(of: inputValue) { _, newValue in
-                                calculateRatios(from: newValue)
-                            }
-                    }
-                    
-                    // Results section
-                    VStack(spacing: 15) {
-                        Text("Ratios are:")
-                            .font(.title2)
-                            .fontWeight(.medium)
-                        
-                        Text("\(partA) and \(partB)")
-                            .font(.title)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.primary)
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color(NSColor.quaternaryLabelColor))
-                            )
-                    }
-                }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(Color(NSColor.controlBackgroundColor))
-                        .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 2)
-                )
-                .padding(.horizontal)
-                
-                Spacer()
+        VStack(spacing: 20) {
+            // Header section
+            VStack(spacing: 4) {
+                Text("Golden Ratio")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.primary)
+
+                Text("Calculator Lite")
+                    .font(.system(size: 17))
+                    .foregroundColor(.secondary)
             }
-            .navigationTitle("Golden Ratio")
-            .background(Color(NSColor.windowBackgroundColor))
+            .padding(.bottom, 10)
+
+            Rectangle()
+                .frame(height: 0.5)
+                .foregroundColor(.gray.opacity(0.3))
+                .frame(maxWidth: .infinity)
+
+            // Card header with icon and reset button
+            HStack(spacing: 12) {
+                Image(systemName: "calculator")
+                    .font(.system(size: 24))
+                    .foregroundColor(.primary)
+
+                Text("Golden ratio values")
+                    .font(.system(size: 22))
+                    .foregroundColor(.primary)
+
+                Spacer()
+
+                Button(action: resetCalculation) {
+                    Text("Reset")
+                        .font(.system(size: 17))
+                        .foregroundColor(.primary)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .cornerRadius(8)
+                }
+            }
+            .padding(.horizontal)
+
+            Divider()
+                .padding(.horizontal)
+
+            // Input section
+            VStack(spacing: 20) {
+                Text("Whole is:")
+                    .font(.system(size: 28))
+                    .foregroundColor(.primary)
+
+                #if os(iOS)
+                TextField("Enter value", text: $inputValue)
+                    .font(.system(size: 48))
+                    .multilineTextAlignment(.center)
+                    .keyboardType(.decimalPad)
+                    .onChange(of: inputValue) { _, newValue in
+                        calculateRatios(from: newValue)
+                    }
+                #else
+                TextField("Enter value", text: $inputValue)
+                    .font(.system(size: 48))
+                    .multilineTextAlignment(.center)
+                    .onChange(of: inputValue) { _, newValue in
+                        calculateRatios(from: newValue)
+                    }
+                #endif
+            }
+            .padding(.vertical, 20)
+
+            Divider()
+                .padding(.horizontal)
+
+            // Results section
+            VStack(spacing: 20) {
+                Text("Ratios are:")
+                    .font(.system(size: 28))
+                    .foregroundColor(.primary)
+
+                Text("\(partA) and \(partB)")
+                    .font(.system(size: 48))
+                    .foregroundColor(.primary)
+            }
+            .padding(.vertical, 20)
         }
+        .padding(.top, 60)
+        .padding(.horizontal, 20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(.background)
     }
     
     private func calculateRatios(from input: String) {

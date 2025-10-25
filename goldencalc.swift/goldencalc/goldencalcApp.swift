@@ -13,5 +13,9 @@ struct goldencalcApp: App {
         WindowGroup {
             ContentView()
         }
+        #if os(macOS)
+        .defaultSize(width: 430, height: 932)
+        .windowResizability(.contentSize)
+        #endif
     }
 }
