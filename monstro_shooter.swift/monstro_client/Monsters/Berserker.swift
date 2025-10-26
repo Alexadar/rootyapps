@@ -64,6 +64,8 @@ class Berserker: Monster {
             let walkAnim = SKAction.animate(with: walkFrames, timePerFrame: 0.08, resize: true, restore: false)
             sprite.run(SKAction.repeatForever(walkAnim), withKey: "walk")
         }
+
+        print("Berserker setup complete: pos=\(position), size=\(boxSize), zPos=\(sprite.zPosition), hasTexture=\(sprite.texture != nil), parent=\(sprite.parent != nil)")
     }
 
     override func update(deltaTime: TimeInterval, playerPosition: CGPoint) {
@@ -95,9 +97,13 @@ class Berserker: Monster {
     override func die() {
         guard !isDying else { return }
         isDying = true
+        isDead = true
 
         // Log entry for diagnostics
         print("Berserker.die() called. dyingFrames.count = \(dyingFrames.count)")
+
+        // Play death sound
+        AudioManager.shared.playWalkerSound()
 
         // Stop walking animation but keep current texture/orientation
         sprite.removeAction(forKey: "walk")

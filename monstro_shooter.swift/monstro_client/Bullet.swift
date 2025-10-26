@@ -6,20 +6,56 @@ import AppKit
 import UIKit
 #endif
 
-/// Lightweight wrapper for bullet nodes and creation utility.
+/// Enhanced bullet class with weapon system support
 class Bullet {
     let sprite: SKSpriteNode
+    let info: BulletInfo
 
-    init(sprite: SKSpriteNode) {
+    var hitCount: Int = 0
+    var distanceTraveled: CGFloat = 0
+    let startPosition: CGPoint
+    var currentScale: CGFloat
+
+    init(sprite: SKSpriteNode, info: BulletInfo, startPosition: CGPoint) {
         self.sprite = sprite
+        self.info = info
+        self.startPosition = startPosition
+        self.currentScale = info.startScale
     }
 
-    /// Create bullet with optional texture (falls back to colored dot).
-    static func create(at position: CGPoint, velocity: CGVector, weaponsImageName: String? = "weapons.png") -> Bullet {
-        // Try to load bullet texture from weapons spritesheet
+    /// Check if bullet can penetrate another enemy
+    func canPenetrate() -> Bool {
+        hitCount += 1
+        return hitCount <= info.penetration
+    }
+
+    /// Check if bullet should be removed
+    func isExpired() -> Bool {
+        return hitCount >= info.penetration || distanceTraveled >= info.range
+    }
+
+    /// Update bullet (scale growth and distance tracking)
+    func update(deltaTime: TimeInterval) {
+        // Grow bullet
+        if currentScale < info.maxScale {
+            currentScale += info.scaleGrowth
+            sprite.setScale(currentScale)
+        }
+
+        // Track distance
+        let velocity = sprite.physicsBody?.velocity ?? CGVector.zero
+        let movement = sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy) * CGFloat(deltaTime)
+        distanceTraveled += movement
+    }
+
+    /// Create bullet from weapon system
+    static func create(at position: CGPoint, angle: CGFloat, bulletInfo: BulletInfo) -> Bullet {
+        // Apply deviation to angle
+        let finalAngle = angle + bulletInfo.deviation
+
+        // Try to load bullet texture
         var bulletNode: SKSpriteNode
-        if let name = weaponsImageName,
-           let path = Bundle.main.path(forResource: name.replacingOccurrences(of: ".png", with: ""), ofType: "png") {
+        if let path = Bundle.main.path(forResource: "weapons", ofType: "png") {
             #if os(macOS)
             if let nsImage = NSImage(contentsOfFile: path) {
                 let texture = SKTexture(image: nsImage)
@@ -44,21 +80,48 @@ class Bullet {
         bulletNode.position = position
         bulletNode.name = "bullet"
         bulletNode.zPosition = 5
+        bulletNode.setScale(bulletInfo.startScale)
 
+        // Set rotation to match direction
+        bulletNode.zRotation = finalAngle
+
+        // Setup physics
         bulletNode.physicsBody = SKPhysicsBody(circleOfRadius: bulletNode.size.width/2)
         bulletNode.physicsBody?.categoryBitMask = PhysicsCategory.bullet
         bulletNode.physicsBody?.contactTestBitMask = PhysicsCategory.monster
         bulletNode.physicsBody?.collisionBitMask = 0
         bulletNode.physicsBody?.affectedByGravity = false
+        bulletNode.physicsBody?.isDynamic = true
+        bulletNode.physicsBody?.usesPreciseCollisionDetection = true
+
+        // Calculate velocity from angle and speed
+        let velocity = CGVector(
+            dx: cos(finalAngle) * bulletInfo.speed,
+            dy: sin(finalAngle) * bulletInfo.speed
+        )
         bulletNode.physicsBody?.velocity = velocity
 
-        // Auto-remove after time to avoid leaks (the scene/update loop may also clean up)
-        let removeAction = SKAction.sequence([
-            SKAction.wait(forDuration: 3.0),
-            SKAction.removeFromParent()
-        ])
-        bulletNode.run(removeAction)
+        return Bullet(sprite: bulletNode, info: bulletInfo, startPosition: position)
+    }
 
-        return Bullet(sprite: bulletNode)
+    /// Legacy create method for compatibility
+    static func create(at position: CGPoint, velocity: CGVector, weaponsImageName: String? = "weapons.png") -> Bullet {
+        // Create with default bullet info
+        let angle = atan2(velocity.dy, velocity.dx)
+        let speed = sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy)
+
+        let defaultInfo = BulletInfo(
+            damage: 10,
+            speed: speed,
+            range: 2000,
+            deviation: 0,
+            penetration: 1,
+            startScale: 1.0,
+            maxScale: 1.0,
+            scaleGrowth: 0,
+            textureName: "bullet_pistol"
+        )
+
+        return create(at: position, angle: angle, bulletInfo: defaultInfo)
     }
 }

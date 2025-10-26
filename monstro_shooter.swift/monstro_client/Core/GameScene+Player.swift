@@ -28,21 +28,32 @@ extension GameScene {
         playerEntity?.sprite.position = CGPoint(x: 0, y: 0)
     }
 
-    func shoot(toward point: CGPoint) {
+    func shoot(toward point: CGPoint, currentTime: TimeInterval) {
         // Guard player presence.
         guard let playerEntity = playerEntity else { return }
 
-        // Compute normalized direction and velocity
+        // Calculate angle to target
         let dx = point.x - playerEntity.sprite.position.x
         let dy = point.y - playerEntity.sprite.position.y
-        let distance = sqrt(dx*dx + dy*dy)
-        guard distance > 0 else { return }
-        let ndx = dx / distance
-        let ndy = dy / distance
-        let velocity = CGVector(dx: ndx * bulletSpeed, dy: ndy * bulletSpeed)
+        let angle = atan2(dy, dx)
 
-        let bullet = Bullet.create(at: playerEntity.sprite.position, velocity: velocity)
-        addChild(bullet.sprite)
-        bullets.append(bullet)
+        // Try to fire weapon
+        guard let bulletInfos = playerEntity.currentWeapon.fire(at: currentTime, baseAngle: angle) else {
+            return  // Can't fire (reloading, out of ammo, rate limit)
+        }
+
+        // Create bullets from weapon
+        for bulletInfo in bulletInfos {
+            let bullet = Bullet.create(at: playerEntity.sprite.position, angle: angle, bulletInfo: bulletInfo)
+            addChild(bullet.sprite)
+            bullets.append(bullet)
+        }
+
+        // Play weapon sound effect
+        let soundName = playerEntity.currentWeapon.config.weaponSoundName
+        if soundName == "weapon_pistol" {
+            AudioManager.shared.playPistolSound()
+        }
+        // TODO: Add rifle/minigun sounds when available
     }
 }

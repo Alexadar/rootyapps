@@ -9,9 +9,10 @@ import UIKit
 /// Monster base class (moved out of GameScene for separation of concerns).
 class Monster {
     var sprite: SKSpriteNode!
-    var speed: CGFloat = 100.0
-    var boxSize: CGSize = CGSize(width: 28, height: 28)
-    var rotationOffset: CGFloat = .pi / 4
+    var speed: CGFloat = GameConstants.monsterSpeed
+    var boxSize: CGSize = GameConstants.monsterBoxSize
+    var rotationOffset: CGFloat = GameConstants.monsterRotationOffset
+    var isDead: Bool = false
     private var animationTimer: TimeInterval = 0
 
     init() {}
@@ -57,6 +58,7 @@ class Monster {
     /// Default die: no-op for generic monsters. Subclasses should override to provide death animation
     /// behavior. The base implementation removes the sprite to avoid leaving unknown nodes in scene.
     func die() {
+        isDead = true
         sprite.removeAllActions()
         sprite.physicsBody = nil
         sprite.removeFromParent()

@@ -11,8 +11,11 @@ import UIKit
 class Player {
     let sprite: SKSpriteNode
     var speed: CGFloat
+    var currentWeapon: Weapon
+    var health: Int
+    var maxHealth: Int
 
-    init?(initialPosition: CGPoint, size: CGSize = CGSize(width: 60, height: 60), atlasImage: String? = "exoskeletons_0.png", xmlPath: String? = "exoskeletons_0.xml") {
+    init?(initialPosition: CGPoint, size: CGSize = GameConstants.playerSize, atlasImage: String? = "exoskeletons_0.png", xmlPath: String? = "exoskeletons_0.xml") {
         // Try to load from atlas like previous implementation
         if let atlasImage = atlasImage,
            let xmlPath = xmlPath,
@@ -36,7 +39,14 @@ class Player {
         sprite.physicsBody?.collisionBitMask = 0
         sprite.physicsBody?.affectedByGravity = false
 
-        self.speed = 300.0
+        self.speed = GameConstants.playerSpeed
+        self.currentWeapon = Weapon(config: .pistol)  // Default weapon
+        self.maxHealth = 100
+        self.health = 100
+    }
+
+    func getHealthPercentage() -> Int {
+        return (health * 100) / maxHealth
     }
 
     func setPosition(_ p: CGPoint) {
@@ -55,7 +65,8 @@ class Player {
     }
 
     /// Move the player by a normalized movement vector scaled by speed and deltaTime.
-    func move(by movement: CGVector, deltaTime: TimeInterval, sceneSize: CGSize) {
+    /// mapSize parameter defines the actual map boundaries (not viewport size)
+    func move(by movement: CGVector, deltaTime: TimeInterval, mapSize: CGSize) {
         var mv = movement
         // Already expected to be normalized or in range -1..1; guard division by zero
         let length = sqrt(mv.dx * mv.dx + mv.dy * mv.dy)
@@ -66,20 +77,15 @@ class Player {
             let newX = sprite.position.x + mv.dx * speed * CGFloat(deltaTime)
             let newY = sprite.position.y + mv.dy * speed * CGFloat(deltaTime)
 
-            // Keep player within bounds.
-            // Scene anchor may be center (0.5,0.5) or bottom-left (0,0). Compute scene origin from anchor,
-            // then clamp using sceneSize so this method works for both coordinate systems.
+            // Keep player within map bounds (not viewport bounds).
+            // Scene uses center anchor point (0.5, 0.5), so map coordinates are -mapSize/2 to +mapSize/2
             let halfWidth = sprite.size.width / 2
             let halfHeight = sprite.size.height / 2
 
-            let anchorPoint = sprite.scene?.anchorPoint ?? CGPoint.zero
-            let originX = -sceneSize.width * anchorPoint.x
-            let originY = -sceneSize.height * anchorPoint.y
-
-            let minX = originX + halfWidth
-            let maxX = originX + sceneSize.width - halfWidth
-            let minY = originY + halfHeight
-            let maxY = originY + sceneSize.height - halfHeight
+            let minX = -mapSize.width / 2 + halfWidth
+            let maxX = mapSize.width / 2 - halfWidth
+            let minY = -mapSize.height / 2 + halfHeight
+            let maxY = mapSize.height / 2 - halfHeight
 
             sprite.position.x = max(minX, min(maxX, newX))
             sprite.position.y = max(minY, min(maxY, newY))

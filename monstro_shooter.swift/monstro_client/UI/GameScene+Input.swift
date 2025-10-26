@@ -111,12 +111,12 @@ extension GameScene {
                 for m in monsters { m.rotationOffset = debugRotationOffset }
             }
         case 12: // Q
-            debugRotationOffset -= debugRotationStep
+            debugRotationOffset -= GameConstants.debugRotationStep
             if debugRotationEnabled {
                 for m in monsters { m.rotationOffset = debugRotationOffset }
             }
         case 14: // E
-            debugRotationOffset += debugRotationStep
+            debugRotationOffset += GameConstants.debugRotationStep
             if debugRotationEnabled {
                 for m in monsters { m.rotationOffset = debugRotationOffset }
             }
@@ -131,10 +131,7 @@ extension GameScene {
 
     override func mouseMoved(with event: NSEvent) {
         let location = event.location(in: self)
-        crosshair?.position = location
         (inputController as? KeyboardMouseInput)?.mouseMoved(to: location)
-        // Safe call: only aim if player exists.
-        playerEntity?.aimToward(point: location)
     }
 
     override func mouseDown(with event: NSEvent) {

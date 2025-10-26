@@ -14,9 +14,21 @@ class GameScene: SKScene {
     var bullets: [Bullet] = []
     var monsters: [Monster] = []
     var crosshair: SKSpriteNode?
+    var gameHUD: GameHUD?
 #if os(macOS)
     var trackingArea: NSTrackingArea?
 #endif
+
+    // MARK: - Level Configuration
+    var currentLevel: GameLevel?
+    var currentMapSize: CGSize = CGSize(width: 12000, height: 12000)  // Current level map size
+    var currentSpawnBoxSize: CGSize = GameConstants.defaultSpawnBoxSize
+
+    // MARK: - Wave Tracking
+    var currentWaveIndex: Int = 0
+    var levelStartTime: TimeInterval = 0
+    var spawnedWaves: Set<Int> = []  // Track which waves have been spawned
+    var killCount: Int = 0  // Track killed monsters
 
     // Debug visuals to verify touch control regions (shown only on non-mac platforms)
     var debugLeftRegion: SKSpriteNode?
@@ -34,8 +46,7 @@ class GameScene: SKScene {
     var showTouchDebug: Bool = false
 
     // MARK: - Game Settings
-    let bulletSpeed: CGFloat = 800.0
-    var monsterSpawnInterval: TimeInterval = 2.0
+    var monsterSpawnInterval: TimeInterval = GameConstants.defaultMonsterSpawnInterval
 
     // MARK: - Input / Timing State
     var lastMonsterSpawn: TimeInterval = 0
@@ -43,18 +54,24 @@ class GameScene: SKScene {
     // Debug rotation controls (R = toggle auto-apply, Q/E = adjust offset)
     var debugRotationEnabled: Bool = false
     var debugRotationOffset: CGFloat = 0.0
-    let debugRotationStep: CGFloat = .pi / 8
     var debugRotationLabel: SKLabelNode?
 
     // MARK: - Scene Setup
     override func didMove(to view: SKView) {
         setupScene()
         setupMap()
+        setupCamera()
         setupPlayer()
         setupCrosshair()
         setupPhysics()
         setupDebugLabel()
         setupInput()
+        setupHUD()
+
+        // Load test level by default
+        if let testLevel = LevelManager.shared.getLevel(id: 1) {
+            loadLevel(testLevel)
+        }
 
         // Reset game state to ensure clean start
         resetGame()
@@ -101,45 +118,96 @@ class GameScene: SKScene {
     }
 
     func setupMap() {
-        // Try to load the map background from resources
+        // Create tiled map background instead of stretched texture
         let mapTexturePath = Bundle.main.path(forResource: "map_background", ofType: "png")
+
         if let texturePath = mapTexturePath {
             #if os(macOS)
             if let nsImage = NSImage(contentsOfFile: texturePath) {
                 let texture = SKTexture(image: nsImage)
-                gameMap = SKSpriteNode(texture: texture)
+                // Create shader or use tile approach
+                createTiledMap(texture: texture)
             } else {
-                // Fallback to colored background
-                gameMap = SKSpriteNode(color: .darkGray, size: size)
+                createFallbackMap()
             }
             #else
             if let uiImage = UIImage(contentsOfFile: texturePath) {
                 let texture = SKTexture(image: uiImage)
-                gameMap = SKSpriteNode(texture: texture)
+                createTiledMap(texture: texture)
             } else {
-                // Fallback to colored background
-                gameMap = SKSpriteNode(color: .darkGray, size: size)
+                createFallbackMap()
             }
             #endif
         } else {
-            // Fallback to colored background
-            gameMap = SKSpriteNode(color: .darkGray, size: size)
+            createFallbackMap()
+        }
+    }
+
+    private func createTiledMap(texture: SKTexture) {
+        // Create a large sprite with tiled texture
+        let tileSize = texture.size()
+
+        // Calculate how many tiles needed
+        let tilesX = Int(ceil(currentMapSize.width / tileSize.width))
+        let tilesY = Int(ceil(currentMapSize.height / tileSize.height))
+
+        // Create parent node to hold all tiles
+        let mapContainer = SKNode()
+        mapContainer.position = CGPoint.zero
+        mapContainer.zPosition = -10
+
+        // Tile the texture across the map
+        for x in 0..<tilesX {
+            for y in 0..<tilesY {
+                let tile = SKSpriteNode(texture: texture)
+                tile.size = tileSize
+
+                // Position tiles from center anchor
+                let posX = -currentMapSize.width / 2 + tileSize.width * CGFloat(x) + tileSize.width / 2
+                let posY = -currentMapSize.height / 2 + tileSize.height * CGFloat(y) + tileSize.height / 2
+                tile.position = CGPoint(x: posX, y: posY)
+
+                mapContainer.addChild(tile)
+            }
         }
 
+        addChild(mapContainer)
+
+        // Store reference using a colored sprite for compatibility
+        gameMap = SKSpriteNode(color: .clear, size: currentMapSize)
+        gameMap?.position = CGPoint.zero
+        gameMap?.zPosition = -10
+    }
+
+    private func createFallbackMap() {
+        // Fallback to colored background
+        gameMap = SKSpriteNode(color: .darkGray, size: currentMapSize)
+        gameMap?.position = CGPoint.zero
+        gameMap?.zPosition = -10
         if let gm = gameMap {
-            gm.position = CGPoint.zero
-            gm.size = size
-            gm.zPosition = -10
             addChild(gm)
         }
     }
 
+    func setupHUD() {
+        gameHUD = GameHUD(scene: self)
+        if let view = view {
+            gameHUD?.setup(viewportSize: view.bounds.size)
+        }
+    }
+
     override func didChangeSize(_ oldSize: CGSize) {
-        // Ensure background and debug UI match the new scene size (SpriteView may resize the scene).
+        // Ensure background keeps level map size (not viewport size)
+        // and debug UI matches the viewport size
         // Guard against early calls where setupMap / other setup methods haven't run yet.
         if let gm = gameMap {
-            gm.size = size
+            gm.size = currentMapSize  // Keep level map size
             gm.position = CGPoint.zero
+        }
+
+        // Reposition HUD for new viewport size
+        if let view = view {
+            gameHUD?.repositionForViewport(view.bounds.size)
         }
 
         // Update debug regions and visuals if they exist
@@ -216,6 +284,20 @@ class GameScene: SKScene {
         #endif
     }
 
+    // MARK: - Level Management
+    func loadLevel(_ level: GameLevel) {
+        currentLevel = level
+        currentMapSize = level.mapSize
+        currentSpawnBoxSize = level.spawnBoxSize
+
+        // Reset wave tracking
+        currentWaveIndex = 0
+        spawnedWaves.removeAll()
+        levelStartTime = 0  // Will be set on first update
+
+        print("Loaded level: \(level.name) - Map: \(level.mapSize.width)x\(level.mapSize.height), Waves: \(level.spawnWaves.count)")
+    }
+
     // MARK: - Game Reset
     func resetGame() {
         // Clear all monsters
@@ -235,6 +317,15 @@ class GameScene: SKScene {
 
         // Reset spawn timing
         lastMonsterSpawn = 0
+
+        // Reset wave tracking
+        currentWaveIndex = 0
+        spawnedWaves.removeAll()
+        levelStartTime = 0
+        killCount = 0
+
+        // Reset player health
+        playerEntity?.health = 100
     }
 
     deinit {

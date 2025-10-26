@@ -45,7 +45,7 @@ extension GameScene {
 
         // Handle player movement via input controller
         let moveVec = inputController?.movementVector() ?? CGVector(dx: 0, dy: 0)
-        playerEntity.move(by: moveVec, deltaTime: deltaTime, sceneSize: size)
+        playerEntity.move(by: moveVec, deltaTime: deltaTime, mapSize: currentMapSize)
 
         // If using AI input, update it with current monster nodes so AI can aim/shoot.
         if let ai = inputController as? AIInput {
@@ -101,25 +101,70 @@ extension GameScene {
         if inputController?.isShooting() ?? false {
             // Prefer aim point if available; on mobile aimPoint() is already oriented around the player.
             let aimPoint = inputController?.aimPoint() ?? crosshair?.position ?? CGPoint.zero
-            shoot(toward: aimPoint)
+            shoot(toward: aimPoint, currentTime: currentTime)
         }
+
+        // Update player weapon (reload progress)
+        playerEntity.currentWeapon.update(currentTime: currentTime)
 
         updateMonsters(deltaTime)
+        updateBullets(deltaTime)
         updateDebugLabel()
+        updateHUD(currentTime: currentTime)
 
-        if currentTime - lastMonsterSpawn > monsterSpawnInterval {
-            spawnMonster()
-            lastMonsterSpawn = currentTime
-        }
+        // Process wave-based spawning from current level
+        processWaveSpawning(currentTime: currentTime)
 
         cleanupBullets()
+
+        // Update camera to follow player (with map bounds)
+        updateCamera(mapSize: currentMapSize)
+    }
+
+    func updateHUD(currentTime: TimeInterval) {
+        // Update time counter (elapsed time since level start)
+        if levelStartTime > 0 {
+            let elapsedTime = Int(currentTime - levelStartTime)
+            gameHUD?.updateTime(seconds: elapsedTime)
+        }
+
+        // Update all HUD elements from player
+        if let player = playerEntity {
+            // Update kill counter (bottom-left)
+            gameHUD?.updateKills(count: killCount)
+
+            // Update ammo (top-right)
+            let weapon = player.currentWeapon
+            let totalAmmo = weapon.currentAmmo + (weapon.config.magazineSize * 10) // Estimate total reserve
+            gameHUD?.updateAmmo(current: weapon.currentAmmo, total: totalAmmo)
+
+            // Update health (bottom-right)
+            gameHUD?.updateHealth(value: player.health)
+        }
+    }
+
+    func updateBullets(_ deltaTime: TimeInterval) {
+        for bullet in bullets {
+            bullet.update(deltaTime: deltaTime)
+        }
     }
 
     func cleanupBullets() {
         bullets.removeAll { bullet in
-            if !frame.contains(bullet.sprite.position) {
+            // Remove if expired (out of range or hit limit)
+            if bullet.isExpired() {
                 bullet.sprite.removeFromParent()
                 return true
+            }
+            // Remove if far from camera (not just scene frame)
+            if let camera = self.camera {
+                let dx = bullet.sprite.position.x - camera.position.x
+                let dy = bullet.sprite.position.y - camera.position.y
+                let distance = sqrt(dx*dx + dy*dy)
+                if distance > 2000 {  // Far offscreen
+                    bullet.sprite.removeFromParent()
+                    return true
+                }
             }
             return false
         }

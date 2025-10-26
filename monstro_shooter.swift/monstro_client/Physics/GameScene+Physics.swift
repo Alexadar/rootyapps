@@ -13,25 +13,32 @@ extension GameScene: SKPhysicsContactDelegate {
             let bulletNode = bodyA.categoryBitMask == PhysicsCategory.bullet ? bodyA.node : bodyB.node
             let monsterNode = bodyA.categoryBitMask == PhysicsCategory.monster ? bodyA.node : bodyB.node
 
-            // Remove bullet
+            // Handle bullet penetration
             if let bNode = bulletNode as? SKSpriteNode {
-                // Find Bullet wrapper and remove
                 if let idx = bullets.firstIndex(where: { $0.sprite == bNode }) {
-                    let b = bullets[idx]
-                    b.sprite.removeFromParent()
-                    bullets.remove(at: idx)
-                } else {
-                    bNode.removeFromParent()
+                    let bullet = bullets[idx]
+
+                    // Check if bullet can penetrate
+                    if !bullet.canPenetrate() {
+                        // Hit limit reached, remove bullet
+                        bullet.sprite.removeFromParent()
+                        bullets.remove(at: idx)
+                    }
+                    // Otherwise bullet continues flying
                 }
             }
 
             // Find monster and trigger its death animation (do not remove immediately)
             if let monsterSprite = monsterNode as? SKSpriteNode {
                 if let monsterIndex = monsters.firstIndex(where: { $0.sprite == monsterSprite }) {
-                    monsters[monsterIndex].die()
-                    monsters[monsterIndex].sprite.physicsBody?.categoryBitMask = 0
-                    monsters[monsterIndex].sprite.physicsBody?.contactTestBitMask = 0
-                    monsters[monsterIndex].sprite.physicsBody?.collisionBitMask = 0
+                    let monster = monsters[monsterIndex]
+                    guard !monster.isDead else { return }  // Skip if already dead
+
+                    monster.die()
+                    monster.sprite.physicsBody?.categoryBitMask = 0
+                    monster.sprite.physicsBody?.contactTestBitMask = 0
+                    monster.sprite.physicsBody?.collisionBitMask = 0
+                    killCount += 1  // Increment kill counter
                 }
             }
         }
