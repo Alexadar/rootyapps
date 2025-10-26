@@ -210,9 +210,6 @@ class TouchInput: InputController {
         debugAimMarker?.removeFromParent()
         debugLine?.removeFromParent()
 
-        // Don't create debug visuals if disabled
-        guard GameConstants.showDebugControls else { return }
-
         // Get camera - all touch controls must be added to camera so they follow viewport
         guard let camera = scene.camera else {
             print("[TouchInput] ERROR: No camera found, cannot setup debug visuals")
@@ -223,41 +220,43 @@ class TouchInput: InputController {
         // Controls are in camera space (viewport coordinates)
         let regionHeight = scene.size.height * 0.25
 
-        // Left control region (movement joystick)
-        let leftRegion = SKSpriteNode(color: .clear, size: CGSize(width: scene.size.width/2, height: regionHeight))
-        leftRegion.anchorPoint = CGPoint(x: 0, y: 0)
-        // Position in camera space (viewport coordinates)
-        leftRegion.position = CGPoint(x: -scene.size.width/2, y: -scene.size.height/2)
-        leftRegion.zPosition = 250
+        // Left control region (movement joystick) - only show rectangle when debug enabled
+        if GameConstants.showDebugControls {
+            let leftRegion = SKSpriteNode(color: .clear, size: CGSize(width: scene.size.width/2, height: regionHeight))
+            leftRegion.anchorPoint = CGPoint(x: 0, y: 0)
+            leftRegion.position = CGPoint(x: -scene.size.width/2, y: -scene.size.height/2)
+            leftRegion.zPosition = 250
 
-        let leftStroke = SKShapeNode(rect: CGRect(origin: .zero, size: leftRegion.size))
-        leftStroke.strokeColor = .white
-        leftStroke.lineWidth = 3
-        leftStroke.fillColor = .clear
-        leftStroke.position = .zero
-        leftStroke.zPosition = 1
-        leftRegion.addChild(leftStroke)
-        camera.addChild(leftRegion)  // Add to camera, not scene
-        debugLeftRegion = leftRegion
+            let leftStroke = SKShapeNode(rect: CGRect(origin: .zero, size: leftRegion.size))
+            leftStroke.strokeColor = .white
+            leftStroke.lineWidth = 3
+            leftStroke.fillColor = .clear
+            leftStroke.position = .zero
+            leftStroke.zPosition = 1
+            leftRegion.addChild(leftStroke)
+            camera.addChild(leftRegion)
+            debugLeftRegion = leftRegion
+        }
 
-        // Right control region (aim/shoot)
-        let rightRegion = SKSpriteNode(color: .clear, size: CGSize(width: scene.size.width/2, height: regionHeight))
-        rightRegion.anchorPoint = CGPoint(x: 0, y: 0)
-        // Position in camera space (viewport coordinates)
-        rightRegion.position = CGPoint(x: 0, y: -scene.size.height/2)
-        rightRegion.zPosition = 250
+        // Right control region (aim/shoot) - only show rectangle when debug enabled
+        if GameConstants.showDebugControls {
+            let rightRegion = SKSpriteNode(color: .clear, size: CGSize(width: scene.size.width/2, height: regionHeight))
+            rightRegion.anchorPoint = CGPoint(x: 0, y: 0)
+            rightRegion.position = CGPoint(x: 0, y: -scene.size.height/2)
+            rightRegion.zPosition = 250
 
-        let rightStroke = SKShapeNode(rect: CGRect(origin: .zero, size: rightRegion.size))
-        rightStroke.strokeColor = .white
-        rightStroke.lineWidth = 3
-        rightStroke.fillColor = .clear
-        rightStroke.position = .zero
-        rightStroke.zPosition = 1
-        rightRegion.addChild(rightStroke)
-        camera.addChild(rightRegion)  // Add to camera, not scene
-        debugRightRegion = rightRegion
+            let rightStroke = SKShapeNode(rect: CGRect(origin: .zero, size: rightRegion.size))
+            rightStroke.strokeColor = .white
+            rightStroke.lineWidth = 3
+            rightStroke.fillColor = .clear
+            rightStroke.position = .zero
+            rightStroke.zPosition = 1
+            rightRegion.addChild(rightStroke)
+            camera.addChild(rightRegion)
+            debugRightRegion = rightRegion
+        }
 
-        // Joystick knob (shows movement direction)
+        // Joystick knob (shows movement direction) - ALWAYS show
         let knobShape = SKShapeNode(circleOfRadius: 18)
         knobShape.strokeColor = UIColor.white.withAlphaComponent(0.9)
         knobShape.lineWidth = 2
@@ -265,13 +264,13 @@ class TouchInput: InputController {
         knobShape.zPosition = 251
         // Initial position at left region center (camera space)
         knobShape.position = CGPoint(
-            x: leftRegion.position.x + leftRegion.size.width * 0.5,
-            y: leftRegion.position.y + leftRegion.size.height * 0.5
+            x: -scene.size.width / 4,
+            y: -scene.size.height / 2 + regionHeight / 2
         )
-        camera.addChild(knobShape)  // Add to camera, not scene
+        camera.addChild(knobShape)
         debugJoystickKnob = knobShape
 
-        // Aim marker (shows aim direction)
+        // Aim marker (shows aim direction) - ALWAYS show
         let aimCircle = SKShapeNode(circleOfRadius: 16)
         aimCircle.strokeColor = .red
         aimCircle.lineWidth = 2
@@ -279,14 +278,14 @@ class TouchInput: InputController {
         aimCircle.zPosition = 251
         // Initial position at right region center (camera space)
         aimCircle.position = CGPoint(
-            x: rightRegion.position.x + rightRegion.size.width * 0.5,
-            y: rightRegion.position.y + rightRegion.size.height * 0.5
+            x: scene.size.width / 4,
+            y: -scene.size.height / 2 + regionHeight / 2
         )
-        camera.addChild(aimCircle)  // Add to camera, not scene
+        camera.addChild(aimCircle)
         debugAimMarker = aimCircle
 
-        // Debug line at bottom of screen if enabled
-        if GameConstants.showDebugLine {
+        // Debug line at bottom of screen - only when debug enabled
+        if GameConstants.showDebugControls && GameConstants.showDebugLine {
             let lineY = -scene.size.height / 2 + regionHeight
             let linePath = CGMutablePath()
             linePath.move(to: CGPoint(x: -scene.size.width / 2, y: lineY))
@@ -296,20 +295,21 @@ class TouchInput: InputController {
             line.strokeColor = .yellow
             line.lineWidth = 2
             line.zPosition = 252
-            camera.addChild(line)  // Add to camera, not scene
+            camera.addChild(line)
             debugLine = line
         }
     }
 
     func updateDebugVisuals(movementVector: CGVector, aimPoint: CGPoint?) {
-        guard let leftRegion = debugLeftRegion, let rightRegion = debugRightRegion else { return }
         guard let scene = scene, let camera = scene.camera else { return }
+
+        let regionHeight = scene.size.height * 0.25
 
         // Update joystick knob position based on movement vector (camera space)
         if let knob = debugJoystickKnob {
             let center = CGPoint(
-                x: leftRegion.position.x + leftRegion.size.width * 0.5,
-                y: leftRegion.position.y + leftRegion.size.height * 0.5
+                x: -scene.size.width / 4,
+                y: -scene.size.height / 2 + regionHeight / 2
             )
             let radius: CGFloat = 60.0
             knob.position = CGPoint(
@@ -330,8 +330,8 @@ class TouchInput: InputController {
             } else {
                 // Default to right region center when not aiming (camera space)
                 let rightCenter = CGPoint(
-                    x: rightRegion.position.x + rightRegion.size.width * 0.5,
-                    y: rightRegion.position.y + rightRegion.size.height * 0.5
+                    x: scene.size.width / 4,
+                    y: -scene.size.height / 2 + regionHeight / 2
                 )
                 aimMarker.position = rightCenter
             }
@@ -339,18 +339,16 @@ class TouchInput: InputController {
     }
 
     func hideDebugVisuals() {
+        // Only hide rectangles and debug line, keep circles visible
         debugLeftRegion?.isHidden = true
         debugRightRegion?.isHidden = true
-        debugJoystickKnob?.isHidden = true
-        debugAimMarker?.isHidden = true
         debugLine?.isHidden = true
     }
 
     func showDebugVisuals() {
+        // Only show rectangles and debug line, circles always visible
         debugLeftRegion?.isHidden = false
         debugRightRegion?.isHidden = false
-        debugJoystickKnob?.isHidden = false
-        debugAimMarker?.isHidden = false
         debugLine?.isHidden = false
     }
 }

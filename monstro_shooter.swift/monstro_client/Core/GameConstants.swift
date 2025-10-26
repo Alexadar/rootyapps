@@ -44,7 +44,7 @@ struct GameConstants {
     /// Automatically disabled in release builds
     static var showDebugControls: Bool {
         #if DEBUG
-        return true
+        return false
         #else
         return false
         #endif
@@ -54,7 +54,7 @@ struct GameConstants {
     /// Automatically disabled in release builds
     static var showDebugLine: Bool {
         #if DEBUG
-        return true
+        return false
         #else
         return false
         #endif
