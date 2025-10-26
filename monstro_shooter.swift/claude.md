@@ -1,6 +1,6 @@
 # Claude Dev Log - Monster Shooter Swift
 
-**Communication Style**: Terse, laconic, concise. Only what's asked, nothing more. Short answers.
+**Communication Style**: Terse, laconic, concise. Only what's asked, nothing more. Short answers. Only build to check compilation. User runs all by himself.
 
 ---
 

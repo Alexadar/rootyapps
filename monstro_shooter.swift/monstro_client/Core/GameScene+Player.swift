@@ -15,7 +15,8 @@ extension GameScene {
         // Name the player node so touch input can locate it without depending on Player type.
         if let p = playerEntity {
             p.sprite.name = "player"
-            addChild(p.sprite)
+            // Add player to world layer instead of scene
+            renderer?.world.worldLayer.addChild(p.sprite)
             // If an external input (like AI) is provided, give it the player node so it can aim/move.
             if let ai = externalInput as? AIInput {
                 ai.setPlayerNode(p.sprite)
@@ -42,10 +43,10 @@ extension GameScene {
             return  // Can't fire (reloading, out of ammo, rate limit)
         }
 
-        // Create bullets from weapon
+        // Create bullets from weapon and add to world layer
         for bulletInfo in bulletInfos {
             let bullet = Bullet.create(at: playerEntity.sprite.position, angle: angle, bulletInfo: bulletInfo)
-            addChild(bullet.sprite)
+            renderer?.world.worldLayer.addChild(bullet.sprite)
             bullets.append(bullet)
         }
 

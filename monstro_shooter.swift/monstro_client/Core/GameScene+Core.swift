@@ -7,14 +7,15 @@ import UIKit
 
 class GameScene: SKScene {
 
+    // MARK: - Renderer
+    var renderer: GameRenderer?
+
     // MARK: - Game Objects
     // Make player optional and guard uses so the scene won't crash if something initialized out-of-order.
     var playerEntity: Player?
-    private var gameMap: SKSpriteNode?
     var bullets: [Bullet] = []
     var monsters: [Monster] = []
     var crosshair: SKSpriteNode?
-    var gameHUD: GameHUD?
 #if os(macOS)
     var trackingArea: NSTrackingArea?
 #endif
@@ -59,14 +60,12 @@ class GameScene: SKScene {
     // MARK: - Scene Setup
     override func didMove(to view: SKView) {
         setupScene()
-        setupMap()
-        setupCamera()
+        setupRenderer()
         setupPlayer()
         setupCrosshair()
         setupPhysics()
         setupDebugLabel()
         setupInput()
-        setupHUD()
 
         // Load test level by default
         if let testLevel = LevelManager.shared.getLevel(id: 1) {
@@ -117,97 +116,16 @@ class GameScene: SKScene {
         scaleMode = .resizeFill
     }
 
-    func setupMap() {
-        // Create tiled map background instead of stretched texture
-        let mapTexturePath = Bundle.main.path(forResource: "map_background", ofType: "png")
-
-        if let texturePath = mapTexturePath {
-            #if os(macOS)
-            if let nsImage = NSImage(contentsOfFile: texturePath) {
-                let texture = SKTexture(image: nsImage)
-                // Create shader or use tile approach
-                createTiledMap(texture: texture)
-            } else {
-                createFallbackMap()
-            }
-            #else
-            if let uiImage = UIImage(contentsOfFile: texturePath) {
-                let texture = SKTexture(image: uiImage)
-                createTiledMap(texture: texture)
-            } else {
-                createFallbackMap()
-            }
-            #endif
-        } else {
-            createFallbackMap()
-        }
-    }
-
-    private func createTiledMap(texture: SKTexture) {
-        // Create a large sprite with tiled texture
-        let tileSize = texture.size()
-
-        // Calculate how many tiles needed
-        let tilesX = Int(ceil(currentMapSize.width / tileSize.width))
-        let tilesY = Int(ceil(currentMapSize.height / tileSize.height))
-
-        // Create parent node to hold all tiles
-        let mapContainer = SKNode()
-        mapContainer.position = CGPoint.zero
-        mapContainer.zPosition = -10
-
-        // Tile the texture across the map
-        for x in 0..<tilesX {
-            for y in 0..<tilesY {
-                let tile = SKSpriteNode(texture: texture)
-                tile.size = tileSize
-
-                // Position tiles from center anchor
-                let posX = -currentMapSize.width / 2 + tileSize.width * CGFloat(x) + tileSize.width / 2
-                let posY = -currentMapSize.height / 2 + tileSize.height * CGFloat(y) + tileSize.height / 2
-                tile.position = CGPoint(x: posX, y: posY)
-
-                mapContainer.addChild(tile)
-            }
-        }
-
-        addChild(mapContainer)
-
-        // Store reference using a colored sprite for compatibility
-        gameMap = SKSpriteNode(color: .clear, size: currentMapSize)
-        gameMap?.position = CGPoint.zero
-        gameMap?.zPosition = -10
-    }
-
-    private func createFallbackMap() {
-        // Fallback to colored background
-        gameMap = SKSpriteNode(color: .darkGray, size: currentMapSize)
-        gameMap?.position = CGPoint.zero
-        gameMap?.zPosition = -10
-        if let gm = gameMap {
-            addChild(gm)
-        }
-    }
-
-    func setupHUD() {
-        gameHUD = GameHUD(scene: self)
-        if let view = view {
-            gameHUD?.setup(viewportSize: view.bounds.size)
-        }
+    func setupRenderer() {
+        // Create and setup renderer with current map size
+        renderer = GameRenderer(scene: self, mapSize: currentMapSize)
+        renderer?.setup()
     }
 
     override func didChangeSize(_ oldSize: CGSize) {
-        // Ensure background keeps level map size (not viewport size)
-        // and debug UI matches the viewport size
-        // Guard against early calls where setupMap / other setup methods haven't run yet.
-        if let gm = gameMap {
-            gm.size = currentMapSize  // Keep level map size
-            gm.position = CGPoint.zero
-        }
-
-        // Reposition HUD for new viewport size
+        // Handle viewport changes through renderer
         if let view = view {
-            gameHUD?.repositionForViewport(view.bounds.size)
+            renderer?.handleViewportChange(view.bounds.size)
         }
 
         // Update debug regions and visuals if they exist
@@ -276,7 +194,8 @@ class GameScene: SKScene {
         ch.addChild(outlineV)
 
         ch.position = CGPoint(x: size.width/2, y: size.height/2)
-        addChild(ch)
+        // Add crosshair to world layer (moves with game world)
+        renderer?.world.worldLayer.addChild(ch)
         crosshair = ch
         #if !os(macOS)
         // On mobile we don't use the mouse-driven crosshair; keep it hidden and use touch aim marker instead.
@@ -289,6 +208,9 @@ class GameScene: SKScene {
         currentLevel = level
         currentMapSize = level.mapSize
         currentSpawnBoxSize = level.spawnBoxSize
+
+        // Update world map size in renderer
+        renderer?.world.updateMapSize(level.mapSize)
 
         // Reset wave tracking
         currentWaveIndex = 0

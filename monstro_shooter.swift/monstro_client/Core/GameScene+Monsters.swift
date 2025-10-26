@@ -50,7 +50,8 @@ extension GameScene {
         }
 
         monster.setup(at: spawnPosition, targetPosition: playerEntity.sprite.position)
-        addChild(monster.sprite)
+        // Add monster to world layer
+        renderer?.world.worldLayer.addChild(monster.sprite)
         monsters.append(monster)
 
         print("Monster spawned at: \(spawnPosition), sprite added to scene, total monsters: \(monsters.count)")

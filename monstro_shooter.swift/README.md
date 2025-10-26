@@ -20,7 +20,8 @@ Swift/SpriteKit port of Flash Monster Shooter. Cross-platform: macOS, iOS, iPadO
 ```
 monstro_client/
 ├── Core/              # GameScene extensions (8 files)
-├── UI/                # GameHUD, UIStyleGuide, touch controls
+├── Rendering/         # GameRenderer, WorldCamera, HUDCamera, GameWorld
+├── UI/                # UIStyleGuide, touch controls
 ├── Input/             # KeyboardMouseInput, TouchInput
 ├── Entities/          # Player, Bullet, Monster, Weapon, GameLevel
 ├── Monsters/          # Berserker
@@ -29,6 +30,17 @@ monstro_client/
 ├── Assets/Audio/      # BGM/*.mp3, SFX/*.wav
 └── Resources/         # Sprites, textures, animations
 ```
+
+## Rendering Architecture
+
+**Hierarchy**: `renderer.camera.contains(hud), renderer.world.contains(gameplay)`
+
+- **GameRenderer**: Master renderer managing all rendering layers
+- **WorldCamera**: Follows player with smooth interpolation, bounded by map
+- **HUDCamera**: Isolated UI layer that follows world camera
+- **GameWorld**: Contains all gameplay elements (map, player, monsters, bullets)
+
+**Separation**: UI (HUD) and game world are on separate layers with independent cameras
 
 ## Constants (GameConstants.swift)
 
@@ -41,7 +53,9 @@ HUD: 20px margin, 60px top, 40px row spacing, 32px height, z-pos 1000
 - Map (level bounds) ≠ Spawn box (monster spawn) ≠ Viewport (screen)
 - Tiled ground (576 sprites, no scaling)
 - Numeric frame sorting (not lexicographic)
-- Camera clamped to mapMin + viewport/2, mapMax - viewport/2
+- Camera hierarchy: WorldCamera → HUDCamera (isolated layers)
+- All gameplay elements added to GameWorld layer
+- HUD follows camera position, maintains viewport coords
 - Resources in app bundle root (no subdirectories)
 - Random selection via @State (runtime, not compile-time)
 

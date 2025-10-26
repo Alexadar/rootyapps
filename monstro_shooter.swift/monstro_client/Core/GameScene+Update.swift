@@ -125,21 +125,21 @@ extension GameScene {
         // Update time counter (elapsed time since level start)
         if levelStartTime > 0 {
             let elapsedTime = Int(currentTime - levelStartTime)
-            gameHUD?.updateTime(seconds: elapsedTime)
+            renderer?.updateTime(seconds: elapsedTime)
         }
 
         // Update all HUD elements from player
         if let player = playerEntity {
-            // Update kill counter (bottom-left)
-            gameHUD?.updateKills(count: killCount)
+            // Update kill counter
+            renderer?.updateKills(count: killCount)
 
-            // Update ammo (top-right)
+            // Update ammo
             let weapon = player.currentWeapon
             let totalAmmo = weapon.currentAmmo + (weapon.config.magazineSize * 10) // Estimate total reserve
-            gameHUD?.updateAmmo(current: weapon.currentAmmo, total: totalAmmo)
+            renderer?.updateAmmo(current: weapon.currentAmmo, total: totalAmmo)
 
-            // Update health (bottom-right)
-            gameHUD?.updateHealth(value: player.health)
+            // Update health
+            renderer?.updateHealth(value: player.health)
         }
     }
 
