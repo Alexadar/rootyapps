@@ -16,6 +16,7 @@ class GameScene: SKScene {
     var bullets: [Bullet] = []
     var monsters: [Monster] = []
     var crosshair: SKSpriteNode?
+    var gameOverUI: GameOverUI?
 #if os(macOS)
     var trackingArea: NSTrackingArea?
 #endif
@@ -48,6 +49,15 @@ class GameScene: SKScene {
 
     // MARK: - Game Settings
     var monsterSpawnInterval: TimeInterval = GameConstants.defaultMonsterSpawnInterval
+
+    // MARK: - Game State
+    var isGameOver: Bool = false
+    var onReturnToMenu: (() -> Void)?
+
+    // MARK: - Damage System
+    var touchingMonsters: Set<ObjectIdentifier> = []  // Monsters currently touching player
+    var lastDamageTime: TimeInterval = 0
+    var damageInterval: TimeInterval = 1.0  // Damage every 1 second
 
     // MARK: - Input / Timing State
     var lastMonsterSpawn: TimeInterval = 0
@@ -169,7 +179,7 @@ class GameScene: SKScene {
     func setupCrosshair() {
         // Create crosshair locally then store into optional property once configured.
         let ch = SKSpriteNode()
-        ch.zPosition = 100 // Always on top
+        ch.zPosition = 1000 // Above HUD layer (HUD is 100)
 
         let horizontalLine = SKSpriteNode(color: .white, size: CGSize(width: 20, height: 2))
         horizontalLine.position = CGPoint.zero
@@ -193,9 +203,9 @@ class GameScene: SKScene {
         outlineV.zPosition = -1
         ch.addChild(outlineV)
 
-        ch.position = CGPoint(x: size.width/2, y: size.height/2)
-        // Add crosshair to world layer (moves with game world)
-        renderer?.world.worldLayer.addChild(ch)
+        ch.position = CGPoint.zero  // Will be updated by mouse position
+        // Add crosshair to camera (UI layer, not world layer)
+        camera?.addChild(ch)
         crosshair = ch
         #if !os(macOS)
         // On mobile we don't use the mouse-driven crosshair; keep it hidden and use touch aim marker instead.
@@ -246,8 +256,72 @@ class GameScene: SKScene {
         levelStartTime = 0
         killCount = 0
 
+        // Reset damage tracking
+        touchingMonsters.removeAll()
+        lastDamageTime = 0
+
         // Reset player health
         playerEntity?.health = 100
+    }
+
+    // MARK: - Game Over
+    func handlePlayerDeath() {
+        guard !isGameOver else { return }
+        isGameOver = true
+
+        print("Player died! Game over.")
+
+        // Don't pause scene, just stop game logic via isGameOver flag
+
+        // Show game over UI
+        showGameOverUI()
+    }
+
+    func showGameOverUI() {
+        // Hide touch debug visuals
+        debugLeftRegion?.isHidden = true
+        debugRightRegion?.isHidden = true
+        debugJoystickKnob?.isHidden = true
+        debugAimMarker?.isHidden = true
+
+        // Create game over UI if needed
+        if gameOverUI == nil {
+            gameOverUI = GameOverUI(scene: self)
+        }
+
+        // Show game over UI
+        gameOverUI?.show(
+            onTryAgain: { [weak self] in
+                self?.restartGame()
+            },
+            onGoToMenu: { [weak self] in
+                self?.returnToMenu()
+            }
+        )
+    }
+
+    func restartGame() {
+        isGameOver = false
+        gameOverUI?.hide()
+
+        // Restore touch debug visuals if using touch input
+        #if !os(macOS)
+        if inputController is TouchInput {
+            debugLeftRegion?.isHidden = false
+            debugRightRegion?.isHidden = false
+            debugJoystickKnob?.isHidden = false
+            debugAimMarker?.isHidden = false
+        }
+        #endif
+
+        resetGame()
+    }
+
+    func returnToMenu() {
+        // Trigger SwiftUI dismiss via closure on main thread
+        onReturnToMenu?()
+        // Play menu music after triggering dismiss
+        AudioManager.shared.playMenuMusic()
     }
 
     deinit {

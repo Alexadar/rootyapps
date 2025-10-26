@@ -10,7 +10,6 @@ import UIKit
 /// AI-based input controller for animated main menu
 /// Provides automated movement and shooting behavior for the main menu character.
 class AIInput: InputController {
-    private weak var scene: SKScene?
     private weak var playerNode: SKNode?
     private var monsters: [SKNode] = []
 
@@ -26,8 +25,7 @@ class AIInput: InputController {
     private let patrolRadius: CGFloat = 140.0
     private let movementStrength: CGFloat = 1.0 // direction magnitude returned in -1..1 range
 
-    init(scene: SKScene? = nil) {
-        self.scene = scene
+    init() {
     }
 
     // MARK: - InputController
@@ -44,15 +42,14 @@ class AIInput: InputController {
                 // move toward a point offset from the monster so AI strafes a little
                 let offset = CGVector(dx: CGFloat.random(in: -40...40), dy: CGFloat.random(in: -40...40))
                 moveTarget = CGPoint(x: nearest.position.x + offset.dx, y: nearest.position.y + offset.dy)
-            } else if let player = playerNode, let scene = scene {
+            } else if let player = playerNode {
                 // pick a random point around the player within patrolRadius
                 let angle = CGFloat(now.truncatingRemainder(dividingBy: 6.28))
                 let r = patrolRadius * (0.6 + CGFloat.random(in: 0...0.4))
                 moveTarget = CGPoint(x: player.position.x + cos(angle) * r, y: player.position.y + sin(angle) * r)
-            } else if let scene = scene {
-                // fallback: random point near center
-                moveTarget = CGPoint(x: scene.size.width/2 + CGFloat.random(in: -100...100),
-                                     y: scene.size.height/2 + CGFloat.random(in: -60...60))
+            } else {
+                // fallback: stay at origin
+                moveTarget = CGPoint.zero
             }
         }
 

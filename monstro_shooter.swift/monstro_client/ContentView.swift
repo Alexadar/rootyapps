@@ -38,11 +38,13 @@ struct ContentView: View {
 
     var body: some View {
         if showGame {
-            GameView()
-                .onAppear {
-                    // Switch to fight music when entering game
-                    AudioManager.shared.playFightMusic()
-                }
+            GameView(onReturnToMenu: {
+                showGame = false
+            })
+            .onAppear {
+                // Switch to fight music when entering game
+                AudioManager.shared.playFightMusic()
+            }
         } else {
             AnimatedMainMenuView(onPlayTapped: {
                 showGame = true
@@ -271,20 +273,29 @@ struct SettingsView: View {
 
 // MARK: - Game View (full game)
 struct GameView: View {
-    var scene: SKScene {
-        let s = GameScene(size: CGSize(width: 1024, height: 768))
-        s.scaleMode = .resizeFill
-        return s
-    }
+    let onReturnToMenu: () -> Void
+    @State private var gameScene: GameScene?
 
     var body: some View {
-        SpriteView(scene: scene)
-            .ignoresSafeArea()
-            .onAppear {
-                #if os(macOS)
-                NSApp.mainWindow?.acceptsMouseMovedEvents = true
-                #endif
+        ZStack {
+            if let scene = gameScene {
+                SpriteView(scene: scene)
+                    .ignoresSafeArea()
             }
+        }
+        .onAppear {
+            let s = GameScene(size: CGSize(width: 1024, height: 768))
+            s.scaleMode = .resizeFill
+            s.onReturnToMenu = { [onReturnToMenu] in
+                // Return to menu via callback
+                onReturnToMenu()
+            }
+            gameScene = s
+
+            #if os(macOS)
+            NSApp.mainWindow?.acceptsMouseMovedEvents = true
+            #endif
+        }
     }
 }
 

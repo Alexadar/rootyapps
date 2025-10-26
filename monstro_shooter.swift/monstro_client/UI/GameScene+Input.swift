@@ -130,11 +130,29 @@ extension GameScene {
     }
 
     override func mouseMoved(with event: NSEvent) {
-        let location = event.location(in: self)
-        (inputController as? KeyboardMouseInput)?.mouseMoved(to: location)
+        // Get mouse location in view coordinates (screen space, not world space)
+        guard let view = self.view else { return }
+
+        // Convert mouse location from window coordinates to view coordinates
+        let locationInWindow = event.locationInWindow
+        let locationInView = view.convert(locationInWindow, from: nil)
+
+        // Convert view coords to scene coords (centered anchor system)
+        let sceneCoords = CGPoint(
+            x: locationInView.x - view.bounds.width / 2,
+            y: locationInView.y - view.bounds.height / 2
+        )
+        (inputController as? KeyboardMouseInput)?.mouseMoved(to: sceneCoords)
     }
 
     override func mouseDown(with event: NSEvent) {
+        // Check if game over UI should handle this
+        if isGameOver {
+            let location = event.location(in: self)
+            gameOverUI?.handleTouch(at: location)
+            return
+        }
+
         (inputController as? KeyboardMouseInput)?.requestShoot()
     }
 
@@ -150,6 +168,13 @@ extension GameScene {
 #else
     // Touch handling on iOS/tvOS: forward to TouchInput
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        // Check if game over UI should handle this
+        if isGameOver, let touch = touches.first {
+            let location = touch.location(in: self)
+            gameOverUI?.handleTouch(at: location)
+            return
+        }
+
         if let tInput = inputController as? TouchInput {
             tInput.touchesBegan(touches, in: self)
         }

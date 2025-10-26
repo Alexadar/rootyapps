@@ -43,10 +43,7 @@ extension GameScene: SKPhysicsContactDelegate {
             }
         }
 
-        // Player hits monster (game over condition)
-        if (bodyA.categoryBitMask == PhysicsCategory.player && bodyB.categoryBitMask == PhysicsCategory.monster) ||
-           (bodyA.categoryBitMask == PhysicsCategory.monster && bodyB.categoryBitMask == PhysicsCategory.player) {
-            print("Player hit by monster!")
-        }
+        // Player-monster collision detection is handled via updateMonsterDamage() using distance checks
+        // No need to apply damage here to avoid duplicate damage
     }
 }

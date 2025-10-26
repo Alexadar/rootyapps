@@ -13,6 +13,9 @@ class Monster {
     var boxSize: CGSize = GameConstants.monsterBoxSize
     var rotationOffset: CGFloat = GameConstants.monsterRotationOffset
     var isDead: Bool = false
+    var damage: Int = 5  // Default damage per hit
+    var lastHitTime: TimeInterval = 0  // Track last hit to prevent rapid hits
+    var hitCooldown: TimeInterval = 1.0  // Seconds between hits
     private var animationTimer: TimeInterval = 0
 
     init() {}
@@ -32,12 +35,16 @@ class Monster {
     }
 
     /// Default movement: move toward player and rotate (override in subclasses if needed).
-    func update(deltaTime: TimeInterval, playerPosition: CGPoint) {
+    /// Stops at player hitbox edge to prevent flickering
+    func update(deltaTime: TimeInterval, playerPosition: CGPoint, playerHitboxRadius: CGFloat) {
         let dx = playerPosition.x - sprite.position.x
         let dy = playerPosition.y - sprite.position.y
         let distance = sqrt(dx*dx + dy*dy)
 
-        if distance > 0 {
+        // Stop distance is player hitbox radius + half of monster size
+        let stopDistance = playerHitboxRadius + (boxSize.width / 2.0)
+
+        if distance > stopDistance {
             let ndx = dx / distance
             let ndy = dy / distance
 

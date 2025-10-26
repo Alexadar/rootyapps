@@ -22,6 +22,8 @@ class Berserker: Monster {
         boxSize = CGSize(width: 40, height: 40)
         // rotate sprites so their front faces the player (90° CCW)
         rotationOffset = .pi / 8
+        damage = 10  // Berserker damage per hit
+        hitCooldown = 1.0  // 1 second between hits
     }
 
     override func setup(at position: CGPoint, targetPosition: CGPoint) {
@@ -68,7 +70,7 @@ class Berserker: Monster {
         print("Berserker setup complete: pos=\(position), size=\(boxSize), zPos=\(sprite.zPosition), hasTexture=\(sprite.texture != nil), parent=\(sprite.parent != nil)")
     }
 
-    override func update(deltaTime: TimeInterval, playerPosition: CGPoint) {
+    override func update(deltaTime: TimeInterval, playerPosition: CGPoint, playerHitboxRadius: CGFloat) {
         guard !isDying else { return }
 
         // Movement same as base but ensure sprite orientation and size
@@ -76,7 +78,10 @@ class Berserker: Monster {
         let dy = playerPosition.y - sprite.position.y
         let distance = sqrt(dx*dx + dy*dy)
 
-        if distance > 0 {
+        // Stop distance is player hitbox radius + half of monster size
+        let stopDistance = playerHitboxRadius + (boxSize.width / 2.0)
+
+        if distance > stopDistance {
             let ndx = dx / distance
             let ndy = dy / distance
 

@@ -11,14 +11,17 @@ extension GameScene {
     // MARK: - Game Loop
     private var lastUpdateTime: TimeInterval {
         get {
-            return objc_getAssociatedObject(self, &AssociatedKeys.lastUpdateTime) as? TimeInterval ?? 0
+            return objc_getAssociatedObject(self, AssociatedKeys.lastUpdateTimeKey) as? TimeInterval ?? 0
         }
         set {
-            objc_setAssociatedObject(self, &AssociatedKeys.lastUpdateTime, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            objc_setAssociatedObject(self, AssociatedKeys.lastUpdateTimeKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
     }
 
     override func update(_ currentTime: TimeInterval) {
+        // Skip update if game over
+        if isGameOver { return }
+
         let deltaTime: TimeInterval
         if lastUpdateTime > 0 {
             deltaTime = currentTime - lastUpdateTime
@@ -34,8 +37,9 @@ extension GameScene {
 #if os(macOS)
         if let win = view?.window, let v = view {
             let global = NSEvent.mouseLocation
-            let windowPoint = win.convertPoint(fromScreen: global)
-            let pointInView = v.convert(windowPoint, from: nil)
+            let windowRect = NSRect(origin: NSPoint(x: global.x, y: global.y), size: .zero)
+            let convertedRect = win.convertFromScreen(windowRect)
+            let pointInView = v.convert(convertedRect.origin, from: nil)
             if !v.bounds.contains(pointInView) {
                 NSCursor.unhide()
                 NSCursor.arrow.set()
@@ -87,9 +91,18 @@ extension GameScene {
 
         // Aim and shooting
         #if os(macOS)
-        if let aim = inputController?.aimPoint() {
-            crosshair?.position = aim
-            playerEntity.aimToward(point: aim)
+        // Crosshair position is in camera space (view coordinates), already set by input controller
+        if let aimCameraCoords = inputController?.aimPoint() {
+            crosshair?.position = aimCameraCoords
+
+            // Convert camera coords to world coords for player aiming
+            if let cam = camera {
+                let worldCoords = CGPoint(
+                    x: aimCameraCoords.x + cam.position.x,
+                    y: aimCameraCoords.y + cam.position.y
+                )
+                playerEntity.aimToward(point: worldCoords)
+            }
         }
         #else
         // On mobile: inputController.aimPoint() returns an absolute point computed around the player.
@@ -99,9 +112,19 @@ extension GameScene {
         #endif
 
         if inputController?.isShooting() ?? false {
-            // Prefer aim point if available; on mobile aimPoint() is already oriented around the player.
-            let aimPoint = inputController?.aimPoint() ?? crosshair?.position ?? CGPoint.zero
+            // Get aim point in world coordinates for bullet trajectory
+            #if os(macOS)
+            if let aimCameraCoords = inputController?.aimPoint(), let cam = camera {
+                let worldCoords = CGPoint(
+                    x: aimCameraCoords.x + cam.position.x,
+                    y: aimCameraCoords.y + cam.position.y
+                )
+                shoot(toward: worldCoords, currentTime: currentTime)
+            }
+            #else
+            let aimPoint = inputController?.aimPoint() ?? CGPoint.zero
             shoot(toward: aimPoint, currentTime: currentTime)
+            #endif
         }
 
         // Update player weapon (reload progress)
@@ -109,6 +132,7 @@ extension GameScene {
 
         updateMonsters(deltaTime)
         updateBullets(deltaTime)
+        updateMonsterDamage(currentTime: currentTime)
         updateDebugLabel()
         updateHUD(currentTime: currentTime)
 
@@ -173,5 +197,9 @@ extension GameScene {
 
 // Associated Keys for stored properties in extensions
 private struct AssociatedKeys {
-    static var lastUpdateTime = "lastUpdateTime"
+    static let lastUpdateTimeKey: UnsafeRawPointer = {
+        let key = UnsafeMutablePointer<UInt8>.allocate(capacity: 1)
+        key.initialize(to: 0)
+        return UnsafeRawPointer(key)
+    }()
 }

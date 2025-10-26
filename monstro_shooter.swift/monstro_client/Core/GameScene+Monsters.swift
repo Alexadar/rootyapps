@@ -114,7 +114,89 @@ extension GameScene {
             if debugRotationEnabled {
                 monster.rotationOffset = debugRotationOffset
             }
-            monster.update(deltaTime: deltaTime, playerPosition: playerEntity.sprite.position)
+            monster.update(deltaTime: deltaTime, playerPosition: playerEntity.sprite.position, playerHitboxRadius: playerEntity.hitboxRadius)
         }
     }
+
+    /// Check for monsters in contact range and update touching array
+    func updateMonsterDamage(currentTime: TimeInterval) {
+        guard let player = playerEntity else { return }
+
+        let playerPos = player.sprite.position
+        let damageRange = player.hitboxRadius + 20.0  // Slightly larger than hitbox
+
+        // Track which monsters are currently touching
+        var currentlyTouching = Set<ObjectIdentifier>()
+
+        for monster in monsters {
+            guard !monster.isDead else { continue }
+
+            let monsterId = ObjectIdentifier(monster)
+
+            // Calculate distance to player
+            let dx = playerPos.x - monster.sprite.position.x
+            let dy = playerPos.y - monster.sprite.position.y
+            let distance = sqrt(dx*dx + dy*dy)
+
+            // Check if monster is in damage range
+            if distance <= damageRange {
+                currentlyTouching.insert(monsterId)
+            }
+        }
+
+        // Apply immediate damage for newly touching monsters (not in previous set)
+        let newlyTouching = currentlyTouching.subtracting(touchingMonsters)
+        if !newlyTouching.isEmpty {
+            var immediateDamage = 0
+            for monster in monsters {
+                guard !monster.isDead else { continue }
+                let monsterId = ObjectIdentifier(monster)
+                if newlyTouching.contains(monsterId) {
+                    immediateDamage += monster.damage
+                }
+            }
+
+            if immediateDamage > 0 {
+                player.health -= immediateDamage
+                print("Initial hit from \(newlyTouching.count) monsters! Total: \(immediateDamage), Health: \(player.health)")
+
+                // Check if player died
+                if player.health <= 0 {
+                    handlePlayerDeath()
+                    touchingMonsters = currentlyTouching
+                    return
+                }
+            }
+        }
+
+        // Update touching monsters set AFTER applying immediate damage
+        touchingMonsters = currentlyTouching
+
+        // Apply periodic damage to all touching monsters
+        if !touchingMonsters.isEmpty && currentTime - lastDamageTime >= damageInterval {
+            lastDamageTime = currentTime
+
+            // Find all monsters in touching set and apply damage
+            var totalDamage = 0
+            for monster in monsters {
+                guard !monster.isDead else { continue }
+                let monsterId = ObjectIdentifier(monster)
+
+                if touchingMonsters.contains(monsterId) {
+                    totalDamage += monster.damage
+                }
+            }
+
+            if totalDamage > 0 {
+                player.health -= totalDamage
+                print("Periodic damage from \(touchingMonsters.count) monsters! Total: \(totalDamage), Health: \(player.health)")
+
+                // Check if player died
+                if player.health <= 0 {
+                    handlePlayerDeath()
+                }
+            }
+        }
+    }
+
 }

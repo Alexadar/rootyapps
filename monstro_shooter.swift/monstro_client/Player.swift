@@ -14,6 +14,7 @@ class Player {
     var currentWeapon: Weapon
     var health: Int
     var maxHealth: Int
+    var hitboxRadius: CGFloat  // Circular hitbox radius
 
     init?(initialPosition: CGPoint, size: CGSize = GameConstants.playerSize, atlasImage: String? = "exoskeletons_0.png", xmlPath: String? = "exoskeletons_0.xml") {
         // Try to load from atlas like previous implementation
@@ -32,8 +33,11 @@ class Player {
         sprite.zPosition = 10
         sprite.name = "player"
 
-        // Setup player physics
-        sprite.physicsBody = SKPhysicsBody(rectangleOf: sprite.size)
+        // Infer circular hitbox radius from sprite size (use average of width/height)
+        self.hitboxRadius = (size.width + size.height) / 4.0
+
+        // Setup player physics with circular body
+        sprite.physicsBody = SKPhysicsBody(circleOfRadius: hitboxRadius)
         sprite.physicsBody?.categoryBitMask = PhysicsCategory.player
         sprite.physicsBody?.contactTestBitMask = PhysicsCategory.monster
         sprite.physicsBody?.collisionBitMask = 0

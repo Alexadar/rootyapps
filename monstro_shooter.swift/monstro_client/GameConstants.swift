@@ -32,7 +32,7 @@ struct GameConstants {
     static let hudRowSpacing: CGFloat = 40
     static let hudElementHeight: CGFloat = 32
     static let hudZPosition: CGFloat = 1000
-    static let hudParallaxStrength: CGFloat = 0.5
+    static let hudParallaxStrength: CGFloat = 1.0
     static let hudMaxParallaxOffset: CGFloat = 50.0
     static let hudParallaxLerpSpeed: CGFloat = 0.15
     static let hudParallaxReturnSpeed: CGFloat = 0.05
