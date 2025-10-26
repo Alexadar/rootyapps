@@ -32,20 +32,10 @@ class GameScene: SKScene {
     var spawnedWaves: Set<Int> = []  // Track which waves have been spawned
     var killCount: Int = 0  // Track killed monsters
 
-    // Debug visuals to verify touch control regions (shown only on non-mac platforms)
-    var debugLeftRegion: SKSpriteNode?
-    var debugRightRegion: SKSpriteNode?
-    // Use a generic SKNode for the knob so we can use SKShapeNode (avoid square sprite artifacts).
-    var debugJoystickKnob: SKNode?
-    var debugAimMarker: SKNode?
-
     // Input controller (abstracted for future mobile controls)
     var inputController: InputController?
     // Optional external input (e.g. AI) that overrides automatic selection for menu scripting.
     var externalInput: InputController?
-    // When true the touch debug regions are shown even if the active input is not TouchInput.
-    // Useful for the animated main-menu where we want touch regions visible as an overlay.
-    var showTouchDebug: Bool = false
 
     // MARK: - Game Settings
     var monsterSpawnInterval: TimeInterval = GameConstants.defaultMonsterSpawnInterval
@@ -138,32 +128,7 @@ class GameScene: SKScene {
             renderer?.handleViewportChange(view.bounds.size)
         }
 
-        // Update debug regions and visuals if they exist
-        let regionHeight = size.height * 0.25
-        if let left = debugLeftRegion {
-            left.size = CGSize(width: size.width/2, height: regionHeight)
-            // left region anchored at bottom-left of scene coordinates (scene center anchor means origin is at center)
-            left.position = CGPoint(x: -size.width/2, y: -size.height/2)
-            if let leftStroke = left.children.first as? SKShapeNode {
-                leftStroke.path = CGPath(rect: CGRect(origin: .zero, size: left.size), transform: nil)
-            }
-        }
-
-        if let right = debugRightRegion {
-            right.size = CGSize(width: size.width/2, height: regionHeight)
-            right.position = CGPoint(x: 0, y: -size.height/2)
-            if let rightStroke = right.children.first as? SKShapeNode {
-                rightStroke.path = CGPath(rect: CGRect(origin: .zero, size: right.size), transform: nil)
-            }
-        }
-
-        if let knob = debugJoystickKnob, let left = debugLeftRegion {
-            knob.position = CGPoint(x: left.position.x + left.size.width * 0.5, y: left.position.y + left.size.height * 0.5)
-        }
-
-        if let aim = debugAimMarker, let right = debugRightRegion {
-            aim.position = CGPoint(x: right.position.x + right.size.width * 0.5, y: right.position.y + right.size.height * 0.5)
-        }
+        // Debug visuals are now managed by InputController - no need to update here
 
         // Keep crosshair centered if needed
         if let ch = crosshair {
@@ -278,11 +243,8 @@ class GameScene: SKScene {
     }
 
     func showGameOverUI() {
-        // Hide touch debug visuals
-        debugLeftRegion?.isHidden = true
-        debugRightRegion?.isHidden = true
-        debugJoystickKnob?.isHidden = true
-        debugAimMarker?.isHidden = true
+        // Hide debug visuals via input controller
+        inputController?.hideDebugVisuals()
 
         // Create game over UI if needed
         if gameOverUI == nil {
@@ -304,15 +266,8 @@ class GameScene: SKScene {
         isGameOver = false
         gameOverUI?.hide()
 
-        // Restore touch debug visuals if using touch input
-        #if !os(macOS)
-        if inputController is TouchInput {
-            debugLeftRegion?.isHidden = false
-            debugRightRegion?.isHidden = false
-            debugJoystickKnob?.isHidden = false
-            debugAimMarker?.isHidden = false
-        }
-        #endif
+        // Show debug visuals via input controller
+        inputController?.showDebugVisuals()
 
         resetGame()
     }

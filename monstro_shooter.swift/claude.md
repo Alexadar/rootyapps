@@ -49,12 +49,30 @@
 
 ---
 
+## Session 4: File Organization & Audio Cycling
+
+**Tasks**: Organize project files, implement music auto-cycling, unify button styling
+**Files**: Moved files to folders, AudioManager (NSObject delegate), StyledButton, GameOverUI
+
+**Key Fixes**:
+- File organization: Bullet/Player → Entities/, TextureAtlas → Rendering/, Constants → Core/
+- Audio cycling: AVAudioPlayerDelegate with numberOfLoops=0, auto-play next random track
+- Button styling: All StyleGuide constants extracted, reusable PrimaryButton/SecondaryButton components
+- GameOverUI: Removed glowWidth, exact match to main menu button styling
+
+**Architecture**:
+- AudioManager inherits NSObject for AVAudioPlayerDelegate protocol
+- StyledButton.swift with PrimaryButton/SecondaryButton SwiftUI views
+- Consistent styling: UIStyleGuide.Button.Primary/Secondary with all properties (fontSize, shadows, padding, etc)
+
+---
+
 ## Architecture Decisions
 
 **Coordinate System**: Centered anchor (0.5, 0.5) for camera math simplicity
 **Input**: Protocol-based (KeyboardMouseInput, TouchInput, AIInput)
 **Level System**: Wave-based spawning with time triggers
-**Audio**: Singleton AudioManager with category-based random selection
+**Audio**: Singleton AudioManager with category-based random selection, AVAudioPlayerDelegate for auto-cycling
 **Map Rendering**: Tiled sprites for quality preservation
 **Settings**: UserDefaults for persistence
 
@@ -75,4 +93,23 @@
 
 - macOS 26.0 (Darwin 25.0.0), Xcode 16+, Swift 5.0+
 - SwiftUI, SpriteKit, AVFoundation
-- ~30 Swift files, ~4000 lines total
+- 34 Swift files, ~4000 lines total
+
+---
+
+## File Organization (Session 4)
+
+**Structure**:
+```
+Core/         GameConstants, GameTypes, GameScene+8 extensions
+Entities/     Player, Bullet, Monster, Weapon, WeaponConfig, GameLevel
+Rendering/    TextureAtlas, GameRenderer, WorldCamera, HUDCamera, GameWorld
+UI/           UIStyleGuide, StyledButton, GameHUD, GameOverUI, GameScene+Input
+Input/        KeyboardMouseInput, TouchInput
+Audio/        AudioManager
+Physics/      GameScene+Physics
+Monsters/     Berserker
+Settings/     SettingsManager
+```
+
+**Key Pattern**: All loose root files organized into domain folders

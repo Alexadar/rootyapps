@@ -1,5 +1,6 @@
 import Foundation
 import CoreGraphics
+import SpriteKit
 
 /// Shared game-wide definitions and small abstractions.
 /// Keeps constants and protocols in a single place so other modules can import them.
@@ -22,6 +23,29 @@ protocol InputController {
 
     /// Returns true when a firing action should occur this frame (e.g. mouse down / touch tap / virtual button).
     func isShooting() -> Bool
+
+    /// Setup debug visuals for input (e.g., touch regions, joystick knobs).
+    /// Called by GameScene during input setup. Default implementation does nothing.
+    func setupDebugVisuals(in scene: SKScene)
+
+    /// Update debug visuals each frame (e.g., joystick knob position, aim marker).
+    /// Called by GameScene during update loop. Default implementation does nothing.
+    func updateDebugVisuals(movementVector: CGVector, aimPoint: CGPoint?)
+
+    /// Hide debug visuals (e.g., when switching to different input mode or game over).
+    /// Default implementation does nothing.
+    func hideDebugVisuals()
+
+    /// Show debug visuals. Default implementation does nothing.
+    func showDebugVisuals()
+}
+
+// Provide default no-op implementations
+extension InputController {
+    func setupDebugVisuals(in scene: SKScene) { }
+    func updateDebugVisuals(movementVector: CGVector, aimPoint: CGPoint?) { }
+    func hideDebugVisuals() { }
+    func showDebugVisuals() { }
 }
 
 // Provide default no-op platform event handlers so GameScene can forward events to the active input controller

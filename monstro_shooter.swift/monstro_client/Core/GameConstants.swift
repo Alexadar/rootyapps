@@ -39,4 +39,24 @@ struct GameConstants {
 
     // MARK: - Debug
     static let debugRotationStep: CGFloat = .pi / 8
+
+    /// Show debug touch controls (joystick regions, knobs, aim markers)
+    /// Automatically disabled in release builds
+    static var showDebugControls: Bool {
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    /// Show debug line at bottom of screen (for testing touch regions)
+    /// Automatically disabled in release builds
+    static var showDebugLine: Bool {
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }
 }

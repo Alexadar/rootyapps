@@ -51,43 +51,8 @@ extension GameScene {
         let moveVec = inputController?.movementVector() ?? CGVector(dx: 0, dy: 0)
         playerEntity.move(by: moveVec, deltaTime: deltaTime, mapSize: currentMapSize)
 
-        // If using AI input, update it with current monster nodes so AI can aim/shoot.
-        if let ai = inputController as? AIInput {
-            ai.updateMonsters(monsters.map { $0.sprite })
-        }
-
-        // Update debug visuals for touch controls on mobile (left/right regions + joystick knob + aim marker)
-        #if !os(macOS)
-        // Show debug touch regions when using touch input OR when running menu scripting (AI-driven background).
-        if inputController is TouchInput {
-            // Joystick knob: center in left region and offset by movement vector scaled by joystick radius
-            if let knob = debugJoystickKnob, let leftRegion = debugLeftRegion {
-                // Center of left control region
-                let center = CGPoint(x: leftRegion.position.x + leftRegion.size.width * 0.5, y: leftRegion.position.y + leftRegion.size.height * 0.5)
-                let radius: CGFloat = 60.0
-                // Always show knob; when movement vector is zero it stays at the region center.
-                knob.isHidden = false
-                knob.position = CGPoint(x: center.x + moveVec.dx * radius, y: center.y + moveVec.dy * radius)
-            }
-
-            // Aim marker: if player is actively aiming use computed aim point (scene coords),
-            // otherwise show the right control area's center so the circle remains visible.
-            if let aimMarker = debugAimMarker, let rightRegion = debugRightRegion {
-                if let aim = inputController?.aimPoint() {
-                    aimMarker.position = aim
-                } else {
-                    // Right region center in scene coords
-                    let rightCenter = CGPoint(x: rightRegion.position.x + rightRegion.size.width * 0.5, y: rightRegion.position.y + rightRegion.size.height * 0.5)
-                    aimMarker.position = rightCenter
-                }
-                aimMarker.isHidden = false
-            }
-        } else {
-            // Hide debug visuals if not using touch input
-            debugJoystickKnob?.isHidden = true
-            debugAimMarker?.isHidden = true
-        }
-        #endif
+        // Update debug visuals via input controller
+        inputController?.updateDebugVisuals(movementVector: moveVec, aimPoint: inputController?.aimPoint())
 
         // Aim and shooting
         #if os(macOS)

@@ -2,7 +2,7 @@ import Foundation
 import AVFoundation
 
 /// Audio manager singleton to handle background music and sound effects
-class AudioManager {
+class AudioManager: NSObject, AVAudioPlayerDelegate {
     static let shared = AudioManager()
 
     // Audio players
@@ -29,23 +29,27 @@ class AudioManager {
         case fight
     }
 
-    private init() {
+    private override init() {
         // Load settings from persistent storage
         self.bgmEnabled = SettingsManager.shared.bgmEnabled
         self.sfxEnabled = SettingsManager.shared.sfxEnabled
 
+        super.init()
+
         print("[AudioManager] Initialized with BGM: \(bgmEnabled), SFX: \(sfxEnabled)")
 
-        // Configure audio session for simultaneous audio playback
+        // Configure audio session for game audio
         do {
             #if os(macOS)
             // macOS doesn't need audio session configuration
             #else
-            try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
+            // Use .playback category for game audio (stops other audio, continues in background if needed)
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
             try AVAudioSession.sharedInstance().setActive(true)
+            print("[AudioManager] Audio session configured successfully")
             #endif
         } catch {
-            print("Failed to set up audio session: \(error)")
+            print("[AudioManager] Failed to set up audio session: \(error)")
         }
     }
 
@@ -106,25 +110,47 @@ class AudioManager {
         currentMusicType = type
 
         let musicFiles = type == .menu ? menuMusic : fightMusic
-        guard let randomMusic = musicFiles.randomElement() else { return }
-
-        print("[AudioManager] Selected random music from \(musicFiles): \(randomMusic)")
-
-        guard let url = Bundle.main.url(forResource: randomMusic.replacingOccurrences(of: ".mp3", with: ""),
-                                       withExtension: "mp3") else {
-            print("Could not find music file: \(randomMusic)")
+        guard let randomMusic = musicFiles.randomElement() else {
+            print("[AudioManager] ERROR: No music files in category")
             return
         }
 
+        print("[AudioManager] Selected random music from \(musicFiles): \(randomMusic)")
+
+        let resourceName = randomMusic.replacingOccurrences(of: ".mp3", with: "")
+
+        // Try to find in BGM subdirectory first
+        var url = Bundle.main.url(forResource: resourceName, withExtension: "mp3", subdirectory: "Assets/Audio/BGM")
+
+        // Fallback: search in root
+        if url == nil {
+            url = Bundle.main.url(forResource: resourceName, withExtension: "mp3")
+        }
+
+        guard let fileURL = url else {
+            print("[AudioManager] ERROR: Could not find music file: \(randomMusic)")
+            print("[AudioManager] Searched in: Assets/Audio/BGM and root")
+            print("[AudioManager] Available mp3 files: \(Bundle.main.urls(forResourcesWithExtension: "mp3", subdirectory: nil)?.map { $0.lastPathComponent } ?? [])")
+            return
+        }
+
+        print("[AudioManager] Found music file at: \(fileURL.path)")
+
         do {
-            bgmPlayer = try AVAudioPlayer(contentsOf: url)
-            bgmPlayer?.numberOfLoops = -1 // Loop indefinitely
+            bgmPlayer = try AVAudioPlayer(contentsOf: fileURL)
+            bgmPlayer?.numberOfLoops = 0 // Play once, then cycle to next track
             bgmPlayer?.volume = 0.5 // 50% volume
+            bgmPlayer?.delegate = self
             bgmPlayer?.prepareToPlay()
-            bgmPlayer?.play()
-            print("Playing \(type == .menu ? "menu" : "fight") music: \(randomMusic)")
+
+            let success = bgmPlayer?.play() ?? false
+            if success {
+                print("[AudioManager] SUCCESS: Now playing \(type == .menu ? "menu" : "fight") music: \(randomMusic)")
+            } else {
+                print("[AudioManager] ERROR: Failed to start playback of \(randomMusic)")
+            }
         } catch {
-            print("Failed to play music: \(error)")
+            print("[AudioManager] ERROR: Failed to create audio player: \(error)")
         }
     }
 
@@ -149,14 +175,23 @@ class AudioManager {
     private func playSFX(filename: String) {
         guard sfxEnabled else { return }
 
-        guard let url = Bundle.main.url(forResource: filename.replacingOccurrences(of: ".wav", with: ""),
-                                       withExtension: "wav") else {
-            print("Could not find SFX file: \(filename)")
+        let resourceName = filename.replacingOccurrences(of: ".wav", with: "")
+
+        // Try to find in SFX subdirectory first
+        var url = Bundle.main.url(forResource: resourceName, withExtension: "wav", subdirectory: "Assets/Audio/SFX")
+
+        // Fallback: search in root
+        if url == nil {
+            url = Bundle.main.url(forResource: resourceName, withExtension: "wav")
+        }
+
+        guard let fileURL = url else {
+            print("[AudioManager] ERROR: Could not find SFX file: \(filename)")
             return
         }
 
         do {
-            let player = try AVAudioPlayer(contentsOf: url)
+            let player = try AVAudioPlayer(contentsOf: fileURL)
             player.volume = 0.3 // 30% volume for SFX
             player.prepareToPlay()
             player.play()
@@ -171,5 +206,16 @@ class AudioManager {
         } catch {
             print("Failed to play SFX: \(error)")
         }
+    }
+
+    // MARK: - AVAudioPlayerDelegate
+
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        guard flag, player == bgmPlayer, let musicType = currentMusicType else { return }
+
+        print("[AudioManager] Track finished, playing next random track")
+
+        // Play next random track of the same type
+        playMusic(type: musicType)
     }
 }

@@ -84,15 +84,12 @@ class GameOverUI {
         background.strokeColor = UIStyleGuide.Button.Primary.borderColor
         background.lineWidth = UIStyleGuide.Button.Primary.borderWidth
         background.zPosition = 0
-
-        // Add glow effect
-        background.glowWidth = UIStyleGuide.Glow.white.radius
         buttonContainer.addChild(background)
 
         // Button label with Primary style
         let label = SKLabelNode(fontNamed: "System-Bold")
         label.text = text
-        label.fontSize = 32
+        label.fontSize = UIStyleGuide.Button.Primary.fontSize
         label.fontColor = UIStyleGuide.Button.Primary.textColor
         label.horizontalAlignmentMode = .center
         label.verticalAlignmentMode = .center
@@ -110,7 +107,7 @@ class GameOverUI {
         let width: CGFloat = 300
         let height: CGFloat = 60
 
-        // Button background with Secondary style
+        // Button background with Secondary style (matching main menu SETTINGS button)
         let background = SKShapeNode(
             rectOf: CGSize(width: width, height: height),
             cornerRadius: UIStyleGuide.Button.Secondary.cornerRadius
@@ -119,15 +116,12 @@ class GameOverUI {
         background.strokeColor = UIStyleGuide.Button.Secondary.borderColor
         background.lineWidth = UIStyleGuide.Button.Secondary.borderWidth
         background.zPosition = 0
-
-        // Add glow effect
-        background.glowWidth = UIStyleGuide.Glow.cyan.radius
         buttonContainer.addChild(background)
 
-        // Button label with Secondary style
+        // Button label with Secondary style matching main menu
         let label = SKLabelNode(fontNamed: "System-Bold")
         label.text = text
-        label.fontSize = 32
+        label.fontSize = UIStyleGuide.Button.Secondary.fontSize
         label.fontColor = UIStyleGuide.Button.Secondary.textColor
         label.horizontalAlignmentMode = .center
         label.verticalAlignmentMode = .center

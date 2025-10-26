@@ -12,7 +12,6 @@ extension GameScene {
         // Allow external input (AI) to override default platform input.
         if let ext = externalInput {
             inputController = ext
-            // still prepare touch debug visuals for completeness (no-op if macOS)
         } else {
             #if os(macOS)
             inputController = KeyboardMouseInput()
@@ -21,81 +20,8 @@ extension GameScene {
             #endif
         }
 
-        // Debug visual regions to verify where touch controls are active (left/right halves).
-        debugLeftRegion?.removeFromParent()
-        debugRightRegion?.removeFromParent()
-        debugJoystickKnob?.removeFromParent()
-        debugAimMarker?.removeFromParent()
-
-        // Debug regions: left/right halves but reduced to 25% height at the bottom.
-        // Visible debug rectangles are intentionally semi-transparent so you can see the areas.
-        let regionHeight = size.height * 0.25
-
-        // Use an invisible container sprite for each control area and add a visible stroked rectangle
-        // (3 px stroke, no transparency) so the debug boxes are clearly visible on device.
-        let leftRegion = SKSpriteNode(color: SKColor.clear, size: CGSize(width: size.width/2, height: regionHeight))
-        leftRegion.anchorPoint = CGPoint(x: 0, y: 0)
-        leftRegion.position = CGPoint(x: 0, y: 0)
-        leftRegion.zPosition = 250
-        // Stroke shape for left region
-        let leftStroke = SKShapeNode(rect: CGRect(origin: CGPoint.zero, size: leftRegion.size))
-        leftStroke.strokeColor = SKColor.white
-        leftStroke.lineWidth = 3
-        leftStroke.fillColor = SKColor.clear
-        leftStroke.position = CGPoint.zero
-        leftStroke.zPosition = 251
-        leftRegion.addChild(leftStroke)
-        addChild(leftRegion)
-        debugLeftRegion = leftRegion
-
-        let rightRegion = SKSpriteNode(color: SKColor.clear, size: CGSize(width: size.width/2, height: regionHeight))
-        rightRegion.anchorPoint = CGPoint(x: 0, y: 0)
-        rightRegion.position = CGPoint(x: size.width/2, y: 0)
-        rightRegion.zPosition = 250
-        // Stroke shape for right region
-        let rightStroke = SKShapeNode(rect: CGRect(origin: CGPoint.zero, size: rightRegion.size))
-        rightStroke.strokeColor = SKColor.white
-        rightStroke.lineWidth = 3
-        rightStroke.fillColor = SKColor.clear
-        rightStroke.position = CGPoint.zero
-        rightStroke.zPosition = 251
-        rightRegion.addChild(rightStroke)
-        addChild(rightRegion)
-        debugRightRegion = rightRegion
-
-        // Knob as a circular shape (prevent square sprite artifacts). Always present and centered in its region when no touch.
-        let knobShape = SKShapeNode(circleOfRadius: 18)
-        knobShape.strokeColor = SKColor.white.withAlphaComponent(0.9)
-        knobShape.lineWidth = 2
-        knobShape.fillColor = SKColor.white.withAlphaComponent(0.06)
-        knobShape.zPosition = 251
-        // Place knob initially at left region center
-        knobShape.position = CGPoint(x: leftRegion.position.x + leftRegion.size.width * 0.5, y: leftRegion.position.y + leftRegion.size.height * 0.5)
-        // Show touch debug visuals only when running with touch input (mobile player actively playing).
-        #if !os(macOS)
-        let showDebugNow = (inputController is TouchInput)
-        #else
-        let showDebugNow = false
-        #endif
-
-        // Hide all debug visuals on macOS
-        leftRegion.isHidden = !showDebugNow
-        rightRegion.isHidden = !showDebugNow
-        knobShape.isHidden = !showDebugNow
-        addChild(knobShape)
-        debugJoystickKnob = knobShape
-
-        // Aim marker as a single SKShapeNode to avoid any accidental square sprite artifacts.
-        // Initially visible only when touch input is active.
-        let aimCircle = SKShapeNode(circleOfRadius: 16)
-        aimCircle.strokeColor = .red
-        aimCircle.lineWidth = 2
-        aimCircle.fillColor = SKColor.red.withAlphaComponent(0.12)
-        aimCircle.zPosition = 251
-        aimCircle.isHidden = !showDebugNow
-        aimCircle.position = CGPoint(x: rightRegion.position.x + rightRegion.size.width * 0.5, y: rightRegion.position.y + rightRegion.size.height * 0.5)
-        addChild(aimCircle)
-        debugAimMarker = aimCircle
+        // Setup debug visuals via input controller
+        inputController?.setupDebugVisuals(in: self)
     }
 
      // MARK: - Input Handling (forward to input controller + debug keys)

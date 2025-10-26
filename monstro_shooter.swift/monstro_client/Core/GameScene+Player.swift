@@ -17,10 +17,6 @@ extension GameScene {
             p.sprite.name = "player"
             // Add player to world layer instead of scene
             renderer?.world.worldLayer.addChild(p.sprite)
-            // If an external input (like AI) is provided, give it the player node so it can aim/move.
-            if let ai = externalInput as? AIInput {
-                ai.setPlayerNode(p.sprite)
-            }
         }
     }
 

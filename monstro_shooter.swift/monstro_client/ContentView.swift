@@ -90,9 +90,8 @@ struct AnimatedMainMenuView: View {
                         Image(uiImage: uiImage)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .frame(width: geometry.size.width, height: geometry.size.height)
-                            .clipped()
-                            .ignoresSafeArea()
+                            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                            .edgesIgnoringSafeArea(.all)
                     } else {
                         Color.black.ignoresSafeArea()
                     }
@@ -106,45 +105,9 @@ struct AnimatedMainMenuView: View {
                 VStack(spacing: 20) {
                     Spacer()
 
-                    // Play button
-                    Button(action: onPlayTapped) {
-                        Text("PLAY")
-                            .font(.system(size: 48, weight: .bold))
-                            .foregroundColor(Color(hex: "#FFFFFF"))
-                            .shadow(color: Color(hex: "#FFFFFF").opacity(0.6), radius: 6, x: 0, y: 0)
-                            .padding(.horizontal, 80)
-                            .padding(.vertical, 24)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(hex: "#0A1428").opacity(0.7))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color(hex: "#FFFFFF"), lineWidth: 3)
-                                    .shadow(color: Color(hex: "#FFFFFF").opacity(0.6), radius: 8, x: 0, y: 0)
-                            )
-                    }
-                    .buttonStyle(.plain)
+                    PrimaryButton(text: "PLAY", action: onPlayTapped)
 
-                    // Settings button
-                    Button(action: { showSettings.toggle() }) {
-                        Text("SETTINGS")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(Color(hex: "#00D9FF"))
-                            .shadow(color: Color(hex: "#00D9FF").opacity(0.4), radius: 4, x: 0, y: 0)
-                            .padding(.horizontal, 40)
-                            .padding(.vertical, 16)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color(hex: "#0A1428").opacity(0.5))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color(hex: "#00D9FF"), lineWidth: 2)
-                                    .shadow(color: Color(hex: "#00D9FF").opacity(0.8), radius: 8, x: 0, y: 0)
-                            )
-                    }
-                    .buttonStyle(.plain)
+                    SecondaryButton(text: "SETTINGS", action: { showSettings.toggle() })
 
                     Spacer().frame(height: 60)
                 }

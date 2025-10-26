@@ -80,23 +80,28 @@ struct UIStyleGuide {
 
     // MARK: - Button Styles
     struct Button {
-        // Primary Button
+        // Primary Button (PLAY button on main menu)
         struct Primary {
             static let backgroundColor = Colors.deepSpaceBlue
             static let backgroundOpacity: CGFloat = 0.7
             static let borderColor = Colors.white
-            static let borderWidth: CGFloat = 2.0
+            static let borderWidth: CGFloat = 3.0
             static let borderGlow = Glow.white
             static let textColor = Colors.white
             static let textFont = Typography.button
             static let textGlow = Glow.white
-            static let cornerRadius: CGFloat = 8.0
-            static let paddingHorizontal: CGFloat = 24.0
-            static let paddingVertical: CGFloat = 12.0
+            static let cornerRadius: CGFloat = 12.0
+            static let paddingHorizontal: CGFloat = 80.0
+            static let paddingVertical: CGFloat = 24.0
             static let minHeight: CGFloat = 44.0
+            static let fontSize: CGFloat = 48.0
+            static let textShadowOpacity: CGFloat = 0.6
+            static let textShadowRadius: CGFloat = 6.0
+            static let borderShadowOpacity: CGFloat = 0.6
+            static let borderShadowRadius: CGFloat = 8.0
         }
 
-        // Secondary Button
+        // Secondary Button (SETTINGS button on main menu)
         struct Secondary {
             static let backgroundColor = Colors.deepSpaceBlue
             static let backgroundOpacity: CGFloat = 0.5
@@ -107,9 +112,14 @@ struct UIStyleGuide {
             static let textFont = Typography.button
             static let textGlow = Glow.subtle
             static let cornerRadius: CGFloat = 8.0
-            static let paddingHorizontal: CGFloat = 20.0
-            static let paddingVertical: CGFloat = 10.0
+            static let paddingHorizontal: CGFloat = 40.0
+            static let paddingVertical: CGFloat = 16.0
             static let minHeight: CGFloat = 40.0
+            static let fontSize: CGFloat = 24.0
+            static let textShadowOpacity: CGFloat = 0.4
+            static let textShadowRadius: CGFloat = 4.0
+            static let borderShadowOpacity: CGFloat = 0.8
+            static let borderShadowRadius: CGFloat = 8.0
         }
 
         // Small Button (Plus buttons, etc)

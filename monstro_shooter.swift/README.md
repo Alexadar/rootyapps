@@ -5,10 +5,10 @@ Swift/SpriteKit port of Flash Monster Shooter. Cross-platform: macOS, iOS, iPadO
 ## Status
 
 **Core**: Wave-based spawning, 12000x12000 map, 4500x4500 spawn box, smooth camera, modular architecture
-**Gameplay**: WASD/joystick movement, mouse/touch aim, pistol (20-round mag, auto-reload), collision physics
-**UI**: Arcade menu backgrounds, HUD (time/health/ammo/percentage), settings popup (BGM/SFX toggles)
-**Audio**: Random BGM (menu_1/2, fight_1/2), SFX (pistol, reload, walker), persistent settings (UserDefaults)
-**Monsters**: Berserker (walk/dying animations, chase AI)
+**Gameplay**: WASD/joystick movement, mouse/touch aim, pistol (20-round mag, auto-reload), collision physics, player damage system
+**UI**: Arcade menu backgrounds, HUD (time/health/ammo/kills), settings popup (BGM/SFX toggles), game over screen with Try Again/Menu buttons
+**Audio**: Random BGM with auto-cycling (menu_1/2, fight_1/2), SFX (pistol, reload, walker), persistent settings (UserDefaults)
+**Monsters**: Berserker (walk/dying animations, chase AI, dot damage on contact)
 
 ## Controls
 
@@ -19,13 +19,14 @@ Swift/SpriteKit port of Flash Monster Shooter. Cross-platform: macOS, iOS, iPadO
 
 ```
 monstro_client/
-├── Core/              # GameScene extensions (8 files)
-├── Rendering/         # GameRenderer, WorldCamera, HUDCamera, GameWorld
-├── UI/                # UIStyleGuide, touch controls
+├── Core/              # GameScene extensions (8 files), GameConstants, GameTypes
+├── Rendering/         # GameRenderer, WorldCamera, HUDCamera, GameWorld, TextureAtlas
+├── UI/                # UIStyleGuide, StyledButton, GameHUD, GameOverUI
 ├── Input/             # KeyboardMouseInput, TouchInput
-├── Entities/          # Player, Bullet, Monster, Weapon, GameLevel
+├── Entities/          # Player, Bullet, Monster, Weapon, WeaponConfig, GameLevel
 ├── Monsters/          # Berserker
-├── Audio/             # AudioManager (BGM/SFX)
+├── Physics/           # GameScene+Physics (collision handling)
+├── Audio/             # AudioManager (BGM/SFX with auto-cycling)
 ├── Settings/          # SettingsManager (UserDefaults)
 ├── Assets/Audio/      # BGM/*.mp3, SFX/*.wav
 └── Resources/         # Sprites, textures, animations
@@ -63,6 +64,14 @@ HUD: 20px margin, 60px top, 40px row spacing, 32px height, z-pos 1000
 
 macOS 26.0+, Xcode 16+, Swift 5.0+, SwiftUI/SpriteKit/AVFoundation
 
+## Recent Updates
+
+- File organization: Moved loose files to proper folders (Entities/, Core/, Rendering/)
+- Audio cycling: Music tracks now auto-cycle to next random track when finished
+- UI consistency: Unified button styling via UIStyleGuide with reusable StyledButton components
+- Game over: Added game over UI with styled Try Again/Menu buttons
+- Player damage: Monster collision damage with cooldown system
+
 ## Known Issues
 
-Single monster type, no player damage system, no score tracking, test level only
+Single monster type, test level only, weapon switching not implemented
