@@ -8,7 +8,7 @@ Swift/SpriteKit port of Flash Monster Shooter. Cross-platform: macOS, iOS, iPadO
 **Gameplay**: WASD/joystick movement, mouse/touch aim, pistol (20-round mag, auto-reload), collision physics, player damage system
 **UI**: Arcade menu backgrounds, HUD (time/health/ammo/kills), settings popup (BGM/SFX toggles), game over screen with Try Again/Menu buttons
 **Audio**: Random BGM with auto-cycling (menu_1/2, fight_1/2), SFX (pistol, reload, walker), persistent settings (UserDefaults)
-**Monsters**: Berserker (walk/dying animations, chase AI, dot damage on contact)
+**Monsters**: 6 types (Bug, Bug2, Bird, Bird2, Walker, Berserker) with walk/dying animations, chase AI, configurable stats, death sounds
 
 ## Controls
 
@@ -17,19 +17,21 @@ Swift/SpriteKit port of Flash Monster Shooter. Cross-platform: macOS, iOS, iPadO
 
 ## Structure
 
-```
+```plaintext
 monstro_client/
 ├── Core/              # GameScene extensions (8 files), GameConstants, GameTypes
 ├── Rendering/         # GameRenderer, WorldCamera, HUDCamera, GameWorld, TextureAtlas
 ├── UI/                # UIStyleGuide, StyledButton, GameHUD, GameOverUI
 ├── Input/             # KeyboardMouseInput, TouchInput
-├── Entities/          # Player, Bullet, Monster, Weapon, WeaponConfig, GameLevel
-├── Monsters/          # Berserker
+├── Entities/          # Player, Bullet, Monster, Weapon, WeaponConfig, GameLevel, MapConfig
+├── Monsters/          # Berserker, Walker, Bug, Bug2, Bird, Bird2
 ├── Physics/           # GameScene+Physics (collision handling)
 ├── Audio/             # AudioManager (BGM/SFX with auto-cycling)
 ├── Settings/          # SettingsManager (UserDefaults)
 ├── Assets/Audio/      # BGM/*.mp3, SFX/*.wav
-└── Resources/         # Sprites, textures, animations
+└── Resources/
+    ├── MapConfigs/    # 250 map JSON configs + monster_types.json + all_maps.json
+    └── Sprites/       # Textures, animations
 ```
 
 ## Rendering Architecture
@@ -47,6 +49,27 @@ monstro_client/
 
 Spawn box: 4500x4500, Camera smooth: 0.1, Player: 300, Monster: 100, Bullet: 800
 HUD: 20px margin, 60px top, 40px row spacing, 32px height, z-pos 1000
+
+## Map System
+
+**Config Format**: JSON files defining wave-based gameplay
+- **250 maps** imported from SQL database (IDs: 1, 14-37, 1029-1273)
+- **Wave system**: Time-triggered spawn events with monster counts
+- **Progressive difficulty**: Monster types unlock at specific timestamps
+- **Duration**: 40-600 seconds per map
+- **Max victims**: Per-monster-type kill limits
+- **Localization**: Russian (ru-ru) and English (en-us) names/descriptions
+- **Encoding**: Imported from SQL dump with windows-1251 → UTF-8 conversion
+
+**Example** (map_0014.json):
+```plaintext
+Name: "карта 5" (ru-ru)
+Duration: 45s, Resource: map_1
+Waves: t=1s(5), t=11s(15), t=31s(15)
+Types: t=30s → [Bug], t=30s → [Bug, Walker]
+```
+
+**MapConfig.swift**: Codable struct with `load(filename:)` and `loadAll()` helpers
 
 ## Tech Notes
 
@@ -66,12 +89,21 @@ macOS 26.0+, Xcode 16+, Swift 5.0+, SwiftUI/SpriteKit/AVFoundation
 
 ## Recent Updates
 
-- File organization: Moved loose files to proper folders (Entities/, Core/, Rendering/)
-- Audio cycling: Music tracks now auto-cycle to next random track when finished
-- UI consistency: Unified button styling via UIStyleGuide with reusable StyledButton components
-- Game over: Added game over UI with styled Try Again/Menu buttons
-- Player damage: Monster collision damage with cooldown system
+- **Map import**: Imported 250 maps from SQL database with proper windows-1251 → UTF-8 encoding conversion
+- **Audio refactor**: Abstracted AudioManager - sound filenames now stored in Monster subclasses, not hardcoded
+- **Monster system**: Added 5 new monster types (Bug, Bug2, Bird, Bird2, Walker) with unique stats, animations, death sounds
+- **Architecture**: Monster base class handles animations/sounds generically, subclasses configure via properties
+- **Type safety**: Fixed CGFloat/Int conversions for damage calculations
+- **macOS compilation**: All compilation errors fixed, builds successfully on macOS
+
+## Monster Types Database
+
+**monster_types.json**: 24 monster definitions with stats
+- ID 1-5: Bug, Walker, Bird, Bug2, Bird2 (implemented)
+- ID 6-24: Additional types (not yet implemented)
+- Properties: speed, health, damage, bodyRadius, experienceReward, moneyReward
+- Resource mapping: resourceFile + resourceName for sprite loading
 
 ## Known Issues
 
-Single monster type, test level only, weapon switching not implemented
+250 maps parsed but not integrated into gameplay, weapon switching not implemented, only 6/24 monster types implemented

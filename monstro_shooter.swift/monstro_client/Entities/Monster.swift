@@ -6,23 +6,52 @@ import AppKit
 import UIKit
 #endif
 
-/// Monster base class (moved out of GameScene for separation of concerns).
+/// Monster base class with generalized animation support
 class Monster {
     var sprite: SKSpriteNode!
     var speed: CGFloat = GameConstants.monsterSpeed
     var boxSize: CGSize = GameConstants.monsterBoxSize
     var rotationOffset: CGFloat = GameConstants.monsterRotationOffset
     var isDead: Bool = false
-    var damage: Int = 5  // Default damage per hit
-    var lastHitTime: TimeInterval = 0  // Track last hit to prevent rapid hits
-    var hitCooldown: TimeInterval = 1.0  // Seconds between hits
+    var damage: CGFloat = 5.0
+    var health: CGFloat = 10.0
+    var lastHitTime: TimeInterval = 0
+    var hitCooldown: TimeInterval = 1.0
+
+    // Animation system
+    private var walkFrames: [SKTexture] = []
+    private var dyingFrames: [SKTexture] = []
+    private var isDying = false
     private var animationTimer: TimeInterval = 0
+
+    // Animation configuration (set in subclass init)
+    var walkAnimationDirectory: String? = nil
+    var dyingAnimationDirectory: String? = nil
+    var walkFrameRate: TimeInterval = 0.08
+    var dyingFrameRate: TimeInterval = 0.06
+
+    // Sound files (set in subclass init)
+    var deathSounds: [String] = []
 
     init() {}
 
-    /// Default setup: simple colored placeholder (kept for safety)
+    /// Setup with texture loading from configured directories
     func setup(at position: CGPoint, targetPosition: CGPoint) {
-        sprite = SKSpriteNode(color: SKColor(red: 0.8, green: 0.2, blue: 0.2, alpha: 1.0), size: boxSize)
+        // Load animation frames if directories configured
+        if let walkDir = walkAnimationDirectory {
+            walkFrames = loadTextures(fromDirectory: walkDir)
+        }
+        if let dyingDir = dyingAnimationDirectory {
+            dyingFrames = loadTextures(fromDirectory: dyingDir)
+        }
+
+        // Create sprite with first walk frame or fallback color
+        if let first = walkFrames.first {
+            sprite = SKSpriteNode(texture: first, size: boxSize)
+        } else {
+            sprite = SKSpriteNode(color: SKColor(red: 0.8, green: 0.2, blue: 0.2, alpha: 1.0), size: boxSize)
+        }
+
         sprite.position = position
         sprite.zPosition = 8
         sprite.name = "monster"
@@ -32,16 +61,22 @@ class Monster {
         sprite.physicsBody?.contactTestBitMask = PhysicsCategory.bullet | PhysicsCategory.player
         sprite.physicsBody?.collisionBitMask = 0
         sprite.physicsBody?.affectedByGravity = false
+
+        // Start walk animation if available
+        if !walkFrames.isEmpty {
+            let walkAnim = SKAction.animate(with: walkFrames, timePerFrame: walkFrameRate, resize: true, restore: false)
+            sprite.run(SKAction.repeatForever(walkAnim), withKey: "walk")
+        }
     }
 
-    /// Default movement: move toward player and rotate (override in subclasses if needed).
-    /// Stops at player hitbox edge to prevent flickering
+    /// Update monster movement and animation
     func update(deltaTime: TimeInterval, playerPosition: CGPoint, playerHitboxRadius: CGFloat) {
+        guard !isDying else { return }
+
         let dx = playerPosition.x - sprite.position.x
         let dy = playerPosition.y - sprite.position.y
         let distance = sqrt(dx*dx + dy*dy)
 
-        // Stop distance is player hitbox radius + half of monster size
         let stopDistance = playerHitboxRadius + (boxSize.width / 2.0)
 
         if distance > stopDistance {
@@ -51,23 +86,58 @@ class Monster {
             sprite.position.x += ndx * speed * CGFloat(deltaTime)
             sprite.position.y += ndy * speed * CGFloat(deltaTime)
 
-            // For top-down art that expects left-right movement, rotate so sprite faces movement
             let angle = atan2(dy, dx)
             sprite.zRotation = angle + rotationOffset
         }
 
-        // Ensure sprite size matches box at runtime
         sprite.size = boxSize
-
         animationTimer += deltaTime
     }
 
-    /// Default die: no-op for generic monsters. Subclasses should override to provide death animation
-    /// behavior. The base implementation removes the sprite to avoid leaving unknown nodes in scene.
+    /// Handle death with animation
     func die() {
+        guard !isDying else { return }
+        isDying = true
         isDead = true
-        sprite.removeAllActions()
-        sprite.physicsBody = nil
-        sprite.removeFromParent()
+
+        // Play death sound
+        playDeathSound()
+
+        // Stop walk animation
+        sprite.removeAction(forKey: "walk")
+
+        let priorTexture = sprite.texture
+
+        // Play dying animation if available
+        if !dyingFrames.isEmpty {
+            let dyingAnim = SKAction.animate(with: dyingFrames, timePerFrame: dyingFrameRate, resize: true, restore: false)
+            sprite.run(dyingAnim) { [weak self] in
+                guard let self = self else { return }
+                // Freeze on last frame
+                if let last = self.dyingFrames.last {
+                    self.sprite.texture = last
+                } else if let prior = priorTexture {
+                    self.sprite.texture = prior
+                }
+                self.sprite.removeAllActions()
+            }
+        } else {
+            // Fallback: tint and freeze
+            let tint = SKAction.colorize(with: .red, colorBlendFactor: 0.6, duration: 0.12)
+            sprite.run(tint) { [weak self] in
+                self?.sprite.removeAllActions()
+            }
+        }
+
+        // Disable physics but keep visible
+        sprite.physicsBody?.categoryBitMask = 0
+        sprite.physicsBody?.contactTestBitMask = 0
+        sprite.physicsBody?.collisionBitMask = 0
+    }
+
+    /// Play appropriate death sound
+    private func playDeathSound() {
+        guard !deathSounds.isEmpty else { return }
+        AudioManager.shared.playRandomSound(from: deathSounds)
     }
 }

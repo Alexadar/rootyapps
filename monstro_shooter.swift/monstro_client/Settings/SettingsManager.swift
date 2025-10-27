@@ -22,6 +22,7 @@ class SettingsManager {
     private enum Keys {
         static let bgmEnabled = "settings.audio.bgmEnabled"
         static let sfxEnabled = "settings.audio.sfxEnabled"
+        static let selectedMapFilename = "settings.game.selectedMapFilename"
     }
 
     private init() {
@@ -34,7 +35,8 @@ class SettingsManager {
     private func registerDefaults() {
         userDefaults.register(defaults: [
             Keys.bgmEnabled: true,
-            Keys.sfxEnabled: true
+            Keys.sfxEnabled: true,
+            Keys.selectedMapFilename: "map_016"  // First map (orderNumber 0)
         ])
     }
 
@@ -62,10 +64,24 @@ class SettingsManager {
         }
     }
 
+    // MARK: - Game Settings
+
+    /// Get/set selected map filename
+    var selectedMapFilename: String {
+        get {
+            return userDefaults.string(forKey: Keys.selectedMapFilename) ?? "map_016"
+        }
+        set {
+            userDefaults.set(newValue, forKey: Keys.selectedMapFilename)
+            print("[SettingsManager] Selected map: \(newValue)")
+        }
+    }
+
     /// Reset all settings to defaults
     func resetToDefaults() {
         bgmEnabled = true
         sfxEnabled = true
+        selectedMapFilename = "map_016"
         print("[SettingsManager] Settings reset to defaults")
     }
 }

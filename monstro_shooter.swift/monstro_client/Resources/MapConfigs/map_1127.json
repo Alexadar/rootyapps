@@ -1,0 +1,99 @@
+{
+  "id": 1127,
+  "ownerName": null,
+  "dropPointId": 10,
+  "ownerId": null,
+  "energyCost": 10000,
+  "landingDuration": 90,
+  "gameResource": "map_4",
+  "country": null,
+  "lastRenameDate": null,
+  "renameCost": 1,
+  "renameCostMult": 1,
+  "removed": false,
+  "orderNumber": 600,
+  "defaultNameLocalizations": {
+    "ru-ru": "Карта 6",
+    "en-us": "First map!"
+  },
+  "descriptionLocalizations": {
+    "ru-ru": "хз",
+    "en-us": ""
+  },
+  "monsterSpawnWaves": [
+    {
+      "startTime": 1,
+      "count": 23
+    },
+    {
+      "startTime": 3,
+      "count": 45
+    },
+    {
+      "startTime": 22,
+      "count": 0
+    },
+    {
+      "startTime": 23,
+      "count": 40
+    },
+    {
+      "startTime": 25,
+      "count": 83
+    },
+    {
+      "startTime": 59,
+      "count": 0
+    },
+    {
+      "startTime": 60,
+      "count": 49
+    },
+    {
+      "startTime": 63,
+      "count": 105
+    },
+    {
+      "startTime": 90,
+      "count": 0
+    }
+  ],
+  "monsterTypes": [
+    {
+      "startTime": 1,
+      "monsterTypeIds": [
+        6,
+        8,
+        9
+      ]
+    },
+    {
+      "startTime": 63,
+      "monsterTypeIds": [
+        10,
+        8,
+        9
+      ]
+    }
+  ],
+  "maximumVictims": {
+    "1": 5000,
+    "2": 5000,
+    "3": 5000,
+    "4": 5000,
+    "5": 5000,
+    "6": 5000,
+    "7": 5000,
+    "8": 5000,
+    "9": 5000,
+    "10": 5000,
+    "11": 5000,
+    "12": 5000,
+    "13": 5000,
+    "14": 5000,
+    "15": 5000,
+    "16": 5000,
+    "17": 5000,
+    "18": 5000
+  }
+}

@@ -63,6 +63,8 @@ struct AnimatedMainMenuView: View {
     @State private var showSettings = false
     @State private var bgmEnabled = SettingsManager.shared.bgmEnabled
     @State private var sfxEnabled = SettingsManager.shared.sfxEnabled
+    @State private var availableMaps: [MapConfig] = []
+    @State private var selectedMapIndex: Int = 0
 
     // Pick random arcade background at runtime
     @State private var backgroundImage: String = ["arcade_bg_1.jpg", "arcade_bg_2.jpg"].randomElement() ?? "arcade_bg_1.jpg"
@@ -101,15 +103,64 @@ struct AnimatedMainMenuView: View {
                     Color.black.ignoresSafeArea()
                 }
 
-                // Overlay UI (Play and Settings buttons with styleguide)
+                // Overlay UI (Map selector, Play and Settings buttons)
                 VStack(spacing: 20) {
                     Spacer()
+
+                    // Map selector
+                    if !availableMaps.isEmpty {
+                        HStack(spacing: 15) {
+                            // Previous map button
+                            Button(action: {
+                                selectedMapIndex = (selectedMapIndex - 1 + availableMaps.count) % availableMaps.count
+                                saveSelectedMap()
+                            }) {
+                                Text("<")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(Color(hex: "#FFFFFF"))
+                                    .frame(width: 40, height: 40)
+                            }
+                            .buttonStyle(.plain)
+
+                            // Map name display
+                            Text(availableMaps[selectedMapIndex].getLocalizedName())
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(Color(hex: "#FFFFFF"))
+                                .frame(minWidth: 200)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 20)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color(hex: "#0A1428").opacity(0.7))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(hex: "#00FF99"), lineWidth: 2)
+                                )
+
+                            // Next map button
+                            Button(action: {
+                                selectedMapIndex = (selectedMapIndex + 1) % availableMaps.count
+                                saveSelectedMap()
+                            }) {
+                                Text(">")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(Color(hex: "#FFFFFF"))
+                                    .frame(width: 40, height: 40)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.bottom, 10)
+                    }
 
                     PrimaryButton(text: "PLAY", action: onPlayTapped)
 
                     SecondaryButton(text: "SETTINGS", action: { showSettings.toggle() })
 
                     Spacer().frame(height: 60)
+                }
+                .onAppear {
+                    loadMaps()
                 }
 
                 // Settings popup overlay
@@ -122,6 +173,28 @@ struct AnimatedMainMenuView: View {
                 }
             }
         }
+    }
+
+    private func loadMaps() {
+        availableMaps = MapConfig.loadAll()
+        if availableMaps.isEmpty {
+            print("[AnimatedMainMenuView] No maps loaded!")
+            return
+        }
+
+        // Find saved map or default to first
+        let savedFilename = SettingsManager.shared.selectedMapFilename
+        if let index = availableMaps.firstIndex(where: { "map_\(String(format: "%03d", $0.id))" == savedFilename }) {
+            selectedMapIndex = index
+        } else {
+            selectedMapIndex = 0
+        }
+    }
+
+    private func saveSelectedMap() {
+        guard !availableMaps.isEmpty else { return }
+        let filename = "map_\(String(format: "%03d", availableMaps[selectedMapIndex].id))"
+        SettingsManager.shared.selectedMapFilename = filename
     }
 }
 

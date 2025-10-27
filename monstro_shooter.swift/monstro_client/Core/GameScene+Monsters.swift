@@ -147,7 +147,7 @@ extension GameScene {
         // Apply immediate damage for newly touching monsters (not in previous set)
         let newlyTouching = currentlyTouching.subtracting(touchingMonsters)
         if !newlyTouching.isEmpty {
-            var immediateDamage = 0
+            var immediateDamage: CGFloat = 0
             for monster in monsters {
                 guard !monster.isDead else { continue }
                 let monsterId = ObjectIdentifier(monster)
@@ -157,7 +157,7 @@ extension GameScene {
             }
 
             if immediateDamage > 0 {
-                player.health -= immediateDamage
+                player.health -= Int(immediateDamage)
                 print("Initial hit from \(newlyTouching.count) monsters! Total: \(immediateDamage), Health: \(player.health)")
 
                 // Check if player died
@@ -177,7 +177,7 @@ extension GameScene {
             lastDamageTime = currentTime
 
             // Find all monsters in touching set and apply damage
-            var totalDamage = 0
+            var totalDamage: CGFloat = 0
             for monster in monsters {
                 guard !monster.isDead else { continue }
                 let monsterId = ObjectIdentifier(monster)
@@ -188,7 +188,7 @@ extension GameScene {
             }
 
             if totalDamage > 0 {
-                player.health -= totalDamage
+                player.health -= Int(totalDamage)
                 print("Periodic damage from \(touchingMonsters.count) monsters! Total: \(totalDamage), Health: \(player.health)")
 
                 // Check if player died

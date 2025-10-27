@@ -1,0 +1,105 @@
+{
+  "id": 1039,
+  "ownerName": null,
+  "dropPointId": 7,
+  "ownerId": null,
+  "energyCost": 10000,
+  "landingDuration": 44,
+  "gameResource": "map_2",
+  "country": null,
+  "lastRenameDate": null,
+  "renameCost": 1,
+  "renameCostMult": 1,
+  "removed": false,
+  "orderNumber": 0,
+  "defaultNameLocalizations": {
+    "ru-ru": "К1 Десант 011 \"Блиц\"",
+    "en-us": "First map!"
+  },
+  "descriptionLocalizations": {
+    "ru-ru": "хз",
+    "en-us": ""
+  },
+  "monsterSpawnWaves": [
+    {
+      "startTime": 1,
+      "count": 30
+    },
+    {
+      "startTime": 2,
+      "count": 60
+    },
+    {
+      "startTime": 5,
+      "count": 90
+    },
+    {
+      "startTime": 7,
+      "count": 120
+    },
+    {
+      "startTime": 11,
+      "count": 150
+    },
+    {
+      "startTime": 12,
+      "count": 0
+    },
+    {
+      "startTime": 19,
+      "count": 40
+    },
+    {
+      "startTime": 21,
+      "count": 70
+    },
+    {
+      "startTime": 23,
+      "count": 120
+    },
+    {
+      "startTime": 25,
+      "count": 150
+    },
+    {
+      "startTime": 27,
+      "count": 170
+    },
+    {
+      "startTime": 28,
+      "count": 0
+    }
+  ],
+  "monsterTypes": [
+    {
+      "startTime": 20,
+      "monsterTypeIds": [
+        1,
+        2,
+        5,
+        3,
+        4
+      ]
+    }
+  ],
+  "maximumVictims": {
+    "1": 5000,
+    "2": 5000,
+    "3": 5000,
+    "4": 5000,
+    "5": 5000,
+    "6": 5000,
+    "7": 5000,
+    "8": 5000,
+    "9": 5000,
+    "10": 5000,
+    "11": 5000,
+    "12": 5000,
+    "13": 5000,
+    "14": 5000,
+    "15": 5000,
+    "16": 5000,
+    "17": 5000,
+    "18": 5000
+  }
+}

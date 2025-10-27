@@ -13,8 +13,7 @@ class AudioManager: NSObject, AVAudioPlayerDelegate {
     private let menuMusic = ["menu_1.mp3", "menu_2.mp3"]
     private let fightMusic = ["fight_1.mp3", "fight_2.mp3"]
 
-    // SFX files
-    private let walkerSounds = ["monster_walker_1.wav", "monster_walker_2.wav"]
+    // Weapon SFX files
     private let pistolSound = "weapon_pistol.wav"
     private let reloadSound = "weapon_reload.wav"
 
@@ -156,9 +155,9 @@ class AudioManager: NSObject, AVAudioPlayerDelegate {
 
     // MARK: - Sound Effects
 
-    /// Play random walker sound for berserker
-    func playWalkerSound() {
-        guard let randomSound = walkerSounds.randomElement() else { return }
+    /// Play random sound from an array of sound filenames
+    func playRandomSound(from soundFiles: [String]) {
+        guard let randomSound = soundFiles.randomElement() else { return }
         playSFX(filename: randomSound)
     }
 
