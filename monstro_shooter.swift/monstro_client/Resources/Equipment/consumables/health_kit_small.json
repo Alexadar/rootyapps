@@ -1,0 +1,19 @@
+{
+  "id": 300,
+  "name": "Small Health Kit",
+  "nameLocalizations": {
+    "en-us": "Small Health Kit",
+    "ru-ru": "Малый медпакет"
+  },
+  "description": "Restores 25% health instantly. Can be used during combat.",
+  "consumableType": "RestoreHealthInGame",
+  "healthRestore": 0.25,
+  "maxStackSize": 10,
+  "levelRequirement": 0,
+  "buyPriceSoft": 300,
+  "buyPriceHard": 10,
+  "sellPriceSoft": 150,
+  "sellPriceHard": 5,
+  "marketAvailability": true,
+  "orderId": 300
+}

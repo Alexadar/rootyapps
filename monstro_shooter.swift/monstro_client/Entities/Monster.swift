@@ -18,6 +18,11 @@ class Monster {
     var lastHitTime: TimeInterval = 0
     var hitCooldown: TimeInterval = 1.0
 
+    // Steering behavior (from old game)
+    var velocityX: CGFloat = 0
+    var velocityY: CGFloat = 0
+    var turnRate: CGFloat = 34  // Steering speed
+
     // Animation system
     private var walkFrames: [SKTexture] = []
     private var dyingFrames: [SKTexture] = []
@@ -80,13 +85,27 @@ class Monster {
         let stopDistance = playerHitboxRadius + (boxSize.width / 2.0)
 
         if distance > stopDistance {
-            let ndx = dx / distance
-            let ndy = dy / distance
+            // Steering behavior from old game (BaseMonster.as lines 138-158)
+            let distanceTotal = distance
 
-            sprite.position.x += ndx * speed * CGFloat(deltaTime)
-            sprite.position.y += ndy * speed * CGFloat(deltaTime)
+            // Steering toward target
+            let moveDistanceX = turnRate * dx / distanceTotal
+            let moveDistanceY = turnRate * dy / distanceTotal
 
-            let angle = atan2(dy, dx)
+            velocityX += moveDistanceX * CGFloat(deltaTime)
+            velocityY += moveDistanceY * CGFloat(deltaTime)
+
+            // Normalize velocity and apply speed
+            let totalVelocity = sqrt(velocityX*velocityX + velocityY*velocityY)
+            if totalVelocity > 0 {
+                velocityX = speed * velocityX / totalVelocity
+                velocityY = speed * velocityY / totalVelocity
+            }
+
+            sprite.position.x += velocityX * CGFloat(deltaTime)
+            sprite.position.y += velocityY * CGFloat(deltaTime)
+
+            let angle = atan2(velocityY, velocityX)
             sprite.zRotation = angle + rotationOffset
         }
 

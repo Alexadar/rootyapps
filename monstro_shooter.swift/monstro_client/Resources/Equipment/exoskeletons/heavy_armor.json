@@ -1,0 +1,21 @@
+{
+  "id": 4,
+  "name": "Heavy Armor",
+  "nameLocalizations": {
+    "en-us": "Heavy Armor",
+    "ru-ru": "Тяжёлая броня"
+  },
+  "description": "Maximum protection at the cost of mobility. Perfect for tank builds and holding positions.",
+  "levelRequirement": 12,
+  "rankRequirement": 0,
+  "defence": 0.35,
+  "speed": 0.85,
+  "gameResourceSprite": "exoskeleton_heavy",
+  "lobbyResourceSprite": "exoskeleton_heavy_preview",
+  "buyPriceSoft": 18000,
+  "buyPriceHard": 350,
+  "sellPriceSoft": 9000,
+  "sellPriceHard": 175,
+  "marketAvailability": true,
+  "orderId": 4
+}

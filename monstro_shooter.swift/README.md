@@ -5,10 +5,11 @@ Swift/SpriteKit port of Flash Monster Shooter. Cross-platform: macOS, iOS, iPadO
 ## Status
 
 **Core**: Wave-based spawning, 12000x12000 map, 4500x4500 spawn box, smooth camera, modular architecture
-**Gameplay**: WASD/joystick movement, mouse/touch aim, pistol (20-round mag, auto-reload), collision physics, player damage system
-**UI**: Arcade menu backgrounds, HUD (time/health/ammo/kills), settings popup (BGM/SFX toggles), game over screen with Try Again/Menu buttons
+**Gameplay**: WASD/joystick movement, mouse/touch aim, weapon selection (pistol/rifle/minigun), exoskeleton system (defense/speed), collision physics, armor-based damage reduction
+**UI**: Arcade menu backgrounds, dropdown selectors (drop points/maps/weapons/exoskeletons), HUD (time/health/ammo/kills), settings popup (BGM/SFX toggles), game over screen
 **Audio**: Random BGM with auto-cycling (menu_1/2, fight_1/2), SFX (pistol, reload, walker), persistent settings (UserDefaults)
 **Monsters**: 6 types (Bug, Bug2, Bird, Bird2, Walker, Berserker) with walk/dying animations, chase AI, configurable stats, death sounds
+**Equipment**: 3 weapons (pistol/rifle/minigun), 4 exoskeletons (standard/light/medium/heavy armor) with defense and speed modifiers
 
 ## Controls
 
@@ -21,16 +22,18 @@ Swift/SpriteKit port of Flash Monster Shooter. Cross-platform: macOS, iOS, iPadO
 monstro_client/
 ├── Core/              # GameScene extensions (8 files), GameConstants, GameTypes
 ├── Rendering/         # GameRenderer, WorldCamera, HUDCamera, GameWorld, TextureAtlas
-├── UI/                # UIStyleGuide, StyledButton, GameHUD, GameOverUI
+├── UI/                # UIStyleGuide, StyledButton, DropdownSelector, GameHUD, GameOverUI
 ├── Input/             # KeyboardMouseInput, TouchInput
-├── Entities/          # Player, Bullet, Monster, Weapon, WeaponConfig, GameLevel, MapConfig
+├── Entities/          # Player, Bullet, Monster, Weapon, WeaponConfig, ExoskeletonConfig, GameLevel, MapConfig, DropPointLoader
 ├── Monsters/          # Berserker, Walker, Bug, Bug2, Bird, Bird2
 ├── Physics/           # GameScene+Physics (collision handling)
 ├── Audio/             # AudioManager (BGM/SFX with auto-cycling)
-├── Settings/          # SettingsManager (UserDefaults)
+├── Settings/          # SettingsManager (UserDefaults - map/weapon/exoskeleton persistence)
 ├── Assets/Audio/      # BGM/*.mp3, SFX/*.wav
 └── Resources/
     ├── MapConfigs/    # 250 map JSON configs + monster_types.json + all_maps.json
+    ├── Equipment/     # Weapons, exoskeletons, boosters, tools, consumables JSONs
+    ├── droppoints.json # 17 drop points with Russian names
     └── Sprites/       # Textures, animations
 ```
 
@@ -89,12 +92,28 @@ macOS 26.0+, Xcode 16+, Swift 5.0+, SwiftUI/SpriteKit/AVFoundation
 
 ## Recent Updates
 
-- **Map import**: Imported 250 maps from SQL database with proper windows-1251 → UTF-8 encoding conversion
-- **Audio refactor**: Abstracted AudioManager - sound filenames now stored in Monster subclasses, not hardcoded
-- **Monster system**: Added 5 new monster types (Bug, Bug2, Bird, Bird2, Walker) with unique stats, animations, death sounds
-- **Architecture**: Monster base class handles animations/sounds generically, subclasses configure via properties
-- **Type safety**: Fixed CGFloat/Int conversions for damage calculations
-- **macOS compilation**: All compilation errors fixed, builds successfully on macOS
+### Equipment System
+- **ExoskeletonConfig**: Defense (absolute damage reduction) + speed multipliers based on old ActionScript formula
+- **Armor calculation**: `actualDamage = max(damage - defense, minDamage)` with 0.4 minimum every 4th hit
+- **Player.takeDamage()**: Implements armor reduction from old game's BaseHero.as
+- **4 exoskeletons**: Standard (0 def, 1.0x speed), Light (1 def, 1.05x), Medium (2 def, 1.0x), Heavy (3.5 def, 0.85x)
+- **3 weapons**: Pistol (balanced), Rifle (penetration), Minigun (fire rate)
+
+### UI Improvements
+- **DropdownSelector**: Reusable SwiftUI component for all selectors
+- **Drop points**: Loaded from droppoints.json with Russian names from old SQL dump
+- **Menu selectors**: Drop point → Map → Weapon → Exoskeleton (4 dropdown hierarchy)
+- **Equipment display**: Shows stats inline ("Light Armor (⚔️1 🏃105%)")
+
+### Integration
+- **SettingsManager**: Persists selectedWeaponId, selectedExoskeletonId
+- **GameScene**: Loads weapon/exoskeleton from settings on player spawn
+- **Monster damage**: Updated to use Player.takeDamage() with armor calculation
+
+### Previous Updates
+- **Map import**: 250 maps from SQL with windows-1251 → UTF-8 conversion
+- **Monster system**: 6 types with animations, chase AI, death sounds
+- **Audio**: Auto-cycling BGM, SFX abstraction
 
 ## Monster Types Database
 
@@ -104,6 +123,15 @@ macOS 26.0+, Xcode 16+, Swift 5.0+, SwiftUI/SpriteKit/AVFoundation
 - Properties: speed, health, damage, bodyRadius, experienceReward, moneyReward
 - Resource mapping: resourceFile + resourceName for sprite loading
 
+## Equipment Data
+
+**Resources/Equipment/** contains 33 JSON files:
+- **6 weapons**: pistol, dual_pistols, rifle, minigun, shotgun, sniper_rifle
+- **7 exoskeletons**: standard_suit, light/medium/heavy_armor, recon_suit, elite_assault, stealth_ops
+- **8 boosters**: damage/defense/speed boosts, rapid_fire, extended_magazine, penetration_rounds, fast_reload, money_multiplier
+- **5 tools**: mines (basic/cluster), artillery (strike/barrage), explosion_belt
+- **3 consumables**: health kits (small/large/full)
+
 ## Known Issues
 
-250 maps parsed but not integrated into gameplay, weapon switching not implemented, only 6/24 monster types implemented
+Only 6/24 monster types implemented, boosters/tools/consumables not integrated, build errors with duplicate .gitkeep files

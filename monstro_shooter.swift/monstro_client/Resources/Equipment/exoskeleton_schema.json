@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Exoskeleton",
+  "description": "Exoskeleton (armor) item configuration for Monster Shooter",
+  "type": "object",
+  "required": ["id", "name", "defence", "speed"],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "Unique exoskeleton identifier"
+    },
+    "name": {
+      "type": "string",
+      "description": "Exoskeleton name (localized)"
+    },
+    "nameLocalizations": {
+      "type": "object",
+      "description": "Localized names",
+      "properties": {
+        "en-us": { "type": "string" },
+        "ru-ru": { "type": "string" }
+      }
+    },
+    "description": {
+      "type": "string",
+      "description": "Exoskeleton description"
+    },
+    "levelRequirement": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Minimum player level required"
+    },
+    "rankRequirement": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Minimum player rank required"
+    },
+    "defence": {
+      "type": "number",
+      "description": "Damage reduction (0.0-1.0 for percentage, or absolute value)"
+    },
+    "speed": {
+      "type": "number",
+      "description": "Movement speed modifier (1.0 = normal, >1.0 = faster, <1.0 = slower)"
+    },
+    "gameResourceSprite": {
+      "type": "string",
+      "description": "In-game sprite/texture name"
+    },
+    "lobbyResourceSprite": {
+      "type": "string",
+      "description": "Lobby/menu preview sprite name"
+    },
+    "buyPriceSoft": {
+      "type": "integer",
+      "description": "Purchase price in soft currency"
+    },
+    "buyPriceHard": {
+      "type": "integer",
+      "description": "Purchase price in hard currency"
+    },
+    "marketAvailability": {
+      "type": "boolean",
+      "description": "Whether available in market"
+    },
+    "orderId": {
+      "type": "integer",
+      "description": "Display order in market"
+    }
+  }
+}

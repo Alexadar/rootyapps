@@ -1,0 +1,25 @@
+{
+  "id": 200,
+  "name": "Proximity Mine",
+  "nameLocalizations": {
+    "en-us": "Proximity Mine",
+    "ru-ru": "Мина замедленного действия"
+  },
+  "description": "Deployable mine that explodes when enemies get close. Can place up to 3 at once.",
+  "toolType": "Mine",
+  "explosionToolType": 2,
+  "explosionRadius": 150,
+  "explosionPower": 100,
+  "kickOffRadius": 250,
+  "kickOffTime": 500,
+  "delay": 1000,
+  "maxStackSize": 5,
+  "usageLimit": 3,
+  "levelRequirement": 6,
+  "buyPriceSoft": 500,
+  "buyPriceHard": 15,
+  "sellPriceSoft": 250,
+  "sellPriceHard": 7,
+  "marketAvailability": true,
+  "orderId": 200
+}

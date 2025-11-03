@@ -157,8 +157,8 @@ extension GameScene {
             }
 
             if immediateDamage > 0 {
-                player.health -= Int(immediateDamage)
-                print("Initial hit from \(newlyTouching.count) monsters! Total: \(immediateDamage), Health: \(player.health)")
+                player.takeDamage(Double(immediateDamage))
+                print("Initial hit from \(newlyTouching.count) monsters! Damage: \(immediateDamage), Health: \(player.health)")
 
                 // Check if player died
                 if player.health <= 0 {
@@ -188,8 +188,8 @@ extension GameScene {
             }
 
             if totalDamage > 0 {
-                player.health -= Int(totalDamage)
-                print("Periodic damage from \(touchingMonsters.count) monsters! Total: \(totalDamage), Health: \(player.health)")
+                player.takeDamage(Double(totalDamage))
+                print("Periodic damage from \(touchingMonsters.count) monsters! Damage: \(totalDamage), Health: \(player.health)")
 
                 // Check if player died
                 if player.health <= 0 {

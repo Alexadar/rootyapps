@@ -1,0 +1,25 @@
+{
+  "id": 104,
+  "name": "Extended Magazine",
+  "nameLocalizations": {
+    "en-us": "Extended Magazine",
+    "ru-ru": "Увеличенный магазин"
+  },
+  "description": "Doubles magazine capacity for 5 minutes.",
+  "duration": 300000,
+  "effects": [
+    {
+      "effectType": 7,
+      "effectName": "WeaponCageSize",
+      "valueType": "Multiplication",
+      "value": 2.0
+    }
+  ],
+  "levelRequirement": 10,
+  "buyPriceSoft": 2500,
+  "buyPriceHard": 55,
+  "sellPriceSoft": 1250,
+  "sellPriceHard": 27,
+  "marketAvailability": true,
+  "orderId": 104
+}

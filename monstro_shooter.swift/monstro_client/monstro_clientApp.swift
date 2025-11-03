@@ -1,6 +1,8 @@
 import SwiftUI
 #if !os(macOS)
 import UIKit
+#else
+import AppKit
 #endif
 
 #if !os(macOS)
@@ -8,6 +10,23 @@ import UIKit
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
         return [.landscapeLeft, .landscapeRight]
+    }
+}
+#else
+/// AppDelegate for macOS to handle app termination with audio fade out
+class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationWillTerminate(_ notification: Notification) {
+        // Fade out audio before app terminates
+        let semaphore = DispatchSemaphore(value: 0)
+        AudioManager.shared.fadeOut(duration: 0.2) {
+            semaphore.signal()
+        }
+        // Wait up to 0.3s for fade to complete
+        _ = semaphore.wait(timeout: .now() + 0.3)
+    }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        return true
     }
 }
 #endif
@@ -24,6 +43,7 @@ struct monstro_clientApp: App {
         }
     }
     #else
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     init() {}
     #endif
 
@@ -37,5 +57,18 @@ struct monstro_clientApp: App {
                     #endif
                 }
         }
+        #if os(macOS)
+        .commands {
+            // Handle Cmd+Q quit
+            CommandGroup(replacing: .appTermination) {
+                Button("Quit") {
+                    AudioManager.shared.fadeOut(duration: 0.2) {
+                        NSApplication.shared.terminate(nil)
+                    }
+                }
+                .keyboardShortcut("q", modifiers: .command)
+            }
+        }
+        #endif
     }
 }

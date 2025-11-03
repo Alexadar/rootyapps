@@ -12,9 +12,12 @@ class Player {
     let sprite: SKSpriteNode
     var speed: CGFloat
     var currentWeapon: Weapon
+    var currentExoskeleton: ExoskeletonConfig
+    var defense: Double  // Damage reduction (absolute value subtracted from incoming damage)
     var health: Int
     var maxHealth: Int
     var hitboxRadius: CGFloat  // Circular hitbox radius
+    var hitCount: Int = 0  // Track hits for minimum damage calculation
 
     init?(initialPosition: CGPoint, size: CGSize = GameConstants.playerSize, atlasImage: String? = "exoskeletons_0.png", xmlPath: String? = "exoskeletons_0.xml") {
         // Try to load from atlas like previous implementation
@@ -43,7 +46,10 @@ class Player {
         sprite.physicsBody?.collisionBitMask = 0
         sprite.physicsBody?.affectedByGravity = false
 
-        self.speed = GameConstants.playerSpeed
+        // Initialize with default exoskeleton (standard suit)
+        self.currentExoskeleton = .standardSuit
+        self.defense = currentExoskeleton.defence
+        self.speed = GameConstants.playerSpeed * currentExoskeleton.speed
         self.currentWeapon = Weapon(config: .pistol)  // Default weapon
         self.maxHealth = 100
         self.health = 100
@@ -51,6 +57,31 @@ class Player {
 
     func getHealthPercentage() -> Int {
         return (health * 100) / maxHealth
+    }
+
+    /// Apply damage to player with armor calculation
+    /// Based on old ActionScript formula: actualDamage = max(damage - defence, minDamage)
+    func takeDamage(_ damage: Double) {
+        hitCount += 1
+
+        // Calculate minimum damage (0.4 every 4th hit to prevent zero damage)
+        let minDamage = (hitCount % 4 == 0) ? 0.4 : 0.0
+
+        // Apply armor formula from old game
+        let actualDamage = max(damage - defense, minDamage)
+
+        health -= Int(actualDamage)
+        if health < 0 { health = 0 }
+
+        print("[Player] Took \(Int(actualDamage)) damage (from \(Int(damage)), defense: \(defense)). Health: \(health)/\(maxHealth)")
+    }
+
+    /// Apply exoskeleton configuration to player
+    func applyExoskeleton(_ exoskeleton: ExoskeletonConfig) {
+        self.currentExoskeleton = exoskeleton
+        self.defense = exoskeleton.defence
+        self.speed = GameConstants.playerSpeed * exoskeleton.speed
+        print("[Player] Applied exoskeleton: \(exoskeleton.name) (defense: \(defense), speed multiplier: \(exoskeleton.speed))")
     }
 
     func setPosition(_ p: CGPoint) {
@@ -78,8 +109,12 @@ class Player {
             mv.dx /= length
             mv.dy /= length
 
-            let newX = sprite.position.x + mv.dx * speed * CGFloat(deltaTime)
-            let newY = sprite.position.y + mv.dy * speed * CGFloat(deltaTime)
+            // Match old game's 0.75 diagonal multiplier (not normalized 0.707)
+            let isDiagonal = abs(mv.dx) > 0.1 && abs(mv.dy) > 0.1
+            let multiplier: CGFloat = isDiagonal ? 0.75 : 1.0
+
+            let newX = sprite.position.x + mv.dx * speed * multiplier * CGFloat(deltaTime)
+            let newY = sprite.position.y + mv.dy * speed * multiplier * CGFloat(deltaTime)
 
             // Keep player within map bounds (not viewport bounds).
             // Scene uses center anchor point (0.5, 0.5), so map coordinates are -mapSize/2 to +mapSize/2

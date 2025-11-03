@@ -39,15 +39,24 @@ struct ContentView: View {
     var body: some View {
         if showGame {
             GameView(onReturnToMenu: {
-                showGame = false
+                // Fade out audio before returning to menu
+                AudioManager.shared.fadeOut(duration: 0.3) {
+                    showGame = false
+                    AudioManager.shared.playMenuMusic()
+                }
             })
             .onAppear {
-                // Switch to fight music when entering game
-                AudioManager.shared.playFightMusic()
+                // Fade in fight music when entering game
+                AudioManager.shared.fadeOut(duration: 0.3) {
+                    AudioManager.shared.playFightMusic()
+                }
             }
         } else {
             AnimatedMainMenuView(onPlayTapped: {
-                showGame = true
+                // Fade out before starting game
+                AudioManager.shared.fadeOut(duration: 0.3) {
+                    showGame = true
+                }
             })
             .onAppear {
                 // Start menu music when menu appears
@@ -63,8 +72,12 @@ struct AnimatedMainMenuView: View {
     @State private var showSettings = false
     @State private var bgmEnabled = SettingsManager.shared.bgmEnabled
     @State private var sfxEnabled = SettingsManager.shared.sfxEnabled
+    @State private var allDropPoints: [DropPoint] = []
+    @State private var selectedDropPointId: Int?
     @State private var availableMaps: [MapConfig] = []
     @State private var selectedMapIndex: Int = 0
+    @State private var selectedWeaponId: Int = 1 // Default to pistol
+    @State private var selectedExoskeletonId: Int = 1 // Default to standard suit
 
     // Pick random arcade background at runtime
     @State private var backgroundImage: String = ["arcade_bg_1.jpg", "arcade_bg_2.jpg"].randomElement() ?? "arcade_bg_1.jpg"
@@ -72,86 +85,83 @@ struct AnimatedMainMenuView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Arcade background with CSS cover style (aspect fill, centered)
-                if let imagePath = Bundle.main.path(forResource: backgroundImage.replacingOccurrences(of: ".jpg", with: ""),
-                                                    ofType: "jpg") {
-                    let _ = print("[AnimatedMainMenuView] Using background: \(backgroundImage)")
-                    #if os(macOS)
-                    if let nsImage = NSImage(contentsOfFile: imagePath) {
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: geometry.size.width, height: geometry.size.height)
-                            .clipped()
-                            .ignoresSafeArea()
-                    } else {
-                        Color.black.ignoresSafeArea()
-                    }
-                    #else
-                    if let uiImage = UIImage(contentsOfFile: imagePath) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
-                            .edgesIgnoringSafeArea(.all)
-                    } else {
-                        Color.black.ignoresSafeArea()
-                    }
-                    #endif
-                } else {
-                    // Fallback to black background
-                    Color.black.ignoresSafeArea()
-                }
+                // Video background layer (CSS cover style)
+                MainMenuVideoLayer()
 
-                // Overlay UI (Map selector, Play and Settings buttons)
+                // Overlay UI (Selectors, Play and Settings buttons)
                 VStack(spacing: 20) {
                     Spacer()
 
-                    // Map selector
-                    if !availableMaps.isEmpty {
-                        HStack(spacing: 15) {
-                            // Previous map button
-                            Button(action: {
-                                selectedMapIndex = (selectedMapIndex - 1 + availableMaps.count) % availableMaps.count
-                                saveSelectedMap()
-                            }) {
-                                Text("<")
-                                    .font(.system(size: 28, weight: .bold))
-                                    .foregroundColor(Color(hex: "#FFFFFF"))
-                                    .frame(width: 40, height: 40)
+                    // Drop Point dropdown selector
+                    if !allDropPoints.isEmpty {
+                        DropdownSelector(
+                            title: "Select Drop Point",
+                            items: allDropPoints,
+                            selectedItem: allDropPoints.first(where: { $0.id == selectedDropPointId }),
+                            displayText: { dropPoint in
+                                if let index = allDropPoints.firstIndex(where: { $0.id == dropPoint.id }) {
+                                    return "\(index + 1). \(dropPoint.name)"
+                                }
+                                return dropPoint.name
+                            },
+                            onSelect: { dropPoint in
+                                selectedDropPointId = dropPoint.id
+                                saveSelectedDropPoint()
+                                loadMaps() // Reload maps based on new drop point
                             }
-                            .buttonStyle(.plain)
-
-                            // Map name display
-                            Text(availableMaps[selectedMapIndex].getLocalizedName())
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(Color(hex: "#FFFFFF"))
-                                .frame(minWidth: 200)
-                                .padding(.vertical, 10)
-                                .padding(.horizontal, 20)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color(hex: "#0A1428").opacity(0.7))
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color(hex: "#00FF99"), lineWidth: 2)
-                                )
-
-                            // Next map button
-                            Button(action: {
-                                selectedMapIndex = (selectedMapIndex + 1) % availableMaps.count
-                                saveSelectedMap()
-                            }) {
-                                Text(">")
-                                    .font(.system(size: 28, weight: .bold))
-                                    .foregroundColor(Color(hex: "#FFFFFF"))
-                                    .frame(width: 40, height: 40)
-                            }
-                            .buttonStyle(.plain)
-                        }
+                        )
                         .padding(.bottom, 10)
                     }
+
+                    // Map dropdown selector
+                    if !availableMaps.isEmpty {
+                        DropdownSelector(
+                            title: "Select Map",
+                            items: availableMaps,
+                            selectedItem: availableMaps[selectedMapIndex],
+                            displayText: { map in
+                                if let index = availableMaps.firstIndex(where: { $0.id == map.id }) {
+                                    return "\(index + 1). \(map.getLocalizedName())"
+                                }
+                                return map.getLocalizedName()
+                            },
+                            onSelect: { map in
+                                if let index = availableMaps.firstIndex(where: { $0.id == map.id }) {
+                                    selectedMapIndex = index
+                                    saveSelectedMap()
+                                }
+                            }
+                        )
+                        .padding(.bottom, 10)
+                    }
+
+                    // Weapon dropdown selector
+                    DropdownSelector(
+                        title: "Select Weapon",
+                        items: getAvailableWeapons(),
+                        selectedItem: getAvailableWeapons().first(where: { $0.id == selectedWeaponId }),
+                        displayText: { $0.getLocalizedName() },
+                        onSelect: { weapon in
+                            selectedWeaponId = weapon.id
+                            saveSelectedWeapon()
+                        }
+                    )
+                    .padding(.bottom, 10)
+
+                    // Exoskeleton dropdown selector
+                    DropdownSelector(
+                        title: "Select Exoskeleton",
+                        items: getAvailableExoskeletons(),
+                        selectedItem: getAvailableExoskeletons().first(where: { $0.id == selectedExoskeletonId }),
+                        displayText: { exo in
+                            "\(exo.getLocalizedName()) (⚔️\(Int(exo.defence)) 🏃\(String(format: "%.0f%%", exo.speed * 100)))"
+                        },
+                        onSelect: { exoskeleton in
+                            selectedExoskeletonId = exoskeleton.id
+                            saveSelectedExoskeleton()
+                        }
+                    )
+                    .padding(.bottom, 10)
 
                     PrimaryButton(text: "PLAY", action: onPlayTapped)
 
@@ -176,9 +186,13 @@ struct AnimatedMainMenuView: View {
     }
 
     private func loadMaps() {
-        availableMaps = MapConfig.loadAll()
+        allDropPoints = DropPointLoader.loadAllDropPoints()
+        selectedDropPointId = SettingsManager.shared.selectedDropPointId
+
+        availableMaps = DropPointLoader.getMaps(forDropPointId: selectedDropPointId)
+
         if availableMaps.isEmpty {
-            print("[AnimatedMainMenuView] No maps loaded!")
+            print("[AnimatedMainMenuView] No maps loaded for selected drop point!")
             return
         }
 
@@ -189,12 +203,36 @@ struct AnimatedMainMenuView: View {
         } else {
             selectedMapIndex = 0
         }
+
+        // Load selected weapon and exoskeleton
+        selectedWeaponId = SettingsManager.shared.selectedWeaponId
+        selectedExoskeletonId = SettingsManager.shared.selectedExoskeletonId
     }
 
     private func saveSelectedMap() {
         guard !availableMaps.isEmpty else { return }
         let filename = "map_\(String(format: "%03d", availableMaps[selectedMapIndex].id))"
         SettingsManager.shared.selectedMapFilename = filename
+    }
+
+    private func saveSelectedDropPoint() {
+        SettingsManager.shared.selectedDropPointId = selectedDropPointId
+    }
+
+    private func saveSelectedWeapon() {
+        SettingsManager.shared.selectedWeaponId = selectedWeaponId
+    }
+
+    private func saveSelectedExoskeleton() {
+        SettingsManager.shared.selectedExoskeletonId = selectedExoskeletonId
+    }
+
+    private func getAvailableWeapons() -> [WeaponConfig] {
+        return WeaponManager.shared.getAllWeapons()
+    }
+
+    private func getAvailableExoskeletons() -> [ExoskeletonConfig] {
+        return ExoskeletonManager.shared.getAllExoskeletons()
     }
 }
 

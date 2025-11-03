@@ -60,21 +60,21 @@ class Bullet {
             if let nsImage = NSImage(contentsOfFile: path) {
                 let texture = SKTexture(image: nsImage)
                 bulletNode = SKSpriteNode(texture: texture)
-                bulletNode.size = CGSize(width: 8, height: 8)
+                bulletNode.size = CGSize(width: 12, height: 12)
             } else {
-                bulletNode = SKSpriteNode(color: .yellow, size: CGSize(width: 6, height: 6))
+                bulletNode = SKSpriteNode(color: .yellow, size: CGSize(width: 10, height: 10))
             }
             #else
             if let uiImage = UIImage(contentsOfFile: path) {
                 let texture = SKTexture(image: uiImage)
                 bulletNode = SKSpriteNode(texture: texture)
-                bulletNode.size = CGSize(width: 8, height: 8)
+                bulletNode.size = CGSize(width: 12, height: 12)
             } else {
-                bulletNode = SKSpriteNode(color: .yellow, size: CGSize(width: 6, height: 6))
+                bulletNode = SKSpriteNode(color: .yellow, size: CGSize(width: 10, height: 10))
             }
             #endif
         } else {
-            bulletNode = SKSpriteNode(color: .yellow, size: CGSize(width: 6, height: 6))
+            bulletNode = SKSpriteNode(color: .yellow, size: CGSize(width: 10, height: 10))
         }
 
         bulletNode.position = position

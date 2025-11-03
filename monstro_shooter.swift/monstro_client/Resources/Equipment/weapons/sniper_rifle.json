@@ -1,0 +1,33 @@
+{
+  "id": 6,
+  "name": "Sniper Rifle",
+  "nameLocalizations": {
+    "en-us": "Sniper Rifle",
+    "ru-ru": "Снайперская винтовка"
+  },
+  "description": "Extreme range and damage. Slow fire rate but devastating accuracy.",
+  "type": 6,
+  "levelRequirement": 20,
+  "rankRequirement": 3,
+  "damage": 50,
+  "shotRange": 1500,
+  "shotDelay": 1200,
+  "cageSize": 5,
+  "rechargeDelay": 4000,
+  "bulletsCount": 1,
+  "bulletSpeed": 1500,
+  "bulletDeviation": 0.5,
+  "bulletMaxDeviation": 0.5,
+  "penetrationPower": 5,
+  "bulletStartScale": 0.4,
+  "bulletMaxScale": 1.2,
+  "bulletScaleFactor": 0.06,
+  "bulletType": 5,
+  "weaponSound": "weapon_sniper",
+  "buyPriceSoft": 40000,
+  "buyPriceHard": 800,
+  "sellPriceSoft": 20000,
+  "sellPriceHard": 400,
+  "marketAvailability": true,
+  "orderId": 6
+}

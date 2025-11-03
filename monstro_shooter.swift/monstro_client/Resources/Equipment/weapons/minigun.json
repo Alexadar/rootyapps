@@ -1,0 +1,33 @@
+{
+  "id": 4,
+  "name": "Minigun",
+  "nameLocalizations": {
+    "en-us": "Minigun",
+    "ru-ru": "Миниган"
+  },
+  "description": "Extreme fire rate with spray pattern. Perfect for suppressive fire and crowd control.",
+  "type": 4,
+  "levelRequirement": 15,
+  "rankRequirement": 0,
+  "damage": 5,
+  "shotRange": 600,
+  "shotDelay": 80,
+  "cageSize": 200,
+  "rechargeDelay": 5000,
+  "bulletsCount": 1,
+  "bulletSpeed": 900,
+  "bulletDeviation": 5,
+  "bulletMaxDeviation": 10,
+  "penetrationPower": 1,
+  "bulletStartScale": 0.2,
+  "bulletMaxScale": 0.8,
+  "bulletScaleFactor": 0.04,
+  "bulletType": 3,
+  "weaponSound": "weapon_minigun",
+  "buyPriceSoft": 25000,
+  "buyPriceHard": 500,
+  "sellPriceSoft": 12500,
+  "sellPriceHard": 250,
+  "marketAvailability": true,
+  "orderId": 4
+}

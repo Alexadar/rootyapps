@@ -1,0 +1,19 @@
+{
+  "id": 301,
+  "name": "Large Health Kit",
+  "nameLocalizations": {
+    "en-us": "Large Health Kit",
+    "ru-ru": "Большой медпакет"
+  },
+  "description": "Restores 75% health instantly. Essential for survival.",
+  "consumableType": "RestoreHealthInGame",
+  "healthRestore": 0.75,
+  "maxStackSize": 5,
+  "levelRequirement": 5,
+  "buyPriceSoft": 800,
+  "buyPriceHard": 20,
+  "sellPriceSoft": 400,
+  "sellPriceHard": 10,
+  "marketAvailability": true,
+  "orderId": 301
+}

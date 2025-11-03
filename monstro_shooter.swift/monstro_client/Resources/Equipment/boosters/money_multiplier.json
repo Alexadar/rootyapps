@@ -1,0 +1,25 @@
+{
+  "id": 107,
+  "name": "Loot Magnet",
+  "nameLocalizations": {
+    "en-us": "Loot Magnet",
+    "ru-ru": "Магнит добычи"
+  },
+  "description": "Increases money earned from kills by 100% for 10 minutes.",
+  "duration": 600000,
+  "effects": [
+    {
+      "effectType": 1,
+      "effectName": "GameEarnedMoney",
+      "valueType": "Multiplication",
+      "value": 2.0
+    }
+  ],
+  "levelRequirement": 1,
+  "buyPriceSoft": 5000,
+  "buyPriceHard": 100,
+  "sellPriceSoft": 2500,
+  "sellPriceHard": 50,
+  "marketAvailability": true,
+  "orderId": 107
+}

@@ -1,0 +1,21 @@
+{
+  "id": 6,
+  "name": "Elite Assault Armor",
+  "nameLocalizations": {
+    "en-us": "Elite Assault Armor",
+    "ru-ru": "Элитная штурмовая броня"
+  },
+  "description": "Advanced military-grade combat armor. Excellent protection without sacrificing speed.",
+  "levelRequirement": 20,
+  "rankRequirement": 5,
+  "defence": 0.3,
+  "speed": 1.1,
+  "gameResourceSprite": "exoskeleton_elite",
+  "lobbyResourceSprite": "exoskeleton_elite_preview",
+  "buyPriceSoft": 50000,
+  "buyPriceHard": 1000,
+  "sellPriceSoft": 25000,
+  "sellPriceHard": 500,
+  "marketAvailability": true,
+  "orderId": 6
+}

@@ -66,19 +66,16 @@ class Weapon {
         }
     }
 
-    /// Generate bullets with deviation
+    /// Generate bullets with deviation value (deviation applied in GameScene)
     private func generateBullets(baseAngle: CGFloat) -> [BulletInfo] {
         var bullets: [BulletInfo] = []
 
         for _ in 0..<config.bulletsPerShot {
-            // Calculate deviation
-            let deviation = CGFloat.random(in: -config.bulletDeviation...config.bulletDeviation)
-
             bullets.append(BulletInfo(
                 damage: config.damage,
                 speed: config.bulletSpeed,
                 range: config.shotRange,
-                deviation: deviation,
+                deviation: config.bulletDeviation, // Pass max deviation to GameScene
                 penetration: config.penetrationPower,
                 startScale: config.bulletStartScale,
                 maxScale: config.bulletMaxScale,

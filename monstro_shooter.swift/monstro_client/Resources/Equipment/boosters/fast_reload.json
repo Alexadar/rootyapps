@@ -1,0 +1,25 @@
+{
+  "id": 106,
+  "name": "Quick Reload Kit",
+  "nameLocalizations": {
+    "en-us": "Quick Reload Kit",
+    "ru-ru": "Набор быстрой перезарядки"
+  },
+  "description": "Reduces reload time by 50% for 4 minutes.",
+  "duration": 240000,
+  "effects": [
+    {
+      "effectType": 6,
+      "effectName": "WeaponRechargeDelay",
+      "valueType": "Multiplication",
+      "value": 0.5
+    }
+  ],
+  "levelRequirement": 7,
+  "buyPriceSoft": 2200,
+  "buyPriceHard": 45,
+  "sellPriceSoft": 1100,
+  "sellPriceHard": 22,
+  "marketAvailability": true,
+  "orderId": 106
+}

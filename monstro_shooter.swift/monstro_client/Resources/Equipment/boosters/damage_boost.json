@@ -1,0 +1,25 @@
+{
+  "id": 100,
+  "name": "Damage Amplifier",
+  "nameLocalizations": {
+    "en-us": "Damage Amplifier",
+    "ru-ru": "Усилитель урона"
+  },
+  "description": "Temporarily increases weapon damage by 50% for 5 minutes.",
+  "duration": 300000,
+  "effects": [
+    {
+      "effectType": 4,
+      "effectName": "WeaponDamage",
+      "valueType": "Multiplication",
+      "value": 1.5
+    }
+  ],
+  "levelRequirement": 5,
+  "buyPriceSoft": 2000,
+  "buyPriceHard": 50,
+  "sellPriceSoft": 1000,
+  "sellPriceHard": 25,
+  "marketAvailability": true,
+  "orderId": 100
+}

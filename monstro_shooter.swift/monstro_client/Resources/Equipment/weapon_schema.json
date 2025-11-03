@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Weapon",
+  "description": "Weapon item configuration for Monster Shooter",
+  "type": "object",
+  "required": ["id", "name", "type", "damage", "shotRange", "shotDelay", "cageSize", "rechargeDelay"],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "Unique weapon identifier"
+    },
+    "name": {
+      "type": "string",
+      "description": "Weapon name (localized)"
+    },
+    "nameLocalizations": {
+      "type": "object",
+      "description": "Localized names",
+      "properties": {
+        "en-us": { "type": "string" },
+        "ru-ru": { "type": "string" }
+      }
+    },
+    "description": {
+      "type": "string",
+      "description": "Weapon description"
+    },
+    "type": {
+      "type": "integer",
+      "enum": [1, 2, 3, 4],
+      "description": "1=Pistol, 2=Dual Pistols, 3=Rifle, 4=Minigun"
+    },
+    "levelRequirement": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Minimum player level required"
+    },
+    "rankRequirement": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Minimum player rank required"
+    },
+    "damage": {
+      "type": "number",
+      "description": "Base damage per bullet"
+    },
+    "shotRange": {
+      "type": "integer",
+      "description": "Maximum range in pixels"
+    },
+    "shotDelay": {
+      "type": "integer",
+      "description": "Time between shots in milliseconds"
+    },
+    "cageSize": {
+      "type": "integer",
+      "description": "Magazine size (bullets per magazine)"
+    },
+    "rechargeDelay": {
+      "type": "integer",
+      "description": "Reload time in milliseconds"
+    },
+    "bulletsCount": {
+      "type": "integer",
+      "default": 1,
+      "description": "Number of bullets per shot (1 for single, 5+ for shotgun)"
+    },
+    "bulletSpeed": {
+      "type": "number",
+      "description": "Bullet velocity (pixels per frame or absolute)"
+    },
+    "bulletDeviation": {
+      "type": "number",
+      "description": "Base spread angle in degrees"
+    },
+    "bulletMaxDeviation": {
+      "type": "number",
+      "description": "Maximum spread angle in degrees"
+    },
+    "penetrationPower": {
+      "type": "integer",
+      "default": 1,
+      "description": "Number of enemies bullet can pierce"
+    },
+    "bulletStartScale": {
+      "type": "number",
+      "default": 0.3,
+      "description": "Initial bullet size scale"
+    },
+    "bulletMaxScale": {
+      "type": "number",
+      "default": 1.0,
+      "description": "Maximum bullet size scale"
+    },
+    "bulletScaleFactor": {
+      "type": "number",
+      "default": 0.05,
+      "description": "Bullet growth rate per frame"
+    },
+    "bulletType": {
+      "type": "integer",
+      "description": "Bullet graphic type ID"
+    },
+    "weaponSound": {
+      "type": "string",
+      "description": "Sound effect filename"
+    },
+    "buyPriceSoft": {
+      "type": "integer",
+      "description": "Purchase price in soft currency"
+    },
+    "buyPriceHard": {
+      "type": "integer",
+      "description": "Purchase price in hard currency"
+    },
+    "marketAvailability": {
+      "type": "boolean",
+      "description": "Whether available in market"
+    },
+    "orderId": {
+      "type": "integer",
+      "description": "Display order in market"
+    }
+  }
+}

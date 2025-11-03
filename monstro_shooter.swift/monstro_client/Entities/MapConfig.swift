@@ -1,7 +1,7 @@
 import Foundation
 
 /// Map configuration matching JSON structure from database
-struct MapConfig: Codable {
+struct MapConfig: Codable, Identifiable {
     let id: Int
     let ownerName: String?
     let dropPointId: Int?
@@ -65,15 +65,18 @@ struct MapConfig: Codable {
 
     /// Load all maps from all_maps.json
     static func loadAll() -> [MapConfig] {
-        guard let url = Bundle.main.url(forResource: "all_maps", withExtension: "json", subdirectory: "MapConfigs") else {
-            print("MapConfig: Failed to find all_maps.json")
+        guard let url = Bundle.main.url(forResource: "all_maps", withExtension: "json") else {
+            print("MapConfig: Failed to find all_maps.json in bundle.")
             return []
         }
+        print("MapConfig: Found all_maps.json at URL: \(url.absoluteString)")
 
         do {
             let data = try Data(contentsOf: url)
+            print("MapConfig: Successfully loaded data from all_maps.json. Data size: \(data.count) bytes")
             let decoder = JSONDecoder()
             let configs = try decoder.decode([MapConfig].self, from: data)
+            print("MapConfig: Successfully decoded \(configs.count) maps from all_maps.json")
             return configs.sorted { $0.orderNumber < $1.orderNumber }
         } catch {
             print("MapConfig: Failed to decode all_maps.json - \(error)")

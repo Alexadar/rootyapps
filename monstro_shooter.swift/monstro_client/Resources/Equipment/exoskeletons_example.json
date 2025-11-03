@@ -1,0 +1,116 @@
+[
+  {
+    "id": 1,
+    "name": "Standard Suit",
+    "nameLocalizations": {
+      "en-us": "Standard Suit",
+      "ru-ru": "Стандартный костюм"
+    },
+    "description": "Basic combat suit. No bonuses or penalties.",
+    "levelRequirement": 0,
+    "rankRequirement": 0,
+    "defence": 0,
+    "speed": 1.0,
+    "gameResourceSprite": "exoskeleton_standard",
+    "lobbyResourceSprite": "exoskeleton_standard_preview",
+    "buyPriceSoft": 0,
+    "buyPriceHard": 0,
+    "marketAvailability": true,
+    "orderId": 1
+  },
+  {
+    "id": 2,
+    "name": "Light Armor",
+    "nameLocalizations": {
+      "en-us": "Light Armor",
+      "ru-ru": "Лёгкая броня"
+    },
+    "description": "Lightweight armor. Small damage reduction, slightly faster movement.",
+    "levelRequirement": 3,
+    "rankRequirement": 0,
+    "defence": 0.1,
+    "speed": 1.05,
+    "gameResourceSprite": "exoskeleton_light",
+    "lobbyResourceSprite": "exoskeleton_light_preview",
+    "buyPriceSoft": 3000,
+    "buyPriceHard": 75,
+    "marketAvailability": true,
+    "orderId": 2
+  },
+  {
+    "id": 3,
+    "name": "Medium Armor",
+    "nameLocalizations": {
+      "en-us": "Medium Armor",
+      "ru-ru": "Средняя броня"
+    },
+    "description": "Balanced protection and mobility. Good all-around choice.",
+    "levelRequirement": 7,
+    "rankRequirement": 0,
+    "defence": 0.2,
+    "speed": 1.0,
+    "gameResourceSprite": "exoskeleton_medium",
+    "lobbyResourceSprite": "exoskeleton_medium_preview",
+    "buyPriceSoft": 8000,
+    "buyPriceHard": 150,
+    "marketAvailability": true,
+    "orderId": 3
+  },
+  {
+    "id": 4,
+    "name": "Heavy Armor",
+    "nameLocalizations": {
+      "en-us": "Heavy Armor",
+      "ru-ru": "Тяжёлая броня"
+    },
+    "description": "Maximum protection at the cost of mobility. Tank build.",
+    "levelRequirement": 12,
+    "rankRequirement": 0,
+    "defence": 0.35,
+    "speed": 0.85,
+    "gameResourceSprite": "exoskeleton_heavy",
+    "lobbyResourceSprite": "exoskeleton_heavy_preview",
+    "buyPriceSoft": 18000,
+    "buyPriceHard": 350,
+    "marketAvailability": true,
+    "orderId": 4
+  },
+  {
+    "id": 5,
+    "name": "Recon Suit",
+    "nameLocalizations": {
+      "en-us": "Recon Suit",
+      "ru-ru": "Разведывательный костюм"
+    },
+    "description": "Speed-focused suit. Minimal protection but maximum agility.",
+    "levelRequirement": 10,
+    "rankRequirement": 0,
+    "defence": 0.05,
+    "speed": 1.25,
+    "gameResourceSprite": "exoskeleton_recon",
+    "lobbyResourceSprite": "exoskeleton_recon_preview",
+    "buyPriceSoft": 12000,
+    "buyPriceHard": 200,
+    "marketAvailability": true,
+    "orderId": 5
+  },
+  {
+    "id": 6,
+    "name": "Elite Assault Armor",
+    "nameLocalizations": {
+      "en-us": "Elite Assault Armor",
+      "ru-ru": "Элитная штурмовая броня"
+    },
+    "description": "Advanced combat armor. Excellent protection without sacrificing speed.",
+    "levelRequirement": 20,
+    "rankRequirement": 5,
+    "defence": 0.3,
+    "speed": 1.1,
+    "gameResourceSprite": "exoskeleton_elite",
+    "lobbyResourceSprite": "exoskeleton_elite_preview",
+    "buyPriceSoft": 50000,
+    "buyPriceHard": 1000,
+    "marketAvailability": true,
+    "orderId": 6
+  }
+]

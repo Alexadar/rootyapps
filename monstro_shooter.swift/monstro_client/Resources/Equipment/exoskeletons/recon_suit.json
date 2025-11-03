@@ -1,0 +1,21 @@
+{
+  "id": 5,
+  "name": "Recon Suit",
+  "nameLocalizations": {
+    "en-us": "Recon Suit",
+    "ru-ru": "Разведывательный костюм"
+  },
+  "description": "Speed-focused tactical suit. Minimal protection but maximum agility. Hit and run tactics.",
+  "levelRequirement": 10,
+  "rankRequirement": 0,
+  "defence": 0.05,
+  "speed": 1.25,
+  "gameResourceSprite": "exoskeleton_recon",
+  "lobbyResourceSprite": "exoskeleton_recon_preview",
+  "buyPriceSoft": 12000,
+  "buyPriceHard": 200,
+  "sellPriceSoft": 6000,
+  "sellPriceHard": 100,
+  "marketAvailability": true,
+  "orderId": 5
+}

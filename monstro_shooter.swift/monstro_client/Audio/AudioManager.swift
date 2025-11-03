@@ -71,6 +71,31 @@ class AudioManager: NSObject, AVAudioPlayerDelegate {
         currentMusicType = nil
     }
 
+    /// Fade out audio gradually over duration, then execute completion
+    func fadeOut(duration: TimeInterval, completion: @escaping () -> Void) {
+        guard let player = bgmPlayer, player.isPlaying else {
+            completion()
+            return
+        }
+
+        let startVolume = player.volume
+        let steps = 30.0
+        let stepDuration = duration / steps
+        let volumeStep = startVolume / Float(steps)
+
+        var currentStep = 0
+        Timer.scheduledTimer(withTimeInterval: stepDuration, repeats: true) { timer in
+            currentStep += 1
+            player.volume = max(0, startVolume - (volumeStep * Float(currentStep)))
+
+            if currentStep >= Int(steps) || player.volume <= 0 {
+                timer.invalidate()
+                player.volume = startVolume // Reset volume for next play
+                completion()
+            }
+        }
+    }
+
     /// Enable or disable background music
     func setBGMEnabled(_ enabled: Bool) {
         bgmEnabled = enabled
@@ -138,18 +163,45 @@ class AudioManager: NSObject, AVAudioPlayerDelegate {
         do {
             bgmPlayer = try AVAudioPlayer(contentsOf: fileURL)
             bgmPlayer?.numberOfLoops = 0 // Play once, then cycle to next track
-            bgmPlayer?.volume = 0.5 // 50% volume
+            bgmPlayer?.volume = 0.0 // Start at 0 volume to prevent crackling
             bgmPlayer?.delegate = self
             bgmPlayer?.prepareToPlay()
 
-            let success = bgmPlayer?.play() ?? false
-            if success {
-                print("[AudioManager] SUCCESS: Now playing \(type == .menu ? "menu" : "fight") music: \(randomMusic)")
-            } else {
-                print("[AudioManager] ERROR: Failed to start playback of \(randomMusic)")
-            }
+            // Start fade in first, then start playback in the middle
+            print("[AudioManager] Starting fade-in sequence")
+            fadeInWithDelayedPlayback(to: 0.5, duration: 0.4)
+
         } catch {
             print("[AudioManager] ERROR: Failed to create audio player: \(error)")
+        }
+    }
+
+    /// Fade in audio gradually, starting playback halfway through fade
+    private func fadeInWithDelayedPlayback(to targetVolume: Float, duration: TimeInterval) {
+        guard let player = bgmPlayer else { return }
+
+        let steps = 40.0
+        let stepDuration = duration / steps
+        let volumeStep = targetVolume / Float(steps)
+        let playbackStartStep = Int(steps / 2) // Start playback halfway through fade
+
+        var currentStep = 0
+        Timer.scheduledTimer(withTimeInterval: stepDuration, repeats: true) { [weak self] timer in
+            currentStep += 1
+
+            // Start actual playback in the middle of the fade
+            if currentStep == playbackStartStep && !player.isPlaying {
+                let success = player.play()
+                print("[AudioManager] Started playback at step \(currentStep)/\(Int(steps)) - success: \(success)")
+            }
+
+            player.volume = min(targetVolume, volumeStep * Float(currentStep))
+
+            if currentStep >= Int(steps) || player.volume >= targetVolume {
+                timer.invalidate()
+                player.volume = targetVolume
+                print("[AudioManager] Fade-in complete at volume \(targetVolume)")
+            }
         }
     }
 

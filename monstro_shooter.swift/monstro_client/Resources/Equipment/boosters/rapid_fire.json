@@ -1,0 +1,25 @@
+{
+  "id": 103,
+  "name": "Rapid Fire Module",
+  "nameLocalizations": {
+    "en-us": "Rapid Fire Module",
+    "ru-ru": "Модуль скорострельности"
+  },
+  "description": "Reduces weapon fire delay by 30% for 4 minutes.",
+  "duration": 240000,
+  "effects": [
+    {
+      "effectType": 8,
+      "effectName": "WeaponRapidFire",
+      "valueType": "Multiplication",
+      "value": 0.7
+    }
+  ],
+  "levelRequirement": 8,
+  "buyPriceSoft": 3000,
+  "buyPriceHard": 65,
+  "sellPriceSoft": 1500,
+  "sellPriceHard": 32,
+  "marketAvailability": true,
+  "orderId": 103
+}

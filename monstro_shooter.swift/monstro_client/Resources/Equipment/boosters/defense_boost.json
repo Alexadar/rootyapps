@@ -1,0 +1,25 @@
+{
+  "id": 101,
+  "name": "Defense Shield",
+  "nameLocalizations": {
+    "en-us": "Defense Shield",
+    "ru-ru": "Защитный щит"
+  },
+  "description": "Increases armor defense by 30% for 5 minutes.",
+  "duration": 300000,
+  "effects": [
+    {
+      "effectType": 2,
+      "effectName": "ExoskeletonDefence",
+      "valueType": "Addition",
+      "value": 0.3
+    }
+  ],
+  "levelRequirement": 5,
+  "buyPriceSoft": 2000,
+  "buyPriceHard": 50,
+  "sellPriceSoft": 1000,
+  "sellPriceHard": 25,
+  "marketAvailability": true,
+  "orderId": 101
+}

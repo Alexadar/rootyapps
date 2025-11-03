@@ -9,58 +9,52 @@ import UIKit
 // MARK: - Texture Loading Utilities
 extension Monster {
 
-    /// Utility: load textures from a folder inside bundle (e.g. "monsters/berserker/walk").
-    /// Robust: tries inDirectory first, then falls back to scanning all PNGs and matching by filename prefix
-    /// (useful because Xcode may copy resources flattened into the bundle root).
+    /// Load textures from sprite atlas in Assets.xcassets
+    /// Atlas names: bug_walk, bug_dying, bug2_walk, etc.
+    /// Expects subpath like "monsters/bug/walk" -> loads from "bug_walk" atlas
     func loadTextures(fromDirectory subpath: String) -> [SKTexture] {
         var textures: [SKTexture] = []
 
-        // 1) Try to load resources from the exact directory inside the bundle.
-        var rawPaths = Bundle.main.paths(forResourcesOfType: "png", inDirectory: subpath)
-
-        // 2) Fallback: if nothing found, try to match by filename prefix.
-        if rawPaths.isEmpty {
-            // Derive a filename prefix from the last path component, e.g. "monsters/berserker/walk" -> "walk_"
-            let comp = subpath.components(separatedBy: "/").last ?? subpath
-            let prefix = comp + "_"
-
-            // Scan all PNGs in the bundle root and filter by prefix
-            let allPngs = Bundle.main.paths(forResourcesOfType: "png", inDirectory: nil)
-            rawPaths = allPngs.filter { path in
-                let name = (path as NSString).lastPathComponent
-                return name.hasPrefix(prefix)
-            }
+        // Parse subpath to get atlas name
+        // "monsters/bug/walk" -> "Bug/Walk"
+        let components = subpath.components(separatedBy: "/")
+        guard components.count >= 3 else {
+            print("[Monster+Textures] ERROR: Invalid subpath format: \(subpath)")
+            return textures
         }
 
-        // Sort by filename numerically (extract number from filename like "walk_12.png" -> 12)
-        let sortedPaths = rawPaths.sorted { (a, b) -> Bool in
-            let nameA = (a as NSString).lastPathComponent
-            let nameB = (b as NSString).lastPathComponent
+        let monsterType = components[components.count - 2]  // "bug", "bird", etc.
+        let animType = components[components.count - 1]     // "walk", "dying"
 
-            // Extract numeric part from filename (e.g., "walk_12.png" -> 12)
-            let numA = nameA.components(separatedBy: CharacterSet.decimalDigits.inverted)
+        // Nested atlas name with namespace: "bug/walk" -> "Berserker/Walk"
+        let atlasName = "\(monsterType.capitalized)/\(animType.capitalized)"
+
+        print("[Monster+Textures] Loading atlas: \(atlasName) from subpath: \(subpath)")
+
+        // Load atlas
+        let atlas = SKTextureAtlas(named: atlasName)
+        let textureNames = atlas.textureNames
+
+        print("[Monster+Textures] Atlas '\(atlasName)' has \(textureNames.count) textures: \(textureNames.prefix(5))")
+
+        let sortedNames = textureNames.sorted { (a, b) -> Bool in
+            // Extract numeric part from filename (e.g., "12.png" -> 12, "12" -> 12)
+            let numA = a.components(separatedBy: CharacterSet.decimalDigits.inverted)
                 .compactMap { Int($0) }
                 .first ?? 0
-            let numB = nameB.components(separatedBy: CharacterSet.decimalDigits.inverted)
+            let numB = b.components(separatedBy: CharacterSet.decimalDigits.inverted)
                 .compactMap { Int($0) }
                 .first ?? 0
 
             return numA < numB
         }
 
-        for p in sortedPaths {
-#if os(macOS)
-            if let img = NSImage(contentsOfFile: p) {
-                let tex = SKTexture(image: img)
-                textures.append(tex)
-            }
-#else
-            if let uiImg = UIImage(contentsOfFile: p) {
-                let tex = SKTexture(image: uiImg)
-                textures.append(tex)
-            }
-#endif
+        for textureName in sortedNames {
+            let texture = atlas.textureNamed(textureName)
+            textures.append(texture)
         }
+
+        print("[Monster+Textures] Loaded \(textures.count) textures from atlas '\(atlasName)'")
 
         return textures
     }

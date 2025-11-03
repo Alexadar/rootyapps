@@ -1,0 +1,21 @@
+{
+  "id": 3,
+  "name": "Medium Armor",
+  "nameLocalizations": {
+    "en-us": "Medium Armor",
+    "ru-ru": "Средняя броня"
+  },
+  "description": "Balanced protection and mobility. Good all-around choice for most combat situations.",
+  "levelRequirement": 7,
+  "rankRequirement": 0,
+  "defence": 0.2,
+  "speed": 1.0,
+  "gameResourceSprite": "exoskeleton_medium",
+  "lobbyResourceSprite": "exoskeleton_medium_preview",
+  "buyPriceSoft": 8000,
+  "buyPriceHard": 150,
+  "sellPriceSoft": 4000,
+  "sellPriceHard": 75,
+  "marketAvailability": true,
+  "orderId": 3
+}
