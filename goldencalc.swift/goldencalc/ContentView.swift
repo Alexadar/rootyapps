@@ -211,7 +211,7 @@ struct ContentView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
                     #if os(macOS)
                     .background(Color(NSColor.controlBackgroundColor))
@@ -219,7 +219,7 @@ struct ContentView: View {
                     .background(Color(.systemGray6))
                     #endif
                     .cornerRadius(10)
-                    
+
                     // Usage Card
                     VStack(alignment: .leading, spacing: 15) {
                         HStack {
@@ -237,7 +237,7 @@ struct ContentView: View {
                                 .font(.subheadline)
                         }
                     }
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
                     #if os(macOS)
                     .background(Color(NSColor.controlBackgroundColor))
