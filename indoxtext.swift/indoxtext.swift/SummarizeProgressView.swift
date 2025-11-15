@@ -85,8 +85,41 @@ struct SummarizeProgressView: View {
     }
 }
 
-#Preview {
+#Preview("Progress - Starting") {
+    @Previewable @StateObject var summarizerState = {
+        let manager = SummarizerStateManager()
+        manager.state = .progress
+        manager.progress = 0.0
+        return manager
+    }()
+
     SummarizeProgressView(isPresented: .constant(true))
-        .environmentObject(SummarizerStateManager())
+        .environmentObject(summarizerState)
+        .environmentObject(NavigationCoordinator())
+}
+
+#Preview("Progress - Mid Progress") {
+    @Previewable @StateObject var summarizerState = {
+        let manager = SummarizerStateManager()
+        manager.state = .progress
+        manager.progress = 0.45
+        return manager
+    }()
+
+    SummarizeProgressView(isPresented: .constant(true))
+        .environmentObject(summarizerState)
+        .environmentObject(NavigationCoordinator())
+}
+
+#Preview("Progress - Almost Complete") {
+    @Previewable @StateObject var summarizerState = {
+        let manager = SummarizerStateManager()
+        manager.state = .progress
+        manager.progress = 0.87
+        return manager
+    }()
+
+    SummarizeProgressView(isPresented: .constant(true))
+        .environmentObject(summarizerState)
         .environmentObject(NavigationCoordinator())
 }

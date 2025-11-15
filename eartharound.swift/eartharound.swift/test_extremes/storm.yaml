@@ -1,0 +1,20 @@
+date: "2025-03-20"
+events:
+  - type: wind
+    value: 65.2
+  - type: wind
+    value: 72.8
+  - type: wind
+    value: 68.3
+  - type: gust
+    value: 85.5
+  - type: gust
+    value: 92.1
+  - type: gust
+    value: 88.7
+  - type: gust
+    value: 95.3
+  - type: rain
+    value: 12.5
+  - type: rain
+    value: 8.7

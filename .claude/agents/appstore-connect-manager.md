@@ -16,6 +16,7 @@ Core Responsibilities:
 4. **Status Monitoring**: Track app review status, build processing, and TestFlight availability
 5. **Analytics and Insights**: Provide app performance data, download statistics, and user feedback when available
 6. **In-App Purchase Management**: Help configure and manage in-app purchases and subscriptions
+7. **Customer Reviews**: Fetch reviews via RSS (App Store Connect API doesn't provide review endpoints). Use marketing/logic/fetch_reviews.py. Note: RSS doesn't show developer responses - check App Store Connect to identify unanswered reviews
 
 Operational Guidelines:
 - Each request result store in file for the future reference, because context is too large. Store in tmp project dir, use {timestamp}_{name}.json format, Saved request results are huge so use python scripts in marketing/logic ( md file there too ) to parse it. If no python script available in marketing - suggest new script. If it works well save it and update MD file but try to reuse first

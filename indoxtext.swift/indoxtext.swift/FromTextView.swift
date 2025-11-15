@@ -62,10 +62,24 @@ struct FromTextView: View {
     }
 }
 
-#Preview {
+#Preview("From Text - Empty State") {
     NavigationView {
         FromTextView()
             .environmentObject(NavigationCoordinator())
             .environmentObject(SummarizerStateManager())
+    }
+}
+
+#Preview("From Text - With Text") {
+    @Previewable @StateObject var summarizerState = {
+        let manager = SummarizerStateManager()
+        manager.inputText = "This is a sample text that needs to be summarized. It contains multiple sentences and paragraphs of content that will be processed by the AI model to generate a concise summary."
+        return manager
+    }()
+
+    NavigationView {
+        FromTextView()
+            .environmentObject(NavigationCoordinator())
+            .environmentObject(summarizerState)
     }
 }

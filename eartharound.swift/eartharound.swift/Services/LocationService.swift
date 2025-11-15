@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreLocation
+import MapKit
 import Combine
 
 @MainActor
@@ -37,11 +38,17 @@ extension LocationService: CLLocationManagerDelegate {
         Task { @MainActor in
             currentLocation = location.coordinate
 
-            let geocoder = CLGeocoder()
             do {
-                let placemarks = try await geocoder.reverseGeocodeLocation(location)
-                if let placemark = placemarks.first {
-                    locationName = placemark.locality ?? placemark.administrativeArea ?? "Current Location"
+                let localSearchCompleter = MKLocalSearchCompleter()
+                let request = MKLocalSearch.Request()
+                request.naturalLanguageQuery = "\(location.coordinate.latitude),\(location.coordinate.longitude)"
+                request.resultTypes = .address
+
+                let search = MKLocalSearch(request: request)
+                let response = try await search.start()
+
+                if let mapItem = response.mapItems.first {
+                    locationName = mapItem.placemark.locality ?? mapItem.placemark.administrativeArea ?? "Current Location"
                 }
             } catch {
                 print("❌ Geocoding error: \(error.localizedDescription)")

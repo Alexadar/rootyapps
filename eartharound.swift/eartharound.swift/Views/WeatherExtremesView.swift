@@ -159,6 +159,8 @@ struct WeatherExtremesView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         #if os(macOS)
         .background(Color(nsColor: .windowBackgroundColor))
+        #elseif os(watchOS) || os(tvOS)
+        .background(Color.black.opacity(0.3))
         #else
         .background(Color(uiColor: .systemBackground))
         #endif

@@ -1,9 +1,26 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct ContentView: View {
+    var body: some View {
+        Group {
+            #if os(macOS)
+            MacOSContentView()
+            #else
+            IOSContentView()
+            #endif
+        }
+    }
+}
+
+// iOS/Other platforms content view
+#if !os(macOS)
+struct IOSContentView: View {
     @StateObject private var navigationCoordinator = NavigationCoordinator()
     @StateObject private var summarizerState = SummarizerStateManager()
-    
+
     var body: some View {
         NavigationStack(path: $navigationCoordinator.navigationPath) {
             HomeView()
@@ -24,6 +41,7 @@ struct ContentView: View {
         .environmentObject(summarizerState)
     }
 }
+#endif
 
 #Preview {
     ContentView()

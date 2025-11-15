@@ -134,10 +134,40 @@ struct FromFileView: View {
     }
 }
 
-#Preview {
+#Preview("From File - No File Selected") {
     NavigationView {
         FromFileView()
             .environmentObject(NavigationCoordinator())
             .environmentObject(SummarizerStateManager())
+    }
+}
+
+#Preview("From File - With File Selected") {
+    @Previewable @StateObject var summarizerState = {
+        let manager = SummarizerStateManager()
+        let tempURL = URL(fileURLWithPath: "/tmp/sample.pdf")
+        manager.inputFile = SelectedFile(url: tempURL, name: "sample.pdf", type: "pdf")
+        return manager
+    }()
+
+    NavigationView {
+        FromFileView()
+            .environmentObject(NavigationCoordinator())
+            .environmentObject(summarizerState)
+    }
+}
+
+#Preview("From File - Text File Selected") {
+    @Previewable @StateObject var summarizerState = {
+        let manager = SummarizerStateManager()
+        let tempURL = URL(fileURLWithPath: "/tmp/document.txt")
+        manager.inputFile = SelectedFile(url: tempURL, name: "document.txt", type: "txt")
+        return manager
+    }()
+
+    NavigationView {
+        FromFileView()
+            .environmentObject(NavigationCoordinator())
+            .environmentObject(summarizerState)
     }
 }

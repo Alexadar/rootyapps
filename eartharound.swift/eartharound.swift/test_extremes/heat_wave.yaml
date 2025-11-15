@@ -1,0 +1,10 @@
+date: "2025-07-15"
+events:
+  - type: heat
+    value: 37.2
+  - type: heat
+    value: 39.8
+  - type: heat
+    value: 41.3
+  - type: heat
+    value: 40.1

@@ -269,6 +269,91 @@ python3 ../marketing/logic/parse_data.py
 
 ---
 
+### 7. fetch_reviews.py (Customer Reviews via RSS) ⭐
+
+**Purpose**: Fetch customer reviews from App Store using public RSS feeds
+
+**Important**: Apple's App Store Connect API does NOT provide customer review endpoints. This script uses RSS feeds as the only programmatic way to access reviews.
+
+**Usage**:
+```bash
+cd tmp
+source venv/bin/activate
+
+# Fetch all reviews for a specific app (US store)
+python3 ../marketing/logic/fetch_reviews.py <app_id>
+
+# Fetch reviews from specific country
+python3 ../marketing/logic/fetch_reviews.py <app_id> <country_code>
+
+# Fetch all apps' reviews
+python3 ../marketing/logic/fetch_reviews.py --all [country_code]
+```
+
+**Examples**:
+```bash
+# Fetch US reviews for Golden Ratio Calculator Lite
+python3 ../marketing/logic/fetch_reviews.py 1570956847
+
+# Fetch UK reviews
+python3 ../marketing/logic/fetch_reviews.py 1570956847 gb
+
+# Fetch reviews for all apps from marketing/apps.json
+python3 ../marketing/logic/fetch_reviews.py --all us
+```
+
+**Output Files**:
+- `reviews_<app_id>_<country>.json` - All reviews with metadata
+- `reviews_<app_id>_<country>_unanswered.json` - Same as above (RSS can't filter)
+
+**Information Retrieved**:
+- Review ID
+- Title and content (text)
+- Star rating (1-5)
+- Author name
+- App version reviewed
+- Date/time posted
+- Vote count (helpful votes)
+
+**Country Codes** (common):
+- `us` - United States
+- `gb` - United Kingdom
+- `ca` - Canada
+- `au` - Australia
+- `jp` - Japan
+- `de` - Germany
+- `fr` - France
+- `es` - Spain
+- `it` - Italy
+
+**When to use**:
+- Monitoring customer feedback
+- Identifying common issues/complaints
+- ASO research (what users say)
+- Competitor analysis (if you know their app IDs)
+- Response prioritization (check recent reviews)
+
+**Limitations**:
+- ⚠️ **RSS feeds do NOT show developer responses** - You cannot determine which reviews are actually answered via RSS
+- Limited to 10 pages (~500 reviews max per fetch)
+- Only public reviews (not filtered/hidden ones)
+- Sorted by most recent or most helpful only
+- No official API for responding (must use App Store Connect web/app)
+
+**How to identify unanswered reviews**:
+1. Use this script to fetch all reviews
+2. Manually check App Store Connect web interface or mobile app
+3. Cross-reference review IDs/content to see which lack responses
+
+**Advantages**:
+- Only programmatic way to access customer reviews
+- No API credentials needed (public RSS)
+- Works for any app (including competitors)
+- Fast and reliable
+- Get rating distribution and sentiment
+
+---
+
 ## Common Workflows
 
 ### 🚀 Quick Start: Complete Portfolio Analysis
@@ -279,16 +364,19 @@ python3 ../marketing/logic/parse_data.py
 cd tmp
 source venv/bin/activate
 
-# Step 1: Fetch all data
+# Step 1: Fetch all data (metadata, versions, localizations, analytics)
 python3 ../marketing/logic/fetch_data.py
 
-# Step 2: Parse and analyze
+# Step 2: Fetch all reviews for all apps
+python3 ../marketing/logic/fetch_reviews.py --all us
+
+# Step 3: Parse and analyze
 python3 ../marketing/logic/parse_data.py > portfolio_analysis.txt
 
-# Step 3: Review output or provide to Claude for analysis
+# Step 4: Review output or provide to Claude for analysis
 ```
 
-This replaces the manual multi-script workflow and gives you a complete data snapshot in ~2 minutes.
+This replaces the manual multi-script workflow and gives you a complete data snapshot in ~3-5 minutes.
 
 ---
 

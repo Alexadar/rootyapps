@@ -1,8 +1,9 @@
 import SwiftUI
 
+#if !os(macOS)
 struct HomeView: View {
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
-    
+
     var body: some View {
         VStack(spacing: 20) {
             Spacer()
@@ -61,3 +62,4 @@ struct HomeView: View {
     HomeView()
         .environmentObject(NavigationCoordinator())
 }
+#endif

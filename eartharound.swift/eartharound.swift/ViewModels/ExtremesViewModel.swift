@@ -11,13 +11,12 @@ import CoreLocation
 
 @MainActor
 class ExtremesViewModel: ObservableObject {
-    @Published var weatherExtremes: WeatherExtremes?
-    @Published var spaceExtremes: SpaceWeatherExtremes?
+    @Published var todayExtremes: DailyExtremes?
+    @Published var yesterdayExtremes: DailyExtremes?
     @Published var isLoading = false
     @Published var errorMessage: String?
 
-    private let weatherService = WeatherService.shared
-    private let spaceWeatherService = SpaceWeatherService.shared
+    private let historicalService = HistoricalWeatherService.shared
     private let locationService = LocationService.shared
     private var refreshTimer: Timer?
 
@@ -27,24 +26,47 @@ class ExtremesViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
 
-        // Request location
         locationService.requestLocation()
-
-        // Wait briefly for location
         try? await Task.sleep(nanoseconds: 1_000_000_000)
 
         do {
-            // Use current location or default to New York
             let lat = locationService.currentLocation?.latitude ?? 40.7128
             let lon = locationService.currentLocation?.longitude ?? -74.0060
-            let location = locationService.locationName
 
-            // Fetch both weather and space data concurrently
-            async let weather = weatherService.getCurrentExtremes(latitude: lat, longitude: lon, location: location)
-            async let space = spaceWeatherService.getCurrentExtremes()
+            // Fetch weather and space data concurrently
+            async let dailyExtremesTask = historicalService.fetchHistoricalExtremes(
+                latitude: lat,
+                longitude: lon,
+                days: 5
+            )
+            async let spaceWeatherTask = SpaceWeatherService.shared.getCurrentExtremes()
 
-            weatherExtremes = try await weather
-            spaceExtremes = try await space
+            let dailyExtremes = try await dailyExtremesTask
+            let spaceWeather = try await spaceWeatherTask
+
+            // Add space weather events to today
+            var today = dailyExtremes.count >= 1 ? dailyExtremes[0] : DailyExtremes(date: Date(), events: [])
+
+            // Add geomagnetic storm if Kp >= 5
+            if let kp = spaceWeather.currentKIndex, kp >= 5.0 {
+                today.events.append(.geomagnetic(kp))
+            }
+
+            // Add solar wind if >= 500 km/s
+            if let wind = spaceWeather.solarWindSpeed, wind >= 500 {
+                today.events.append(.solarWind(wind))
+            }
+
+            // Add major flare if exists
+            if let flare = spaceWeather.latestFlare?.classType {
+                today.events.append(.solarFlare(flare))
+            }
+
+            todayExtremes = today
+
+            if dailyExtremes.count >= 2 {
+                yesterdayExtremes = dailyExtremes[1]
+            }
 
         } catch {
             errorMessage = "Failed to fetch data: \(error.localizedDescription)"
@@ -52,28 +74,6 @@ class ExtremesViewModel: ObservableObject {
         }
 
         isLoading = false
-    }
-
-    // MARK: - Fetch Weather Only
-    func fetchWeatherExtremes(latitude: Double = 40.7128, longitude: Double = -74.0060, location: String = "New York") async {
-        do {
-            weatherExtremes = try await weatherService.getCurrentExtremes(
-                latitude: latitude,
-                longitude: longitude,
-                location: location
-            )
-        } catch {
-            errorMessage = "Weather fetch failed: \(error.localizedDescription)"
-        }
-    }
-
-    // MARK: - Fetch Space Weather Only
-    func fetchSpaceExtremes() async {
-        do {
-            spaceExtremes = try await spaceWeatherService.getCurrentExtremes()
-        } catch {
-            errorMessage = "Space weather fetch failed: \(error.localizedDescription)"
-        }
     }
 
     // MARK: - Start Auto Refresh

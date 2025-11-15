@@ -1,0 +1,30 @@
+/* General */
+"app.title" = "Extremes";
+"app.subtitle" = "Today & Yesterday";
+
+/* Time */
+"time.today" = "Today";
+"time.yesterday" = "Yesterday";
+
+/* Event Types */
+"event.cold" = "Cold";
+"event.heat" = "Heat";
+"event.wind" = "Wind";
+"event.gust" = "Gust";
+"event.rain" = "Rain";
+"event.geomagnetic" = "Geomagnetic";
+"event.solar_wind" = "Solar Wind";
+"event.solar_flare" = "Solar Flare";
+
+/* Event Details */
+"detail.title" = "Event Details";
+"detail.type" = "Type";
+"detail.value" = "Value";
+"detail.count" = "Occurrences";
+"detail.max_value" = "Maximum";
+"detail.close" = "Close";
+
+/* States */
+"state.no_extremes" = "No extremes";
+"state.loading" = "Loading extremes...";
+"state.error" = "Failed to load data";

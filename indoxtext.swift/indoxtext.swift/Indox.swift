@@ -554,9 +554,23 @@ class Indox {
 
     // Predictor
     var predCounter = 0;
-    for _ in (1 ... predictThreads) {
+    for threadIdx in (1 ... predictThreads) {
       let predictorThread = DispatchWorkItem {
-        let model = try! sentenceModel()
+        // Configure model to use Neural Engine/GPU
+        let configuration = MLModelConfiguration()
+        configuration.computeUnits = .all // Use CPU, GPU, and Neural Engine
+
+        // Prefer Neural Engine for best performance on Apple Silicon
+        if #available(macOS 13.0, iOS 16.0, *) {
+          // .all includes Neural Engine, GPU, and CPU
+          configuration.computeUnits = .all
+        }
+
+        let model = try! sentenceModel(configuration: configuration)
+
+        // Log which compute units are available
+        self.log(logVal: "Predictor thread \(threadIdx) initialized with compute units: \(configuration.computeUnits == .all ? "Neural Engine + GPU + CPU" : configuration.computeUnits == .cpuAndGPU ? "GPU + CPU" : "CPU only")")
+
         while(predCounter < totalBatches) {
           if(self.status != EngineState.OnWork) {
             return;
