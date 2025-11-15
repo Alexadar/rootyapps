@@ -102,13 +102,13 @@ struct GameLevel: Codable, Identifiable {
 struct SpawnWave: Codable {
     let startTime: TimeInterval       // When this wave starts (seconds from level start)
     let monsterCount: Int             // How many monsters to spawn in this wave
-    let monsterTypes: [String]        // Monster type names (e.g., ["Berserker", "Zombie"])
+    let monsterTypeIDs: [Int]         // Monster type IDs (e.g., [1, 2, 3])
     let spawnInterval: TimeInterval   // Time between individual monster spawns (default 1.0)
 
-    init(startTime: TimeInterval, monsterCount: Int, monsterTypes: [String], spawnInterval: TimeInterval = 1.0) {
+    init(startTime: TimeInterval, monsterCount: Int, monsterTypeIDs: [Int], spawnInterval: TimeInterval = 1.0) {
         self.startTime = startTime
         self.monsterCount = monsterCount
-        self.monsterTypes = monsterTypes
+        self.monsterTypeIDs = monsterTypeIDs
         self.spawnInterval = spawnInterval
     }
 }
@@ -146,67 +146,21 @@ class LevelManager {
         loadLevels()
     }
 
-    /// Load levels from JSON configuration file or use hardcoded defaults
+    /// Load levels from JSON configuration file - fail fast if not found
     func loadLevels() {
-        // Try to load from JSON first
-        if let loadedLevels = loadLevelsFromJSON() {
-            levels = loadedLevels
-        } else {
-            // Fallback to default hardcoded levels
-            levels = createDefaultLevels()
+        guard let url = Bundle.main.url(forResource: "levels", withExtension: "json") else {
+            fatalError("[LevelManager] levels.json not found in bundle")
         }
-    }
 
-    /// Load levels from JSON file in bundle
-    private func loadLevelsFromJSON() -> [GameLevel]? {
-        guard let url = Bundle.main.url(forResource: "levels", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let levels = try? JSONDecoder().decode([GameLevel].self, from: data) else {
-            return nil
+        guard let data = try? Data(contentsOf: url) else {
+            fatalError("[LevelManager] Failed to read levels.json")
         }
-        return levels
-    }
 
-    /// Create default hardcoded levels for initial development
-    private func createDefaultLevels() -> [GameLevel] {
-        return [
-            // Test Level - 20 waves escalating to 200 monsters
-            GameLevel(
-                id: 1,
-                name: "Test level",
-                description: "Testing level with 20 waves",
-                orderNumber: 1,
-                difficulty: 5,
-                levelRequirement: 1,
-                duration: 600,  // 10 minutes
-                mapSize: CGSize(width: 12000, height: 12000),     // Large map
-                spawnBoxSize: GameConstants.defaultSpawnBoxSize,  // 4500x4500 spawn box
-                spawnWaves: [
-                    SpawnWave(startTime: 0, monsterCount: 5, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 20, monsterCount: 8, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 40, monsterCount: 12, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 60, monsterCount: 15, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 80, monsterCount: 20, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 100, monsterCount: 25, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 120, monsterCount: 30, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 140, monsterCount: 35, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 160, monsterCount: 40, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 180, monsterCount: 50, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 210, monsterCount: 60, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 240, monsterCount: 70, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 270, monsterCount: 80, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 300, monsterCount: 90, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 330, monsterCount: 100, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 360, monsterCount: 110, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 390, monsterCount: 120, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 420, monsterCount: 140, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 450, monsterCount: 160, monsterTypes: ["Berserker"]),
-                    SpawnWave(startTime: 480, monsterCount: 200, monsterTypes: ["Berserker"], spawnInterval: 0.5)
-                ],
-                experienceReward: 1000,
-                moneyReward: 500
-            )
-        ]
+        guard let loadedLevels = try? JSONDecoder().decode([GameLevel].self, from: data) else {
+            fatalError("[LevelManager] Failed to decode levels.json")
+        }
+
+        levels = loadedLevels
     }
 
     /// Start playing a specific level

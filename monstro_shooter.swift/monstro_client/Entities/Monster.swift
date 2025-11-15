@@ -21,12 +21,13 @@ class Monster {
     // Steering behavior (from old game)
     var velocityX: CGFloat = 0
     var velocityY: CGFloat = 0
-    var turnRate: CGFloat = 34  // Steering speed
+    var turnRate: CGFloat = 34  // Steering speed (for flying monsters with arcs)
+    var useDirectSteering: Bool = false  // true = instant steering (bugs/walkers), false = arc steering (birds)
 
     // Animation system
     private var walkFrames: [SKTexture] = []
     private var dyingFrames: [SKTexture] = []
-    private var isDying = false
+    public var isDying = false
     private var animationTimer: TimeInterval = 0
 
     // Animation configuration (set in subclass init)
@@ -39,6 +40,26 @@ class Monster {
     var deathSounds: [String] = []
 
     init() {}
+
+    /// Initialize from config
+    convenience init(config: MonsterConfig) {
+        self.init()
+
+        speed = config.speed
+        boxSize = config.boxSize
+        damage = config.damage
+        health = config.health
+        hitCooldown = config.hitCooldown
+        rotationOffset = config.rotationOffset
+        useDirectSteering = config.useDirectSteering
+
+        walkAnimationDirectory = config.walkAnimationDirectory
+        dyingAnimationDirectory = config.dyingAnimationDirectory
+        walkFrameRate = config.walkFrameRate
+        dyingFrameRate = config.dyingFrameRate
+
+        deathSounds = config.deathSounds
+    }
 
     /// Setup with texture loading from configured directories
     func setup(at position: CGPoint, targetPosition: CGPoint) {
@@ -85,28 +106,43 @@ class Monster {
         let stopDistance = playerHitboxRadius + (boxSize.width / 2.0)
 
         if distance > stopDistance {
-            // Steering behavior from old game (BaseMonster.as lines 138-158)
-            let distanceTotal = distance
+            if useDirectSteering {
+                // Direct steering (bugs, walkers) - move straight to target
+                let dirX = dx / distance
+                let dirY = dy / distance
 
-            // Steering toward target
-            let moveDistanceX = turnRate * dx / distanceTotal
-            let moveDistanceY = turnRate * dy / distanceTotal
+                velocityX = dirX * speed
+                velocityY = dirY * speed
 
-            velocityX += moveDistanceX * CGFloat(deltaTime)
-            velocityY += moveDistanceY * CGFloat(deltaTime)
+                sprite.position.x += velocityX * CGFloat(deltaTime)
+                sprite.position.y += velocityY * CGFloat(deltaTime)
 
-            // Normalize velocity and apply speed
-            let totalVelocity = sqrt(velocityX*velocityX + velocityY*velocityY)
-            if totalVelocity > 0 {
-                velocityX = speed * velocityX / totalVelocity
-                velocityY = speed * velocityY / totalVelocity
+                let angle = atan2(velocityY, velocityX)
+                sprite.zRotation = angle + rotationOffset
+            } else {
+                // Arc steering (birds) - smooth turning with momentum
+                let distanceTotal = distance
+
+                // Steering toward target
+                let moveDistanceX = turnRate * dx / distanceTotal
+                let moveDistanceY = turnRate * dy / distanceTotal
+
+                velocityX += moveDistanceX * CGFloat(deltaTime)
+                velocityY += moveDistanceY * CGFloat(deltaTime)
+
+                // Normalize velocity and apply speed
+                let totalVelocity = sqrt(velocityX*velocityX + velocityY*velocityY)
+                if totalVelocity > 0 {
+                    velocityX = speed * velocityX / totalVelocity
+                    velocityY = speed * velocityY / totalVelocity
+                }
+
+                sprite.position.x += velocityX * CGFloat(deltaTime)
+                sprite.position.y += velocityY * CGFloat(deltaTime)
+
+                let angle = atan2(velocityY, velocityX)
+                sprite.zRotation = angle + rotationOffset
             }
-
-            sprite.position.x += velocityX * CGFloat(deltaTime)
-            sprite.position.y += velocityY * CGFloat(deltaTime)
-
-            let angle = atan2(velocityY, velocityX)
-            sprite.zRotation = angle + rotationOffset
         }
 
         sprite.size = boxSize
@@ -125,33 +161,18 @@ class Monster {
         // Stop walk animation
         sprite.removeAction(forKey: "walk")
 
-        let priorTexture = sprite.texture
-
         // Play dying animation if available
         if !dyingFrames.isEmpty {
             let dyingAnim = SKAction.animate(with: dyingFrames, timePerFrame: dyingFrameRate, resize: true, restore: false)
-            sprite.run(dyingAnim) { [weak self] in
-                guard let self = self else { return }
-                // Freeze on last frame
-                if let last = self.dyingFrames.last {
-                    self.sprite.texture = last
-                } else if let prior = priorTexture {
-                    self.sprite.texture = prior
-                }
-                self.sprite.removeAllActions()
-            }
+            sprite.run(dyingAnim)
         } else {
             // Fallback: tint and freeze
             let tint = SKAction.colorize(with: .red, colorBlendFactor: 0.6, duration: 0.12)
-            sprite.run(tint) { [weak self] in
-                self?.sprite.removeAllActions()
-            }
+            sprite.run(tint)
         }
 
-        // Disable physics but keep visible
-        sprite.physicsBody?.categoryBitMask = 0
-        sprite.physicsBody?.contactTestBitMask = 0
-        sprite.physicsBody?.collisionBitMask = 0
+        // Completely remove physics body to prevent any further collisions
+        sprite.physicsBody = nil
     }
 
     /// Play appropriate death sound

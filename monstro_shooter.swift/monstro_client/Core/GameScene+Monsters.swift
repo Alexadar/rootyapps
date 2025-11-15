@@ -4,29 +4,16 @@ import SpriteKit
 extension GameScene {
 
     /// Spawn a monster at the edge of the spawn box around the player
-    func spawnMonster(monsterType: String = "Berserker") {
+    func spawnMonster(monsterTypeID: Int) {
         // Guard player — monsters need a target; skip spawning if player missing.
         guard let playerEntity = playerEntity else { return }
 
-        // Create monster based on type
-        let monster: Monster
-        switch monsterType {
-        case "Bug":
-            monster = Bug()
-        case "Berserker":
-            monster = Berserker()
-        case "Bird":
-            monster = Bird()
-        case "Bug2":
-            monster = Bug2()
-        case "Bird2":
-            monster = Bird2()
-        case "Walker":
-            monster = Walker()
-        default:
-            print("[GameScene] Unknown monster type: \(monsterType), using Berserker")
-            monster = Berserker()  // Fallback to Berserker
+        // Create monster from config - fail fast if not found
+        guard let config = MonsterRegistry.shared.getConfig(forID: monsterTypeID) else {
+            fatalError("[GameScene] No config for monster ID \(monsterTypeID)")
         }
+
+        let monster = Monster(config: config)
 
         // Spawn at random edge of spawn box (not screen edges!)
         // Spawn box follows the player but is bounded by map
@@ -107,9 +94,11 @@ extension GameScene {
                 SKAction.wait(forDuration: delay),
                 SKAction.run { [weak self] in
                     guard let self = self else { return }
-                    // Pick random monster type from the wave
-                    let monsterType = wave.monsterTypes.randomElement() ?? "Berserker"
-                    self.spawnMonster(monsterType: monsterType)
+                    // Pick random monster type ID from the wave - fail fast if empty
+                    guard let monsterTypeID = wave.monsterTypeIDs.randomElement() else {
+                        fatalError("[GameScene] Wave has no monster type IDs")
+                    }
+                    self.spawnMonster(monsterTypeID: monsterTypeID)
                 }
             ])
 

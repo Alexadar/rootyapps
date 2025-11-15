@@ -111,7 +111,7 @@ struct WeaponConfig: Codable, Identifiable {
         shotDelay: 0.08,
         magazineSize: 200,
         reloadTime: 5.0,
-        bulletsPerShot: 1,
+        bulletsPerShot: 3,  // Minigun fires 3-round burst
         bulletSpeed: 900,
         bulletDeviation: 0.087,  // ~5 degrees (spray)
         maxDeviation: 0.174,     // ~10 degrees

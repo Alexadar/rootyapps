@@ -1,0 +1,16 @@
+monsterTypeID: 3
+speed: 210.0
+boxWidth: 50
+boxHeight: 50
+damage: 2.0
+health: 6.0
+hitCooldown: 0.3
+rotationOffset: 0
+useDirectSteering: false
+walkAnimationDirectory: "monsters/bird/walk"
+dyingAnimationDirectory: "monsters/bird/dying"
+walkFrameRate: 0.08
+dyingFrameRate: 0.06
+deathSounds:
+  - "monster_avia_1.wav"
+  - "monster_avia_2.wav"
