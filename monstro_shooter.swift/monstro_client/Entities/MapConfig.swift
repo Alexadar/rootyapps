@@ -47,8 +47,8 @@ struct MapConfig: Codable, Identifiable {
 
     /// Load map by filename (e.g. "map_017")
     static func load(filename: String) -> MapConfig? {
-        guard let url = Bundle.main.url(forResource: filename, withExtension: "json", subdirectory: "MapConfigs") else {
-            print("MapConfig: Failed to find \(filename).json")
+        guard let url = Bundle.main.url(forResource: filename, withExtension: "json") else {
+            print("MapConfig: Failed to find \(filename).json in bundle")
             return nil
         }
 

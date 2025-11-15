@@ -11,9 +11,20 @@ extension GameScene {
         // Create monster based on type
         let monster: Monster
         switch monsterType {
+        case "Bug":
+            monster = Bug()
         case "Berserker":
             monster = Berserker()
+        case "Bird":
+            monster = Bird()
+        case "Bug2":
+            monster = Bug2()
+        case "Bird2":
+            monster = Bird2()
+        case "Walker":
+            monster = Walker()
         default:
+            print("[GameScene] Unknown monster type: \(monsterType), using Berserker")
             monster = Berserker()  // Fallback to Berserker
         }
 

@@ -97,11 +97,15 @@ struct MacOSContentView: View {
                 Text("Ratios are:")
                     .font(.title2)
                     .fontWeight(.medium)
+                    .multilineTextAlignment(.center)
 
                 Text("\(partA) and \(partB)")
                     .font(.system(size: 48, weight: .regular, design: .default))
                     .foregroundColor(.primary)
+                    .padding(.vertical, 10)
+                    .multilineTextAlignment(.center)
             }
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding()
         .background(.ultraThinMaterial)
@@ -226,3 +230,4 @@ class TransparentWindowController: NSWindowController {
 }
 
 #endif
+

@@ -39,8 +39,8 @@ class SettingsManager {
         userDefaults.register(defaults: [
             Keys.bgmEnabled: true,
             Keys.sfxEnabled: true,
-            Keys.selectedMapFilename: "map_016",  // First map (orderNumber 0)
-            Keys.selectedDropPointId: 4,
+            Keys.selectedMapFilename: "map_0014",  // Test map with Bug + Berserker
+            Keys.selectedDropPointId: 18,
             Keys.selectedWeaponId: 1,  // Default to pistol
             Keys.selectedExoskeletonId: 1  // Default to standard suit
         ])
@@ -75,7 +75,7 @@ class SettingsManager {
     /// Get/set selected map filename
     var selectedMapFilename: String {
         get {
-            return userDefaults.string(forKey: Keys.selectedMapFilename) ?? "map_016"
+            return userDefaults.string(forKey: Keys.selectedMapFilename) ?? "map_0014"
         }
         set {
             userDefaults.set(newValue, forKey: Keys.selectedMapFilename)
@@ -120,8 +120,8 @@ class SettingsManager {
     func resetToDefaults() {
         bgmEnabled = true
         sfxEnabled = true
-        selectedMapFilename = "map_016"
-        selectedDropPointId = nil
+        selectedMapFilename = "map_0014"
+        selectedDropPointId = 18
         selectedWeaponId = 1
         selectedExoskeletonId = 1
         print("[SettingsManager] Settings reset to defaults")

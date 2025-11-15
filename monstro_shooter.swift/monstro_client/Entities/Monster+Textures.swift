@@ -10,8 +10,9 @@ import UIKit
 extension Monster {
 
     /// Load textures from sprite atlas in Assets.xcassets
-    /// Atlas names: bug_walk, bug_dying, bug2_walk, etc.
-    /// Expects subpath like "monsters/bug/walk" -> loads from "bug_walk" atlas
+    /// Atlas names: Bug/Walk, Bug/Dying, Berserker/Walk, etc.
+    /// Expects subpath like "monsters/bug/walk" -> loads from "Bug/Walk" atlas
+    /// Textures named: walk_01.png, walk_02.png or dying_01.png, dying_02.png
     func loadTextures(fromDirectory subpath: String) -> [SKTexture] {
         var textures: [SKTexture] = []
 
@@ -23,10 +24,10 @@ extension Monster {
             return textures
         }
 
-        let monsterType = components[components.count - 2]  // "bug", "bird", etc.
+        let monsterType = components[components.count - 2]  // "bug", "bird", "berserker", etc.
         let animType = components[components.count - 1]     // "walk", "dying"
 
-        // Nested atlas name with namespace: "bug/walk" -> "Berserker/Walk"
+        // Nested atlas name with namespace: "monsters/berserker/walk" -> "Berserker/Walk"
         let atlasName = "\(monsterType.capitalized)/\(animType.capitalized)"
 
         print("[Monster+Textures] Loading atlas: \(atlasName) from subpath: \(subpath)")
@@ -37,8 +38,14 @@ extension Monster {
 
         print("[Monster+Textures] Atlas '\(atlasName)' has \(textureNames.count) textures: \(textureNames.prefix(5))")
 
-        let sortedNames = textureNames.sorted { (a, b) -> Bool in
-            // Extract numeric part from filename (e.g., "12.png" -> 12, "12" -> 12)
+        // Filter textures by animation type prefix (walk_ or dying_)
+        let prefix = "\(monsterType.capitalized)/\(animType)_"
+        let filteredNames = textureNames.filter { $0.hasPrefix(prefix) }
+
+        print("[Monster+Textures] Filtered \(filteredNames.count) textures with prefix '\(prefix)'")
+
+        let sortedNames = filteredNames.sorted { (a, b) -> Bool in
+            // Extract numeric part from filename (e.g., "Berserker/walk_12" -> 12)
             let numA = a.components(separatedBy: CharacterSet.decimalDigits.inverted)
                 .compactMap { Int($0) }
                 .first ?? 0

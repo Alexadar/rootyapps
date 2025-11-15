@@ -198,7 +198,7 @@ struct AnimatedMainMenuView: View {
 
         // Find saved map or default to first
         let savedFilename = SettingsManager.shared.selectedMapFilename
-        if let index = availableMaps.firstIndex(where: { "map_\(String(format: "%03d", $0.id))" == savedFilename }) {
+        if let index = availableMaps.firstIndex(where: { "map_\(String(format: "%04d", $0.id))" == savedFilename }) {
             selectedMapIndex = index
         } else {
             selectedMapIndex = 0
@@ -211,7 +211,7 @@ struct AnimatedMainMenuView: View {
 
     private func saveSelectedMap() {
         guard !availableMaps.isEmpty else { return }
-        let filename = "map_\(String(format: "%03d", availableMaps[selectedMapIndex].id))"
+        let filename = "map_\(String(format: "%04d", availableMaps[selectedMapIndex].id))"
         SettingsManager.shared.selectedMapFilename = filename
     }
 

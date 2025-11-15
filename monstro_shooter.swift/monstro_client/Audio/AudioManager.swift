@@ -11,7 +11,7 @@ class AudioManager: NSObject, AVAudioPlayerDelegate {
 
     // Music categories
     private let menuMusic = ["menu_1.mp3", "menu_2.mp3"]
-    private let fightMusic = ["fight_1.mp3", "fight_2.mp3"]
+    private let fightMusic = ["fight_1.mp3", "fight_2.mp3", "fight_1_ai.mp3"]
 
     // Weapon SFX files
     private let pistolSound = "weapon_pistol.wav"

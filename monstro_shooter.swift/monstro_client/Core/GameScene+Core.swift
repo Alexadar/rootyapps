@@ -67,9 +67,19 @@ class GameScene: SKScene {
         setupDebugLabel()
         setupInput()
 
-        // Load test level by default
-        if let testLevel = LevelManager.shared.getLevel(id: 1) {
-            loadLevel(testLevel)
+        // Load level from settings
+        let mapFilename = SettingsManager.shared.selectedMapFilename
+        print("[GameScene] Loading map: \(mapFilename)")
+        if let mapConfig = MapConfig.load(filename: mapFilename) {
+            print("[GameScene] Loaded MapConfig: \(mapConfig.getLocalizedName()), monsters: \(mapConfig.monsterTypes)")
+            let level = convertMapConfigToLevel(mapConfig)
+            loadLevel(level)
+        } else {
+            print("[GameScene] Failed to load \(mapFilename), using fallback level")
+            // Fallback to hardcoded test level
+            if let testLevel = LevelManager.shared.getLevel(id: 1) {
+                loadLevel(testLevel)
+            }
         }
 
         // Reset game state to ensure clean start
@@ -179,6 +189,53 @@ class GameScene: SKScene {
     }
 
     // MARK: - Level Management
+
+    /// Convert MapConfig JSON to GameLevel
+    private func convertMapConfigToLevel(_ config: MapConfig) -> GameLevel {
+        // Build spawn waves from JSON data
+        var waves: [SpawnWave] = []
+
+        print("[convertMapConfigToLevel] Processing \(config.monsterSpawnWaves.count) spawn waves")
+        print("[convertMapConfigToLevel] Monster type periods: \(config.monsterTypes.map { "t:\($0.startTime) ids:\($0.monsterTypeIds)" })")
+
+        for spawnWave in config.monsterSpawnWaves {
+            // Find monster types for this time period
+            let availableTypes = config.monsterTypes
+                .filter { $0.startTime <= spawnWave.startTime }
+                .last?
+                .monsterTypeIds ?? []
+
+            print("[convertMapConfigToLevel] Wave at t=\(spawnWave.startTime), count=\(spawnWave.count), available IDs: \(availableTypes)")
+
+            // Map monster IDs to type names using enum
+            let monsterNames = availableTypes.compactMap { id -> String? in
+                GameConstants.MonsterType(rawValue: id)?.name
+            }
+
+            print("[convertMapConfigToLevel] Mapped to monster names: \(monsterNames)")
+
+            if spawnWave.count > 0 && !monsterNames.isEmpty {
+                waves.append(SpawnWave(
+                    startTime: TimeInterval(spawnWave.startTime),
+                    monsterCount: spawnWave.count,
+                    monsterTypes: monsterNames,
+                    spawnInterval: 1.0
+                ))
+            }
+        }
+
+        return GameLevel(
+            id: config.id,
+            name: config.getLocalizedName(),
+            description: config.getLocalizedDescription(),
+            orderNumber: config.orderNumber,
+            difficulty: 5,
+            duration: TimeInterval(config.landingDuration),
+            mapSize: CGSize(width: 12000, height: 12000),
+            spawnWaves: waves
+        )
+    }
+
     func loadLevel(_ level: GameLevel) {
         currentLevel = level
         currentMapSize = level.mapSize
@@ -192,7 +249,9 @@ class GameScene: SKScene {
         spawnedWaves.removeAll()
         levelStartTime = 0  // Will be set on first update
 
-        print("Loaded level: \(level.name) - Map: \(level.mapSize.width)x\(level.mapSize.height), Waves: \(level.spawnWaves.count)")
+        let mapFilename = SettingsManager.shared.selectedMapFilename
+        let allMonsterTypes = Set(level.spawnWaves.flatMap { $0.monsterTypes }).sorted()
+        print("Loaded level: \(level.name) (file: \(mapFilename)) - Map: \(level.mapSize.width)x\(level.mapSize.height), Waves: \(level.spawnWaves.count), Monsters: \(allMonsterTypes.joined(separator: ", "))")
     }
 
     // MARK: - Game Reset

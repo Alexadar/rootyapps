@@ -13,6 +13,57 @@ struct GameConstants {
     static let monsterBoxSize: CGSize = CGSize(width: 28, height: 28)
     static let monsterRotationOffset: CGFloat = .pi / 4
 
+    /// Monster type IDs matching database/JSON configuration
+    enum MonsterType: Int {
+        case bug = 1
+        case berserker = 2
+        case bird = 3
+        case bug2 = 4
+        case bird2 = 5
+        case walker = 6
+        case berserker2 = 7
+        case walker2 = 8
+        case bug3 = 9
+        case bird3 = 10
+        case berserker3 = 11
+        case walker3 = 12
+        case bug4 = 13
+        case bird4 = 14
+        case walker4 = 15
+        case berserker4 = 16
+        case bug5 = 17
+        case bird5 = 18
+        case walker6 = 22
+        case berserker6 = 23
+        case bug6 = 24
+
+        var name: String {
+            switch self {
+            case .bug: return "Bug"
+            case .berserker: return "Berserker"
+            case .bird: return "Bird"
+            case .bug2: return "Bug2"
+            case .bird2: return "Bird2"
+            case .walker: return "Walker"
+            case .berserker2: return "Berserker2"
+            case .walker2: return "Walker2"
+            case .bug3: return "Bug3"
+            case .bird3: return "Bird3"
+            case .berserker3: return "Berserker3"
+            case .walker3: return "Walker3"
+            case .bug4: return "Bug4"
+            case .bird4: return "Bird4"
+            case .walker4: return "Walker4"
+            case .berserker4: return "Berserker4"
+            case .bug5: return "Bug5"
+            case .bird5: return "Bird5"
+            case .walker6: return "Walker6"
+            case .berserker6: return "Berserker6"
+            case .bug6: return "Bug6"
+            }
+        }
+    }
+
     // MARK: - Bullet
     static let bulletSpeed: CGFloat = 800.0
 
