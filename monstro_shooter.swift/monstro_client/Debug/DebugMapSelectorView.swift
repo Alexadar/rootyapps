@@ -5,6 +5,9 @@ import SpriteKit
 struct DebugMapSelectorView: View {
     let onBack: () -> Void
     @State private var showGame = false
+    @State private var showSettings = false
+    @State private var bgmEnabled = SettingsManager.shared.bgmEnabled
+    @State private var sfxEnabled = SettingsManager.shared.sfxEnabled
     @State private var allDropPoints: [DropPoint] = []
     @State private var selectedDropPointId: Int?
     @State private var availableMaps: [MapConfig] = []
@@ -14,12 +17,21 @@ struct DebugMapSelectorView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            // Video background layer
+            MainMenuVideoLayer()
 
             if showGame {
                 DebugGameView(onReturnToMenu: {
                     showGame = false
+                    AudioManager.shared.fadeOut(duration: 0.3) {
+                        AudioManager.shared.playMenuMusic()
+                    }
                 })
+                .onAppear {
+                    AudioManager.shared.fadeOut(duration: 0.3) {
+                        AudioManager.shared.playFightMusic()
+                    }
+                }
             } else {
                 VStack(spacing: 20) {
                     HStack {
@@ -108,10 +120,22 @@ struct DebugMapSelectorView: View {
 
                     PrimaryButton(text: "START GAME", action: { showGame = true })
 
+                    SecondaryButton(text: "SETTINGS", action: { showSettings.toggle() })
+
                     Spacer().frame(height: 60)
                 }
                 .onAppear {
                     loadMaps()
+                    AudioManager.shared.playMenuMusic()
+                }
+
+                // Settings popup overlay
+                if showSettings {
+                    SettingsView(
+                        isPresented: $showSettings,
+                        bgmEnabled: $bgmEnabled,
+                        sfxEnabled: $sfxEnabled
+                    )
                 }
             }
         }

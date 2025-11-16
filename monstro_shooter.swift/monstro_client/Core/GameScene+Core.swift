@@ -199,24 +199,30 @@ class GameScene: SKScene {
         var waves: [SpawnWave] = []
 
         print("[convertMapConfigToLevel] Processing \(config.monsterSpawnWaves.count) spawn waves")
-        print("[convertMapConfigToLevel] Monster type periods: \(config.monsterTypes.map { "t:\($0.startTime) ids:\($0.monsterTypeIds)" })")
+
+        let monsterNames = config.monsterTypes.map { period in
+            let names = period.monsterTypeIds.compactMap { id in
+                GameConstants.MonsterType(rawValue: id)?.name ?? "\(id)"
+            }.joined(separator: ", ")
+            return "t:\(period.startTime) [\(names)]"
+        }
+        print("[convertMapConfigToLevel] Monster type periods: \(monsterNames)")
 
         for spawnWave in config.monsterSpawnWaves {
-            // Find monster types for this time period
-            let availableTypes = config.monsterTypes
-                .filter { $0.startTime <= spawnWave.startTime }
-                .last?
-                .monsterTypeIds ?? []
+            // Find all monster types available at any time
+            let allAvailableTypes = config.monsterTypes.flatMap { $0.monsterTypeIds }
 
-            print("[convertMapConfigToLevel] Wave at t=\(spawnWave.startTime), count=\(spawnWave.count), available IDs: \(availableTypes)")
+            let availableNames = allAvailableTypes.compactMap { id in
+                GameConstants.MonsterType(rawValue: id)?.name ?? "\(id)"
+            }.joined(separator: ", ")
 
-            print("[convertMapConfigToLevel] Available monster type IDs: \(availableTypes)")
+            print("[convertMapConfigToLevel] Wave at t=\(spawnWave.startTime), count=\(spawnWave.count), monsters: [\(availableNames)]")
 
-            if spawnWave.count > 0 && !availableTypes.isEmpty {
+            if spawnWave.count > 0 && !allAvailableTypes.isEmpty {
                 waves.append(SpawnWave(
                     startTime: TimeInterval(spawnWave.startTime),
                     monsterCount: spawnWave.count,
-                    monsterTypeIDs: availableTypes,
+                    monsterTypeIDs: allAvailableTypes,
                     spawnInterval: 1.0
                 ))
             }
