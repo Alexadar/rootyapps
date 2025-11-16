@@ -3,11 +3,33 @@ import SpriteKit
 /// Master renderer that manages rendering hierarchy:
 /// renderer.camera.contains(hud), renderer.world.contains(gameplay)
 /// Provides clean separation between UI and game world layers
+///
+/// **Rendering Architecture:**
+/// ```
+/// SKScene
+///   ├── world.worldLayer (zPosition: 0) - PAUSABLE game layer
+///   │   ├── map background (zPosition: -10)
+///   │   ├── player sprite
+///   │   ├── monster sprites
+///   │   └── bullet sprites
+///   └── worldCamera.cameraNode (scene.camera) - ALWAYS ACTIVE
+///       ├── hudCamera.hudLayer - UI elements
+///       │   ├── time panel
+///       │   ├── health panel
+///       │   ├── ammo panel
+///       │   └── kills panel
+///       └── pauseMenu (added directly to camera) - UI overlay
+/// ```
+///
+/// **Pause System:**
+/// - Pausing `world.worldLayer.isPaused = true` freezes ALL gameplay
+/// - Camera layer remains active for UI interaction (HUD, pause menu)
+/// - This separation is critical for responsive pause menus
 class GameRenderer {
     // Rendering components
     let worldCamera: WorldCamera
     let hudCamera: HUDCamera
-    let world: GameWorld
+    let world: GameWorld  // Contains worldLayer - pause this to freeze game
 
     private weak var scene: SKScene?
 

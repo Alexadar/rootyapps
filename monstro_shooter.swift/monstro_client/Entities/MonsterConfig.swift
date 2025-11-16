@@ -21,4 +21,8 @@ struct MonsterConfig: Codable {
     var boxSize: CGSize {
         CGSize(width: boxWidth, height: boxHeight)
     }
+
+    var name: String {
+        GameConstants.MonsterType(rawValue: monsterTypeID)?.name ?? "Unknown"
+    }
 }

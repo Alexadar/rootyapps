@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		111360FB2EC93A7300A6F6EA /* Yams in Frameworks */ = {isa = PBXBuildFile; productRef = 111360FA2EC93A7300A6F6EA /* Yams */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		11A3A5762E80AA2C0011EEBC /* monstro_client.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = monstro_client.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				111360FB2EC93A7300A6F6EA /* Yams in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = monstro_client;
 			packageProductDependencies = (
+				111360FA2EC93A7300A6F6EA /* Yams */,
 			);
 			productName = monstro_client;
 			productReference = 11A3A5762E80AA2C0011EEBC /* monstro_client.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = 11A3A56D2E80AA2B0011EEBC;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				111360F92EC93A7300A6F6EA /* XCRemoteSwiftPackageReference "Yams" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 11A3A5772E80AA2C0011EEBC /* Products */;
 			projectDirPath = "";
@@ -361,6 +370,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		111360F92EC93A7300A6F6EA /* XCRemoteSwiftPackageReference "Yams" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/jpsim/Yams";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.2.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		111360FA2EC93A7300A6F6EA /* Yams */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 111360F92EC93A7300A6F6EA /* XCRemoteSwiftPackageReference "Yams" */;
+			productName = Yams;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 11A3A56E2E80AA2B0011EEBC /* Project object */;
 }

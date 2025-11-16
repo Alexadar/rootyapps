@@ -19,8 +19,9 @@ extension GameScene {
     }
 
     override func update(_ currentTime: TimeInterval) {
-        // Skip update if game over
-        if isGameOver { return }
+        // Skip update if game over or paused
+        guard !isGameOver else { return }
+        guard !isGamePaused else { return }
 
         let deltaTime: TimeInterval
         if lastUpdateTime > 0 {

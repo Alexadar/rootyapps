@@ -8,6 +8,51 @@ import UIKit
 // MARK: - Lifecycle & Background Handling
 extension GameScene {
 
+    func setupPauseMenu() {
+        let isDebug = LaunchMode.current == .debug ||
+                      LaunchMode.current == .debugMapSelector ||
+                      LaunchMode.current == .debugMonsters ||
+                      LaunchMode.current == .debugPlayerTest
+
+        // Add pause menu to camera layer so it stays visible when world is paused
+        guard let cameraNode = camera else { return }
+        pauseMenuUI = PauseMenuUI(scene: self, parentNode: cameraNode, isDebugMode: isDebug)
+
+        pauseMenuUI?.onResume = { [weak self] in
+            self?.resumeGame()
+        }
+
+        pauseMenuUI?.onMainMenu = { [weak self] in
+            self?.onReturnToMenu?()
+        }
+
+        pauseMenuUI?.onExit = {
+            #if os(macOS)
+            NSApplication.shared.terminate(nil)
+            #endif
+        }
+    }
+
+    func pauseGame() {
+        guard !isGamePaused && !isGameOver else { return }
+        isGamePaused = true
+
+        // Pause the world layer (player, monsters, bullets) but keep UI active
+        renderer?.world.worldLayer.isPaused = true
+
+        pauseMenuUI?.show()
+    }
+
+    func resumeGame() {
+        guard isGamePaused else { return }
+        isGamePaused = false
+
+        // Resume the world layer
+        renderer?.world.worldLayer.isPaused = false
+
+        pauseMenuUI?.hide()
+    }
+
     // MARK: - Window / focus handling
 #if os(macOS)
     @objc func windowDidResignKey(_ notification: Notification) {

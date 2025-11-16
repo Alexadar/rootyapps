@@ -27,6 +27,16 @@ extension GameScene {
      // MARK: - Input Handling (forward to input controller + debug keys)
 #if os(macOS)
     override func keyDown(with event: NSEvent) {
+        // ESC key
+        if event.keyCode == 53 {
+            if isGamePaused {
+                resumeGame()
+            } else {
+                pauseGame()
+            }
+            return
+        }
+
         (inputController as? KeyboardMouseInput)?.keyDown(event)
 
         // Debug keys:
@@ -72,9 +82,16 @@ extension GameScene {
     }
 
     override func mouseDown(with event: NSEvent) {
+        let location = event.location(in: self)
+
+        // Check if pause menu should handle this
+        if isGamePaused {
+            _ = pauseMenuUI?.handleTouch(at: location)
+            return
+        }
+
         // Check if game over UI should handle this
         if isGameOver {
-            let location = event.location(in: self)
             gameOverUI?.handleTouch(at: location)
             return
         }

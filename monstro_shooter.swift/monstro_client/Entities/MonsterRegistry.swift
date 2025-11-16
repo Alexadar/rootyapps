@@ -12,21 +12,17 @@ class MonsterRegistry {
     }
 
     private func loadConfigs() {
-        let configDir = "configs/monsters"
-
         guard let resourcePath = Bundle.main.resourcePath else {
             fatalError("[MonsterRegistry] Bundle resource path not found")
         }
 
-        let fullPath = resourcePath + "/" + configDir
-
-        guard let files = try? FileManager.default.contentsOfDirectory(atPath: fullPath) else {
-            fatalError("[MonsterRegistry] Failed to list monster configs at \(fullPath)")
+        guard let files = try? FileManager.default.contentsOfDirectory(atPath: resourcePath) else {
+            fatalError("[MonsterRegistry] Failed to list bundle resources at \(resourcePath)")
         }
 
         for filename in files where filename.hasSuffix(".yaml") {
-            guard let path = Bundle.main.path(forResource: "\(configDir)/\(filename.dropLast(5))", ofType: "yaml") else {
-                fatalError("[MonsterRegistry] Config file not found: \(filename)")
+            guard let path = Bundle.main.path(forResource: String(filename.dropLast(5)), ofType: "yaml") else {
+                continue // Skip if not found
             }
 
             guard let yamlString = try? String(contentsOfFile: path, encoding: .utf8) else {

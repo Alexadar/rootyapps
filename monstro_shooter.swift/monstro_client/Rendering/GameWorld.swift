@@ -2,8 +2,20 @@ import SpriteKit
 
 /// Contains all gameplay elements (player, monsters, bullets, map)
 /// Managed by the renderer and isolated from UI layer
+///
+/// **Pause System Architecture:**
+/// - worldLayer is the ONLY node that gets paused via worldLayer.isPaused = true
+/// - When paused, ALL children (player, monsters, bullets, map) stop:
+///   - SKActions stop executing
+///   - Physics simulation stops
+///   - Manual update() loop is blocked by guard in GameScene+Update
+/// - UI elements (HUD, pause menu) live in cameraNode layer and remain active
+/// - This follows SpriteKit best practice: pause game world, keep UI interactive
 class GameWorld {
+    /// Master container for all gameplay elements
+    /// PAUSE THIS NODE to freeze player, monsters, bullets, physics
     let worldLayer: SKNode
+
     private weak var scene: SKScene?
 
     // Game elements

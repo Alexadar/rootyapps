@@ -6,6 +6,38 @@ import AppKit
 import UIKit
 #endif
 
+// MARK: - Launch Mode
+enum LaunchMode {
+    case normal
+    case debug
+    case debugMapSelector
+    case debugMonsters
+    case debugPlayerTest
+
+    static var current: LaunchMode {
+        if CommandLine.arguments.contains("--debug") {
+            return .debug
+        } else if CommandLine.arguments.contains("--debug-map-selector") {
+            return .debugMapSelector
+        } else if CommandLine.arguments.contains("--debug-monsters") {
+            return .debugMonsters
+        } else if CommandLine.arguments.contains("--debug-player-test") {
+            return .debugPlayerTest
+        }
+        return .normal
+    }
+}
+
+// MARK: - View Type
+enum ViewType {
+    case mainMenu
+    case game
+    case debugMasterMenu
+    case debugMapSelector
+    case debugMonsters
+    case debugPlayerTest
+}
+
 // MARK: - Color Hex Extension
 extension Color {
     init(hex: String) {
@@ -34,34 +66,73 @@ extension Color {
 }
 
 struct ContentView: View {
-    @State private var showGame = false
+    @State private var currentView: ViewType
+
+    init() {
+        switch LaunchMode.current {
+        case .debug:
+            _currentView = State(initialValue: .debugMasterMenu)
+        case .debugMapSelector:
+            _currentView = State(initialValue: .debugMapSelector)
+        case .debugMonsters:
+            _currentView = State(initialValue: .debugMonsters)
+        case .debugPlayerTest:
+            _currentView = State(initialValue: .debugPlayerTest)
+        default:
+            _currentView = State(initialValue: .mainMenu)
+        }
+    }
 
     var body: some View {
-        if showGame {
-            GameView(onReturnToMenu: {
-                // Fade out audio before returning to menu
+        switch currentView {
+        case .mainMenu:
+            AnimatedMainMenuView(onPlayTapped: {
                 AudioManager.shared.fadeOut(duration: 0.3) {
-                    showGame = false
+                    currentView = .game
+                }
+            })
+            .onAppear {
+                AudioManager.shared.playMenuMusic()
+            }
+
+        case .game:
+            GameView(onReturnToMenu: {
+                AudioManager.shared.fadeOut(duration: 0.3) {
+                    currentView = .mainMenu
                     AudioManager.shared.playMenuMusic()
                 }
             })
             .onAppear {
-                // Fade in fight music when entering game
                 AudioManager.shared.fadeOut(duration: 0.3) {
                     AudioManager.shared.playFightMusic()
                 }
             }
-        } else {
-            AnimatedMainMenuView(onPlayTapped: {
-                // Fade out before starting game
-                AudioManager.shared.fadeOut(duration: 0.3) {
-                    showGame = true
+
+        case .debugMasterMenu:
+            DebugMasterMenuView(selectedDebugView: Binding(
+                get: { nil },
+                set: { newView in
+                    if let debugView = newView {
+                        switch debugView {
+                        case .mapSelector:
+                            currentView = .debugMapSelector
+                        case .monsters:
+                            currentView = .debugMonsters
+                        case .playerTest:
+                            currentView = .debugPlayerTest
+                        }
+                    }
                 }
-            })
-            .onAppear {
-                // Start menu music when menu appears
-                AudioManager.shared.playMenuMusic()
-            }
+            ))
+
+        case .debugMapSelector:
+            DebugMapSelectorView(onBack: { currentView = .debugMasterMenu })
+
+        case .debugMonsters:
+            DebugMonstersView(onBack: { currentView = .debugMasterMenu })
+
+        case .debugPlayerTest:
+            DebugPlayerTestView(onBack: { currentView = .debugMasterMenu })
         }
     }
 }

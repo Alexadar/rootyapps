@@ -17,6 +17,7 @@ class GameScene: SKScene {
     var monsters: [Monster] = []
     var crosshair: SKSpriteNode?
     var gameOverUI: GameOverUI?
+    var pauseMenuUI: PauseMenuUI?
 #if os(macOS)
     var trackingArea: NSTrackingArea?
 #endif
@@ -42,6 +43,7 @@ class GameScene: SKScene {
 
     // MARK: - Game State
     var isGameOver: Bool = false
+    var isGamePaused: Bool = false
     var onReturnToMenu: (() -> Void)?
 
     // MARK: - Damage System
@@ -66,6 +68,7 @@ class GameScene: SKScene {
         setupPhysics()
         setupDebugLabel()
         setupInput()
+        setupPauseMenu()
 
         // Load level from settings
         let mapFilename = SettingsManager.shared.selectedMapFilename
@@ -207,18 +210,13 @@ class GameScene: SKScene {
 
             print("[convertMapConfigToLevel] Wave at t=\(spawnWave.startTime), count=\(spawnWave.count), available IDs: \(availableTypes)")
 
-            // Map monster IDs to type names using enum
-            let monsterNames = availableTypes.compactMap { id -> String? in
-                GameConstants.MonsterType(rawValue: id)?.name
-            }
+            print("[convertMapConfigToLevel] Available monster type IDs: \(availableTypes)")
 
-            print("[convertMapConfigToLevel] Mapped to monster names: \(monsterNames)")
-
-            if spawnWave.count > 0 && !monsterNames.isEmpty {
+            if spawnWave.count > 0 && !availableTypes.isEmpty {
                 waves.append(SpawnWave(
                     startTime: TimeInterval(spawnWave.startTime),
                     monsterCount: spawnWave.count,
-                    monsterTypes: monsterNames,
+                    monsterTypeIDs: availableTypes,
                     spawnInterval: 1.0
                 ))
             }
@@ -250,8 +248,8 @@ class GameScene: SKScene {
         levelStartTime = 0  // Will be set on first update
 
         let mapFilename = SettingsManager.shared.selectedMapFilename
-        let allMonsterTypes = Set(level.spawnWaves.flatMap { $0.monsterTypes }).sorted()
-        print("Loaded level: \(level.name) (file: \(mapFilename)) - Map: \(level.mapSize.width)x\(level.mapSize.height), Waves: \(level.spawnWaves.count), Monsters: \(allMonsterTypes.joined(separator: ", "))")
+        let allMonsterTypeIDs = Set(level.spawnWaves.flatMap { $0.monsterTypeIDs }).sorted()
+        print("Loaded level: \(level.name) (file: \(mapFilename)) - Map: \(level.mapSize.width)x\(level.mapSize.height), Waves: \(level.spawnWaves.count), Monster IDs: \(allMonsterTypeIDs.map { String($0) }.joined(separator: ", "))")
     }
 
     // MARK: - Game Reset
