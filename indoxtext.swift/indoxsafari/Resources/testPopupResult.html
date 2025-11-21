@@ -1,0 +1,49 @@
+<html>
+    <head>
+        <style>
+            html {
+                display: flex;
+                width: 100vw;
+                height: 100vh;
+                flex : 1;
+                border: none;
+            }
+            body {
+                display: flex;
+                width: 100vw;
+                height: 100vh;
+                flex: 1;
+                justify-content: center;
+                background-color: beige;
+                border: none;
+            }
+            iframe {
+                border: none;
+            }
+        </style>
+        <link rel="stylesheet" href="modal.css">
+    </head>
+    <body>
+        <div class="indox-modal indox-modal-open" id="indox-summary-result-modal">
+            <div class="indox-modal-bg"></div>
+            <div class="indox-modal-container">
+              <h1 id="indox-summary-result-header" class="indox-summary-result-header">Result</h1>
+              <div id="indox-summary-result-content" class="indox-summary-result-content">While most images can be relatively easily described in words, generating images from text inputs requires specialized skills and many hours of labour. Enabling an AI agent to automatically generate photorealistic images from natural language prompts not only empowers humans with the ability to create rich and diverse visual content with unprecedented ease, it also enables easier iterative refinement and fine-grained control of the generated images.
+
+                Recent studies have shown that likelihood-based diffusion models also have the ability to generate high-quality synthetic images, especially when paired with a guidance technique designed to trade-off diversity for fidelity. In May, OpenAI introduced a guided diffusion model that enables diffusion models to condition on a classifier’s labels.
+                
+                GLIDE builds on this progress, applying guided diffusion to the challenge of text-conditional image synthesis. After training a 3.5 billion parameter GLIDE diffusion model that uses a text encoder to condition on natural language descriptions, the researchers compared two different guidance strategies: CLIP guidance and classifier-free guidance.
+                
+                CLIP (Radford et al., 2021) is a scalable approach for learning joint representations between text and images that provides a score reflecting how close an image is to a caption. The team applied this method to their diffusion models by replacing the classifier with a CLIP model that “guides” the models.
+                
+                Classifier-free guidance meanwhile is a technique for guiding diffusion models that does not require training a separate classifier. It has two appealing properties: 1) Enabling a single model to leverage its own knowledge during guidance, rather than relying on the knowledge of a separate classification model; 2) Simplifying guidance when conditioning on information that is difficult to predict with a classifier.
+                
+                The researchers observed that classifier-free guidance image outputs were preferred by human evaluators for both photorealism and caption similarity.</div>
+              <button class="indox-modal-close indox-modal-exit">Close</button>
+              <div class="indox-modal-bottom-buttons">
+                <button class="indox-modal-copycb">Copy to clipboard</button>
+               </div>
+            </div>
+          </div>
+    </body>
+</html>

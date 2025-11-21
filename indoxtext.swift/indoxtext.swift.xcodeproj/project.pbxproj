@@ -9,6 +9,11 @@
 /* Begin PBXBuildFile section */
 		11138B062E7F16AA008D3AE4 /* indoxtext.safari Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 11138B052E7F16AA008D3AE4 /* indoxtext.safari Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		11138B102E7F16AA008D3AE4 /* indoxtext.safari Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 11138B0F2E7F16AA008D3AE4 /* indoxtext.safari Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		119ECA582ED08E5900C645B3 /* liquid_icon_app.icon in Resources */ = {isa = PBXBuildFile; fileRef = 119ECA572ED08E5900C645B3 /* liquid_icon_app.icon */; };
+		119ECA592ED08E5900C645B3 /* liquid_icon_app.icon in Resources */ = {isa = PBXBuildFile; fileRef = 119ECA572ED08E5900C645B3 /* liquid_icon_app.icon */; };
+		119ECA5A2ED08E5900C645B3 /* liquid_icon_app.icon in Resources */ = {isa = PBXBuildFile; fileRef = 119ECA572ED08E5900C645B3 /* liquid_icon_app.icon */; };
+		119ECA5B2ED08E5900C645B3 /* liquid_icon_app.icon in Resources */ = {isa = PBXBuildFile; fileRef = 119ECA572ED08E5900C645B3 /* liquid_icon_app.icon */; };
+		119ECA5C2ED08E5900C645B3 /* liquid_icon_app.icon in Resources */ = {isa = PBXBuildFile; fileRef = 119ECA572ED08E5900C645B3 /* liquid_icon_app.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,6 +64,7 @@
 		11138AFA2E7F16AA008D3AE4 /* indoxtext.safari.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = indoxtext.safari.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		11138B052E7F16AA008D3AE4 /* indoxtext.safari Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "indoxtext.safari Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		11138B0F2E7F16AA008D3AE4 /* indoxtext.safari Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "indoxtext.safari Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		119ECA572ED08E5900C645B3 /* liquid_icon_app.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = liquid_icon_app.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -73,13 +79,6 @@
 				ViewController.swift,
 			);
 			target = 11138AE82E7F16AA008D3AE4 /* indoxtext.safari (iOS) */;
-		};
-		11138B372E7F16AA008D3AE4 /* Exceptions for "iOS (Extension)" folder in "indoxtext.safari Extension (iOS)" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 11138B042E7F16AA008D3AE4 /* indoxtext.safari Extension (iOS) */;
 		};
 		11138B3C2E7F16AA008D3AE4 /* Exceptions for "iOS (App)" folder in "indoxtext.safari (iOS)" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -99,45 +98,6 @@
 				ViewController.swift,
 			);
 			target = 11138AF92E7F16AA008D3AE4 /* indoxtext.safari (macOS) */;
-		};
-		11138B412E7F16AA008D3AE4 /* Exceptions for "macOS (Extension)" folder in "indoxtext.safari Extension (macOS)" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 11138B0E2E7F16AA008D3AE4 /* indoxtext.safari Extension (macOS) */;
-		};
-		11138B462E7F16AA008D3AE4 /* Exceptions for "Shared (Extension)" folder in "indoxtext.safari Extension (iOS)" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Resources/_locales,
-				Resources/background.js,
-				Resources/content.js,
-				Resources/images,
-				Resources/manifest.json,
-				Resources/modal.css,
-				Resources/popup.css,
-				Resources/popup.html,
-				Resources/popup.js,
-				SafariWebExtensionHandler.swift,
-			);
-			target = 11138B042E7F16AA008D3AE4 /* indoxtext.safari Extension (iOS) */;
-		};
-		11138B472E7F16AA008D3AE4 /* Exceptions for "Shared (Extension)" folder in "indoxtext.safari Extension (macOS)" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Resources/_locales,
-				Resources/background.js,
-				Resources/content.js,
-				Resources/images,
-				Resources/manifest.json,
-				Resources/modal.css,
-				Resources/popup.css,
-				Resources/popup.html,
-				Resources/popup.js,
-				SafariWebExtensionHandler.swift,
-			);
-			target = 11138B0E2E7F16AA008D3AE4 /* indoxtext.safari Extension (macOS) */;
 		};
 		1168BE5D2E99DAB500E8196F /* Exceptions for "indoxtext.swift" folder in "indoxtext.safari Extension (iOS)" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -206,19 +166,6 @@
 			path = "Shared (App)";
 			sourceTree = "<group>";
 		};
-		11138ADA2E7F16AA008D3AE4 /* Shared (Extension) */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				11138B462E7F16AA008D3AE4 /* Exceptions for "Shared (Extension)" folder in "indoxtext.safari Extension (iOS)" target */,
-				11138B472E7F16AA008D3AE4 /* Exceptions for "Shared (Extension)" folder in "indoxtext.safari Extension (macOS)" target */,
-			);
-			explicitFolders = (
-				Resources/_locales,
-				Resources/images,
-			);
-			path = "Shared (Extension)";
-			sourceTree = "<group>";
-		};
 		11138AEA2E7F16AA008D3AE4 /* iOS (App) */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -232,20 +179,9 @@
 			path = "macOS (App)";
 			sourceTree = "<group>";
 		};
-		11138B092E7F16AA008D3AE4 /* iOS (Extension) */ = {
+		1199ECA02ED0AAAA00000001 /* indoxsafari */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				11138B372E7F16AA008D3AE4 /* Exceptions for "iOS (Extension)" folder in "indoxtext.safari Extension (iOS)" target */,
-			);
-			path = "iOS (Extension)";
-			sourceTree = "<group>";
-		};
-		11138B132E7F16AA008D3AE4 /* macOS (Extension) */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				11138B412E7F16AA008D3AE4 /* Exceptions for "macOS (Extension)" folder in "indoxtext.safari Extension (macOS)" target */,
-			);
-			path = "macOS (Extension)";
+			path = indoxsafari;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -294,12 +230,11 @@
 			children = (
 				11138A9B2E7F11F1008D3AE4 /* indoxtext.swift */,
 				11138AD12E7F16A9008D3AE4 /* Shared (App) */,
-				11138ADA2E7F16AA008D3AE4 /* Shared (Extension) */,
 				11138AEA2E7F16AA008D3AE4 /* iOS (App) */,
 				11138AFB2E7F16AA008D3AE4 /* macOS (App) */,
-				11138B092E7F16AA008D3AE4 /* iOS (Extension) */,
-				11138B132E7F16AA008D3AE4 /* macOS (Extension) */,
+				1199ECA02ED0AAAA00000001 /* indoxsafari */,
 				11138A9A2E7F11F1008D3AE4 /* Products */,
+				119ECA572ED08E5900C645B3 /* liquid_icon_app.icon */,
 			);
 			sourceTree = "<group>";
 		};
@@ -401,7 +336,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				11138B092E7F16AA008D3AE4 /* iOS (Extension) */,
+				1199ECA02ED0AAAA00000001 /* indoxsafari */,
 			);
 			name = "indoxtext.safari Extension (iOS)";
 			packageProductDependencies = (
@@ -423,7 +358,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				11138B132E7F16AA008D3AE4 /* macOS (Extension) */,
+				1199ECA02ED0AAAA00000001 /* indoxsafari */,
 			);
 			name = "indoxtext.safari Extension (macOS)";
 			packageProductDependencies = (
@@ -487,6 +422,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				119ECA582ED08E5900C645B3 /* liquid_icon_app.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -494,6 +430,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				119ECA592ED08E5900C645B3 /* liquid_icon_app.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -501,6 +438,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				119ECA5B2ED08E5900C645B3 /* liquid_icon_app.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -508,6 +446,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				119ECA5C2ED08E5900C645B3 /* liquid_icon_app.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -515,6 +454,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				119ECA5A2ED08E5900C645B3 /* liquid_icon_app.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -691,7 +631,7 @@
 		11138AA52E7F11F2008D3AE4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon_app;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -711,10 +651,10 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "oleksandr.aisixteen.indoxtext-swift";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -728,14 +668,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				XROS_DEPLOYMENT_TARGET = 26.0;
+				XROS_DEPLOYMENT_TARGET = 1.0;
 			};
 			name = Debug;
 		};
 		11138AA62E7F11F2008D3AE4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon_app;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -755,10 +695,10 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "oleksandr.aisixteen.indoxtext-swift";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -772,7 +712,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				XROS_DEPLOYMENT_TARGET = 26.0;
+				XROS_DEPLOYMENT_TARGET = 1.0;
 			};
 			name = Release;
 		};
@@ -783,7 +723,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = LSKNNBG94G;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_FILE = indoxsafari/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "indoxtext.safari Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -817,7 +757,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = LSKNNBG94G;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_FILE = indoxsafari/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "indoxtext.safari Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -848,7 +788,7 @@
 		11138B3A2E7F16AA008D3AE4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon_app;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -889,7 +829,7 @@
 		11138B3B2E7F16AA008D3AE4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon_app;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -938,7 +878,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_FILE = indoxsafari/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "indoxtext.safari Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -946,7 +886,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -974,7 +914,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_FILE = indoxsafari/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "indoxtext.safari Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -982,7 +922,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -1003,7 +943,7 @@
 		11138B442E7F16AA008D3AE4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon_app;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -1020,7 +960,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -1044,7 +984,7 @@
 		11138B452E7F16AA008D3AE4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon_app;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -1061,7 +1001,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"-framework",

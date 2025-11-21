@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "Indox Browser",
+        "description": "Indox Browser"
+    },
+    "extension_description": {
+        "message": "This is Indox Browser. Article summarizer",
+        "description": "Indox Browser shortens articles for faster reading"
+    }
+}
