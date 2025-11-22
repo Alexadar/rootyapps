@@ -16,7 +16,7 @@ import SafariServices
 typealias PlatformViewController = NSViewController
 #endif
 
-let extensionBundleIdentifier = "oleksandr.aisixteen.indoxtext-safari.Extension"
+let extensionBundleIdentifier = "oleksandr.indoxtext.Extension"
 
 class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMessageHandler {
 

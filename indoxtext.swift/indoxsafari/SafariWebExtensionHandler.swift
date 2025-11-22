@@ -18,7 +18,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
   
   #if targetEnvironment(macCatalyst) || os(macOS)
     private static var indox = Indox(
-      vectorizerThreads: 2,
+      vectorizerThreads: 16,
       predictThreads: 8,
       batch_size: 64,
       min_sen_width: 75,
@@ -27,7 +27,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     )
   #else
     private static var indox = Indox(
-      vectorizerThreads: 2,
+      vectorizerThreads: 8,
       predictThreads: 2,
       batch_size: 64,
       min_sen_width: 75,

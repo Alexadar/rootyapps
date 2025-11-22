@@ -94,7 +94,14 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     browser.runtime
       .sendMessage({
         command: 'DoSumm',
-        data: {innerHtml: document.documentElement.innerHTML},
+        data: {innerHtml: (
+          document.querySelector('article')?.innerText ||
+          document.querySelector('main')?.innerText ||
+          document.querySelector('[role="main"]')?.innerText ||
+          document.querySelector('[role="article"]')?.innerText ||
+          document.querySelector('.post-content, .article-content, .entry-content')?.innerText ||
+          document.body.innerText
+        )},
       })
       .then(handleResponse, handleError);
   }
