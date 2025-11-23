@@ -7,77 +7,32 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		118A7CFD2ED3657400024EC0 /* liquid_icon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 118A7CFC2ED3657400024EC0 /* liquid_icon.icon */; };
-		118A7CFE2ED3657400024EC0 /* liquid_icon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 118A7CFC2ED3657400024EC0 /* liquid_icon.icon */; };
 		118A7CFF2ED3657400024EC0 /* liquid_icon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 118A7CFC2ED3657400024EC0 /* liquid_icon.icon */; };
-		118A7D002ED3657400024EC0 /* liquid_icon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 118A7CFC2ED3657400024EC0 /* liquid_icon.icon */; };
-		11CC00012ED32B0000000001 /* output_story in Resources */ = {isa = PBXBuildFile; fileRef = 11CC00002ED32B0000000001 /* output_story */; };
-		11CC00022ED32B0000000001 /* output_story in Resources */ = {isa = PBXBuildFile; fileRef = 11CC00002ED32B0000000001 /* output_story */; };
+		118A84652ED36C9F00024EC0 /* Yams in Frameworks */ = {isa = PBXBuildFile; productRef = 11YAMS0042ED4000000000001 /* Yams */; };
 		11CC00032ED32B0000000001 /* output_story in Resources */ = {isa = PBXBuildFile; fileRef = 11CC00002ED32B0000000001 /* output_story */; };
-		11CC00042ED32B0000000001 /* output_story in Resources */ = {isa = PBXBuildFile; fileRef = 11CC00002ED32B0000000001 /* output_story */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		118A7CFC2ED3657400024EC0 /* liquid_icon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = liquid_icon.icon; sourceTree = "<group>"; };
-		11BD2D392EA0248D0069B5FD /* bigpinkcat.swift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = bigpinkcat.swift.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		11BD2D4A2EA0248D0069B5FD /* bigpinkcat.swift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = bigpinkcat.swift.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		11BD2D5A2EA0248D0069B5FD /* bigpinkcat.swift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = bigpinkcat.swift.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		11BD2DA82EA0248D0069B5FD /* bigpinkcat.swift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = bigpinkcat.swift.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		11CC00002ED32B0000000001 /* output_story */ = {isa = PBXFileReference; lastKnownFileType = folder; name = output_story; path = "bigpinkcat.swift Shared/output_story"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		11BD2D6F2EA0248D0069B5FD /* Exceptions for "bigpinkcat.swift Shared" folder in "bigpinkcat.swift iOS" target */ = {
+		11BD2D772EA0248D0069B5FD /* Exceptions for "bigpinkcat.swift Shared" folder in "bigpinkcat.swift" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Actions.sks,
 				Assets.xcassets,
+				BigPinkCatApp.swift,
+				GameContentView.swift,
 				GameDataLoader.swift,
 				GameDataModels.swift,
 				GameScene.sks,
 				GameScene.swift,
 				VisualNovelScene.swift,
 			);
-			target = 11BD2D382EA0248D0069B5FD /* bigpinkcat.swift iOS */;
-		};
-		11BD2D732EA0248D0069B5FD /* Exceptions for "bigpinkcat.swift Shared" folder in "bigpinkcat.swift tvOS" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Actions.sks,
-				Assets.xcassets,
-				GameDataLoader.swift,
-				GameDataModels.swift,
-				GameScene.sks,
-				GameScene.swift,
-				VisualNovelScene.swift,
-			);
-			target = 11BD2D492EA0248D0069B5FD /* bigpinkcat.swift tvOS */;
-		};
-		11BD2D772EA0248D0069B5FD /* Exceptions for "bigpinkcat.swift Shared" folder in "bigpinkcat.swift macOS" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Actions.sks,
-				Assets.xcassets,
-				GameDataLoader.swift,
-				GameDataModels.swift,
-				GameScene.sks,
-				GameScene.swift,
-				VisualNovelScene.swift,
-			);
-			target = 11BD2D592EA0248D0069B5FD /* bigpinkcat.swift macOS */;
-		};
-		11BD2DA92EA0248D0069B5FD /* Exceptions for "bigpinkcat.swift Shared" folder in "bigpinkcat.swift visionOS" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Actions.sks,
-				Assets.xcassets,
-				GameDataLoader.swift,
-				GameDataModels.swift,
-				GameScene.sks,
-				GameScene.swift,
-				VisualNovelScene.swift,
-			);
-			target = 11BD2DA12EA0248D0069B5FD /* bigpinkcat.swift visionOS */;
+			target = 11BD2D592EA0248D0069B5FD /* bigpinkcat.swift */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -85,10 +40,7 @@
 		11BD2D302EA0248A0069B5FD /* bigpinkcat.swift Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				11BD2D6F2EA0248D0069B5FD /* Exceptions for "bigpinkcat.swift Shared" folder in "bigpinkcat.swift iOS" target */,
-				11BD2D732EA0248D0069B5FD /* Exceptions for "bigpinkcat.swift Shared" folder in "bigpinkcat.swift tvOS" target */,
-				11BD2D772EA0248D0069B5FD /* Exceptions for "bigpinkcat.swift Shared" folder in "bigpinkcat.swift macOS" target */,
-				11BD2DA92EA0248D0069B5FD /* Exceptions for "bigpinkcat.swift Shared" folder in "bigpinkcat.swift visionOS" target */,
+				11BD2D772EA0248D0069B5FD /* Exceptions for "bigpinkcat.swift Shared" folder in "bigpinkcat.swift" target */,
 			);
 			path = "bigpinkcat.swift Shared";
 			sourceTree = "<group>";
@@ -116,31 +68,11 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		11BD2D362EA0248D0069B5FD /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		11BD2D472EA0248D0069B5FD /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		11BD2D572EA0248D0069B5FD /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		11BD2DA62EA0248D0069B5FD /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
+				118A84652ED36C9F00024EC0 /* Yams in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -164,10 +96,7 @@
 		11BD2D3A2EA0248D0069B5FD /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				11BD2D392EA0248D0069B5FD /* bigpinkcat.swift.app */,
-				11BD2D4A2EA0248D0069B5FD /* bigpinkcat.swift.app */,
 				11BD2D5A2EA0248D0069B5FD /* bigpinkcat.swift.app */,
-				11BD2DA82EA0248D0069B5FD /* bigpinkcat.swift.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -175,55 +104,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		11BD2D382EA0248D0069B5FD /* bigpinkcat.swift iOS */ = {
+		11BD2D592EA0248D0069B5FD /* bigpinkcat.swift */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 11BD2D702EA0248D0069B5FD /* Build configuration list for PBXNativeTarget "bigpinkcat.swift iOS" */;
-			buildPhases = (
-				11BD2D352EA0248D0069B5FD /* Sources */,
-				11BD2D362EA0248D0069B5FD /* Frameworks */,
-				11BD2D372EA0248D0069B5FD /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				11BD2D3B2EA0248D0069B5FD /* bigpinkcat.swift iOS */,
-			);
-			name = "bigpinkcat.swift iOS";
-			packageProductDependencies = (
-				11YAMS0022ED4000000000001 /* Yams */,
-			);
-			productName = "bigpinkcat.swift iOS";
-			productReference = 11BD2D392EA0248D0069B5FD /* bigpinkcat.swift.app */;
-			productType = "com.apple.product-type.application";
-		};
-		11BD2D492EA0248D0069B5FD /* bigpinkcat.swift tvOS */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 11BD2D742EA0248D0069B5FD /* Build configuration list for PBXNativeTarget "bigpinkcat.swift tvOS" */;
-			buildPhases = (
-				11BD2D462EA0248D0069B5FD /* Sources */,
-				11BD2D472EA0248D0069B5FD /* Frameworks */,
-				11BD2D482EA0248D0069B5FD /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				11BD2D4B2EA0248D0069B5FD /* bigpinkcat.swift tvOS */,
-			);
-			name = "bigpinkcat.swift tvOS";
-			packageProductDependencies = (
-				11YAMS0032ED4000000000001 /* Yams */,
-			);
-			productName = "bigpinkcat.swift tvOS";
-			productReference = 11BD2D4A2EA0248D0069B5FD /* bigpinkcat.swift.app */;
-			productType = "com.apple.product-type.application";
-		};
-		11BD2D592EA0248D0069B5FD /* bigpinkcat.swift macOS */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 11BD2D782EA0248D0069B5FD /* Build configuration list for PBXNativeTarget "bigpinkcat.swift macOS" */;
+			buildConfigurationList = 11BD2D782EA0248D0069B5FD /* Build configuration list for PBXNativeTarget "bigpinkcat.swift" */;
 			buildPhases = (
 				11BD2D562EA0248D0069B5FD /* Sources */,
 				11BD2D572EA0248D0069B5FD /* Frameworks */,
@@ -236,35 +119,12 @@
 			fileSystemSynchronizedGroups = (
 				11BD2D5B2EA0248D0069B5FD /* bigpinkcat.swift macOS */,
 			);
-			name = "bigpinkcat.swift macOS";
+			name = bigpinkcat.swift;
 			packageProductDependencies = (
 				11YAMS0042ED4000000000001 /* Yams */,
 			);
 			productName = "bigpinkcat.swift macOS";
 			productReference = 11BD2D5A2EA0248D0069B5FD /* bigpinkcat.swift.app */;
-			productType = "com.apple.product-type.application";
-		};
-		11BD2DA12EA0248D0069B5FD /* bigpinkcat.swift visionOS */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 11BD2DA22EA0248D0069B5FD /* Build configuration list for PBXNativeTarget "bigpinkcat.swift visionOS" */;
-			buildPhases = (
-				11BD2DA52EA0248D0069B5FD /* Sources */,
-				11BD2DA62EA0248D0069B5FD /* Frameworks */,
-				11BD2DA72EA0248D0069B5FD /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				11BD2DA02EA0248D0069B5FD /* bigpinkcat.swift visionOS */,
-			);
-			name = "bigpinkcat.swift visionOS";
-			packageProductDependencies = (
-				11YAMS0052ED4000000000001 /* Yams */,
-			);
-			productName = "bigpinkcat.swift visionOS";
-			productReference = 11BD2DA82EA0248D0069B5FD /* bigpinkcat.swift.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -277,16 +137,7 @@
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
-					11BD2D382EA0248D0069B5FD = {
-						CreatedOnToolsVersion = 26.0.1;
-					};
-					11BD2D492EA0248D0069B5FD = {
-						CreatedOnToolsVersion = 26.0.1;
-					};
 					11BD2D592EA0248D0069B5FD = {
-						CreatedOnToolsVersion = 26.0.1;
-					};
-					11BD2DA12EA0248D0069B5FD = {
 						CreatedOnToolsVersion = 26.0.1;
 					};
 				};
@@ -300,41 +151,20 @@
 			);
 			mainGroup = 11BD2D2B2EA0248A0069B5FD;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			packageReferences = (
 				11YAMS0012ED4000000000001 /* XCRemoteSwiftPackageReference "Yams" */,
 			);
+			preferredProjectObjectVersion = 77;
 			productRefGroup = 11BD2D3A2EA0248D0069B5FD /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				11BD2D382EA0248D0069B5FD /* bigpinkcat.swift iOS */,
-				11BD2D492EA0248D0069B5FD /* bigpinkcat.swift tvOS */,
-				11BD2D592EA0248D0069B5FD /* bigpinkcat.swift macOS */,
-				11BD2DA12EA0248D0069B5FD /* bigpinkcat.swift visionOS */,
+				11BD2D592EA0248D0069B5FD /* bigpinkcat.swift */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		11BD2D372EA0248D0069B5FD /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				11CC00012ED32B0000000001 /* output_story in Resources */,
-				118A7CFE2ED3657400024EC0 /* liquid_icon.icon in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		11BD2D482EA0248D0069B5FD /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				11CC00022ED32B0000000001 /* output_story in Resources */,
-				118A7CFD2ED3657400024EC0 /* liquid_icon.icon in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		11BD2D582EA0248D0069B5FD /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -344,40 +174,10 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		11BD2DA72EA0248D0069B5FD /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				11CC00042ED32B0000000001 /* output_story in Resources */,
-				118A7D002ED3657400024EC0 /* liquid_icon.icon in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		11BD2D352EA0248D0069B5FD /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		11BD2D462EA0248D0069B5FD /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		11BD2D562EA0248D0069B5FD /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		11BD2DA52EA0248D0069B5FD /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -387,150 +187,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		11BD2D712EA0248D0069B5FD /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = LSKNNBG94G;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Big Pink Cat";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
-				INFOPLIST_KEY_UIStatusBarHidden = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = oleksandr.aisixteen.bigpinkcat;
-				PRODUCT_NAME = bigpinkcat.swift;
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		11BD2D722EA0248D0069B5FD /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = LSKNNBG94G;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Big Pink Cat";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
-				INFOPLIST_KEY_UIStatusBarHidden = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = oleksandr.aisixteen.bigpinkcat;
-				PRODUCT_NAME = bigpinkcat.swift;
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
-		11BD2D752EA0248D0069B5FD /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = LSKNNBG94G;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Big Pink Cat";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
-				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = oleksandr.aisixteen.bigpinkcat;
-				PRODUCT_NAME = bigpinkcat.swift;
-				SDKROOT = appletvos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 3;
-				TVOS_DEPLOYMENT_TARGET = 26.0;
-			};
-			name = Debug;
-		};
-		11BD2D762EA0248D0069B5FD /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = LSKNNBG94G;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Big Pink Cat";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
-				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = oleksandr.aisixteen.bigpinkcat;
-				PRODUCT_NAME = bigpinkcat.swift;
-				SDKROOT = appletvos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 3;
-				TVOS_DEPLOYMENT_TARGET = 26.0;
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
 		11BD2D792EA0248D0069B5FD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -547,8 +203,6 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Big Pink Cat";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMainStoryboardFile = Main;
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -560,11 +214,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,3,7";
 			};
 			name = Debug;
 		};
@@ -584,8 +241,6 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Big Pink Cat";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMainStoryboardFile = Main;
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -597,11 +252,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,3,7";
 			};
 			name = Release;
 		};
@@ -721,65 +379,6 @@
 			};
 			name = Release;
 		};
-		11BD2DA32EA0248D0069B5FD /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = LSKNNBG94G;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Big Pink Cat";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = oleksandr.aisixteen.bigpinkcat;
-				PRODUCT_NAME = bigpinkcat.swift;
-				SDKROOT = xros;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 7;
-				XROS_DEPLOYMENT_TARGET = 2.0;
-			};
-			name = Debug;
-		};
-		11BD2DA42EA0248D0069B5FD /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = LSKNNBG94G;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Big Pink Cat";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = oleksandr.aisixteen.bigpinkcat;
-				PRODUCT_NAME = bigpinkcat.swift;
-				SDKROOT = xros;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 7;
-				VALIDATE_PRODUCT = YES;
-				XROS_DEPLOYMENT_TARGET = 2.0;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -792,38 +391,11 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		11BD2D702EA0248D0069B5FD /* Build configuration list for PBXNativeTarget "bigpinkcat.swift iOS" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				11BD2D712EA0248D0069B5FD /* Debug */,
-				11BD2D722EA0248D0069B5FD /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		11BD2D742EA0248D0069B5FD /* Build configuration list for PBXNativeTarget "bigpinkcat.swift tvOS" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				11BD2D752EA0248D0069B5FD /* Debug */,
-				11BD2D762EA0248D0069B5FD /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		11BD2D782EA0248D0069B5FD /* Build configuration list for PBXNativeTarget "bigpinkcat.swift macOS" */ = {
+		11BD2D782EA0248D0069B5FD /* Build configuration list for PBXNativeTarget "bigpinkcat.swift" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				11BD2D792EA0248D0069B5FD /* Debug */,
 				11BD2D7A2EA0248D0069B5FD /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		11BD2DA22EA0248D0069B5FD /* Build configuration list for PBXNativeTarget "bigpinkcat.swift visionOS" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				11BD2DA32EA0248D0069B5FD /* Debug */,
-				11BD2DA42EA0248D0069B5FD /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -842,22 +414,7 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		11YAMS0022ED4000000000001 /* Yams */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 11YAMS0012ED4000000000001 /* XCRemoteSwiftPackageReference "Yams" */;
-			productName = Yams;
-		};
-		11YAMS0032ED4000000000001 /* Yams */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 11YAMS0012ED4000000000001 /* XCRemoteSwiftPackageReference "Yams" */;
-			productName = Yams;
-		};
 		11YAMS0042ED4000000000001 /* Yams */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 11YAMS0012ED4000000000001 /* XCRemoteSwiftPackageReference "Yams" */;
-			productName = Yams;
-		};
-		11YAMS0052ED4000000000001 /* Yams */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 11YAMS0012ED4000000000001 /* XCRemoteSwiftPackageReference "Yams" */;
 			productName = Yams;

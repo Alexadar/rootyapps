@@ -17,7 +17,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "11BD2D592EA0248D0069B5FD"
                BuildableName = "bigpinkcat.swift.app"
-               BlueprintName = "bigpinkcat.swift macOS"
+               BlueprintName = "bigpinkcat.swift"
                ReferencedContainer = "container:bigpinkcat.swift.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -46,7 +46,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "11BD2D592EA0248D0069B5FD"
             BuildableName = "bigpinkcat.swift.app"
-            BlueprintName = "bigpinkcat.swift macOS"
+            BlueprintName = "bigpinkcat.swift"
             ReferencedContainer = "container:bigpinkcat.swift.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -63,7 +63,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "11BD2D592EA0248D0069B5FD"
             BuildableName = "bigpinkcat.swift.app"
-            BlueprintName = "bigpinkcat.swift macOS"
+            BlueprintName = "bigpinkcat.swift"
             ReferencedContainer = "container:bigpinkcat.swift.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

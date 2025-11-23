@@ -42,6 +42,7 @@ class VisualNovelScene: SKScene {
     private var backgroundNode: SKSpriteNode?
     private var dialogBackgroundPanel: SKShapeNode?
     private var optionsCaptionLabel: SKLabelNode?
+    private var optionsCaptionPanel: SKShapeNode?
 
     // Settings keys
     private static let muteSettingKey = "bigpinkcat_isMuted"
@@ -58,6 +59,7 @@ class VisualNovelScene: SKScene {
     #if DEBUG
     private var debugLabel: SKLabelNode?
     private var currentSummaryIndex: Int = 0
+    private var showDebug: Bool = false
     #endif
     // Track current video sizing inputs for dynamic layout (to relayout on window/scene resize)
     private var currentVideoNaturalSizePx: CGSize?
@@ -111,37 +113,40 @@ class VisualNovelScene: SKScene {
             addChild(bg)
         }
 
-        // Create title label (UI layer above video)
+        // Create title label (UI layer above video) - supports wrapping for long titles
         titleLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
-        titleLabel?.fontSize = 72
-        titleLabel?.position = CGPoint(x: size.width / 2, y: size.height / 2 + 220)
+        titleLabel?.fontSize = 56
+        titleLabel?.position = CGPoint(x: size.width / 2, y: size.height / 2 + 180)
         titleLabel?.zPosition = 2
         titleLabel?.fontColor = .white
         titleLabel?.verticalAlignmentMode = .center
+        titleLabel?.horizontalAlignmentMode = .center
+        titleLabel?.preferredMaxLayoutWidth = size.width - 100
+        titleLabel?.numberOfLines = 0
         if let title = titleLabel {
             addChild(title)
         }
 
-        // Create character name label (centered vertically)
+        // Create character name label (positioned above dialog)
         characterNameLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
-        characterNameLabel?.fontSize = 36
-        characterNameLabel?.position = CGPoint(x: size.width / 2, y: size.height / 2 + 100)
+        characterNameLabel?.fontSize = 28
+        characterNameLabel?.position = CGPoint(x: size.width / 2, y: size.height / 2 + 120)
         characterNameLabel?.horizontalAlignmentMode = .center
-        characterNameLabel?.zPosition = 2
+        characterNameLabel?.zPosition = 3
         characterNameLabel?.fontColor = .cyan
         if let nameLabel = characterNameLabel {
             addChild(nameLabel)
         }
 
-        // Create dialog label (centered)
+        // Create dialog label (centered, smaller text to prevent overlap)
         dialogLabel = SKLabelNode(fontNamed: "Helvetica")
-        dialogLabel?.fontSize = 32
-        dialogLabel?.position = CGPoint(x: size.width / 2, y: size.height / 2 - 40)
-        dialogLabel?.preferredMaxLayoutWidth = size.width - 400
+        dialogLabel?.fontSize = 24
+        dialogLabel?.position = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
+        dialogLabel?.preferredMaxLayoutWidth = size.width - 100
         dialogLabel?.numberOfLines = 0
-        dialogLabel?.zPosition = 2
+        dialogLabel?.zPosition = 3
         dialogLabel?.fontColor = .white
-        dialogLabel?.verticalAlignmentMode = .center
+        dialogLabel?.verticalAlignmentMode = .top
         if let label = dialogLabel {
             addChild(label)
         }
@@ -152,6 +157,7 @@ class VisualNovelScene: SKScene {
         optionsCaptionLabel?.zPosition = 2
         optionsCaptionLabel?.fontColor = .white
         optionsCaptionLabel?.horizontalAlignmentMode = .center
+        optionsCaptionLabel?.verticalAlignmentMode = .center
         optionsCaptionLabel?.isHidden = true
         if let caption = optionsCaptionLabel {
             addChild(caption)
@@ -184,6 +190,8 @@ class VisualNovelScene: SKScene {
         dialogBackgroundPanel?.removeFromParent()
         dialogBackgroundPanel = nil
         optionsCaptionLabel?.isHidden = true
+        optionsCaptionPanel?.removeFromParent()
+        optionsCaptionPanel = nil
         removeOptionButtons()
 
         switch newState {
@@ -285,7 +293,7 @@ class VisualNovelScene: SKScene {
 
         #if DEBUG
         debugLabel?.text = "Main Menu"
-        debugLabel?.isHidden = false
+        debugLabel?.isHidden = !showDebug
         #endif
     }
 
@@ -299,6 +307,11 @@ class VisualNovelScene: SKScene {
         // Show character name
         characterNameLabel?.text = dialog.character.name
         characterNameLabel?.isHidden = false
+
+        // Reset dialog label position and alignment for regular dialog
+        dialogLabel?.position = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
+        dialogLabel?.verticalAlignmentMode = .top
+        dialogLabel?.horizontalAlignmentMode = .center
 
         // Show dialog text with typing effect (also creates background panel)
         dialogLabel?.isHidden = false
@@ -347,7 +360,7 @@ class VisualNovelScene: SKScene {
         let isLastDialog = dialog.nextDialog == nil
 
         debugLabel?.text = "Summary: \(currentSummaryIndex) | Dialog: \(currentPosition)/\(totalInSummary) (id:\(dialogId)) | Last:\(isLastDialog) | Options:\(hasOptions) | Final:\(hasFinalWords)"
-        debugLabel?.isHidden = false
+        debugLabel?.isHidden = !showDebug
     }
     #endif
 
@@ -440,16 +453,30 @@ class VisualNovelScene: SKScene {
 
         // Create option buttons
         let buttonHeight: CGFloat = 80
-        let buttonWidth: CGFloat = 800
+        let buttonWidth: CGFloat = min(size.width - 40, 800)
         let buttonSpacing: CGFloat = 20
         let totalHeight = CGFloat(options.count) * (buttonHeight + buttonSpacing)
         let captionSpacing: CGFloat = 30
         var yPosition = size.height / 2 + totalHeight / 2
 
         // Position caption above the buttons
+        let captionY = yPosition + buttonHeight / 2 + captionSpacing
         optionsCaptionLabel?.text = "Choose your path:"
-        optionsCaptionLabel?.position = CGPoint(x: size.width / 2, y: yPosition + buttonHeight / 2 + captionSpacing)
+        optionsCaptionLabel?.position = CGPoint(x: size.width / 2, y: captionY)
         optionsCaptionLabel?.isHidden = false
+
+        // Create background panel for caption (same style as dialog panels)
+        let captionPadding: CGFloat = 20
+        let captionWidth: CGFloat = 280
+        let captionHeight: CGFloat = 50
+        let captionPanel = SKShapeNode(rectOf: CGSize(width: captionWidth, height: captionHeight), cornerRadius: 15)
+        captionPanel.position = CGPoint(x: size.width / 2, y: captionY)
+        captionPanel.fillColor = SKColor.black.withAlphaComponent(0.4)
+        captionPanel.strokeColor = SKColor.white.withAlphaComponent(0.2)
+        captionPanel.lineWidth = 1
+        captionPanel.zPosition = 1
+        addChild(captionPanel)
+        optionsCaptionPanel = captionPanel
 
         for (index, option) in options.enumerated() {
             let button = createOptionButton(
@@ -465,11 +492,12 @@ class VisualNovelScene: SKScene {
     }
 
     private func createOptionButton(text: String, position: CGPoint, size: CGSize, tag: Int) -> SKShapeNode {
-        let button = SKShapeNode(rectOf: size, cornerRadius: 10)
+        // Style buttons like dialog background panels (semi-transparent with subtle border)
+        let button = SKShapeNode(rectOf: size, cornerRadius: 15)
         button.position = position
-        button.fillColor = .darkGray
-        button.strokeColor = .white
-        button.lineWidth = 2
+        button.fillColor = SKColor.black.withAlphaComponent(0.4)
+        button.strokeColor = SKColor.white.withAlphaComponent(0.2)
+        button.lineWidth = 1
         button.name = "option_\(tag)"
         // Ensure buttons render above video/background
         button.zPosition = 2
@@ -527,6 +555,11 @@ class VisualNovelScene: SKScene {
         characterNameLabel?.isHidden = true
         dialogLabel?.isHidden = false
         dialogLabel?.text = finalWords
+
+        // Center the dialog label for final words
+        dialogLabel?.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        dialogLabel?.verticalAlignmentMode = .center
+        dialogLabel?.horizontalAlignmentMode = .center
 
         // Create background panel that wraps around final words
         updateDialogBackgroundPanel()
@@ -602,15 +635,66 @@ class VisualNovelScene: SKScene {
         node.position = CGPoint(x: sceneW / 2.0, y: sceneH / 2.0)
     }
 
-    // Re-layout video on window/scene resize (macOS windowed, iPad multitasking, etc.)
+    // Re-layout video and UI on window/scene resize (macOS windowed, iPad multitasking, etc.)
     override func didChangeSize(_ oldSize: CGSize) {
         super.didChangeSize(oldSize)
+
+        let centerX = self.size.width / 2
+        let centerY = self.size.height / 2
+
         // Update background to fill scene
         backgroundNode?.size = self.size
-        backgroundNode?.position = CGPoint(x: self.size.width / 2, y: self.size.height / 2)
+        backgroundNode?.position = CGPoint(x: centerX, y: centerY)
+
         // Re-layout current video as CSS cover
         if let node = videoNode, let nat = currentVideoNaturalSizePx {
             layoutVideoNode(node, naturalSizePx: nat, preferredTransform: currentVideoPreferredTransform)
+        }
+
+        // Re-center all UI elements
+        titleLabel?.position = CGPoint(x: centerX, y: centerY + 180)
+        titleLabel?.preferredMaxLayoutWidth = self.size.width - 100
+
+        characterNameLabel?.position = CGPoint(x: centerX, y: centerY + 120)
+
+        dialogLabel?.position = CGPoint(x: centerX, y: centerY + 40)
+        dialogLabel?.preferredMaxLayoutWidth = self.size.width - 100
+
+        optionsCaptionLabel?.position.x = centerX
+
+        #if DEBUG
+        debugLabel?.position = CGPoint(x: centerX, y: 30)
+        #endif
+
+        // Re-center option buttons based on current state
+        if currentState == .mainMenu {
+            // Reposition menu buttons
+            if let startButton = childNode(withName: "startButton") {
+                startButton.position = CGPoint(x: centerX, y: centerY)
+            }
+            if let muteButton = childNode(withName: "muteButton") {
+                muteButton.position = CGPoint(x: centerX, y: centerY - 80)
+            }
+        } else if currentState == .dialogOptions {
+            // Reposition dialog option buttons
+            let buttonHeight: CGFloat = 80
+            let buttonSpacing: CGFloat = 20
+            let totalHeight = CGFloat(optionButtons.count) * (buttonHeight + buttonSpacing)
+            var yPosition = centerY + totalHeight / 2
+            let captionY = yPosition + buttonHeight / 2 + 30
+
+            optionsCaptionLabel?.position = CGPoint(x: centerX, y: captionY)
+            optionsCaptionPanel?.position = CGPoint(x: centerX, y: captionY)
+
+            for button in optionButtons {
+                button.position = CGPoint(x: centerX, y: yPosition)
+                yPosition -= (buttonHeight + buttonSpacing)
+            }
+        }
+
+        // Update dialog background panel position if visible
+        if dialogBackgroundPanel != nil {
+            updateDialogBackgroundPanel()
         }
     }
     private func playBackgroundMusic() {
