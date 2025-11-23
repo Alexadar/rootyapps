@@ -44,15 +44,16 @@ extension Monster {
 
         print("[Monster+Textures] Filtered \(filteredNames.count) textures with prefix '\(prefix)'")
 
+        // IMPORTANT: Use .last not .first to extract frame number!
+        // "Bird5/dying_01" splits to [5, 1] - .first returns 5 (monster ID), .last returns 1 (frame)
+        // Using .first caused all frames to have same sort key = random order = glitchy animations
         let sortedNames = filteredNames.sorted { (a, b) -> Bool in
-            // Extract numeric part from filename (e.g., "Berserker/walk_12" -> 12)
             let numA = a.components(separatedBy: CharacterSet.decimalDigits.inverted)
                 .compactMap { Int($0) }
-                .first ?? 0
+                .last ?? 0  // .last = frame number, NOT .first
             let numB = b.components(separatedBy: CharacterSet.decimalDigits.inverted)
                 .compactMap { Int($0) }
-                .first ?? 0
-
+                .last ?? 0
             return numA < numB
         }
 

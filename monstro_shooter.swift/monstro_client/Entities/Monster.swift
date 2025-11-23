@@ -161,10 +161,11 @@ class Monster {
         // Stop walk animation
         sprite.removeAction(forKey: "walk")
 
-        // Play dying animation if available
+        // Play dying animation (keyed to prevent stacking if die() called multiple times)
         if !dyingFrames.isEmpty {
+            sprite.removeAction(forKey: "dying")
             let dyingAnim = SKAction.animate(with: dyingFrames, timePerFrame: dyingFrameRate, resize: true, restore: false)
-            sprite.run(dyingAnim)
+            sprite.run(dyingAnim, withKey: "dying")  // key prevents animation stacking
         } else {
             // Fallback: tint and freeze
             let tint = SKAction.colorize(with: .red, colorBlendFactor: 0.6, duration: 0.12)
