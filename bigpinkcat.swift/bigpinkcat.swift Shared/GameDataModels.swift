@@ -95,9 +95,8 @@ struct SummaryPart: Codable {
     let previousSummary: String?
     let nextOptions: [String]?
     let nextStructs: [String]?
-    // Some YAML files use string labels in `next_structs_idx` (e.g. "Index 0").
-    // Accept them as strings here and convert to Int when building the dialog tree.
-    let nextStructsIdx: [String]?
+    // next_structs_idx can be integers or strings - we store as Int array
+    let nextStructsIdx: [Int]?
 
     enum CodingKeys: String, CodingKey {
         case index

@@ -40,6 +40,25 @@ class VisualNovelScene: SKScene {
     private var optionButtons: [SKShapeNode] = []
     private var videoNode: SKVideoNode?
     private var backgroundNode: SKSpriteNode?
+    private var dialogBackgroundPanel: SKShapeNode?
+    private var optionsCaptionLabel: SKLabelNode?
+
+    // Settings keys
+    private static let muteSettingKey = "bigpinkcat_isMuted"
+
+    // Mute state with persistent storage
+    private var isMuted: Bool {
+        get { UserDefaults.standard.bool(forKey: Self.muteSettingKey) }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Self.muteSettingKey)
+            applyMuteState()
+        }
+    }
+
+    #if DEBUG
+    private var debugLabel: SKLabelNode?
+    private var currentSummaryIndex: Int = 0
+    #endif
     // Track current video sizing inputs for dynamic layout (to relayout on window/scene resize)
     private var currentVideoNaturalSizePx: CGSize?
     private var currentVideoPreferredTransform: CGAffineTransform = .identity
@@ -48,6 +67,36 @@ class VisualNovelScene: SKScene {
     override func didMove(to view: SKView) {
         setupScene()
         changeState(to: .loading)
+    }
+
+    deinit {
+        cleanupVideoPlayer()
+    }
+
+    private func cleanupVideoPlayer() {
+        cleanupVideoOnly()
+
+        // Stop audio player
+        audioPlayer?.stop()
+        audioPlayer = nil
+    }
+
+    private func cleanupVideoOnly() {
+        // Remove KVO observer and notifications from current player item
+        if let item = currentPlayerItem {
+            item.removeObserver(self, forKeyPath: "status", context: &Self.playerItemContext)
+            NotificationCenter.default.removeObserver(self, name: .AVPlayerItemFailedToPlayToEndTime, object: item)
+            NotificationCenter.default.removeObserver(self, name: .AVPlayerItemDidPlayToEndTime, object: item)
+            currentPlayerItem = nil
+        }
+
+        // Stop and release video player
+        videoPlayer?.pause()
+        videoPlayer = nil
+
+        // Remove video node from scene
+        videoNode?.removeFromParent()
+        videoNode = nil
     }
 
     private func setupScene() {
@@ -96,6 +145,31 @@ class VisualNovelScene: SKScene {
         if let label = dialogLabel {
             addChild(label)
         }
+
+        // Create options caption label (used for "Choose your path:")
+        optionsCaptionLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
+        optionsCaptionLabel?.fontSize = 28
+        optionsCaptionLabel?.zPosition = 2
+        optionsCaptionLabel?.fontColor = .white
+        optionsCaptionLabel?.horizontalAlignmentMode = .center
+        optionsCaptionLabel?.isHidden = true
+        if let caption = optionsCaptionLabel {
+            addChild(caption)
+        }
+
+        #if DEBUG
+        // Create debug label at bottom of screen
+        debugLabel = SKLabelNode(fontNamed: "Courier")
+        debugLabel?.fontSize = 14
+        debugLabel?.position = CGPoint(x: size.width / 2, y: 30)
+        debugLabel?.zPosition = 10
+        debugLabel?.fontColor = .yellow
+        debugLabel?.horizontalAlignmentMode = .center
+        debugLabel?.isHidden = true
+        if let debug = debugLabel {
+            addChild(debug)
+        }
+        #endif
     }
 
     // MARK: - State Machine
@@ -107,6 +181,9 @@ class VisualNovelScene: SKScene {
         titleLabel?.isHidden = true
         dialogLabel?.isHidden = true
         characterNameLabel?.isHidden = true
+        dialogBackgroundPanel?.removeFromParent()
+        dialogBackgroundPanel = nil
+        optionsCaptionLabel?.isHidden = true
         removeOptionButtons()
 
         switch newState {
@@ -171,26 +248,45 @@ class VisualNovelScene: SKScene {
         titleLabel?.alpha = 0
         titleLabel?.run(SKAction.fadeIn(withDuration: 2.0))
 
-        // Show "Tap to Start" after delay
-        let startLabel = SKLabelNode(fontNamed: "Helvetica")
-        startLabel.name = "startLabel"
-        startLabel.text = "Tap to Start"
-        startLabel.fontSize = 48
-        startLabel.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        startLabel.fontColor = .white
-        startLabel.alpha = 0
-        addChild(startLabel)
+        // Create "Start Game" button
+        let startButton = createOptionButton(
+            text: "Start Game",
+            position: CGPoint(x: size.width / 2, y: size.height / 2),
+            size: CGSize(width: 300, height: 60),
+            tag: -1  // Special tag for start button
+        )
+        startButton.name = "startButton"
+        startButton.alpha = 0
+        addChild(startButton)
+        optionButtons.append(startButton)
 
+        // Create "Mute/Unmute" button
+        let muteButton = createOptionButton(
+            text: isMuted ? "Unmute" : "Mute",
+            position: CGPoint(x: size.width / 2, y: size.height / 2 - 80),
+            size: CGSize(width: 300, height: 60),
+            tag: -2  // Special tag for mute button
+        )
+        muteButton.name = "muteButton"
+        muteButton.alpha = 0
+        addChild(muteButton)
+        optionButtons.append(muteButton)
+
+        // Fade in buttons
         let fadeIn = SKAction.fadeIn(withDuration: 1.0)
-        let fadeOut = SKAction.fadeOut(withDuration: 1.0)
-        let sequence = SKAction.sequence([fadeIn, fadeOut])
-        startLabel.run(SKAction.repeatForever(sequence))
+        startButton.run(fadeIn)
+        muteButton.run(fadeIn)
 
         // Play background music if available
         playBackgroundMusic()
 
         // Try to play background style video if available (use subdirectory-aware loader)
         playBackgroundVideo("style/latest_u_d")
+
+        #if DEBUG
+        debugLabel?.text = "Main Menu"
+        debugLabel?.isHidden = false
+        #endif
     }
 
     // MARK: - Dialog State
@@ -204,7 +300,7 @@ class VisualNovelScene: SKScene {
         characterNameLabel?.text = dialog.character.name
         characterNameLabel?.isHidden = false
 
-        // Show dialog text with typing effect
+        // Show dialog text with typing effect (also creates background panel)
         dialogLabel?.isHidden = false
         animateDialogText(dialog.dialog.characterText)
 
@@ -212,12 +308,107 @@ class VisualNovelScene: SKScene {
         if let videoName = dialog.character.videoName {
             playCharacterVideo(videoName)
         }
+
+        #if DEBUG
+        updateDebugLabel()
+        #endif
     }
+
+    #if DEBUG
+    private func updateDebugLabel() {
+        guard let dialog = currentDialog else {
+            debugLabel?.isHidden = true
+            return
+        }
+
+        // Find total dialogs in current summary and current position
+        let dialogId = dialog.dialog.id
+        var totalInSummary = 0
+        var currentPosition = 0
+
+        // Walk backwards to find first dialog in chain
+        var firstInChain: DialogNode? = dialog
+        while let prev = firstInChain?.previousDialog {
+            firstInChain = prev
+        }
+
+        // Count total and find position
+        var walker: DialogNode? = firstInChain
+        while walker != nil {
+            totalInSummary += 1
+            if walker?.dialog.id == dialogId {
+                currentPosition = totalInSummary
+            }
+            walker = walker?.nextDialog
+        }
+
+        let hasOptions = dialog.options != nil && !(dialog.options?.isEmpty ?? true)
+        let hasFinalWords = dialog.dialog.finalWordsOfTheStory != nil
+        let isLastDialog = dialog.nextDialog == nil
+
+        debugLabel?.text = "Summary: \(currentSummaryIndex) | Dialog: \(currentPosition)/\(totalInSummary) (id:\(dialogId)) | Last:\(isLastDialog) | Options:\(hasOptions) | Final:\(hasFinalWords)"
+        debugLabel?.isHidden = false
+    }
+    #endif
 
     private func animateDialogText(_ text: String) {
         dialogLabel?.text = text
         dialogLabel?.alpha = 0
         dialogLabel?.run(SKAction.fadeIn(withDuration: 0.5))
+
+        // Update background panel to wrap around text
+        updateDialogBackgroundPanel()
+    }
+
+    private func updateDialogBackgroundPanel() {
+        // Remove old panel
+        dialogBackgroundPanel?.removeFromParent()
+
+        // Calculate bounds that encompass character name and dialog text
+        guard let nameLabel = characterNameLabel, !nameLabel.isHidden,
+              let dialogLbl = dialogLabel, !dialogLbl.isHidden else {
+            // If only dialog label is visible (e.g., final words)
+            if let dialogLbl = dialogLabel, !dialogLbl.isHidden {
+                let textFrame = dialogLbl.frame
+                let padding: CGFloat = 30
+                let panelWidth = max(textFrame.width + padding * 2, 400)
+                let panelHeight = textFrame.height + padding * 2
+
+                let panel = SKShapeNode(rectOf: CGSize(width: panelWidth, height: panelHeight), cornerRadius: 15)
+                panel.position = CGPoint(x: dialogLbl.position.x, y: dialogLbl.position.y)
+                panel.fillColor = SKColor.black.withAlphaComponent(0.4)
+                panel.strokeColor = SKColor.white.withAlphaComponent(0.2)
+                panel.lineWidth = 1
+                panel.zPosition = 1
+                addChild(panel)
+                dialogBackgroundPanel = panel
+            }
+            return
+        }
+
+        // Calculate combined bounds for name + dialog
+        let nameFrame = nameLabel.frame
+        let dialogFrame = dialogLbl.frame
+        let padding: CGFloat = 30
+
+        let minY = min(nameFrame.minY, dialogFrame.minY)
+        let maxY = max(nameFrame.maxY, dialogFrame.maxY)
+        let minX = min(nameFrame.minX, dialogFrame.minX)
+        let maxX = max(nameFrame.maxX, dialogFrame.maxX)
+
+        let panelWidth = max(maxX - minX + padding * 2, 400)
+        let panelHeight = maxY - minY + padding * 2
+        let centerX = (minX + maxX) / 2
+        let centerY = (minY + maxY) / 2
+
+        let panel = SKShapeNode(rectOf: CGSize(width: panelWidth, height: panelHeight), cornerRadius: 15)
+        panel.position = CGPoint(x: centerX, y: centerY)
+        panel.fillColor = SKColor.black.withAlphaComponent(0.4)
+        panel.strokeColor = SKColor.white.withAlphaComponent(0.2)
+        panel.lineWidth = 1
+        panel.zPosition = 1
+        addChild(panel)
+        dialogBackgroundPanel = panel
     }
 
     private func advanceDialog() {
@@ -247,15 +438,18 @@ class VisualNovelScene: SKScene {
             return
         }
 
-        dialogLabel?.isHidden = false
-        dialogLabel?.text = "Choose your path:"
-
         // Create option buttons
         let buttonHeight: CGFloat = 80
         let buttonWidth: CGFloat = 800
         let buttonSpacing: CGFloat = 20
         let totalHeight = CGFloat(options.count) * (buttonHeight + buttonSpacing)
+        let captionSpacing: CGFloat = 30
         var yPosition = size.height / 2 + totalHeight / 2
+
+        // Position caption above the buttons
+        optionsCaptionLabel?.text = "Choose your path:"
+        optionsCaptionLabel?.position = CGPoint(x: size.width / 2, y: yPosition + buttonHeight / 2 + captionSpacing)
+        optionsCaptionLabel?.isHidden = false
 
         for (index, option) in options.enumerated() {
             let button = createOptionButton(
@@ -307,10 +501,13 @@ class VisualNovelScene: SKScene {
         }
 
         let selectedOption = options[index]
-        print("Selected option: \(selectedOption.text)")
+        print("Selected option: \(selectedOption.text) -> summary \(selectedOption.nextSummaryIdx)")
 
         // Load the next summary part
         if let nextDialog = gameDataLoader?.getDialogForSummary(index: selectedOption.nextSummaryIdx) {
+            #if DEBUG
+            currentSummaryIndex = selectedOption.nextSummaryIdx
+            #endif
             currentDialog = nextDialog
             changeState(to: .dialog)
         } else {
@@ -331,6 +528,9 @@ class VisualNovelScene: SKScene {
         dialogLabel?.isHidden = false
         dialogLabel?.text = finalWords
 
+        // Create background panel that wraps around final words
+        updateDialogBackgroundPanel()
+
         // Return to menu after delay
         let wait = SKAction.wait(forDuration: 5.0)
         let returnToMenu = SKAction.run { [weak self] in
@@ -345,6 +545,24 @@ class VisualNovelScene: SKScene {
         titleLabel?.isHidden = false
         dialogLabel?.text = message
         dialogLabel?.isHidden = false
+    }
+
+    // MARK: - Audio Control
+    private func toggleMute() {
+        isMuted = !isMuted
+        print("Audio muted: \(isMuted)")
+    }
+
+    private func applyMuteState() {
+        let muted = isMuted
+        audioPlayer?.volume = muted ? 0.0 : 1.0
+        videoPlayer?.isMuted = muted
+
+        // Update button label if visible
+        if let muteButton = childNode(withName: "muteButton") as? SKShapeNode,
+           let label = muteButton.children.first as? SKLabelNode {
+            label.text = muted ? "Unmute" : "Mute"
+        }
     }
 
     // MARK: - Media Playback
@@ -414,6 +632,7 @@ class VisualNovelScene: SKScene {
             do {
                 audioPlayer = try AVAudioPlayer(contentsOf: url)
                 audioPlayer?.numberOfLoops = -1 // Loop forever
+                audioPlayer?.volume = isMuted ? 0.0 : 1.0
                 audioPlayer?.play()
             } catch {
                 print("Error playing background music: \(error)")
@@ -425,18 +644,7 @@ class VisualNovelScene: SKScene {
 
     private func playCharacterVideo(_ videoName: String) {
         // Stop any existing video node/player and cleanup observers
-        if let oldItem = currentPlayerItem {
-            oldItem.removeObserver(self, forKeyPath: "status", context: &Self.playerItemContext)
-            NotificationCenter.default.removeObserver(self, name: .AVPlayerItemFailedToPlayToEndTime, object: oldItem)
-            NotificationCenter.default.removeObserver(self, name: .AVPlayerItemDidPlayToEndTime, object: oldItem)
-            currentPlayerItem = nil
-        }
-        videoNode?.removeFromParent()
-        videoNode = nil
-        if let player = videoPlayer {
-            player.pause()
-            videoPlayer = nil
-        }
+        cleanupVideoOnly()
 
         // videoName expected like "char1/latest_u_d"
         let components = videoName.split(separator: "/").map(String.init)
@@ -536,6 +744,7 @@ class VisualNovelScene: SKScene {
                         self.addChild(skNode)
                         self.videoNode = skNode
 
+                        player.isMuted = self.isMuted
                         player.play()
                     } else {
                         print("Asset not playable (async): \(finalURL.lastPathComponent)")
@@ -551,18 +760,7 @@ class VisualNovelScene: SKScene {
 
     private func playBackgroundVideo(_ resourcePath: String) {
         // Stop any existing video node/player and cleanup observers
-        if let oldItem = currentPlayerItem {
-            oldItem.removeObserver(self, forKeyPath: "status", context: &Self.playerItemContext)
-            NotificationCenter.default.removeObserver(self, name: .AVPlayerItemFailedToPlayToEndTime, object: oldItem)
-            NotificationCenter.default.removeObserver(self, name: .AVPlayerItemDidPlayToEndTime, object: oldItem)
-            currentPlayerItem = nil
-        }
-        videoNode?.removeFromParent()
-        videoNode = nil
-        if let player = videoPlayer {
-            player.pause()
-            videoPlayer = nil
-        }
+        cleanupVideoOnly()
 
         // resourcePath expected like "style/latest_u_d" or "char1/latest_u_d"
         let components = resourcePath.split(separator: "/").map(String.init)
@@ -657,6 +855,7 @@ class VisualNovelScene: SKScene {
                         self.addChild(skNode)
                         self.videoNode = skNode
 
+                        player.isMuted = self.isMuted
                         player.play()
                     } else {
                         print("Asset not playable (async): \(finalURL.lastPathComponent)")
@@ -669,7 +868,7 @@ class VisualNovelScene: SKScene {
             }
         }
     }
-    
+
     // Observe AVPlayerItem KVO and notifications
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         guard context == &Self.playerItemContext else {
@@ -719,9 +918,21 @@ class VisualNovelScene: SKScene {
     private func handleTap(at location: CGPoint) {
         switch currentState {
         case .mainMenu:
-            // Remove start label and begin
-            childNode(withName: "startLabel")?.removeFromParent()
-            changeState(to: .dialog)
+            // Check if a menu button was tapped
+            let touchedNodes = nodes(at: location)
+            for node in touchedNodes {
+                if node.name == "startButton" || node.parent?.name == "startButton" {
+                    #if DEBUG
+                    currentSummaryIndex = 0
+                    #endif
+                    currentDialog = gameDataLoader?.getInitialDialog()
+                    changeState(to: .dialog)
+                    return
+                } else if node.name == "muteButton" || node.parent?.name == "muteButton" {
+                    toggleMute()
+                    return
+                }
+            }
 
         case .dialog:
             advanceDialog()

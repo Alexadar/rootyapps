@@ -6,11 +6,24 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		118A7CFD2ED3657400024EC0 /* liquid_icon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 118A7CFC2ED3657400024EC0 /* liquid_icon.icon */; };
+		118A7CFE2ED3657400024EC0 /* liquid_icon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 118A7CFC2ED3657400024EC0 /* liquid_icon.icon */; };
+		118A7CFF2ED3657400024EC0 /* liquid_icon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 118A7CFC2ED3657400024EC0 /* liquid_icon.icon */; };
+		118A7D002ED3657400024EC0 /* liquid_icon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 118A7CFC2ED3657400024EC0 /* liquid_icon.icon */; };
+		11CC00012ED32B0000000001 /* output_story in Resources */ = {isa = PBXBuildFile; fileRef = 11CC00002ED32B0000000001 /* output_story */; };
+		11CC00022ED32B0000000001 /* output_story in Resources */ = {isa = PBXBuildFile; fileRef = 11CC00002ED32B0000000001 /* output_story */; };
+		11CC00032ED32B0000000001 /* output_story in Resources */ = {isa = PBXBuildFile; fileRef = 11CC00002ED32B0000000001 /* output_story */; };
+		11CC00042ED32B0000000001 /* output_story in Resources */ = {isa = PBXBuildFile; fileRef = 11CC00002ED32B0000000001 /* output_story */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		118A7CFC2ED3657400024EC0 /* liquid_icon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = liquid_icon.icon; sourceTree = "<group>"; };
 		11BD2D392EA0248D0069B5FD /* bigpinkcat.swift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = bigpinkcat.swift.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		11BD2D4A2EA0248D0069B5FD /* bigpinkcat.swift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = bigpinkcat.swift.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		11BD2D5A2EA0248D0069B5FD /* bigpinkcat.swift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = bigpinkcat.swift.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		11BD2DA82EA0248D0069B5FD /* bigpinkcat.swift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = bigpinkcat.swift.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		11CC00002ED32B0000000001 /* output_story */ = {isa = PBXFileReference; lastKnownFileType = folder; name = output_story; path = "bigpinkcat.swift Shared/output_story"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -24,7 +37,6 @@
 				GameScene.sks,
 				GameScene.swift,
 				VisualNovelScene.swift,
-				YAMLParser.swift,
 			);
 			target = 11BD2D382EA0248D0069B5FD /* bigpinkcat.swift iOS */;
 		};
@@ -38,7 +50,6 @@
 				GameScene.sks,
 				GameScene.swift,
 				VisualNovelScene.swift,
-				YAMLParser.swift,
 			);
 			target = 11BD2D492EA0248D0069B5FD /* bigpinkcat.swift tvOS */;
 		};
@@ -52,7 +63,6 @@
 				GameScene.sks,
 				GameScene.swift,
 				VisualNovelScene.swift,
-				YAMLParser.swift,
 			);
 			target = 11BD2D592EA0248D0069B5FD /* bigpinkcat.swift macOS */;
 		};
@@ -66,7 +76,6 @@
 				GameScene.sks,
 				GameScene.swift,
 				VisualNovelScene.swift,
-				YAMLParser.swift,
 			);
 			target = 11BD2DA12EA0248D0069B5FD /* bigpinkcat.swift visionOS */;
 		};
@@ -141,6 +150,8 @@
 		11BD2D2B2EA0248A0069B5FD = {
 			isa = PBXGroup;
 			children = (
+				11CC00002ED32B0000000001 /* output_story */,
+				118A7CFC2ED3657400024EC0 /* liquid_icon.icon */,
 				11BD2D302EA0248A0069B5FD /* bigpinkcat.swift Shared */,
 				11BD2D3B2EA0248D0069B5FD /* bigpinkcat.swift iOS */,
 				11BD2D4B2EA0248D0069B5FD /* bigpinkcat.swift tvOS */,
@@ -181,6 +192,7 @@
 			);
 			name = "bigpinkcat.swift iOS";
 			packageProductDependencies = (
+				11YAMS0022ED4000000000001 /* Yams */,
 			);
 			productName = "bigpinkcat.swift iOS";
 			productReference = 11BD2D392EA0248D0069B5FD /* bigpinkcat.swift.app */;
@@ -203,6 +215,7 @@
 			);
 			name = "bigpinkcat.swift tvOS";
 			packageProductDependencies = (
+				11YAMS0032ED4000000000001 /* Yams */,
 			);
 			productName = "bigpinkcat.swift tvOS";
 			productReference = 11BD2D4A2EA0248D0069B5FD /* bigpinkcat.swift.app */;
@@ -225,6 +238,7 @@
 			);
 			name = "bigpinkcat.swift macOS";
 			packageProductDependencies = (
+				11YAMS0042ED4000000000001 /* Yams */,
 			);
 			productName = "bigpinkcat.swift macOS";
 			productReference = 11BD2D5A2EA0248D0069B5FD /* bigpinkcat.swift.app */;
@@ -247,6 +261,7 @@
 			);
 			name = "bigpinkcat.swift visionOS";
 			packageProductDependencies = (
+				11YAMS0052ED4000000000001 /* Yams */,
 			);
 			productName = "bigpinkcat.swift visionOS";
 			productReference = 11BD2DA82EA0248D0069B5FD /* bigpinkcat.swift.app */;
@@ -286,6 +301,9 @@
 			mainGroup = 11BD2D2B2EA0248A0069B5FD;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
+			packageReferences = (
+				11YAMS0012ED4000000000001 /* XCRemoteSwiftPackageReference "Yams" */,
+			);
 			productRefGroup = 11BD2D3A2EA0248D0069B5FD /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -303,6 +321,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				11CC00012ED32B0000000001 /* output_story in Resources */,
+				118A7CFE2ED3657400024EC0 /* liquid_icon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -310,6 +330,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				11CC00022ED32B0000000001 /* output_story in Resources */,
+				118A7CFD2ED3657400024EC0 /* liquid_icon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -317,6 +339,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				11CC00032ED32B0000000001 /* output_story in Resources */,
+				118A7CFF2ED3657400024EC0 /* liquid_icon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -324,6 +348,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				11CC00042ED32B0000000001 /* output_story in Resources */,
+				118A7D002ED3657400024EC0 /* liquid_icon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -364,7 +390,7 @@
 		11BD2D712EA0248D0069B5FD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -402,7 +428,7 @@
 		11BD2D722EA0248D0069B5FD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -441,7 +467,7 @@
 		11BD2D752EA0248D0069B5FD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "tvOS App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -474,7 +500,7 @@
 		11BD2D762EA0248D0069B5FD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "tvOS App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -508,7 +534,7 @@
 		11BD2D792EA0248D0069B5FD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -545,7 +571,7 @@
 		11BD2D7A2EA0248D0069B5FD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -698,7 +724,7 @@
 		11BD2DA32EA0248D0069B5FD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -727,7 +753,7 @@
 		11BD2DA42EA0248D0069B5FD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = liquid_icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -803,6 +829,40 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		11YAMS0012ED4000000000001 /* XCRemoteSwiftPackageReference "Yams" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/jpsim/Yams.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		11YAMS0022ED4000000000001 /* Yams */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 11YAMS0012ED4000000000001 /* XCRemoteSwiftPackageReference "Yams" */;
+			productName = Yams;
+		};
+		11YAMS0032ED4000000000001 /* Yams */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 11YAMS0012ED4000000000001 /* XCRemoteSwiftPackageReference "Yams" */;
+			productName = Yams;
+		};
+		11YAMS0042ED4000000000001 /* Yams */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 11YAMS0012ED4000000000001 /* XCRemoteSwiftPackageReference "Yams" */;
+			productName = Yams;
+		};
+		11YAMS0052ED4000000000001 /* Yams */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 11YAMS0012ED4000000000001 /* XCRemoteSwiftPackageReference "Yams" */;
+			productName = Yams;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 11BD2D2C2EA0248A0069B5FD /* Project object */;
 }
