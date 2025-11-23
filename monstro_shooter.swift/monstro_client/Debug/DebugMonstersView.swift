@@ -32,7 +32,7 @@ struct DebugMonstersView: View {
 
                     // Monster grid
                     if !monsterConfigs.isEmpty {
-                        let itemWidth = (geometry.size.width - CGFloat(columns + 1) * padding) / CGFloat(columns)
+                        let itemWidth = (geometry.size.width - CGFloat(columns + 1) * padding) / CGFloat(columns) / 2
                         let itemHeight = itemWidth // Square cells
 
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: padding), count: columns), spacing: padding) {
