@@ -27,6 +27,7 @@ class ScreenshotStyle:
         screenshot_zoom=2.5,
         screenshot_crop='full',
         screenshot_move_down=0,
+        screenshot_move_left=0,
         screenshot_padding=80,
         border_width=12,
         border_color='#ffffff',
@@ -43,6 +44,7 @@ class ScreenshotStyle:
         self.screenshot_zoom = screenshot_zoom
         self.screenshot_crop = screenshot_crop
         self.screenshot_move_down = screenshot_move_down
+        self.screenshot_move_left = screenshot_move_left
         self.screenshot_padding = screenshot_padding
         self.border_width = border_width
         self.border_color = border_color
@@ -65,9 +67,10 @@ class TwoColumnStyle(ScreenshotStyle):
         screenshot_zoom=2.5,
         screenshot_crop='full',
         screenshot_move_down=0,
+        screenshot_move_left=0,
         **kwargs
     ):
-        super().__init__(layout_type='2cols', screenshot_zoom=screenshot_zoom, screenshot_crop=screenshot_crop, screenshot_move_down=screenshot_move_down, **kwargs)
+        super().__init__(layout_type='2cols', screenshot_zoom=screenshot_zoom, screenshot_crop=screenshot_crop, screenshot_move_down=screenshot_move_down, screenshot_move_left=screenshot_move_left, **kwargs)
         self.text_col_percent = text_col_percent
         self.screenshot_col_percent = screenshot_col_percent
 
@@ -169,7 +172,7 @@ class TwoColumnStyle(ScreenshotStyle):
         print(f"    Final viewport with borders: {bordered_width}x{bordered_height}")
 
         # Position screenshot (center in column, allow overflow)
-        screenshot_x = text_col_width + (screenshot_col_width - bordered_width) // 2
+        screenshot_x = text_col_width + (screenshot_col_width - bordered_width) // 2 - self.screenshot_move_left
         screenshot_y = (canvas_height - bordered_height) // 2
 
         # Add shadow

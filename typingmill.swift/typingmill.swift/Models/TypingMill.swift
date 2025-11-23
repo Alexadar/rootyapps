@@ -51,18 +51,18 @@ class TypingMill: ObservableObject {
     
     private func initiateText() {
         millElements.removeAll()
-        currentElementIndex = 0
-        
+        currentElementIndex = -1  // Temporary invalid value to force onChange trigger
+
         // Generate initial text elements
         for _ in 0..<30 { // Generate many more elements to ensure text extends far to the right
             generateNextElement()
         }
-        
+
         // Set first element as current
         if !millElements.isEmpty {
             millElements[0].isCurrent = true
         }
-        
+
         // Fade in animation
         withAnimation(.easeInOut(duration: 0.3)) {
             isAnimating = false
@@ -70,8 +70,9 @@ class TypingMill: ObservableObject {
                 element.isFadedOut = false
             }
         }
-        
-        // Update current character after animation setup
+
+        // Set index to 0 AFTER elements exist - this triggers onChange in the view
+        currentElementIndex = 0
         updateCurrentCharacter()
     }
     

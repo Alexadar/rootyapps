@@ -30,13 +30,18 @@ struct BackgroundAnimationView: View {
 
 // MARK: - Starfield with Shooting Stars Animation
 struct StarfieldWithShootingStarsView: View {
+    // TEMP: Set to true to trigger animation for demo
+    static let animDemo = false
+    static let animDemoInterval = 0.1
+
     let typingChar: Character?
     let typingSpeed: Double
     let difficulty: Int
     let correctKeystroke: Bool
-    
+
     @State private var stars: [Star] = []
     @State private var shootingStars: [ShootingStar] = []
+    @State private var demoTimer: Timer?
     
     private struct Star: Identifiable {
         let id = UUID()
@@ -139,6 +144,16 @@ struct StarfieldWithShootingStarsView: View {
             DispatchQueue.main.async {
                 generateStars(canvasSize: CGSize(width: 1200, height: 800))
             }
+            // Demo mode: trigger shooting stars at interval
+            if Self.animDemo {
+                demoTimer = Timer.scheduledTimer(withTimeInterval: Self.animDemoInterval, repeats: true) { _ in
+                    createShootingStar(canvasSize: CGSize(width: 1200, height: 800))
+                }
+            }
+        }
+        .onDisappear {
+            demoTimer?.invalidate()
+            demoTimer = nil
         }
     }
     
