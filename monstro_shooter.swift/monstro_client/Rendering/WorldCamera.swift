@@ -9,6 +9,7 @@ class WorldCamera {
         self.scene = scene
         self.cameraNode = SKCameraNode()
         self.cameraNode.position = CGPoint.zero
+        self.cameraNode.setScale(GameConstants.cameraScale)
     }
 
     /// Update camera to follow target with smooth interpolation

@@ -76,6 +76,8 @@ struct GameConstants {
     // MARK: - Camera
     /// Camera follow speed (0.0 = instant, 1.0 = very slow)
     static let cameraFollowSmoothing: CGFloat = 0.1
+    /// Camera zoom scale (0.5 = 2x zoom in, 1.0 = normal, 2.0 = 2x zoom out)
+    static let cameraScale: CGFloat = 0.5
 
     // MARK: - HUD
     static let hudHorizontalMargin: CGFloat = 20
