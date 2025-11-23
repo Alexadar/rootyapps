@@ -215,6 +215,159 @@ class TwoColumnStyle(ScreenshotStyle):
         return True
 
 
+class TopBottomStyle(ScreenshotStyle):
+    """Portrait layout: text on top, screenshot on bottom (for iOS, iPad, Watch)"""
+
+    def __init__(
+        self,
+        text_row_percent=25,
+        screenshot_row_percent=75,
+        screenshot_zoom=1.0,
+        screenshot_crop='full',
+        **kwargs
+    ):
+        super().__init__(layout_type='topbottom', screenshot_zoom=screenshot_zoom, screenshot_crop=screenshot_crop, **kwargs)
+        self.text_row_percent = text_row_percent
+        self.screenshot_row_percent = screenshot_row_percent
+
+    def render(self, screenshot_path: str, output_path: str, canvas_size: Tuple[int, int], title: str, subtitle: str = "") -> bool:
+        """Render top-bottom screenshot (portrait)"""
+
+        # Load screenshot
+        screenshot = Image.open(screenshot_path).convert('RGBA')
+        original_size = screenshot.size
+
+        canvas_width, canvas_height = canvas_size
+        text_row_height = int(canvas_height * self.text_row_percent / 100)
+        screenshot_row_height = canvas_height - text_row_height
+
+        # Create background
+        if self.bg_gradient:
+            canvas = create_gradient_background(canvas_width, canvas_height, self.bg_color_top, self.bg_color_bottom)
+        else:
+            canvas = Image.new('RGB', (canvas_width, canvas_height), self.bg_color_top)
+        canvas = canvas.convert('RGBA')
+        draw = ImageDraw.Draw(canvas)
+
+        # Scale factor based on width (portrait)
+        scale_factor = canvas_width / 1242  # Base on iPhone 6.5" width
+
+        # === TEXT ROW (TOP) ===
+        title_font = load_or_get_font(None, int(90 * scale_factor))
+        subtitle_font = load_or_get_font(None, int(50 * scale_factor))
+
+        text_padding = int(self.text_padding * scale_factor)
+        title_lines = wrap_text(title, title_font, canvas_width - text_padding * 2)
+        subtitle_lines = wrap_text(subtitle, subtitle_font, canvas_width - text_padding * 2) if subtitle else []
+
+        # Calculate total text height
+        title_line_height = int(110 * scale_factor)
+        subtitle_line_height = int(70 * scale_factor)
+        total_text_height = len(title_lines) * title_line_height + len(subtitle_lines) * subtitle_line_height
+
+        # Center text vertically in text row
+        current_y = (text_row_height - total_text_height) // 2
+        for line in title_lines:
+            bbox = title_font.getbbox(line)
+            line_width = bbox[2] - bbox[0]
+            x = (canvas_width - line_width) // 2
+            draw.text((x, int(current_y)), line, font=title_font, fill=self.title_color)
+            current_y += title_line_height
+
+        if subtitle_lines:
+            current_y += int(10 * scale_factor)
+            for line in subtitle_lines:
+                bbox = subtitle_font.getbbox(line)
+                line_width = bbox[2] - bbox[0]
+                x = (canvas_width - line_width) // 2
+                draw.text((x, int(current_y)), line, font=subtitle_font, fill=self.subtitle_color)
+                current_y += subtitle_line_height
+
+        # === SCREENSHOT ROW (BOTTOM) ===
+        screenshot_padding = int(self.screenshot_padding * scale_factor)
+        available_width = canvas_width - screenshot_padding * 2
+        available_height = screenshot_row_height - screenshot_padding * 2
+
+        # Calculate size to fit
+        screenshot_ratio = screenshot.width / screenshot.height
+        available_ratio = available_width / available_height
+
+        if screenshot_ratio > available_ratio:
+            fit_width = available_width
+            fit_height = int(fit_width / screenshot_ratio)
+        else:
+            fit_height = available_height
+            fit_width = int(fit_height * screenshot_ratio)
+
+        # Apply zoom
+        zoomed_width = int(fit_width * self.screenshot_zoom)
+        zoomed_height = int(fit_height * self.screenshot_zoom)
+
+        print(f"    Original: {original_size}, Fit: {fit_width}x{fit_height}, Zoom: {self.screenshot_zoom}x, Zoomed: {zoomed_width}x{zoomed_height}")
+
+        # Resize screenshot
+        screenshot_zoomed = screenshot.resize((zoomed_width, zoomed_height), Image.Resampling.LANCZOS)
+
+        # Add border
+        border_width = int(self.border_width * scale_factor)
+        border_radius = int(self.border_radius * scale_factor)
+        bordered_width = zoomed_width + border_width * 2
+        bordered_height = zoomed_height + border_width * 2
+
+        border_bg = Image.new('RGBA', (bordered_width, bordered_height), self.border_color)
+        border_mask = create_rounded_rectangle_mask((bordered_width, bordered_height), border_radius)
+        border_bg.putalpha(border_mask)
+
+        screenshot_mask = create_rounded_rectangle_mask((zoomed_width, zoomed_height), max(0, border_radius - border_width))
+        screenshot_zoomed.putalpha(screenshot_mask)
+        border_bg.paste(screenshot_zoomed, (border_width, border_width), screenshot_zoomed)
+
+        # Position screenshot (center horizontally, in screenshot row)
+        screenshot_x = (canvas_width - bordered_width) // 2
+        screenshot_y = text_row_height + (screenshot_row_height - bordered_height) // 2
+
+        # Add shadow
+        if self.shadow:
+            shadow = add_shadow(border_bg, (20, 20), int(40 * scale_factor), '#000000')
+            shadow_x = screenshot_x - int(40 * scale_factor)
+            shadow_y = screenshot_y - int(40 * scale_factor)
+            # Clip shadow if needed
+            if shadow_x >= 0 and shadow_y >= 0 and shadow_x + shadow.width <= canvas_width and shadow_y + shadow.height <= canvas_height:
+                canvas.paste(shadow, (shadow_x, shadow_y), shadow)
+            else:
+                paste_x = max(0, shadow_x)
+                paste_y = max(0, shadow_y)
+                crop_x = max(0, -shadow_x)
+                crop_y = max(0, -shadow_y)
+                crop_w = min(shadow.width - crop_x, canvas_width - paste_x)
+                crop_h = min(shadow.height - crop_y, canvas_height - paste_y)
+                if crop_w > 0 and crop_h > 0:
+                    shadow_cropped = shadow.crop((crop_x, crop_y, crop_x + crop_w, crop_y + crop_h))
+                    canvas.paste(shadow_cropped, (paste_x, paste_y), shadow_cropped)
+
+        # Paste screenshot (clip if overflow)
+        if screenshot_x >= 0 and screenshot_y >= 0 and screenshot_x + bordered_width <= canvas_width and screenshot_y + bordered_height <= canvas_height:
+            canvas.paste(border_bg, (screenshot_x, screenshot_y), border_bg)
+        else:
+            paste_x = max(0, screenshot_x)
+            paste_y = max(0, screenshot_y)
+            crop_x = max(0, -screenshot_x)
+            crop_y = max(0, -screenshot_y)
+            crop_w = min(bordered_width - crop_x, canvas_width - paste_x)
+            crop_h = min(bordered_height - crop_y, canvas_height - paste_y)
+            if crop_w > 0 and crop_h > 0:
+                screenshot_cropped = border_bg.crop((crop_x, crop_y, crop_x + crop_w, crop_y + crop_h))
+                canvas.paste(screenshot_cropped, (paste_x, paste_y), screenshot_cropped)
+            print(f"    Overflow clipped: paste at ({paste_x}, {paste_y})")
+
+        # Save
+        final_image = canvas.convert('RGB')
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        final_image.save(output_path, 'PNG', quality=95)
+
+        return True
+
+
 # Pre-configured styles
 style_default = TwoColumnStyle(screenshot_zoom=2.5)
 style_zoom_high = TwoColumnStyle(screenshot_zoom=3.0)

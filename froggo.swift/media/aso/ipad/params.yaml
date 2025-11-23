@@ -1,0 +1,31 @@
+platform: ipad-landscape
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/froggo.swift/media/raw/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/froggo.swift/media/aso/ipad
+
+style:
+  bg_gradient: true
+  bg_color_top: '#1E90FF'
+  bg_color_bottom: '#0066CC'
+  title_color: '#ffffff'
+  subtitle_color: '#90EE90'
+  screenshot_zoom: 1.1
+  text_col_percent: 32
+  screenshot_col_percent: 68
+  border_width: 10
+  border_radius: 30
+  text_padding: 60
+  screenshot_padding: 60
+
+texts:
+  - title: Skyscraper Frog
+    subtitle: 8-bit Pixel Adventure
+  - title: Jump & Slide
+    subtitle: Help Freddy the Frog
+  - title: High Scores
+    subtitle: Beat Your Best
+  - title: Endless Fun
+    subtitle: Play Anywhere
+  - title: Game Over?
+    subtitle: Try Again!

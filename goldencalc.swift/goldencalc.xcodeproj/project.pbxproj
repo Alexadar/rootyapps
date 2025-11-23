@@ -305,7 +305,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.3;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = oleksandr.aisixteen.goldencalc;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=appletvos*]" = koreniuk.goldencalc;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = koreniuk.goldencalc;
@@ -361,7 +361,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.3;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = oleksandr.aisixteen.goldencalc;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=appletvos*]" = koreniuk.goldencalc;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = koreniuk.goldencalc;

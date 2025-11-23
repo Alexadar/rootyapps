@@ -181,11 +181,8 @@ class Indox {
   public func summaryFileStart(url: URL) -> Void {
     if(self.status == EngineState.OnIdle) {
       do {
-        var isAccessing = false
-        #if os(macOS)
-        // Security-scoped URLs (if needed, mostly app store builds)
-        isAccessing = url.startAccessingSecurityScopedResource()
-        #endif
+        // Security-scoped URLs required for files from Files app, iCloud, etc.
+        let isAccessing = url.startAccessingSecurityScopedResource()
         defer {
             if isAccessing {
                 url.stopAccessingSecurityScopedResource()

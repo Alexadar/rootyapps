@@ -51,6 +51,9 @@ struct IOSContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .navigationTitle("Golden Ratio")
             .navigationBarTitleDisplayMode(.large)
+            .onTapGesture {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
         }
     }
 

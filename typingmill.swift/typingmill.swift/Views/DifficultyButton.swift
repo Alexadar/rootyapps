@@ -10,14 +10,15 @@ import SwiftUI
 struct DifficultyButton: View {
     let difficulty: Int
     let isPressed: Bool
+    var size: CGFloat = 50
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             Text("\(difficulty)")
-                .font(.system(size: 18, weight: .medium))
+                .font(.system(size: size * 0.36, weight: .medium))
                 .foregroundColor(isPressed ? .black : .white)
-                .frame(width: 50, height: 50)
+                .frame(width: size, height: size)
                 .background(isPressed ? .white : .black)
                 .border(.white, width: 2)
         }

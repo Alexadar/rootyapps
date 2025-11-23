@@ -451,26 +451,33 @@ class VisualNovelScene: SKScene {
             return
         }
 
-        // Create option buttons
-        let buttonHeight: CGFloat = 80
-        let buttonWidth: CGFloat = min(size.width - 40, 800)
-        let buttonSpacing: CGFloat = 20
-        let totalHeight = CGFloat(options.count) * (buttonHeight + buttonSpacing)
-        let captionSpacing: CGFloat = 30
-        var yPosition = size.height / 2 + totalHeight / 2
+        let centerX = size.width / 2
+        let centerY = size.height / 2
+        let layout = adaptiveLayout
+
+        // Calculate button sizing with overflow protection
+        let buttonCount = options.count
+        let totalHeight = CGFloat(buttonCount) * (layout.buttonHeight + layout.buttonSpacing)
+        let availableHeight = size.height - 100
+
+        let effectiveButtonHeight = totalHeight > availableHeight
+            ? min(layout.buttonHeight, (availableHeight - 50) / CGFloat(buttonCount) - layout.buttonSpacing)
+            : layout.buttonHeight
+        let effectiveTotalHeight = CGFloat(buttonCount) * (effectiveButtonHeight + layout.buttonSpacing)
+
+        var yPosition = centerY + effectiveTotalHeight / 2
+        let captionY = min(yPosition + effectiveButtonHeight / 2 + 20, size.height - 50)
 
         // Position caption above the buttons
-        let captionY = yPosition + buttonHeight / 2 + captionSpacing
         optionsCaptionLabel?.text = "Choose your path:"
-        optionsCaptionLabel?.position = CGPoint(x: size.width / 2, y: captionY)
+        optionsCaptionLabel?.position = CGPoint(x: centerX, y: captionY)
         optionsCaptionLabel?.isHidden = false
 
         // Create background panel for caption (same style as dialog panels)
-        let captionPadding: CGFloat = 20
         let captionWidth: CGFloat = 280
         let captionHeight: CGFloat = 50
         let captionPanel = SKShapeNode(rectOf: CGSize(width: captionWidth, height: captionHeight), cornerRadius: 15)
-        captionPanel.position = CGPoint(x: size.width / 2, y: captionY)
+        captionPanel.position = CGPoint(x: centerX, y: captionY)
         captionPanel.fillColor = SKColor.black.withAlphaComponent(0.4)
         captionPanel.strokeColor = SKColor.white.withAlphaComponent(0.2)
         captionPanel.lineWidth = 1
@@ -481,13 +488,13 @@ class VisualNovelScene: SKScene {
         for (index, option) in options.enumerated() {
             let button = createOptionButton(
                 text: option.text,
-                position: CGPoint(x: size.width / 2, y: yPosition),
-                size: CGSize(width: buttonWidth, height: buttonHeight),
+                position: CGPoint(x: centerX, y: yPosition),
+                size: CGSize(width: layout.maxButtonWidth, height: effectiveButtonHeight),
                 tag: index
             )
             optionButtons.append(button)
             addChild(button)
-            yPosition -= (buttonHeight + buttonSpacing)
+            yPosition -= (effectiveButtonHeight + layout.buttonSpacing)
         }
     }
 
@@ -502,9 +509,12 @@ class VisualNovelScene: SKScene {
         // Ensure buttons render above video/background
         button.zPosition = 2
 
+        // Adaptive font size based on button height
+        let fontSize: CGFloat = min(size.height * 0.35, 28)
+
         let label = SKLabelNode(fontNamed: "Helvetica")
         label.text = text
-        label.fontSize = 28
+        label.fontSize = fontSize
         label.fontColor = .white
         label.verticalAlignmentMode = .center
         label.preferredMaxLayoutWidth = size.width - 40
@@ -635,12 +645,45 @@ class VisualNovelScene: SKScene {
         node.position = CGPoint(x: sceneW / 2.0, y: sceneH / 2.0)
     }
 
+    // Helper to determine if we're in landscape orientation
+    private var isLandscape: Bool {
+        return size.width > size.height
+    }
+
+    // Adaptive layout constants based on orientation
+    private var adaptiveLayout: (titleOffset: CGFloat, nameOffset: CGFloat, dialogOffset: CGFloat, buttonSpacing: CGFloat, buttonHeight: CGFloat, maxButtonWidth: CGFloat, padding: CGFloat) {
+        if isLandscape {
+            // Landscape: more compact vertical spacing, use horizontal space
+            return (
+                titleOffset: min(size.height * 0.25, 120),
+                nameOffset: min(size.height * 0.15, 80),
+                dialogOffset: min(size.height * 0.05, 30),
+                buttonSpacing: 12,
+                buttonHeight: 60,
+                maxButtonWidth: min(size.width - 80, 600),
+                padding: 60
+            )
+        } else {
+            // Portrait: original spacing
+            return (
+                titleOffset: 180,
+                nameOffset: 120,
+                dialogOffset: 40,
+                buttonSpacing: 20,
+                buttonHeight: 80,
+                maxButtonWidth: min(size.width - 40, 800),
+                padding: 100
+            )
+        }
+    }
+
     // Re-layout video and UI on window/scene resize (macOS windowed, iPad multitasking, etc.)
     override func didChangeSize(_ oldSize: CGSize) {
         super.didChangeSize(oldSize)
 
         let centerX = self.size.width / 2
         let centerY = self.size.height / 2
+        let layout = adaptiveLayout
 
         // Update background to fill scene
         backgroundNode?.size = self.size
@@ -651,14 +694,19 @@ class VisualNovelScene: SKScene {
             layoutVideoNode(node, naturalSizePx: nat, preferredTransform: currentVideoPreferredTransform)
         }
 
-        // Re-center all UI elements
-        titleLabel?.position = CGPoint(x: centerX, y: centerY + 180)
-        titleLabel?.preferredMaxLayoutWidth = self.size.width - 100
+        // Re-center all UI elements with adaptive offsets
+        titleLabel?.position = CGPoint(x: centerX, y: centerY + layout.titleOffset)
+        titleLabel?.preferredMaxLayoutWidth = self.size.width - layout.padding
 
-        characterNameLabel?.position = CGPoint(x: centerX, y: centerY + 120)
+        characterNameLabel?.position = CGPoint(x: centerX, y: centerY + layout.nameOffset)
 
-        dialogLabel?.position = CGPoint(x: centerX, y: centerY + 40)
-        dialogLabel?.preferredMaxLayoutWidth = self.size.width - 100
+        // For dialog, check if we're in finalWords state (centered) or regular dialog (top-aligned)
+        if currentState == .finalWords {
+            dialogLabel?.position = CGPoint(x: centerX, y: centerY)
+        } else {
+            dialogLabel?.position = CGPoint(x: centerX, y: centerY + layout.dialogOffset)
+        }
+        dialogLabel?.preferredMaxLayoutWidth = self.size.width - layout.padding
 
         optionsCaptionLabel?.position.x = centerX
 
@@ -676,25 +724,43 @@ class VisualNovelScene: SKScene {
                 muteButton.position = CGPoint(x: centerX, y: centerY - 80)
             }
         } else if currentState == .dialogOptions {
-            // Reposition dialog option buttons
-            let buttonHeight: CGFloat = 80
-            let buttonSpacing: CGFloat = 20
-            let totalHeight = CGFloat(optionButtons.count) * (buttonHeight + buttonSpacing)
-            var yPosition = centerY + totalHeight / 2
-            let captionY = yPosition + buttonHeight / 2 + 30
-
-            optionsCaptionLabel?.position = CGPoint(x: centerX, y: captionY)
-            optionsCaptionPanel?.position = CGPoint(x: centerX, y: captionY)
-
-            for button in optionButtons {
-                button.position = CGPoint(x: centerX, y: yPosition)
-                yPosition -= (buttonHeight + buttonSpacing)
-            }
+            relayoutDialogOptions()
         }
 
         // Update dialog background panel position if visible
         if dialogBackgroundPanel != nil {
             updateDialogBackgroundPanel()
+        }
+    }
+
+    // Relayout dialog options to fit current screen size
+    private func relayoutDialogOptions() {
+        let centerX = self.size.width / 2
+        let centerY = self.size.height / 2
+        let layout = adaptiveLayout
+
+        let buttonCount = optionButtons.count
+        let totalHeight = CGFloat(buttonCount) * (layout.buttonHeight + layout.buttonSpacing)
+
+        // Check if options would overflow and adjust
+        let availableHeight = size.height - 100 // Leave margins
+        let needsScroll = totalHeight > availableHeight
+
+        let effectiveButtonHeight = needsScroll ? min(layout.buttonHeight, (availableHeight - 50) / CGFloat(buttonCount) - layout.buttonSpacing) : layout.buttonHeight
+        let effectiveTotalHeight = CGFloat(buttonCount) * (effectiveButtonHeight + layout.buttonSpacing)
+
+        var yPosition = centerY + effectiveTotalHeight / 2
+        let captionY = min(yPosition + effectiveButtonHeight / 2 + 20, size.height - 50)
+
+        optionsCaptionLabel?.position = CGPoint(x: centerX, y: captionY)
+        optionsCaptionPanel?.position = CGPoint(x: centerX, y: captionY)
+
+        for button in optionButtons {
+            button.position = CGPoint(x: centerX, y: yPosition)
+            // Resize button width for current orientation
+            let newPath = CGPath(roundedRect: CGRect(x: -layout.maxButtonWidth/2, y: -effectiveButtonHeight/2, width: layout.maxButtonWidth, height: effectiveButtonHeight), cornerWidth: 15, cornerHeight: 15, transform: nil)
+            button.path = newPath
+            yPosition -= (effectiveButtonHeight + layout.buttonSpacing)
         }
     }
     private func playBackgroundMusic() {

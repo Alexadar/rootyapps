@@ -1,0 +1,29 @@
+platform: ios
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/typingmill.swift/marketing/raw/iphone
+  output_folder: /Users/oleksandr/Projects/rootyapps/typingmill.swift/marketing/aso/ios
+
+style:
+  bg_gradient: true
+  bg_color_top: '#1D1D1F'
+  bg_color_bottom: '#000000'
+  title_color: '#ffffff'
+  subtitle_color: '#F5F5F7'
+  screenshot_zoom: 0.85
+  text_row_percent: 20
+  screenshot_row_percent: 80
+  border_width: 8
+  border_radius: 30
+  text_padding: 40
+  screenshot_padding: 40
+
+texts:
+  - title: Typing Mill
+    subtitle: Master Your Typing Speed
+  - title: Typing Mill
+    subtitle: Practice with Real Words
+  - title: Typing Mill
+    subtitle: 4 Difficulty Levels
+  - title: Typing Mill
+    subtitle: Beautiful Animated Experience

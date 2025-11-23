@@ -1,0 +1,27 @@
+platform: ios
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/goldencalclite.swift/marketing/raw/ios
+  output_folder: /Users/oleksandr/Projects/rootyapps/goldencalclite.swift/marketing/aso/ios
+
+style:
+  bg_gradient: true
+  bg_color_top: '#1D1D1F'
+  bg_color_bottom: '#000000'
+  title_color: '#ffffff'
+  subtitle_color: '#F5F5F7'
+  screenshot_zoom: 0.9
+  text_row_percent: 20
+  screenshot_row_percent: 80
+  border_width: 8
+  border_radius: 30
+  text_padding: 40
+  screenshot_padding: 40
+
+texts:
+  - title: Golden Ratio Calculator
+    subtitle: Simple & Easy
+  - title: Instant Results
+    subtitle: Get golden ratios
+  - title: Precise Calculations
+    subtitle: For Design & Math

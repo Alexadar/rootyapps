@@ -10,7 +10,7 @@
 		119ECA582ED08E5900C645B3 /* liquid_icon_app.icon in Resources */ = {isa = PBXBuildFile; fileRef = 119ECA572ED08E5900C645B3 /* liquid_icon_app.icon */; };
 		119ECA5A2ED08E5900C645B3 /* liquid_icon_app.icon in Resources */ = {isa = PBXBuildFile; fileRef = 119ECA572ED08E5900C645B3 /* liquid_icon_app.icon */; };
 		119ECA5C2ED08E5900C645B3 /* liquid_icon_app.icon in Resources */ = {isa = PBXBuildFile; fileRef = 119ECA572ED08E5900C645B3 /* liquid_icon_app.icon */; };
-		DEADBEEF00000015 /* indoxtext.safari Extension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 11138B0F2E7F16AA008D3AE4 /* indoxtext.safari Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		DEADBEEF00000015 /* indoxtext.safari Extension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 11138B052E7F16AA008D3AE4 /* indoxtext.safari Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; platformFilter = ios; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -18,8 +18,8 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 11138A912E7F11F1008D3AE4 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 11138B0E2E7F16AA008D3AE4;
-			remoteInfo = "indoxtext.safari Extension (macOS)";
+			remoteGlobalIDString = 11138B042E7F16AA008D3AE4;
+			remoteInfo = "indoxtext.safari Extension (iOS)";
 		};
 /* End PBXContainerItemProxy section */
 
@@ -336,7 +336,7 @@
 /* Begin PBXTargetDependency section */
 		DEADBEEF00000012 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 11138B0E2E7F16AA008D3AE4 /* indoxtext.safari Extension (macOS) */;
+			target = 11138B042E7F16AA008D3AE4 /* indoxtext.safari Extension (iOS) */;
 			targetProxy = DEADBEEF00000013 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */

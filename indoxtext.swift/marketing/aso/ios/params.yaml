@@ -1,0 +1,33 @@
+platform: ios
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/indoxtext.swift/marketing/raw/ios
+  output_folder: /Users/oleksandr/Projects/rootyapps/indoxtext.swift/marketing/aso/ios
+
+style:
+  bg_gradient: true
+  bg_color_top: '#0A1628'
+  bg_color_bottom: '#000000'
+  title_color: '#ffffff'
+  subtitle_color: '#29ABE2'
+  screenshot_zoom: 0.85
+  text_row_percent: 18
+  screenshot_row_percent: 82
+  border_width: 8
+  border_radius: 30
+  text_padding: 40
+  screenshot_padding: 40
+
+texts:
+  - title: Indox Text
+    subtitle: AI Text Summarizer
+  - title: On-Device AI
+    subtitle: Fast & Private
+  - title: Instant Summaries
+    subtitle: Copy with one tap
+  - title: Summarize Files
+    subtitle: PDF, DOC & More
+  - title: Safari Extension
+    subtitle: Summarize any webpage
+  - title: Quick Results
+    subtitle: Save time reading
