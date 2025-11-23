@@ -9,7 +9,7 @@ import AppKit
 class KeyboardMouseInput: InputController {
     private var keysPressed = Set<UInt16>()
     private var mouseLocation: CGPoint? = nil
-    private var shootRequested = false
+    private var isMouseDown = false
 
     // Keycodes used in original project (macOS):
     // W:13, A:0, S:1, D:2
@@ -33,10 +33,14 @@ class KeyboardMouseInput: InputController {
         mouseLocation = location
     }
 
-    /// Called when mouse/touch firing input occurs. This is an edge-trigger: isShooting()
-    /// will return true once after this call and then reset until next call.
-    func requestShoot() {
-        shootRequested = true
+    /// Called when mouse button is pressed
+    func mouseDown() {
+        isMouseDown = true
+    }
+
+    /// Called when mouse button is released
+    func mouseUp() {
+        isMouseDown = false
     }
 
     func mouseEntered() {
@@ -62,11 +66,7 @@ class KeyboardMouseInput: InputController {
     }
 
     func isShooting() -> Bool {
-        if shootRequested {
-            shootRequested = false
-            return true
-        }
-        return false
+        return isMouseDown
     }
 }
 #endif

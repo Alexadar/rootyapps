@@ -46,11 +46,15 @@ class Player {
         sprite.physicsBody?.collisionBitMask = 0
         sprite.physicsBody?.affectedByGravity = false
 
-        // Initialize with default exoskeleton (standard suit)
-        self.currentExoskeleton = .standardSuit
+        // Initialize with default exoskeleton and weapon from managers
+        guard let defaultExo = ExoskeletonManager.shared.getExoskeleton(id: 1),
+              let defaultWeapon = WeaponManager.shared.getWeapon(id: 1) else {
+            return nil
+        }
+        self.currentExoskeleton = defaultExo
         self.defense = currentExoskeleton.defence
         self.speed = GameConstants.playerSpeed * currentExoskeleton.speed
-        self.currentWeapon = Weapon(config: .pistol)  // Default weapon
+        self.currentWeapon = Weapon(config: defaultWeapon)
         self.maxHealth = 100
         self.health = 100
     }

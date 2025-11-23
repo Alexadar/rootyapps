@@ -62,34 +62,25 @@ extension GameScene {
 
         // Create bullets from weapon and add to world layer
         let playerPos = playerEntity.sprite.position
+        // Use player sprite's rotation directly - it already faces the cursor correctly
+        // This accounts for player movement and is updated every frame
+        // Player sprite has -90° offset because sprite faces UP, add it back for bullet direction
+        let baseAngle = playerEntity.sprite.zRotation + (.pi / 2)
+
         for bulletInfo in bulletInfos {
-            // Apply deviation to target point (old game method)
-            // var deviation:Point = Point.polar(currentDeviation * Math.random(), Math.PI * Math.random())
-            let deviationRadius = CGFloat.random(in: 0...bulletInfo.deviation)
-            let deviationAngle = CGFloat.random(in: 0...(.pi * 2))
-            let deviationX = deviationRadius * cos(deviationAngle)
-            let deviationY = deviationRadius * sin(deviationAngle)
+            // Apply angular deviation perpendicular to aim direction
+            // deviation is max spread in pixels at some reference distance
+            // Convert to angular spread: at 500px distance, deviation pixels = angle radians approx
+            let angularDeviation = atan2(bulletInfo.deviation, 500.0) // Convert pixel deviation to angle
+            let randomSpread = CGFloat.random(in: -angularDeviation...angularDeviation)
+            let finalAngle = baseAngle + randomSpread
 
-            let targetWithDeviation = CGPoint(
-                x: point.x + deviationX,
-                y: point.y + deviationY
-            )
-
-            // Calculate angle to deviated target
-            let dx = targetWithDeviation.x - playerPos.x
-            let dy = targetWithDeviation.y - playerPos.y
-            let angle = atan2(dy, dx)
-
-            let bullet = Bullet.create(at: playerPos, angle: angle, bulletInfo: bulletInfo)
+            let bullet = Bullet.create(at: playerPos, angle: finalAngle, bulletInfo: bulletInfo)
             renderer?.world.worldLayer.addChild(bullet.sprite)
             bullets.append(bullet)
         }
 
         // Play weapon sound effect
-        let soundName = playerEntity.currentWeapon.config.weaponSoundName
-        if soundName == "weapon_pistol" {
-            AudioManager.shared.playPistolSound()
-        }
-        // TODO: Add rifle/minigun sounds when available
+        AudioManager.shared.playWeaponSound(playerEntity.currentWeapon.config.weaponSoundName)
     }
 }

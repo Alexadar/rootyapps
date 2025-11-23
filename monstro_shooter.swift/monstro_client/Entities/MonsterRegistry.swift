@@ -21,20 +21,19 @@ class MonsterRegistry {
         }
 
         for filename in files where filename.hasSuffix(".yaml") {
-            guard let path = Bundle.main.path(forResource: String(filename.dropLast(5)), ofType: "yaml") else {
-                continue // Skip if not found
+            guard let path = Bundle.main.path(forResource: String(filename.dropLast(5)), ofType: "yaml"),
+                  let yamlString = try? String(contentsOfFile: path, encoding: .utf8) else {
+                continue
             }
 
-            guard let yamlString = try? String(contentsOfFile: path, encoding: .utf8) else {
-                fatalError("[MonsterRegistry] Failed to read config: \(filename)")
-            }
-
-            guard let config = try? YAMLDecoder().decode(MonsterConfig.self, from: yamlString) else {
-                fatalError("[MonsterRegistry] Failed to decode config: \(filename)")
+            // Try to decode as MonsterConfig - skip if it's not a monster config
+            guard let config = try? YAMLDecoder().decode(MonsterConfig.self, from: yamlString),
+                  config.monsterTypeID > 0 else {
+                continue
             }
 
             configs[config.monsterTypeID] = config
-            print("Loaded monster config ID \(config.monsterTypeID) from \(filename)")
+            print("[MonsterRegistry] Loaded monster: ID \(config.monsterTypeID) from \(filename)")
         }
 
         guard !configs.isEmpty else {

@@ -1,0 +1,21 @@
+id: 1
+name: "Pistol"
+type: 1
+nameLocalizations:
+  en-us: "Pistol"
+  ru-ru: "Пистолет"
+damage: 10.0
+shotRange: 500.0
+shotDelay: 0.5
+magazineSize: 12
+reloadTime: 2.0
+bulletsPerShot: 1
+bulletSpeed: 800.0
+bulletDeviation: 5.0
+maxDeviation: 5.0
+penetrationPower: 1
+bulletStartScale: 0.3
+bulletMaxScale: 1.0
+bulletScaleGrowth: 0.05
+bulletTextureName: "bullet_pistol"
+weaponSoundName: "weapon_pistol"

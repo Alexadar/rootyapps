@@ -50,8 +50,7 @@ class Bullet {
 
     /// Create bullet from weapon system
     static func create(at position: CGPoint, angle: CGFloat, bulletInfo: BulletInfo) -> Bullet {
-        // Apply deviation to angle
-        let finalAngle = angle + bulletInfo.deviation
+        // Angle already includes deviation from GameScene, use directly
 
         // Try to load bullet texture
         var bulletNode: SKSpriteNode
@@ -83,7 +82,7 @@ class Bullet {
         bulletNode.setScale(bulletInfo.startScale)
 
         // Set rotation to match direction
-        bulletNode.zRotation = finalAngle
+        bulletNode.zRotation = angle
 
         // Setup physics
         bulletNode.physicsBody = SKPhysicsBody(circleOfRadius: bulletNode.size.width/2)
@@ -96,8 +95,8 @@ class Bullet {
 
         // Calculate velocity from angle and speed
         let velocity = CGVector(
-            dx: cos(finalAngle) * bulletInfo.speed,
-            dy: sin(finalAngle) * bulletInfo.speed
+            dx: cos(angle) * bulletInfo.speed,
+            dy: sin(angle) * bulletInfo.speed
         )
         bulletNode.physicsBody?.velocity = velocity
 

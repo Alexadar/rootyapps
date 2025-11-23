@@ -1,0 +1,21 @@
+id: 2
+name: "Dual Pistols"
+type: 2
+nameLocalizations:
+  en-us: "Dual Pistols"
+  ru-ru: "Два пистолета"
+damage: 8.0
+shotRange: 500.0
+shotDelay: 0.35
+magazineSize: 24
+reloadTime: 2.5
+bulletsPerShot: 2
+bulletSpeed: 800.0
+bulletDeviation: 15.0
+maxDeviation: 15.0
+penetrationPower: 1
+bulletStartScale: 0.3
+bulletMaxScale: 1.0
+bulletScaleGrowth: 0.05
+bulletTextureName: "bullet_pistol"
+weaponSoundName: "weapon_pistol"

@@ -15,6 +15,9 @@ class AudioManager: NSObject, AVAudioPlayerDelegate {
 
     // Weapon SFX files
     private let pistolSound = "weapon_pistol.wav"
+    private let rifleSound = "weapon_rifle.wav"
+    private let minigunSound = "weapon_minigun.wav"
+    private let machinegunSound = "weapon_machinegun.wav"
     private let reloadSound = "weapon_reload.wav"
 
     private var currentMusicType: MusicType?
@@ -216,6 +219,37 @@ class AudioManager: NSObject, AVAudioPlayerDelegate {
     /// Play pistol sound for player shooting
     func playPistolSound() {
         playSFX(filename: pistolSound)
+    }
+
+    /// Play rifle sound
+    func playRifleSound() {
+        playSFX(filename: rifleSound)
+    }
+
+    /// Play minigun sound
+    func playMinigunSound() {
+        playSFX(filename: minigunSound)
+    }
+
+    /// Play machinegun/shotgun sound
+    func playMachinegunSound() {
+        playSFX(filename: machinegunSound)
+    }
+
+    /// Play weapon sound by name
+    func playWeaponSound(_ soundName: String) {
+        switch soundName {
+        case "weapon_pistol":
+            playPistolSound()
+        case "weapon_rifle":
+            playRifleSound()
+        case "weapon_minigun":
+            playMinigunSound()
+        case "weapon_machinegun", "weapon_shotgun":
+            playMachinegunSound()
+        default:
+            playSFX(filename: soundName + ".wav")
+        }
     }
 
     /// Play reload sound for weapon reloading

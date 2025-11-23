@@ -96,7 +96,23 @@ extension GameScene {
             return
         }
 
-        (inputController as? KeyboardMouseInput)?.requestShoot()
+        (inputController as? KeyboardMouseInput)?.mouseDown()
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        // Update mouse location while dragging (for continuous aim)
+        guard let view = self.view else { return }
+        let locationInWindow = event.locationInWindow
+        let locationInView = view.convert(locationInWindow, from: nil)
+        let sceneCoords = CGPoint(
+            x: locationInView.x - view.bounds.width / 2,
+            y: locationInView.y - view.bounds.height / 2
+        )
+        (inputController as? KeyboardMouseInput)?.mouseMoved(to: sceneCoords)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        (inputController as? KeyboardMouseInput)?.mouseUp()
     }
 
     override func mouseEntered(with event: NSEvent) {

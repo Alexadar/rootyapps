@@ -1,0 +1,21 @@
+id: 6
+name: "Sniper Rifle"
+type: 6
+nameLocalizations:
+  en-us: "Sniper Rifle"
+  ru-ru: "Снайперская винтовка"
+damage: 50.0
+shotRange: 1000.0
+shotDelay: 1.2
+magazineSize: 5
+reloadTime: 4.0
+bulletsPerShot: 1
+bulletSpeed: 1200.0
+bulletDeviation: 2.0
+maxDeviation: 2.0
+penetrationPower: 5
+bulletStartScale: 0.4
+bulletMaxScale: 1.2
+bulletScaleGrowth: 0.06
+bulletTextureName: "bullet_sniper"
+weaponSoundName: "weapon_rifle"

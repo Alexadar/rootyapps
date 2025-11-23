@@ -1,0 +1,17 @@
+id: 1
+name: "Standard Suit"
+defence: 0.0
+speed: 1.0
+gameResourceSprite: "exoskeleton_standard"
+lobbyResourceSprite: "exoskeleton_standard_preview"
+levelRequirement: 0
+rankRequirement: 0
+buyPriceSoft: 0
+buyPriceHard: 0
+sellPriceSoft: 0
+sellPriceHard: 0
+marketAvailability: true
+orderId: 1
+nameLocalizations:
+  en-us: "Standard Suit"
+  ru-ru: "Стандартный костюм"

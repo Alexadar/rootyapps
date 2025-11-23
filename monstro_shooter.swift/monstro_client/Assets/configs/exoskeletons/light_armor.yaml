@@ -1,0 +1,17 @@
+id: 2
+name: "Light Armor"
+defence: 1.0
+speed: 1.05
+gameResourceSprite: "exoskeleton_light"
+lobbyResourceSprite: "exoskeleton_light_preview"
+levelRequirement: 3
+rankRequirement: 0
+buyPriceSoft: 3000
+buyPriceHard: 75
+sellPriceSoft: 1500
+sellPriceHard: 37
+marketAvailability: true
+orderId: 2
+nameLocalizations:
+  en-us: "Light Armor"
+  ru-ru: "Лёгкая броня"
