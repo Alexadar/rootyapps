@@ -22,14 +22,11 @@
 		11BD2D772EA0248D0069B5FD /* Exceptions for "bigpinkcat.swift Shared" folder in "bigpinkcat.swift" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Actions.sks,
 				Assets.xcassets,
 				BigPinkCatApp.swift,
 				GameContentView.swift,
 				GameDataLoader.swift,
 				GameDataModels.swift,
-				GameScene.sks,
-				GameScene.swift,
 				VisualNovelScene.swift,
 			);
 			target = 11BD2D592EA0248D0069B5FD /* bigpinkcat.swift */;
@@ -43,26 +40,6 @@
 				11BD2D772EA0248D0069B5FD /* Exceptions for "bigpinkcat.swift Shared" folder in "bigpinkcat.swift" target */,
 			);
 			path = "bigpinkcat.swift Shared";
-			sourceTree = "<group>";
-		};
-		11BD2D3B2EA0248D0069B5FD /* bigpinkcat.swift iOS */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "bigpinkcat.swift iOS";
-			sourceTree = "<group>";
-		};
-		11BD2D4B2EA0248D0069B5FD /* bigpinkcat.swift tvOS */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "bigpinkcat.swift tvOS";
-			sourceTree = "<group>";
-		};
-		11BD2D5B2EA0248D0069B5FD /* bigpinkcat.swift macOS */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "bigpinkcat.swift macOS";
-			sourceTree = "<group>";
-		};
-		11BD2DA02EA0248D0069B5FD /* bigpinkcat.swift visionOS */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "bigpinkcat.swift visionOS";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -85,10 +62,6 @@
 				11CC00002ED32B0000000001 /* output_story */,
 				118A7CFC2ED3657400024EC0 /* liquid_icon.icon */,
 				11BD2D302EA0248A0069B5FD /* bigpinkcat.swift Shared */,
-				11BD2D3B2EA0248D0069B5FD /* bigpinkcat.swift iOS */,
-				11BD2D4B2EA0248D0069B5FD /* bigpinkcat.swift tvOS */,
-				11BD2D5B2EA0248D0069B5FD /* bigpinkcat.swift macOS */,
-				11BD2DA02EA0248D0069B5FD /* bigpinkcat.swift visionOS */,
 				11BD2D3A2EA0248D0069B5FD /* Products */,
 			);
 			sourceTree = "<group>";
@@ -115,9 +88,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				11BD2D5B2EA0248D0069B5FD /* bigpinkcat.swift macOS */,
 			);
 			name = bigpinkcat.swift;
 			packageProductDependencies = (
