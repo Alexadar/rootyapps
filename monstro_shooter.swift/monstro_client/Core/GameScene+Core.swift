@@ -45,6 +45,9 @@ class GameScene: SKScene {
     var isGameOver: Bool = false
     var isGamePaused: Bool = false
     var onReturnToMenu: (() -> Void)?
+    #if os(macOS)
+    var isCursorHidden: Bool = false  // Track cursor state to avoid counter issues
+    #endif
 
     // MARK: - Damage System
     var touchingMonsters: Set<ObjectIdentifier> = []  // Monsters currently touching player
@@ -117,6 +120,9 @@ class GameScene: SKScene {
             )
             view.addTrackingArea(trackingArea)
             strongSelf.trackingArea = trackingArea
+
+            // Hide cursor initially during gameplay
+            strongSelf.updateCursorVisibility()
         }
         #endif
     }
@@ -309,6 +315,10 @@ class GameScene: SKScene {
         // Hide debug visuals via input controller
         inputController?.hideDebugVisuals()
 
+        #if os(macOS)
+        updateCursorVisibility()
+        #endif
+
         // Create game over UI if needed
         if gameOverUI == nil {
             gameOverUI = GameOverUI(scene: self)
@@ -332,10 +342,22 @@ class GameScene: SKScene {
         // Show debug visuals via input controller
         inputController?.showDebugVisuals()
 
+        #if os(macOS)
+        updateCursorVisibility()
+        #endif
+
         resetGame()
     }
 
     func returnToMenu() {
+        #if os(macOS)
+        // Restore cursor before leaving game
+        if isCursorHidden {
+            NSCursor.unhide()
+            isCursorHidden = false
+        }
+        #endif
+
         // Trigger SwiftUI dismiss via closure on main thread
         onReturnToMenu?()
         // Play menu music after triggering dismiss

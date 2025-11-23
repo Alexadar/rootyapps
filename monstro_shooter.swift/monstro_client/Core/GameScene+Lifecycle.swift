@@ -41,6 +41,10 @@ extension GameScene {
         renderer?.world.worldLayer.isPaused = true
 
         pauseMenuUI?.show()
+
+        #if os(macOS)
+        updateCursorVisibility()
+        #endif
     }
 
     func resumeGame() {
@@ -51,13 +55,19 @@ extension GameScene {
         renderer?.world.worldLayer.isPaused = false
 
         pauseMenuUI?.hide()
+
+        #if os(macOS)
+        updateCursorVisibility()
+        #endif
     }
 
     // MARK: - Window / focus handling
 #if os(macOS)
     @objc func windowDidResignKey(_ notification: Notification) {
-        NSCursor.unhide()
-        NSCursor.arrow.set()
+        if isCursorHidden {
+            NSCursor.unhide()
+            isCursorHidden = false
+        }
     }
 #endif
 
@@ -89,8 +99,10 @@ extension GameScene {
             super.willMove(from: SKView())
         }
 #if os(macOS)
-        NSCursor.unhide()
-        NSCursor.arrow.set()
+        if isCursorHidden {
+            NSCursor.unhide()
+            isCursorHidden = false
+        }
         if let ta = trackingArea, let v = view {
             v.removeTrackingArea(ta)
             trackingArea = nil

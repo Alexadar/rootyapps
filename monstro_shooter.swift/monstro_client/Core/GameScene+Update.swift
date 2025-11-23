@@ -34,20 +34,6 @@ extension GameScene {
         // Safety: if player isn't ready yet (scene not fully initialized) skip this frame.
         guard let playerEntity = playerEntity else { return }
 
-        // Safety: restore cursor if outside view bounds
-#if os(macOS)
-        if let win = view?.window, let v = view {
-            let global = NSEvent.mouseLocation
-            let windowRect = NSRect(origin: NSPoint(x: global.x, y: global.y), size: .zero)
-            let convertedRect = win.convertFromScreen(windowRect)
-            let pointInView = v.convert(convertedRect.origin, from: nil)
-            if !v.bounds.contains(pointInView) {
-                NSCursor.unhide()
-                NSCursor.arrow.set()
-            }
-        }
-#endif
-
         // Handle player movement via input controller
         let moveVec = inputController?.movementVector() ?? CGVector(dx: 0, dy: 0)
         playerEntity.move(by: moveVec, deltaTime: deltaTime, mapSize: currentMapSize)

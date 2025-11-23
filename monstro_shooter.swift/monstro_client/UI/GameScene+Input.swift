@@ -116,13 +116,32 @@ extension GameScene {
     }
 
     override func mouseEntered(with event: NSEvent) {
-        crosshair?.isHidden = false
+        updateCursorVisibility()
     }
 
     override func mouseExited(with event: NSEvent) {
-        NSCursor.unhide()
-        NSCursor.arrow.set()
-        crosshair?.isHidden = false
+        if isCursorHidden {
+            NSCursor.unhide()
+            isCursorHidden = false
+        }
+        crosshair?.isHidden = true
+    }
+
+    /// Updates cursor visibility based on game state (paused/game over shows pointer, gameplay shows crosshair)
+    func updateCursorVisibility() {
+        let shouldHideCursor = !isGamePaused && !isGameOver
+
+        if shouldHideCursor && !isCursorHidden {
+            // Hide system pointer, show crosshair
+            NSCursor.hide()
+            isCursorHidden = true
+            crosshair?.isHidden = false
+        } else if !shouldHideCursor && isCursorHidden {
+            // Show system pointer, hide crosshair
+            NSCursor.unhide()
+            isCursorHidden = false
+            crosshair?.isHidden = true
+        }
     }
 #else
     // Touch handling on iOS/tvOS: forward to TouchInput
