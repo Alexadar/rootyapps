@@ -109,24 +109,30 @@ def load_or_get_font(font_path: str, size: int) -> ImageFont.FreeTypeFont:
 
 
 def wrap_text(text: str, font: ImageFont.FreeTypeFont, max_width: int) -> List[str]:
-    """Wrap text to fit within max_width"""
-    words = text.split()
+    """Wrap text to fit within max_width, respecting explicit newlines"""
     lines = []
-    current_line = []
 
-    for word in words:
-        test_line = ' '.join(current_line + [word])
-        bbox = font.getbbox(test_line)
-        width = bbox[2] - bbox[0]
+    # First split by explicit newlines
+    for paragraph in text.split('\n'):
+        words = paragraph.split()
+        if not words:
+            lines.append('')
+            continue
 
-        if width <= max_width:
-            current_line.append(word)
-        else:
-            if current_line:
-                lines.append(' '.join(current_line))
-            current_line = [word]
+        current_line = []
+        for word in words:
+            test_line = ' '.join(current_line + [word])
+            bbox = font.getbbox(test_line)
+            width = bbox[2] - bbox[0]
 
-    if current_line:
-        lines.append(' '.join(current_line))
+            if width <= max_width:
+                current_line.append(word)
+            else:
+                if current_line:
+                    lines.append(' '.join(current_line))
+                current_line = [word]
+
+        if current_line:
+            lines.append(' '.join(current_line))
 
     return lines
