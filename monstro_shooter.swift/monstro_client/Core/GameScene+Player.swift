@@ -23,26 +23,26 @@ extension GameScene {
         }
     }
 
-    /// Load and apply weapon and exoskeleton from DemoConfig (hardcoded for release)
+    /// Load and apply weapon and exoskeleton from GameConfig
     func applyLoadoutFromSettings() {
         guard let player = playerEntity else { return }
 
-        // Load weapon from DemoConfig
-        let weaponId = DemoConfig.weaponId
-        if let weaponConfig = WeaponManager.shared.getWeapon(id: weaponId) {
+        let config = GameConfig.current
+
+        // Load weapon from config
+        if let weaponConfig = WeaponManager.shared.getWeapon(id: config.weaponId) {
             player.currentWeapon = Weapon(config: weaponConfig)
             print("[GameScene] Applied weapon: \(weaponConfig.name)")
         } else {
-            print("[GameScene] Warning: Could not find weapon with ID \(weaponId), using default")
+            print("[GameScene] Warning: Could not find weapon with ID \(config.weaponId), using default")
         }
 
-        // Load exoskeleton from DemoConfig
-        let exoskeletonId = DemoConfig.exoskeletonId
-        if let exoskeletonConfig = ExoskeletonManager.shared.getExoskeleton(id: exoskeletonId) {
+        // Load exoskeleton from config
+        if let exoskeletonConfig = ExoskeletonManager.shared.getExoskeleton(id: config.exoskeletonId) {
             player.applyExoskeleton(exoskeletonConfig)
             print("[GameScene] Applied exoskeleton: \(exoskeletonConfig.name)")
         } else {
-            print("[GameScene] Warning: Could not find exoskeleton with ID \(exoskeletonId), using default")
+            print("[GameScene] Warning: Could not find exoskeleton with ID \(config.exoskeletonId), using default")
         }
     }
 
