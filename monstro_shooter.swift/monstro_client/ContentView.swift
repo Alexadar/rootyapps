@@ -183,6 +183,7 @@ struct SettingsView: View {
     @Binding var isPresented: Bool
     @Binding var bgmEnabled: Bool
     @Binding var sfxEnabled: Bool
+    @State private var selectedFPS: Int = SettingsManager.shared.targetFPS
 
     var body: some View {
         ZStack {
@@ -255,6 +256,38 @@ struct SettingsView: View {
                     .buttonStyle(.plain)
                 }
 
+                // FPS Selector
+                HStack(spacing: 20) {
+                    Text("FPS")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(Color(hex: "#FFFFFF"))
+                        .frame(width: 120, alignment: .leading)
+
+                    HStack(spacing: 8) {
+                        ForEach(SettingsManager.fpsOptions, id: \.self) { fps in
+                            Button(action: {
+                                selectedFPS = fps
+                                SettingsManager.shared.targetFPS = fps
+                            }) {
+                                Text("\(fps)")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(selectedFPS == fps ? Color(hex: "#00FF99") : Color(hex: "#FFFFFF"))
+                                    .frame(width: 50)
+                                    .padding(.vertical, 12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color(hex: "#0A1428").opacity(0.7))
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(selectedFPS == fps ? Color(hex: "#00FF99") : Color(hex: "#555555"), lineWidth: 2)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
                 // Close button
                 Button(action: { isPresented = false }) {
                     Text("CLOSE")
@@ -295,7 +328,11 @@ struct GameView: View {
     var body: some View {
         ZStack {
             if let scene = gameScene {
-                SpriteView(scene: scene)
+                SpriteView(
+                    scene: scene,
+                    preferredFramesPerSecond: SettingsManager.shared.targetFPS,
+                    options: [.ignoresSiblingOrder, .shouldCullNonVisibleNodes]
+                )
                     .ignoresSafeArea()
             }
         }

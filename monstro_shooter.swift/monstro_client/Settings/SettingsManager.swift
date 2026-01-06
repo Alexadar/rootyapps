@@ -1,4 +1,7 @@
 import Foundation
+#if os(macOS)
+import IOKit.ps
+#endif
 
 /// Settings manager singleton to handle persistent game settings using UserDefaults
 ///
@@ -26,6 +29,7 @@ class SettingsManager {
         static let selectedDropPointId = "settings.game.selectedDropPointId"
         static let selectedWeaponId = "settings.game.selectedWeaponId"
         static let selectedExoskeletonId = "settings.game.selectedExoskeletonId"
+        static let targetFPS = "settings.graphics.targetFPS"
     }
 
     private init() {
@@ -42,8 +46,45 @@ class SettingsManager {
             Keys.selectedMapFilename: "map_0014",  // Test map with Bug + Berserker
             Keys.selectedDropPointId: 18,
             Keys.selectedWeaponId: 1,  // Default to pistol
-            Keys.selectedExoskeletonId: 1  // Default to standard suit
+            Keys.selectedExoskeletonId: 1,  // Default to standard suit
+            Keys.targetFPS: Self.detectOptimalFPS()  // Auto-detect based on device
         ])
+    }
+
+    /// Detect optimal FPS based on device capabilities
+    private static func detectOptimalFPS() -> Int {
+        #if os(macOS)
+        // Check if running on battery (laptop) vs plugged in
+        // Also check thermal state if available
+        if let powerSource = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
+           let sources = IOPSCopyPowerSourcesList(powerSource)?.takeRetainedValue() as? [CFTypeRef],
+           !sources.isEmpty,
+           let info = IOPSGetPowerSourceDescription(powerSource, sources[0])?.takeUnretainedValue() as? [String: Any],
+           let isCharging = info[kIOPSIsChargingKey] as? Bool,
+           !isCharging {
+            // On battery - use 60 FPS to save power
+            return 60
+        }
+        // Plugged in or desktop - use 120 FPS
+        return 120
+        #else
+        // iOS: Check device model for performance tier
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let machineMirror = Mirror(reflecting: systemInfo.machine)
+        let identifier = machineMirror.children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+
+        // Pro/Max models and newer iPads get 120 FPS
+        if identifier.contains("iPhone14") || identifier.contains("iPhone15") || identifier.contains("iPhone16") ||
+           identifier.contains("iPad13") || identifier.contains("iPad14") {
+            return 120
+        }
+        // Older devices get 60 FPS
+        return 60
+        #endif
     }
 
     // MARK: - Audio Settings
@@ -116,6 +157,31 @@ class SettingsManager {
         }
     }
 
+    // MARK: - Graphics Settings
+
+    /// Available FPS options
+    static let fpsOptions: [Int] = [30, 60, 120]
+
+    /// Get/set target FPS (30, 60, or 120)
+    var targetFPS: Int {
+        get {
+            let fps = userDefaults.integer(forKey: Keys.targetFPS)
+            // Validate stored value is in allowed options
+            return Self.fpsOptions.contains(fps) ? fps : Self.detectOptimalFPS()
+        }
+        set {
+            // Only allow valid FPS values
+            let validFPS = Self.fpsOptions.contains(newValue) ? newValue : 60
+            userDefaults.set(validFPS, forKey: Keys.targetFPS)
+            print("[SettingsManager] Target FPS: \(validFPS)")
+        }
+    }
+
+    /// Reset FPS to auto-detected optimal value
+    func resetFPSToAuto() {
+        targetFPS = Self.detectOptimalFPS()
+    }
+
     /// Reset all settings to defaults
     func resetToDefaults() {
         bgmEnabled = true
@@ -124,6 +190,7 @@ class SettingsManager {
         selectedDropPointId = 18
         selectedWeaponId = 1
         selectedExoskeletonId = 1
+        targetFPS = Self.detectOptimalFPS()
         print("[SettingsManager] Settings reset to defaults")
     }
 }

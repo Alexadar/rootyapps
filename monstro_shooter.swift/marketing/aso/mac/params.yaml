@@ -1,0 +1,39 @@
+# Monstro Shooter - macOS App Store Screenshots
+
+platform: mac
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/monstro_shooter.swift/marketing/raw/mac
+  output_folder: /Users/oleksandr/Projects/rootyapps/monstro_shooter.swift/marketing/aso/mac
+
+style:
+  # Layout
+  text_col_percent: 38
+  screenshot_col_percent: 62
+  screenshot_zoom: 1.15
+  screenshot_move_down: 0
+
+  # Dark sci-fi Mars theme
+  bg_gradient: true
+  bg_color_top: '#1a0a00'
+  bg_color_bottom: '#000000'
+  title_color: '#ff6b35'
+  subtitle_color: '#d4a574'
+
+  # Screenshot frame
+  text_padding: 80
+  screenshot_padding: 60
+  border_width: 16
+  border_color: '#ff6b35'
+  border_radius: 50
+  shadow: true
+
+texts:
+  - title: "Monstro Shooter"
+    subtitle: "Survive the\nAlien Invasion"
+  - title: "Monstro Shooter"
+    subtitle: "Battle Across\nthe Galaxy"
+  - title: "Monstro Shooter"
+    subtitle: "Fight Waves of\nDeadly Creatures"
+  - title: "Monstro Shooter"
+    subtitle: "Intense Top-Down\nAction"
