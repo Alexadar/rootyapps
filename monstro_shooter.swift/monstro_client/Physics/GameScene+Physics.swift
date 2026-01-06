@@ -1,4 +1,5 @@
 import SpriteKit
+import QuartzCore
 
 // MARK: - Physics Contact Delegate
 extension GameScene: SKPhysicsContactDelegate {
@@ -39,6 +40,9 @@ extension GameScene: SKPhysicsContactDelegate {
                     monster.sprite.physicsBody?.contactTestBitMask = 0
                     monster.sprite.physicsBody?.collisionBitMask = 0
                     killCount += 1  // Increment kill counter
+
+                    // Track kill for tutorial
+                    tutorialController?.recordKill(at: CACurrentMediaTime())
                 }
             }
         }

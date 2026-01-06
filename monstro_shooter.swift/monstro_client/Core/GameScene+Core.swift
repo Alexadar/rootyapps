@@ -45,6 +45,10 @@ class GameScene: SKScene {
     var isGameOver: Bool = false
     var isGamePaused: Bool = false
     var onReturnToMenu: (() -> Void)?
+
+    // MARK: - Tutorial
+    var tutorialController: TutorialController?
+    var tutorialUI: TutorialUI?
     #if os(macOS)
     var isCursorHidden: Bool = false  // Track cursor state to avoid counter issues
     #endif
@@ -72,6 +76,7 @@ class GameScene: SKScene {
         setupDebugLabel()
         setupInput()
         setupPauseMenu()
+        setupTutorial()
 
         // Load level from GameConfig (prod.json or SettingsManager based on mode)
         let config = GameConfig.current
@@ -297,6 +302,9 @@ class GameScene: SKScene {
 
         // Reset player health
         playerEntity?.health = 100
+
+        // Reset tutorial (will initialize timers on first update)
+        tutorialController?.reset(at: 0)
     }
 
     // MARK: - Game Over
@@ -312,7 +320,7 @@ class GameScene: SKScene {
         showGameOverUI()
     }
 
-    func showGameOverUI() {
+    func showGameOverUI(mode: EndGameMode = .death) {
         // Hide debug visuals via input controller
         inputController?.hideDebugVisuals()
 
@@ -327,6 +335,7 @@ class GameScene: SKScene {
 
         // Show game over UI
         gameOverUI?.show(
+            mode: mode,
             onTryAgain: { [weak self] in
                 self?.restartGame()
             },
@@ -334,6 +343,13 @@ class GameScene: SKScene {
                 self?.returnToMenu()
             }
         )
+    }
+
+    func handleVictory() {
+        guard !isGameOver else { return }
+        isGameOver = true
+        print("Victory! All monsters defeated.")
+        showGameOverUI(mode: .victory)
     }
 
     func restartGame() {

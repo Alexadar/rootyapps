@@ -79,6 +79,21 @@ extension GameScene {
                 spawnedWaves.insert(index)
             }
         }
+
+        // Check for victory: all waves spawned and no monsters left
+        checkVictoryCondition(level: level)
+    }
+
+    /// Check if player has won (killed all expected monsters)
+    private func checkVictoryCondition(level: GameLevel) {
+        // Calculate total expected monsters from all waves
+        let expectedTotal = level.spawnWaves.reduce(0) { $0 + $1.monsterCount }
+
+        // Victory when all expected monsters have been killed
+        guard killCount >= expectedTotal else { return }
+
+        // Trigger victory
+        handleVictory()
     }
 
     /// Spawn a specific wave of monsters

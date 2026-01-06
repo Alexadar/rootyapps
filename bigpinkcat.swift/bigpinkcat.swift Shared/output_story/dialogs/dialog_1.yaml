@@ -1,152 +1,88 @@
-- character_id: 1
-  character_name: Astronaut
-  character_text: As I pondered the riddles, I began to notice a pattern. The cat's
-    words seemed to be leading me on a path of discovery.
-  id: 0
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: Ah, the wheels are turning, Astronaut. You are getting close to
-    unlocking the secrets of the galaxy.
-  id: 1
-- character_id: 1
-  character_name: Astronaut
-  character_text: I feel like I'm on the cusp of something big. What lies ahead?
-  id: 2
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: The next challenge awaits. Are you prepared to face it?
-  id: 3
-- character_id: 1
-  character_name: Astronaut
-  character_text: I've come this far, I'm not going to stop now. What do I need to
-    do?
-  id: 4
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: Solve the riddle of the celestial spheres. The answer lies within
-    the stars.
-  id: 5
-- character_id: 1
-  character_name: Astronaut
-  character_text: I've studied the stars, but I've never seen anything like this.
-    What am I looking for?
-  id: 6
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: Look for the harmony of the spheres. It's the key to unlocking the
-    next level of knowledge.
-  id: 7
-- character_id: 1
-  character_name: Astronaut
-  character_text: I think I see it. The stars are aligning in a specific pattern.
-    Is that what you meant?
-  id: 8
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: You are indeed perceptive, Astronaut. The harmony of the spheres
-    is a powerful tool.
-  id: 9
-- character_id: 1
-  character_name: Astronaut
-  character_text: What can I do with this newfound knowledge?
-  id: 10
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: You can use it to communicate with other celestial bodies. The possibilities
-    are endless.
-  id: 11
-- character_id: 1
-  character_name: Astronaut
-  character_text: I feel like I'm on the verge of a major breakthrough. What's the
-    next step?
-  id: 12
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: The next challenge is to confront the entity that lurks in the shadows.
-    Are you prepared to face it?
-  id: 13
-- character_id: 1
-  character_name: Astronaut
-  character_text: I've come too far to turn back now. I'm ready to face whatever lies
-    ahead.
-  id: 14
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: Then let us proceed, Astronaut. The fate of the galaxy is in your
-    hands.
-  id: 15
-- character_id: 1
-  character_name: Astronaut
-  character_text: What does the entity want from me?
-  id: 16
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: It wants to share its knowledge with you. Are you prepared to receive
-    it?
-  id: 17
-- character_id: 1
-  character_name: Astronaut
-  character_text: I think I am. What does it have to say?
-  id: 18
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: It says that the secrets of the galaxy are not for the faint of
-    heart. Are you prepared to pay the price?
-  id: 19
-- character_id: 1
-  character_name: Astronaut
-  character_text: I've come too far to turn back now. I'm ready to pay the price.
-  id: 20
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: Then let us proceed, Astronaut. The entity awaits.
-  id: 21
-- character_id: 1
-  character_name: Astronaut
-  character_text: What's the final challenge?
-  id: 22
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: The final challenge is to use your newfound knowledge to help others.
-    Will you accept the task?
-  id: 23
-- character_id: 1
-  character_name: Astronaut
-  character_text: I accept the task. I'm ready to use my knowledge to help others.
-  id: 24
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: Then let us proceed, Astronaut. The fate of the galaxy is in your
-    hands.
-  id: 25
-- character_id: 1
-  character_name: Astronaut
-  character_text: I've done it. I've unlocked the secrets of the galaxy.
-  id: 26
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: Congratulations, Astronaut. You have achieved greatness.
-  id: 27
-- character_id: 1
-  character_name: Astronaut
-  character_text: What's next for me?
-  id: 28
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: You will return to Earth as a hero, sharing your knowledge with
-    the world.
-  id: 29
-- character_id: 1
-  character_name: Astronaut
-  character_text: I'm ready to go back home. Thank you for your guidance, Colossal
-    pink cat.
-  id: 30
-- character_id: 2
-  character_name: Colossal pink cat
-  character_text: Farewell, Astronaut. May your journey inspire others to reach for
-    the stars.
-  final_words_of_the_story: With the secrets of the galaxy finally deciphered, the
-    astronaut and the colossal pink cat vanished into the Martian sunset, leaving
-    behind a legacy of wonder and discovery.
-  id: 31
-  options: []
+- guidelines:
+    - astronaut was on usual spacetime folding transportation routine, 
+    - he expected to transfer itself from europa to earth, with scientific package
+    - visual novel starts with astronauts frame where he overwhelmed with the area where he appeared - colofrul eerie lanscape, and a Big Pink Cat next to him
+    - cat begin to comunicate, asks why he feels so bad, but astronaut shockingly answer with a question how can he talk and where is he
+    - cat tells him that he talks because astronaut understand language, and he is behind his spacetime by a few steps
+    - astronaut shocked that it is possible, humans theored that it can be possible but noome moved avay from spacetime continium even with an extreeme spacetime folding travels
+    - astronaut asked cat how to get back, cat say that it will help gladly, but where his "bak" is. Cat sure astronaut behind his continium by few steps because he smells that but behind which one? cat want to help but want to do it preciselly
+    - astronaut asked why he is a cat, cat answers because astronaut likes cats, maybe thats why, cat not sure because thats a usual things in his spacetime so cat suggested to not waste time because astronaut waveform kinda alien here and might be affected
+    - cat acts swiftky and suggested few options to help
+    - particular interest gained scintific package, "what that" asked cat
+    - astronaut says "that is a time crystal, we hold scientifical data from europa with information on safe spacetime folding for food transfer"
+    - cat says "not sure what food is but this crystal is exactly what we need to plot a bridge, but we should choose on of the options, you choose it, because it s your bridge"
+    - options of phase_1, cat offers:
+      - convert a crystal to the energy directly to build a bridge
+      - walk around and find some similar waveforms to amplify a signal
+      - ask astronaut more about time crystal and its properties
+      - tell astronaut more about this spacetime 
+- story_dialogs:
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Chromatic aberration in the visual cortex... no. The spectrometer reads real photons. This is actually happening.
+    id: 0
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: You're hyperventilating. Inefficient use of oxygen in a suit with limited reserves, wouldn't you say?
+    id: 1
+  - character_id: 1
+    character_name: Astronaut
+    character_text: A talking cat. Of course. Because why not add hallucinations to navigational failure.
+    id: 2
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Not a hallucination. Not a cat either, technically. Your visual cortex is doing its best with limited reference points. I'm flattered it chose something you find comforting.
+    id: 3
+  - character_id: 1
+    character_name: Astronaut
+    character_text: The fold signature was clean. Europa to Earth, standard Alcubierre compression. I've done this route eight hundred times.
+    id: 4
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Eight hundred and one proved interesting. You didn't fold through spacetime. You folded past it.
+    id: 5
+  - character_id: 1
+    character_name: Astronaut
+    character_text: That's not possible. The mathematics don't allow—
+    id: 6
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Your mathematics. Written for your continuum. You're not in it anymore.
+    id: 7
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Then where am I?
+    id: 8
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Between. Think of spacetime as fabric. You found a thread loose and slipped behind the weave. I can smell at least four continuum signatures on you—which one is home?
+    id: 9
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Earth. 2067. Sol system, Orion Arm.
+    id: 10
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Poetic coordinates. Useless here. What's that crystalline structure in your cargo hold? It's resonating with something I recognize.
+    id: 11
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Temporal lattice array. Stores quantum states of verified fold routes. Why?
+    id: 12
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Because it remembers where you came from, even if you don't know how to read it here. We can use it to build a bridge back. But the method matters—different approaches, different costs.
+    id: 13
+  - character_id: 1
+    character_name: Astronaut
+    character_text: What kind of costs?
+    id: 14
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Time. Information. Certainty. Possibly identity. Choose how we proceed.
+    id: 15
+    options:
+    - option_text: Convert the crystal's energy directly into a bridge
+    - option_text: Search for resonant waveforms to amplify the signal
+    - option_text: Analyze the crystal's data layers for precise coordinates
+    - option_text: Map this spacetime's topology first

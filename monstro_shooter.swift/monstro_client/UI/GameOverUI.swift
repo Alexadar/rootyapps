@@ -5,6 +5,19 @@ import AppKit
 import UIKit
 #endif
 
+/// End game modes
+enum EndGameMode {
+    case death
+    case victory
+
+    var title: String {
+        switch self {
+        case .death: return "GAME OVER"
+        case .victory: return "VICTORY!"
+        }
+    }
+}
+
 /// Game over overlay with Try Again and Menu buttons
 class GameOverUI {
     private let containerNode: SKNode
@@ -18,7 +31,7 @@ class GameOverUI {
         self.containerNode.zPosition = 2000  // Above HUD
     }
 
-    func show(onTryAgain: @escaping () -> Void, onGoToMenu: @escaping () -> Void) {
+    func show(mode: EndGameMode = .death, onTryAgain: @escaping () -> Void, onGoToMenu: @escaping () -> Void) {
         guard let scene = scene, let camera = scene.camera else { return }
 
         self.onTryAgain = onTryAgain
@@ -36,9 +49,9 @@ class GameOverUI {
         overlay.zPosition = 0
         containerNode.addChild(overlay)
 
-        // "GAME OVER" title
+        // Title based on mode
         let titleLabel = SKLabelNode(fontNamed: "System-Bold")
-        titleLabel.text = "GAME OVER"
+        titleLabel.text = mode.title
         titleLabel.fontSize = 64
         titleLabel.fontColor = UIStyleGuide.Colors.white
         titleLabel.position = CGPoint(x: 0, y: 100)

@@ -1,0 +1,40 @@
+{
+  "id": 9999,
+  "ownerName": null,
+  "dropPointId": 1,
+  "ownerId": null,
+  "energyCost": 100,
+  "landingDuration": 10,
+  "gameResource": "map_1",
+  "country": null,
+  "lastRenameDate": "2026-01-06 00:00:00.000",
+  "renameCost": 1,
+  "renameCostMult": 1,
+  "removed": false,
+  "orderNumber": 1,
+  "defaultNameLocalizations": {
+    "en-us": "Test - 1 Bug"
+  },
+  "descriptionLocalizations": {
+    "en-us": "Test map with 1 bug"
+  },
+  "monsterSpawnWaves": [
+    {
+      "startTime": 1,
+      "count": 1
+    },
+    {
+      "startTime": 10,
+      "count": 0
+    }
+  ],
+  "monsterTypes": [
+    {
+      "startTime": 0,
+      "monsterTypeIds": [1]
+    }
+  ],
+  "maximumVictims": {
+    "1": 100
+  }
+}

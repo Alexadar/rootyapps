@@ -38,6 +38,11 @@ extension GameScene {
         let moveVec = inputController?.movementVector() ?? CGVector(dx: 0, dy: 0)
         playerEntity.move(by: moveVec, deltaTime: deltaTime, mapSize: currentMapSize)
 
+        // Track movement for tutorial
+        if moveVec.dx != 0 || moveVec.dy != 0 {
+            tutorialController?.recordMove(at: currentTime)
+        }
+
         // Update debug visuals via input controller
         inputController?.updateDebugVisuals(movementVector: moveVec, aimPoint: inputController?.aimPoint())
 
@@ -95,6 +100,9 @@ extension GameScene {
 
         // Update camera to follow player (with map bounds)
         updateCamera(mapSize: currentMapSize)
+
+        // Update tutorial hints
+        tutorialController?.update(currentTime: currentTime)
     }
 
     func updateHUD(currentTime: TimeInterval) {

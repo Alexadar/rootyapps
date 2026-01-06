@@ -33,6 +33,22 @@ extension GameScene {
         }
     }
 
+    func setupTutorial() {
+        guard let hudCamera = renderer?.hudCamera else { return }
+
+        tutorialController = TutorialController()
+        tutorialUI = TutorialUI(hudCamera: hudCamera)
+
+        tutorialController?.onShowHint = { [weak self] text in
+            guard let self = self else { return }
+            self.tutorialUI?.showHint(text, viewportSize: self.size)
+        }
+
+        tutorialController?.onHideHint = { [weak self] in
+            self?.tutorialUI?.hideHint()
+        }
+    }
+
     func pauseGame() {
         guard !isGamePaused && !isGameOver else { return }
         isGamePaused = true

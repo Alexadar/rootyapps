@@ -90,6 +90,14 @@ struct GameConstants {
     static let hudParallaxLerpSpeed: CGFloat = 0.15
     static let hudParallaxReturnSpeed: CGFloat = 0.05
 
+    // MARK: - Tutorial
+    static let tutorialMoveHintDelay: TimeInterval = 5.0      // Show move hint after 5 sec no movement
+    static let tutorialShootHintDelay: TimeInterval = 30.0    // Show shoot hint after 30 sec no shooting
+    static let tutorialKillHintDelay: TimeInterval = 60.0     // Show kill hint after 1 min no kills
+    static let tutorialHintDisplayDuration: TimeInterval = 1.0 // Hint visible for 1 sec
+    static let tutorialHintFadeDuration: TimeInterval = 0.5   // Fade in/out duration
+    static let tutorialHintPauseDuration: TimeInterval = 2.0  // Pause between hints
+
     // MARK: - Debug
     static let debugRotationStep: CGFloat = .pi / 8
 

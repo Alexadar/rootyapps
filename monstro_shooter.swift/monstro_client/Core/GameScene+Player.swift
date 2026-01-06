@@ -82,5 +82,8 @@ extension GameScene {
 
         // Play weapon sound effect
         AudioManager.shared.playWeaponSound(playerEntity.currentWeapon.config.weaponSoundName)
+
+        // Track shooting for tutorial
+        tutorialController?.recordShoot(at: currentTime)
     }
 }

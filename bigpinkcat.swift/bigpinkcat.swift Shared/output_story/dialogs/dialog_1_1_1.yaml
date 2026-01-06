@@ -1,0 +1,160 @@
+- guidelines:
+    - astronaut chooses "Red", "Okay whatever it is, red sounds confident"
+    - cat says "Alright, red it is, i will add crystal to red
+    - astronaut asks, "Ok how can i speak to red"
+    - cat says "I will translate, red dont want to talk your language, it sounds weally to it"
+    - astronaut says "Okay, it is able to desire, i felt nothing may surprise me here"
+    - cat says "Red asking you why you promised your friend a help, but did not fulfill it?"
+    - astronaut says "Okay, thats unexpected, tell him i was in hurry and risked relationship for greater good"
+    - Cat says "Red says it was not agreater good, but it seems you honest, it will try now to narrow your desire, and ask a spacetime to help you"
+    - Astrnaut - "So spacetime can talk, wow, cat why you cannot talk to it? We wasting time"
+    - Cat says "Not each spacetime can talk, not each with me, it really meaningless rigth now, you feel how water pulls you , or how you sayd it?"
+    - astronaut says "Yeah, i feel it, usual sensations on unshielded warping, hope it will not pulls us appart"
+    - cat says "It will not here, it against usual behavior of that process, but nevermind"
+    - Red says, he wish you will be better person next time, here is your crystal and lets go
+    - Astrinaut says "We did not move, why?"
+    - Cat says "Because red just send us back he changed his mind"
+    - "Astronaut you had a think on your friends? I assume yes, that may be the cause"
+    - "So you kidding me? Thoughts are the crime here? Thats sarcastic"
+    - "Cat says We have no crimes here, i just havent expected you will do it, nevermind, what i know on you? Ok lets try last options"
+    - "Um, thats so tricky that you can expect things, it makes you person i guess"
+    - "No im not a person, thats a long unwanted explanation, because time is up"
+    - Cat contunies - I know how to return you back, red allready left some traces in a waves, so i can decipher
+    - Cat continues - Choose your gift from a red, it may be only one
+    - Astronaut - "You kidding, so thats it? Ok at last, i hope you would not change your mind, im not thinking on anything"
+    - Cat - "Thats so funny! You can think, no afraid, im different. Anyway, presents are:"
+    - "Knowledge, Dream, Story, Completeness"
+    - "Astronaut, i should go, choose one, and you will be sent back. We will not see eachother again, bye!"
+    - "Wait, thats it? what if it will not work? (but it worked right after he think about a present)"
+    - "After player choos one - end message shown:"
+    - Knowledge - Says that after he returns he became knowledgeble of a formula which allows more precise and faster travels, scientist tells that now humans travels on some edge
+    - Dream - Astronaut forgets all, but remembers it as a dream, makes his life as before
+    - Story - Astronaut tells this story in a detail, he cannot believe he can remember. People listen to this story, good business on selling copies, with much interest but noone believes
+    - Completeness - Astronaut remembers some, but finds a way to live happiest life ever for himself
+- story_dialogs:
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Red it is. Sounds confident at least.
+    id: 0
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Confident is one word for it. Integrating crystal with Red now. Done. It's listening.
+    id: 1
+  - character_id: 1
+    character_name: Astronaut
+    character_text: How do I speak to it?
+    id: 2
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Through me. Red refuses your language—says it sounds weak. I'll translate.
+    id: 3
+  - character_id: 1
+    character_name: Astronaut
+    character_text: It has preferences about language. Of course it does. Nothing surprises me anymore.
+    id: 4
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Red asks why you promised your friend help but never delivered.
+    id: 5
+  - character_id: 1
+    character_name: Astronaut
+    character_text: What? How does it— Tell it I was in a hurry. I prioritized the mission over personal obligations.
+    id: 6
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Red says that wasn't a greater good. Just convenient rationalization. But you're honest about it, which is something. It will narrow your waveform and petition spacetime on your behalf.
+    id: 7
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Spacetime can be petitioned? Why didn't you just do that from the start?
+    id: 8
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Not every spacetime talks. Not every spacetime talks to me. Irrelevant now—do you feel that pull? Like water, you said earlier?
+    id: 9
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Yes. Familiar sensation. Unshielded warp signature. Hopefully it won't tear us apart.
+    id: 10
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: It won't. Different rules here. Red says it wishes you'd be a better person next time. Here's your crystal. We should be moving now.
+    id: 11
+  - character_id: 1
+    character_name: Astronaut
+    character_text: We're not moving. Why aren't we moving?
+    id: 12
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Because Red reversed the process. Changed its mind. You were thinking about your friend just now, weren't you?
+    id: 13
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Are you serious? Thoughts are crimes here?
+    id: 14
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: No crimes here. I just didn't anticipate you'd dwell on it. What do I know about humans? Never mind. We have one option left.
+    id: 15
+  - character_id: 1
+    character_name: Astronaut
+    character_text: It's strange that you anticipate things at all. Makes you seem like a person.
+    id: 16
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: I'm not a person. That explanation would take longer than you have. Red left traces in the waveform—I can decipher a path from them.
+    id: 17
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Then do it.
+    id: 18
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: One condition. Red left a gift for you. You can only take one. Choose, and you'll be sent back immediately.
+    id: 19
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Wait. Red sabotaged my return, judged me, reversed the process out of spite—and now it's offering gifts?
+    id: 20
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Red operates on principles I don't fully understand. Hostility and generosity aren't contradictions for it.
+    id: 21
+  - character_id: 1
+    character_name: Astronaut
+    character_text: That makes no sense.
+    id: 22
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Add it to the list of things you won't get answers to. That list will follow you home, I'm afraid.
+    id: 23
+  - character_id: 1
+    character_name: Astronaut
+    character_text: So I just accept the contradiction and pick a gift?
+    id: 24
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: That's it. I have to go now. We won't see each other again. The gifts are Knowledge, Dream, Story, or Completeness.
+    id: 25
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Wait—what if it doesn't work? What do these even mean?
+    id: 26
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: It will work. Knowledge gives understanding. Dream gives forgetting. Story gives memory. Completeness gives peace. Choose quickly. Goodbye, astronaut.
+    id: 27
+  - character_id: 1
+    character_name: Astronaut
+    character_text: I...
+    id: 28
+    options:
+    - option_text: Knowledge—I want to understand what happened
+    - option_text: Dream—let me forget this ever happened
+    - option_text: Story—I want to remember every detail
+    - option_text: Completeness—I want peace
+    final_words:
+      option_1: "The astronaut returned to Earth carrying equations that shouldn't exist. Within a decade, humanity's fold drives operated at the theoretical edge of possibility—faster, cleaner, touching the fabric of spacetime itself. Scientists called it a breakthrough. He called it a gift from something that wasn't a cat."
+      option_2: "The astronaut woke in the medical bay of the Europa station, convinced he'd experienced the strangest dream. The fold had been routine. The crystal data was intact. His life continued exactly as before, though sometimes at night he dreamed of pink fur and impossible colors."
+      option_3: "The astronaut told his story to anyone who would listen. He wrote it down in precise detail—details he shouldn't have been able to remember. The book sold well. People found it entertaining, imaginative, clearly fiction. No one believed a word. But they couldn't stop reading."
+      option_4: "The astronaut returned changed. He remembered fragments—colors, a voice, something about choices. But mostly he felt complete in a way he couldn't explain. He reconnected with old friends. He stopped rushing. He lived the rest of his life in quiet contentment, never sure why."
