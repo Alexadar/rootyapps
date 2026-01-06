@@ -73,8 +73,8 @@ class GameScene: SKScene {
         setupInput()
         setupPauseMenu()
 
-        // Load level from settings
-        let mapFilename = SettingsManager.shared.selectedMapFilename
+        // Load level from DemoConfig (hardcoded for release)
+        let mapFilename = DemoConfig.mapFilename
         print("[GameScene] Loading map: \(mapFilename)")
         if let mapConfig = MapConfig.load(filename: mapFilename) {
             print("[GameScene] Loaded MapConfig: \(mapConfig.getLocalizedName()), monsters: \(mapConfig.monsterTypes)")

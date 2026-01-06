@@ -23,12 +23,12 @@ extension GameScene {
         }
     }
 
-    /// Load and apply weapon and exoskeleton selections from SettingsManager
+    /// Load and apply weapon and exoskeleton from DemoConfig (hardcoded for release)
     func applyLoadoutFromSettings() {
         guard let player = playerEntity else { return }
 
-        // Load selected weapon
-        let weaponId = SettingsManager.shared.selectedWeaponId
+        // Load weapon from DemoConfig
+        let weaponId = DemoConfig.weaponId
         if let weaponConfig = WeaponManager.shared.getWeapon(id: weaponId) {
             player.currentWeapon = Weapon(config: weaponConfig)
             print("[GameScene] Applied weapon: \(weaponConfig.name)")
@@ -36,8 +36,8 @@ extension GameScene {
             print("[GameScene] Warning: Could not find weapon with ID \(weaponId), using default")
         }
 
-        // Load selected exoskeleton
-        let exoskeletonId = SettingsManager.shared.selectedExoskeletonId
+        // Load exoskeleton from DemoConfig
+        let exoskeletonId = DemoConfig.exoskeletonId
         if let exoskeletonConfig = ExoskeletonManager.shared.getExoskeleton(id: exoskeletonId) {
             player.applyExoskeleton(exoskeletonConfig)
             print("[GameScene] Applied exoskeleton: \(exoskeletonConfig.name)")

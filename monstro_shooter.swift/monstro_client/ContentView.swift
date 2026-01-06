@@ -143,12 +143,6 @@ struct AnimatedMainMenuView: View {
     @State private var showSettings = false
     @State private var bgmEnabled = SettingsManager.shared.bgmEnabled
     @State private var sfxEnabled = SettingsManager.shared.sfxEnabled
-    @State private var allDropPoints: [DropPoint] = []
-    @State private var selectedDropPointId: Int?
-    @State private var availableMaps: [MapConfig] = []
-    @State private var selectedMapIndex: Int = 0
-    @State private var selectedWeaponId: Int = 1 // Default to pistol
-    @State private var selectedExoskeletonId: Int = 1 // Default to standard suit
 
     // Pick random arcade background at runtime
     @State private var backgroundImage: String = ["arcade_bg_1.jpg", "arcade_bg_2.jpg"].randomElement() ?? "arcade_bg_1.jpg"
@@ -163,85 +157,11 @@ struct AnimatedMainMenuView: View {
                 VStack(spacing: 20) {
                     Spacer()
 
-                    // Drop Point dropdown selector
-                    if !allDropPoints.isEmpty {
-                        DropdownSelector(
-                            title: "Select Drop Point",
-                            items: allDropPoints,
-                            selectedItem: allDropPoints.first(where: { $0.id == selectedDropPointId }),
-                            displayText: { dropPoint in
-                                if let index = allDropPoints.firstIndex(where: { $0.id == dropPoint.id }) {
-                                    return "\(index + 1). \(dropPoint.name)"
-                                }
-                                return dropPoint.name
-                            },
-                            onSelect: { dropPoint in
-                                selectedDropPointId = dropPoint.id
-                                saveSelectedDropPoint()
-                                loadMaps() // Reload maps based on new drop point
-                            }
-                        )
-                        .padding(.bottom, 10)
-                    }
-
-                    // Map dropdown selector
-                    if !availableMaps.isEmpty {
-                        DropdownSelector(
-                            title: "Select Map",
-                            items: availableMaps,
-                            selectedItem: availableMaps[selectedMapIndex],
-                            displayText: { map in
-                                if let index = availableMaps.firstIndex(where: { $0.id == map.id }) {
-                                    return "\(index + 1). \(map.getLocalizedName())"
-                                }
-                                return map.getLocalizedName()
-                            },
-                            onSelect: { map in
-                                if let index = availableMaps.firstIndex(where: { $0.id == map.id }) {
-                                    selectedMapIndex = index
-                                    saveSelectedMap()
-                                }
-                            }
-                        )
-                        .padding(.bottom, 10)
-                    }
-
-                    // Weapon dropdown selector
-                    DropdownSelector(
-                        title: "Select Weapon",
-                        items: getAvailableWeapons(),
-                        selectedItem: getAvailableWeapons().first(where: { $0.id == selectedWeaponId }),
-                        displayText: { $0.getLocalizedName() },
-                        onSelect: { weapon in
-                            selectedWeaponId = weapon.id
-                            saveSelectedWeapon()
-                        }
-                    )
-                    .padding(.bottom, 10)
-
-                    // Exoskeleton dropdown selector
-                    DropdownSelector(
-                        title: "Select Exoskeleton",
-                        items: getAvailableExoskeletons(),
-                        selectedItem: getAvailableExoskeletons().first(where: { $0.id == selectedExoskeletonId }),
-                        displayText: { exo in
-                            "\(exo.getLocalizedName()) (⚔️\(Int(exo.defence)) 🏃\(String(format: "%.0f%%", exo.speed * 100)))"
-                        },
-                        onSelect: { exoskeleton in
-                            selectedExoskeletonId = exoskeleton.id
-                            saveSelectedExoskeleton()
-                        }
-                    )
-                    .padding(.bottom, 10)
-
                     PrimaryButton(text: "PLAY", action: onPlayTapped)
 
                     SecondaryButton(text: "SETTINGS", action: { showSettings.toggle() })
 
                     Spacer().frame(height: 60)
-                }
-                .onAppear {
-                    loadMaps()
                 }
 
                 // Settings popup overlay
@@ -256,55 +176,6 @@ struct AnimatedMainMenuView: View {
         }
     }
 
-    private func loadMaps() {
-        allDropPoints = DropPointLoader.loadAllDropPoints()
-        selectedDropPointId = SettingsManager.shared.selectedDropPointId
-
-        availableMaps = DropPointLoader.getMaps(forDropPointId: selectedDropPointId)
-
-        if availableMaps.isEmpty {
-            print("[AnimatedMainMenuView] No maps loaded for selected drop point!")
-            return
-        }
-
-        // Find saved map or default to first
-        let savedFilename = SettingsManager.shared.selectedMapFilename
-        if let index = availableMaps.firstIndex(where: { "map_\(String(format: "%04d", $0.id))" == savedFilename }) {
-            selectedMapIndex = index
-        } else {
-            selectedMapIndex = 0
-        }
-
-        // Load selected weapon and exoskeleton
-        selectedWeaponId = SettingsManager.shared.selectedWeaponId
-        selectedExoskeletonId = SettingsManager.shared.selectedExoskeletonId
-    }
-
-    private func saveSelectedMap() {
-        guard !availableMaps.isEmpty else { return }
-        let filename = "map_\(String(format: "%04d", availableMaps[selectedMapIndex].id))"
-        SettingsManager.shared.selectedMapFilename = filename
-    }
-
-    private func saveSelectedDropPoint() {
-        SettingsManager.shared.selectedDropPointId = selectedDropPointId
-    }
-
-    private func saveSelectedWeapon() {
-        SettingsManager.shared.selectedWeaponId = selectedWeaponId
-    }
-
-    private func saveSelectedExoskeleton() {
-        SettingsManager.shared.selectedExoskeletonId = selectedExoskeletonId
-    }
-
-    private func getAvailableWeapons() -> [WeaponConfig] {
-        return WeaponManager.shared.getAllWeapons()
-    }
-
-    private func getAvailableExoskeletons() -> [ExoskeletonConfig] {
-        return ExoskeletonManager.shared.getAllExoskeletons()
-    }
 }
 
 // MARK: - Settings View
