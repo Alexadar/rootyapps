@@ -45,8 +45,8 @@ class PauseMenuUI {
         let panelWidth: CGFloat = 400
         let panelHeight: CGFloat = 400
         panelNode = SKShapeNode(rectOf: CGSize(width: panelWidth, height: panelHeight), cornerRadius: 20)
-        panelNode.fillColor = NSColor(red: 0.04, green: 0.08, blue: 0.16, alpha: 0.95)
-        panelNode.strokeColor = NSColor(red: 0.0, green: 0.85, blue: 1.0, alpha: 1.0)
+        panelNode.fillColor = SKColor(red: 0.04, green: 0.08, blue: 0.16, alpha: 0.95)
+        panelNode.strokeColor = SKColor(red: 0.0, green: 0.85, blue: 1.0, alpha: 1.0)
         panelNode.lineWidth = 3
         panelNode.zPosition = 2
         containerNode.addChild(panelNode)
@@ -110,8 +110,8 @@ class PauseMenuUI {
 
     private func createButton(size: CGSize) -> SKShapeNode {
         let button = SKShapeNode(rectOf: size, cornerRadius: 10)
-        button.fillColor = NSColor(red: 0.0, green: 1.0, blue: 0.6, alpha: 0.3)
-        button.strokeColor = NSColor(red: 0.0, green: 1.0, blue: 0.6, alpha: 1.0)
+        button.fillColor = SKColor(red: 0.0, green: 1.0, blue: 0.6, alpha: 0.3)
+        button.strokeColor = SKColor(red: 0.0, green: 1.0, blue: 0.6, alpha: 1.0)
         button.lineWidth = 2
         return button
     }

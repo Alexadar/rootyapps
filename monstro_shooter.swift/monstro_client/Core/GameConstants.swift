@@ -1,5 +1,8 @@
 import Foundation
 import CoreGraphics
+#if !os(macOS)
+import UIKit
+#endif
 
 /// Global game constants and configuration values
 struct GameConstants {
@@ -77,7 +80,18 @@ struct GameConstants {
     /// Camera follow speed (0.0 = instant, 1.0 = very slow)
     static let cameraFollowSmoothing: CGFloat = 0.1
     /// Camera zoom scale (0.5 = 2x zoom in, 1.0 = normal, 2.0 = 2x zoom out)
-    static let cameraScale: CGFloat = 0.7
+    /// Platform-specific for optimal viewing experience
+    static var cameraScale: CGFloat {
+        #if os(macOS)
+        return 0.7
+        #else
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return 0.7  // iPadOS
+        } else {
+            return 1.0  // iOS (iPhone)
+        }
+        #endif
+    }
 
     // MARK: - HUD
     static let hudHorizontalMargin: CGFloat = 20
@@ -97,6 +111,16 @@ struct GameConstants {
     static let tutorialHintDisplayDuration: TimeInterval = 1.0 // Hint visible for 1 sec
     static let tutorialHintFadeDuration: TimeInterval = 0.5   // Fade in/out duration
     static let tutorialHintPauseDuration: TimeInterval = 2.0  // Pause between hints
+
+    // MARK: - Touch Controls (iOS/iPadOS)
+    /// Physical size of touch control zones in centimeters
+    static let touchControlSizeCm: CGFloat = 4.0
+    /// Joystick active radius as percentage of control zone size
+    static let touchJoystickRadiusRatio: CGFloat = 0.35
+    /// Control indicator circle radius in points
+    static let touchIndicatorRadius: CGFloat = 18.0
+    /// Aim indicator circle radius in points
+    static let touchAimIndicatorRadius: CGFloat = 16.0
 
     // MARK: - Debug
     static let debugRotationStep: CGFloat = .pi / 8

@@ -8,3 +8,9 @@ fantastic_website
 **/screenshots/raw
 
 bigpinkcat.unity
+
+# .DS_Store
+.DS_Store
+Thumbs.db
+**/*/.DS_Store
+

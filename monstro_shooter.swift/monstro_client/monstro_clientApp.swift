@@ -35,27 +35,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 struct monstro_clientApp: App {
     #if !os(macOS)
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-
-    init() {
-        // Request device orientation to landscape at launch.
-        DispatchQueue.main.async {
-            UIDevice.current.setValue(UIInterfaceOrientation.landscapeLeft.rawValue, forKey: "orientation")
-        }
-    }
     #else
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    init() {}
     #endif
 
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .onAppear {
-                    #if !os(macOS)
-                    // Ensure orientation is set when the view appears.
-                    UIDevice.current.setValue(UIInterfaceOrientation.landscapeLeft.rawValue, forKey: "orientation")
-                    #endif
-                }
         }
         #if os(macOS)
         .commands {

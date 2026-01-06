@@ -8,13 +8,10 @@ import SpriteKit
 /*
 Design:
 - Landscape layout assumed.
-- Left half of the screen acts as a virtual joystick for movement:
-  * On touch begin within left half, it'll become "leftTouch" and set a joystick origin.
-  * Dragging updates movement vector in range -1..1 based on joystick radius.
-- Right half of the screen is for aiming and shooting:
-  * Touching the right half becomes "rightTouch". While held, aimPoint() returns that location
-    and isShooting() returns true (continuous firing while holding).
-  * Moving the right touch updates aim position.
+- Two 4x4cm physical-sized control zones in bottom corners.
+- Left zone: virtual joystick for movement
+- Right zone: virtual joystick for aiming (auto-fires while touching)
+- Physical sizing ensures comfortable controls on all screen sizes.
 This class is only compiled for non-macOS platforms.
 */
 class TouchInput: InputController {
@@ -32,12 +29,11 @@ class TouchInput: InputController {
     private var rightRawPosition: CGPoint?
 
     // Virtual origin for right-side aiming area (CAMERA SPACE - viewport coordinates)
-    // When a right touch begins we anchor the aim joystick origin to this center so the
-    // finger->origin vector defines the aim direction that's then mapped relative to the player.
     private var rightOrigin: CGPoint?
 
-    // Joystick sensitivity / radius for both virtual sticks
-    private let joystickRadius: CGFloat = 60.0
+    // Cached physical dimensions (calculated once per scene setup)
+    private var controlZoneSize: CGFloat = 150  // Will be recalculated
+    private var joystickRadius: CGFloat = 60    // Will be recalculated
 
     // Debug visual nodes
     private var debugLeftRegion: SKSpriteNode?
@@ -48,83 +44,140 @@ class TouchInput: InputController {
 
     init(scene: SKScene? = nil) {
         self.scene = scene
+        calculatePhysicalDimensions()
     }
 
-    // Helper: classify a touch as bottom-left or bottom-right control rectangles.
+    // MARK: - Physical Size Calculation
+
+    /// Convert centimeters to points based on screen PPI
+    private static func cmToPoints(_ cm: CGFloat) -> CGFloat {
+        let inches = cm / 2.54
+        let ppi = estimateScreenPPI()
+        let pixels = inches * ppi
+        // Convert pixels to points using screen scale
+        return pixels / UIScreen.main.scale
+    }
+
+    /// Estimate screen PPI based on device type
+    private static func estimateScreenPPI() -> CGFloat {
+        let screenWidth = UIScreen.main.nativeBounds.width
+        let screenHeight = UIScreen.main.nativeBounds.height
+        let screenDiagonalPixels = sqrt(screenWidth * screenWidth + screenHeight * screenHeight)
+
+        // Detect device type by screen characteristics
+        let isIPad = UIDevice.current.userInterfaceIdiom == .pad
+
+        if isIPad {
+            // iPads: 264 PPI (standard), 264 PPI (Pro with ProMotion)
+            return 264
+        } else {
+            // iPhones vary more:
+            // - Standard Retina: 326 PPI
+            // - Plus/Max models: 401-458 PPI
+            // - Pro models: 460 PPI
+            // Use screen diagonal to estimate
+            if screenDiagonalPixels > 2500 {
+                // Larger Pro/Max phones
+                return 460
+            } else {
+                // Standard iPhones
+                return 326
+            }
+        }
+    }
+
+    /// Calculate control dimensions based on physical size constants
+    private func calculatePhysicalDimensions() {
+        controlZoneSize = Self.cmToPoints(GameConstants.touchControlSizeCm)
+        joystickRadius = controlZoneSize * GameConstants.touchJoystickRadiusRatio
+    }
+
+    // MARK: - Control Zone Geometry
+
+    /// Get left control zone rect (camera space) - bottom-left corner, no margin
+    private func leftZoneRect(in scene: SKScene) -> CGRect {
+        let x = -scene.size.width / 2
+        let y = -scene.size.height / 2
+        return CGRect(x: x, y: y, width: controlZoneSize, height: controlZoneSize)
+    }
+
+    /// Get right control zone rect (camera space) - bottom-right corner, no margin
+    private func rightZoneRect(in scene: SKScene) -> CGRect {
+        let x = scene.size.width / 2 - controlZoneSize
+        let y = -scene.size.height / 2
+        return CGRect(x: x, y: y, width: controlZoneSize, height: controlZoneSize)
+    }
+
+    /// Get left zone center (camera space)
+    private func leftZoneCenter(in scene: SKScene) -> CGPoint {
+        let rect = leftZoneRect(in: scene)
+        return CGPoint(x: rect.midX, y: rect.midY)
+    }
+
+    /// Get right zone center (camera space)
+    private func rightZoneCenter(in scene: SKScene) -> CGPoint {
+        let rect = rightZoneRect(in: scene)
+        return CGPoint(x: rect.midX, y: rect.midY)
+    }
+
+    // Helper: classify a touch as in left or right control zone.
     // Touch controls are in CAMERA space (viewport), not world space.
-    // We need to convert touch position from world coords to camera coords.
-    private func isBottomLeft(_ pos: CGPoint, in scene: SKScene) -> Bool {
-        // Convert world position to camera-relative position
+    // Takes world position, converts to camera space for zone check.
+    private func isInLeftZone(_ worldPos: CGPoint, in scene: SKScene) -> Bool {
         guard let camera = scene.camera else { return false }
-        let cameraPos = CGPoint(x: pos.x - camera.position.x, y: pos.y - camera.position.y)
-
-        let regionHeight = scene.size.height * 0.25
-        // Bottom region is from -size.height/2 to -size.height/2 + regionHeight
-        let bottomThreshold = -scene.size.height / 2 + regionHeight
-        // Left half is from -size.width/2 to 0
-        return cameraPos.x < 0 && cameraPos.y < bottomThreshold
+        let cameraPos = camera.convert(worldPos, from: scene)
+        return leftZoneRect(in: scene).contains(cameraPos)
     }
-    private func isBottomRight(_ pos: CGPoint, in scene: SKScene) -> Bool {
-        // Convert world position to camera-relative position
-        guard let camera = scene.camera else { return false }
-        let cameraPos = CGPoint(x: pos.x - camera.position.x, y: pos.y - camera.position.y)
 
-        let regionHeight = scene.size.height * 0.25
-        // Bottom region is from -size.height/2 to -size.height/2 + regionHeight
-        let bottomThreshold = -scene.size.height / 2 + regionHeight
-        // Right half is from 0 to size.width/2
-        return cameraPos.x >= 0 && cameraPos.y < bottomThreshold
+    private func isInRightZone(_ worldPos: CGPoint, in scene: SKScene) -> Bool {
+        guard let camera = scene.camera else { return false }
+        let cameraPos = camera.convert(worldPos, from: scene)
+        return rightZoneRect(in: scene).contains(cameraPos)
     }
 
     // Forward touch events from the scene. Scene should call these from its touch handlers.
     func touchesBegan(_ touches: Set<UITouch>, in scene: SKScene) {
         self.scene = scene
-        guard let camera = scene.camera else { return }
+        calculatePhysicalDimensions()  // Recalculate in case orientation changed
+        guard let camera = scene.camera, let view = scene.view else { return }
 
         for t in touches {
-            let worldPos = t.location(in: scene)
-            // Convert to camera-relative coordinates (same system as debug UI)
-            let cameraPos = CGPoint(x: worldPos.x - camera.position.x, y: worldPos.y - camera.position.y)
+            // Get touch in view coordinates, then convert properly to scene coordinates
+            let viewPos = t.location(in: view)
+            let worldPos = scene.convertPoint(fromView: viewPos)
+            // Use SpriteKit's proper coordinate conversion to camera space
+            let cameraPos = camera.convert(worldPos, from: scene)
 
-            if isBottomLeft(worldPos, in: scene) {
-                // Bottom-left — movement joystick
+            if isInLeftZone(worldPos, in: scene) {
+                // Left zone — movement joystick (floating origin at touch point)
                 if leftTouch == nil {
                     leftTouch = t
-                    // Anchor left joystick origin to the center of the left control rectangle (CAMERA SPACE)
-                    let regionHeight = scene.size.height * 0.25
-                    leftOrigin = CGPoint(
-                        x: -scene.size.width / 4,
-                        y: -scene.size.height / 2 + regionHeight / 2
-                    )
-                    // Store current position in CAMERA SPACE
+                    // Anchor joystick origin to where finger touches (CAMERA SPACE)
+                    leftOrigin = cameraPos
                     leftCurrent = cameraPos
                 }
-            } else if isBottomRight(worldPos, in: scene) {
-                // Bottom-right — aim / shoot (virtual stick anchored to right-area center)
+            } else if isInRightZone(worldPos, in: scene) {
+                // Right zone — aim / shoot (floating origin at touch point)
                 if rightTouch == nil {
                     rightTouch = t
-                    // Store position in CAMERA SPACE
+                    // Anchor origin to where finger touches (CAMERA SPACE)
+                    rightOrigin = cameraPos
                     rightRawPosition = cameraPos
-                    // Anchor origin to the center of the right control rectangle (CAMERA SPACE)
-                    let regionHeight = scene.size.height * 0.25
-                    rightOrigin = CGPoint(
-                        x: scene.size.width / 4,
-                        y: -scene.size.height / 2 + regionHeight / 2
-                    )
                 }
-            } else {
-                // Touches outside control areas are ignored (prevents accidental dragging)
             }
+            // Touches outside control zones are ignored (prevents accidental dragging)
         }
     }
 
     func touchesMoved(_ touches: Set<UITouch>, in scene: SKScene) {
-        guard let camera = scene.camera else { return }
+        guard let camera = scene.camera, let view = scene.view else { return }
 
         for t in touches {
-            let worldPos = t.location(in: scene)
-            // Convert to camera-relative coordinates
-            let cameraPos = CGPoint(x: worldPos.x - camera.position.x, y: worldPos.y - camera.position.y)
+            // Get touch in view coordinates, then convert properly to scene coordinates
+            let viewPos = t.location(in: view)
+            let worldPos = scene.convertPoint(fromView: viewPos)
+            // Use SpriteKit's proper coordinate conversion to camera space
+            let cameraPos = camera.convert(worldPos, from: scene)
 
             if let lt = leftTouch, t == lt {
                 // Store in CAMERA SPACE
@@ -202,6 +255,7 @@ class TouchInput: InputController {
 
     func setupDebugVisuals(in scene: SKScene) {
         self.scene = scene
+        calculatePhysicalDimensions()
 
         // Remove existing debug visuals if any
         debugLeftRegion?.removeFromParent()
@@ -216,20 +270,20 @@ class TouchInput: InputController {
             return
         }
 
-        // Debug regions: left/right halves at bottom 25% of screen
-        // Controls are in camera space (viewport coordinates)
-        let regionHeight = scene.size.height * 0.25
+        // Get zone rects for positioning
+        let leftRect = leftZoneRect(in: scene)
+        let rightRect = rightZoneRect(in: scene)
 
         // Left control region (movement joystick) - only show rectangle when debug enabled
         if GameConstants.showDebugControls {
-            let leftRegion = SKSpriteNode(color: .clear, size: CGSize(width: scene.size.width/2, height: regionHeight))
+            let leftRegion = SKSpriteNode(color: .clear, size: CGSize(width: controlZoneSize, height: controlZoneSize))
             leftRegion.anchorPoint = CGPoint(x: 0, y: 0)
-            leftRegion.position = CGPoint(x: -scene.size.width/2, y: -scene.size.height/2)
+            leftRegion.position = CGPoint(x: leftRect.minX, y: leftRect.minY)
             leftRegion.zPosition = 250
 
-            let leftStroke = SKShapeNode(rect: CGRect(origin: .zero, size: leftRegion.size))
+            let leftStroke = SKShapeNode(rect: CGRect(origin: .zero, size: leftRegion.size), cornerRadius: 8)
             leftStroke.strokeColor = .white
-            leftStroke.lineWidth = 3
+            leftStroke.lineWidth = 2
             leftStroke.fillColor = .clear
             leftStroke.position = .zero
             leftStroke.zPosition = 1
@@ -240,14 +294,14 @@ class TouchInput: InputController {
 
         // Right control region (aim/shoot) - only show rectangle when debug enabled
         if GameConstants.showDebugControls {
-            let rightRegion = SKSpriteNode(color: .clear, size: CGSize(width: scene.size.width/2, height: regionHeight))
+            let rightRegion = SKSpriteNode(color: .clear, size: CGSize(width: controlZoneSize, height: controlZoneSize))
             rightRegion.anchorPoint = CGPoint(x: 0, y: 0)
-            rightRegion.position = CGPoint(x: 0, y: -scene.size.height/2)
+            rightRegion.position = CGPoint(x: rightRect.minX, y: rightRect.minY)
             rightRegion.zPosition = 250
 
-            let rightStroke = SKShapeNode(rect: CGRect(origin: .zero, size: rightRegion.size))
+            let rightStroke = SKShapeNode(rect: CGRect(origin: .zero, size: rightRegion.size), cornerRadius: 8)
             rightStroke.strokeColor = .white
-            rightStroke.lineWidth = 3
+            rightStroke.lineWidth = 2
             rightStroke.fillColor = .clear
             rightStroke.position = .zero
             rightStroke.zPosition = 1
@@ -257,83 +311,53 @@ class TouchInput: InputController {
         }
 
         // Joystick knob (shows movement direction) - ALWAYS show
-        let knobShape = SKShapeNode(circleOfRadius: 18)
+        let knobShape = SKShapeNode(circleOfRadius: GameConstants.touchIndicatorRadius)
         knobShape.strokeColor = UIColor.white.withAlphaComponent(0.9)
         knobShape.lineWidth = 2
         knobShape.fillColor = UIColor.white.withAlphaComponent(0.06)
         knobShape.zPosition = 251
-        // Initial position at left region center (camera space)
-        knobShape.position = CGPoint(
-            x: -scene.size.width / 4,
-            y: -scene.size.height / 2 + regionHeight / 2
-        )
+        // Initial position at left zone center
+        knobShape.position = leftZoneCenter(in: scene)
         camera.addChild(knobShape)
         debugJoystickKnob = knobShape
 
         // Aim marker (shows aim direction) - ALWAYS show
-        let aimCircle = SKShapeNode(circleOfRadius: 16)
+        let aimCircle = SKShapeNode(circleOfRadius: GameConstants.touchAimIndicatorRadius)
         aimCircle.strokeColor = .red
         aimCircle.lineWidth = 2
         aimCircle.fillColor = UIColor.red.withAlphaComponent(0.12)
         aimCircle.zPosition = 251
-        // Initial position at right region center (camera space)
-        aimCircle.position = CGPoint(
-            x: scene.size.width / 4,
-            y: -scene.size.height / 2 + regionHeight / 2
-        )
+        // Initial position at right zone center
+        aimCircle.position = rightZoneCenter(in: scene)
         camera.addChild(aimCircle)
         debugAimMarker = aimCircle
 
-        // Debug line at bottom of screen - only when debug enabled
-        if GameConstants.showDebugControls && GameConstants.showDebugLine {
-            let lineY = -scene.size.height / 2 + regionHeight
-            let linePath = CGMutablePath()
-            linePath.move(to: CGPoint(x: -scene.size.width / 2, y: lineY))
-            linePath.addLine(to: CGPoint(x: scene.size.width / 2, y: lineY))
-
-            let line = SKShapeNode(path: linePath)
-            line.strokeColor = .yellow
-            line.lineWidth = 2
-            line.zPosition = 252
-            camera.addChild(line)
-            debugLine = line
-        }
+        // Debug line removed - no longer using full-width regions
     }
 
     func updateDebugVisuals(movementVector: CGVector, aimPoint: CGPoint?) {
         guard let scene = scene, let camera = scene.camera else { return }
 
-        let regionHeight = scene.size.height * 0.25
-
-        // Update joystick knob position based on movement vector (camera space)
+        // Update joystick knob position - under finger when active, zone center when idle
         if let knob = debugJoystickKnob {
-            let center = CGPoint(
-                x: -scene.size.width / 4,
-                y: -scene.size.height / 2 + regionHeight / 2
-            )
-            let radius: CGFloat = 60.0
-            knob.position = CGPoint(
-                x: center.x + movementVector.dx * radius,
-                y: center.y + movementVector.dy * radius
-            )
+            if let fingerPos = leftCurrent {
+                // Active: put circle under finger
+                knob.position = fingerPos
+            } else {
+                // Idle: show at zone center
+                knob.position = leftZoneCenter(in: scene)
+            }
         }
 
         // Update aim marker position (convert world aim point to camera space)
         if let aimMarker = debugAimMarker {
             if let worldAim = aimPoint {
-                // Convert world coordinates to camera-relative coordinates
-                let cameraRelativeAim = CGPoint(
-                    x: worldAim.x - camera.position.x,
-                    y: worldAim.y - camera.position.y
-                )
+                // Use proper SpriteKit coordinate conversion
+                let cameraRelativeAim = camera.convert(worldAim, from: scene)
                 aimMarker.position = cameraRelativeAim
             } else {
-                // Default to right region center when not aiming (camera space)
-                let rightCenter = CGPoint(
-                    x: scene.size.width / 4,
-                    y: -scene.size.height / 2 + regionHeight / 2
-                )
-                aimMarker.position = rightCenter
+                // Default to right zone center when not aiming (camera space)
+                aimMarker.position = rightZoneCenter(in: scene)
             }
         }
     }
