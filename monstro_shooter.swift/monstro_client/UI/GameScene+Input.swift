@@ -153,6 +153,18 @@ extension GameScene {
             return
         }
 
+        // Check if pause button was tapped (convert to camera-relative coordinates)
+        if let touch = touches.first, let camera = camera {
+            let sceneLocation = touch.location(in: self)
+            let cameraLocation = CGPoint(
+                x: sceneLocation.x - camera.position.x,
+                y: sceneLocation.y - camera.position.y
+            )
+            if renderer?.hudCamera.handleTouch(at: cameraLocation) == true {
+                return  // Pause button handled the touch
+            }
+        }
+
         if let tInput = inputController as? TouchInput {
             tInput.touchesBegan(touches, in: self)
         }

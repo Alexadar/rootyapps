@@ -158,6 +158,83 @@ struct UIStyleGuide {
         static let topBarHeight: CGFloat = 64.0
         static let bottomBarHeight: CGFloat = 140.0
     }
+
+    // MARK: - HUD Panel Styles
+    struct HUD {
+        static let panelWidth: CGFloat = 140
+        static let panelHeight: CGFloat = 40
+        static let cornerRadius: CGFloat = 8
+        static let backgroundColor = Colors.deepSpaceBlue
+        static let backgroundOpacity: CGFloat = 0.7
+        static let borderColor = Colors.white
+        static let borderWidth: CGFloat = 2
+        static let fontSize: CGFloat = 18
+        static let fontName = "System-Bold"
+        static let textColor = Colors.white
+    }
+
+    // MARK: - Pause Menu Styles
+    struct PauseMenu {
+        // Panel
+        static let panelBackgroundColor = Colors.deepSpaceBlue
+        static let panelBackgroundOpacity: CGFloat = 0.95
+        static let panelBorderColor = Colors.cyanAccent
+        static let panelBorderWidth: CGFloat = 3
+        static let panelCornerRadius: CGFloat = 20
+        static let panelWidth: CGFloat = 400
+        static let panelHeight: CGFloat = 350
+
+        // Title
+        static let titleFontSize: CGFloat = 48
+        static let titleFontName = "System-Bold"
+        static let titleColor = Colors.white
+
+        // Buttons
+        static let buttonFontSize: CGFloat = 24
+        static let buttonFontName = "System-Bold"
+        static let buttonTextColor = Colors.white
+        static let buttonHighlightColor = Colors.brightGreen
+        static let buttonBackgroundOpacity: CGFloat = 0.3
+        static let buttonBorderWidth: CGFloat = 2
+        static let buttonCornerRadius: CGFloat = 12
+        static let buttonWidth: CGFloat = 280
+        static let buttonHeight: CGFloat = 50
+        static let buttonSpacing: CGFloat = 20
+    }
+
+    // MARK: - Game Over Styles
+    struct GameOver {
+        static let titleFontSize: CGFloat = 64
+        static let titleFontName = "System-Bold"
+        static let titleColor = Colors.white
+        static let victoryColor = Colors.gold
+        static let deathColor = Colors.white
+    }
+
+    // MARK: - Tutorial Styles
+    struct Tutorial {
+        static let fontSize: CGFloat = 18
+        static let fontName = "System-Bold"
+        static let textColor = Colors.white
+        static let backgroundColor = Colors.deepSpaceBlue
+        static let backgroundOpacity: CGFloat = 0.7
+        static let borderColor = Colors.white
+        static let borderWidth: CGFloat = 2
+        static let cornerRadius: CGFloat = 8
+        static let paddingHorizontal: CGFloat = 20
+        static let paddingVertical: CGFloat = 10
+    }
+
+    // MARK: - Dropdown Styles (SwiftUI)
+    struct Dropdown {
+        static let backgroundColor = "#0A1428"
+        static let backgroundOpacity: CGFloat = 0.9
+        static let borderColor = "#00FF99"
+        static let borderWidth: CGFloat = 2
+        static let textColor = "#FFFFFF"
+        static let highlightColor = "#00FF99"
+        static let accentColor = "#00D9FF"
+    }
 }
 
 // MARK: - PlatformColor Hex Extension

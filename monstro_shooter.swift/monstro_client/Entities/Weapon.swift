@@ -117,6 +117,12 @@ class Weapon {
         startReload(at: currentTime)
     }
 
+    /// Restore ammo state (for game state persistence)
+    func restoreAmmo(_ ammo: Int) {
+        currentAmmo = min(ammo, config.magazineSize)
+        isReloading = false
+    }
+
     /// Get reload progress (0.0 to 1.0)
     func getReloadProgress(currentTime: TimeInterval) -> CGFloat {
         guard isReloading else { return 1.0 }

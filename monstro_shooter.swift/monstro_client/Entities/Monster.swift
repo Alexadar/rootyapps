@@ -9,6 +9,7 @@ import UIKit
 /// Monster base class with generalized animation support
 class Monster {
     var sprite: SKSpriteNode!
+    var monsterTypeID: Int = 0  // Type ID for serialization
     var speed: CGFloat = GameConstants.monsterSpeed
     var boxSize: CGSize = GameConstants.monsterBoxSize
     var rotationOffset: CGFloat = GameConstants.monsterRotationOffset

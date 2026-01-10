@@ -97,6 +97,9 @@ class GameScene: SKScene {
         // Reset game state to ensure clean start
         resetGame()
 
+        // Try to restore saved game state (if app was terminated while backgrounded)
+        restoreGameState()
+
         #if !os(macOS)
         // Enable multitouch so movement and shooting can work simultaneously on mobile.
         view.isMultipleTouchEnabled = true
@@ -312,7 +315,8 @@ class GameScene: SKScene {
         guard !isGameOver else { return }
         isGameOver = true
 
-        print("Player died! Game over.")
+        // Clear saved state - game is over
+        clearSavedGameState()
 
         // Don't pause scene, just stop game logic via isGameOver flag
 
@@ -348,7 +352,10 @@ class GameScene: SKScene {
     func handleVictory() {
         guard !isGameOver else { return }
         isGameOver = true
-        print("Victory! All monsters defeated.")
+
+        // Clear saved state - game is over
+        clearSavedGameState()
+
         showGameOverUI(mode: .victory)
     }
 
@@ -367,6 +374,9 @@ class GameScene: SKScene {
     }
 
     func returnToMenu() {
+        // Clear saved state when returning to menu
+        clearSavedGameState()
+
         #if os(macOS)
         // Restore cursor before leaving game
         if isCursorHidden {

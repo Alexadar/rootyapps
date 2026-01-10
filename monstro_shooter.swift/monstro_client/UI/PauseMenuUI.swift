@@ -42,20 +42,20 @@ class PauseMenuUI {
         containerNode.addChild(backgroundOverlay)
 
         // Panel
-        let panelWidth: CGFloat = 400
+        let panelWidth: CGFloat = UIStyleGuide.PauseMenu.panelWidth
         let panelHeight: CGFloat = 400
-        panelNode = SKShapeNode(rectOf: CGSize(width: panelWidth, height: panelHeight), cornerRadius: 20)
-        panelNode.fillColor = SKColor(red: 0.04, green: 0.08, blue: 0.16, alpha: 0.95)
-        panelNode.strokeColor = SKColor(red: 0.0, green: 0.85, blue: 1.0, alpha: 1.0)
-        panelNode.lineWidth = 3
+        panelNode = SKShapeNode(rectOf: CGSize(width: panelWidth, height: panelHeight), cornerRadius: UIStyleGuide.PauseMenu.panelCornerRadius)
+        panelNode.fillColor = UIStyleGuide.PauseMenu.panelBackgroundColor.withAlphaComponent(UIStyleGuide.PauseMenu.panelBackgroundOpacity)
+        panelNode.strokeColor = UIStyleGuide.PauseMenu.panelBorderColor
+        panelNode.lineWidth = UIStyleGuide.PauseMenu.panelBorderWidth
         panelNode.zPosition = 2
         containerNode.addChild(panelNode)
 
         // Title
         titleLabel = SKLabelNode(text: "PAUSED")
-        titleLabel.fontName = "Helvetica-Bold"
-        titleLabel.fontSize = 48
-        titleLabel.fontColor = .white
+        titleLabel.fontName = UIStyleGuide.PauseMenu.titleFontName
+        titleLabel.fontSize = UIStyleGuide.PauseMenu.titleFontSize
+        titleLabel.fontColor = UIStyleGuide.PauseMenu.titleColor
         titleLabel.position = CGPoint(x: 0, y: 120)
         titleLabel.zPosition = 3
         containerNode.addChild(titleLabel)
@@ -69,9 +69,9 @@ class PauseMenuUI {
         containerNode.addChild(resumeButton)
 
         resumeLabel = SKLabelNode(text: "RESUME")
-        resumeLabel.fontName = "Helvetica-Bold"
-        resumeLabel.fontSize = 24
-        resumeLabel.fontColor = .white
+        resumeLabel.fontName = UIStyleGuide.PauseMenu.buttonFontName
+        resumeLabel.fontSize = UIStyleGuide.PauseMenu.buttonFontSize
+        resumeLabel.fontColor = UIStyleGuide.PauseMenu.buttonTextColor
         resumeLabel.verticalAlignmentMode = .center
         resumeLabel.zPosition = 4
         resumeButton.addChild(resumeLabel)
@@ -83,9 +83,9 @@ class PauseMenuUI {
         containerNode.addChild(menuButton)
 
         menuLabel = SKLabelNode(text: isDebugMode ? "BACK" : "MAIN MENU")
-        menuLabel.fontName = "Helvetica-Bold"
-        menuLabel.fontSize = 24
-        menuLabel.fontColor = .white
+        menuLabel.fontName = UIStyleGuide.PauseMenu.buttonFontName
+        menuLabel.fontSize = UIStyleGuide.PauseMenu.buttonFontSize
+        menuLabel.fontColor = UIStyleGuide.PauseMenu.buttonTextColor
         menuLabel.verticalAlignmentMode = .center
         menuLabel.zPosition = 4
         menuButton.addChild(menuLabel)
@@ -97,9 +97,9 @@ class PauseMenuUI {
         containerNode.addChild(exitButton)
 
         exitLabel = SKLabelNode(text: "EXIT")
-        exitLabel.fontName = "Helvetica-Bold"
-        exitLabel.fontSize = 24
-        exitLabel.fontColor = .white
+        exitLabel.fontName = UIStyleGuide.PauseMenu.buttonFontName
+        exitLabel.fontSize = UIStyleGuide.PauseMenu.buttonFontSize
+        exitLabel.fontColor = UIStyleGuide.PauseMenu.buttonTextColor
         exitLabel.verticalAlignmentMode = .center
         exitLabel.zPosition = 4
         exitButton.addChild(exitLabel)
@@ -109,10 +109,10 @@ class PauseMenuUI {
     }
 
     private func createButton(size: CGSize) -> SKShapeNode {
-        let button = SKShapeNode(rectOf: size, cornerRadius: 10)
-        button.fillColor = SKColor(red: 0.0, green: 1.0, blue: 0.6, alpha: 0.3)
-        button.strokeColor = SKColor(red: 0.0, green: 1.0, blue: 0.6, alpha: 1.0)
-        button.lineWidth = 2
+        let button = SKShapeNode(rectOf: size, cornerRadius: UIStyleGuide.PauseMenu.buttonCornerRadius)
+        button.fillColor = UIStyleGuide.PauseMenu.buttonHighlightColor.withAlphaComponent(UIStyleGuide.PauseMenu.buttonBackgroundOpacity)
+        button.strokeColor = UIStyleGuide.PauseMenu.buttonHighlightColor
+        button.lineWidth = UIStyleGuide.PauseMenu.buttonBorderWidth
         return button
     }
 

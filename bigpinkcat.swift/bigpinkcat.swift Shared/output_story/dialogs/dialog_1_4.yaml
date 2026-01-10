@@ -1,0 +1,138 @@
+- guidelines:
+  - Map this spacetime's topology first
+  - Astronaut decides to go through exploration of this spacetime first
+  - Cat says that it is the least meaningful option but okay
+  - Astronaut asked why, cat says that this analysis would be obsoleete next time they met, but they will never met again so maybe ok for now
+  - Astronaut asked how he know it, cat says, if he will met him again it will be not here, not a cat, and not this way so why to map?
+  - Astronaut says he agrees, because its unlogical, means it fits maybe so he took his multimeter to analyze around
+  - Multimeter showed they are moving out and in black hole event horizon
+  - Cat says, yeah can be, now this spacetime is in turbulence between astronauts and something noone wants to know
+  - Why noone wants to know? Im curious on new realms
+  - Cat says - most probably you do not want to, its beyound your threshold to perceive horrors, so lets do fun stuff lets try to ride a resonanse wave tou bounce up to yours
+  - Options of phase_4_option_2:
+    - Create a Phase Shift Snowboard to surf the resonance waves
+    - Create a Spatial-Temporal slingshot to launch through the turbulence
+    - Create a Quantum Paraglider to glide on the spacetime currents
+    - Create a titanium boat with a warp core to float through the turbulence
+- story_dialogs:
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Before we do anything with the crystal, I want to understand where I am. Let me map this place first.
+    id: 0
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: That's the least meaningful option. But okay.
+    id: 1
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Least meaningful? Knowledge is never meaningless.
+    id: 2
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Any analysis you make will be obsolete the next time we meet. But we'll never meet again, so perhaps it's fine for now.
+    id: 3
+  - character_id: 1
+    character_name: Astronaut
+    character_text: How do you know we'll never meet again?
+    id: 4
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: If we meet again, it won't be here. I won't be a cat. You won't be you in any way that matters. So why map a place neither of us will return to?
+    id: 5
+  - character_id: 1
+    character_name: Astronaut
+    character_text: That's completely illogical.
+    id: 6
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Yes.
+    id: 7
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Which means it probably fits here. Fine. Let me get my multimeter.
+    id: 8
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Your instruments work here?
+    id: 9
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Apparently. Getting readings now. This is... that can't be right.
+    id: 10
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: What does it say?
+    id: 11
+  - character_id: 1
+    character_name: Astronaut
+    character_text: According to this, we're oscillating across a black hole event horizon. Simultaneously inside and outside. Repeatedly.
+    id: 12
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: That sounds about right.
+    id: 13
+  - character_id: 1
+    character_name: Astronaut
+    character_text: That's physically impossible. We'd be spaghettified. We'd be dead.
+    id: 14
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: By your physics. Here, we're in turbulence—the boundary layer between your spacetime and something else.
+    id: 15
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Something else? What's on the other side?
+    id: 16
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Something no one wants to know about.
+    id: 17
+  - character_id: 1
+    character_name: Astronaut
+    character_text: I'm curious. I want to know. That's literally my job—exploring new realms.
+    id: 18
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: No, you don't. Trust me. It's beyond your perceptual threshold. Your mind would translate it as horror, and the horror would stay with you. Let's do something fun instead.
+    id: 19
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Fun? We're oscillating through a black hole event horizon.
+    id: 20
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Exactly. Turbulence means resonance waves. We can ride them—bounce you back up to your continuum. It's actually enjoyable, if you build the right vehicle.
+    id: 21
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Build a vehicle. Out of what?
+    id: 22
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Intent, mostly. The shape matters more than the material here. I can guide the construction, but you choose the form. Different shapes ride the waves differently.
+    id: 23
+  - character_id: 1
+    character_name: Astronaut
+    character_text: What are my options?
+    id: 24
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: A phase shift snowboard—agile, fast, requires balance. A spatial-temporal slingshot—violent acceleration, minimal control. A quantum paraglider—slow and graceful, reads the currents. Or a titanium boat with a warp core—stable but heavy, brute force approach.
+    id: 25
+  - character_id: 1
+    character_name: Astronaut
+    character_text: A titanium boat. In spacetime turbulence.
+    id: 26
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: You asked for options. I gave you options. The absurdity is consistent, at least.
+    id: 27
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Fair point. Let me think about which way I want to possibly die.
+    id: 28
+    options:
+    - option_text: Phase Shift Snowboard—surf the resonance waves
+    - option_text: Spatial-Temporal Slingshot—launch through turbulence
+    - option_text: Quantum Paraglider—glide on spacetime currents
+    - option_text: Titanium Boat with Warp Core—float through turbulence

@@ -3,7 +3,7 @@ import SpriteKit
 // MARK: - Monster Management
 extension GameScene {
 
-    /// Spawn a monster at the edge of the spawn box around the player
+    /// Spawn a monster at the edge of the viewport (just off-screen)
     func spawnMonster(monsterTypeID: Int) {
         // Guard player — monsters need a target; skip spawning if player missing.
         guard let playerEntity = playerEntity else { return }
@@ -14,35 +14,41 @@ extension GameScene {
         }
 
         let monster = Monster(config: config)
+        monster.monsterTypeID = monsterTypeID
 
-        // Spawn at random edge of spawn box (not screen edges!)
-        // Spawn box follows the player but is bounded by map
+        // Spawn just outside visible viewport (adjusted for camera scale)
+        // This makes monsters appear faster than spawning from far away
         let playerPos = playerEntity.sprite.position
-        let spawnBoxHalfWidth = currentSpawnBoxSize.width / 2
-        let spawnBoxHalfHeight = currentSpawnBoxSize.height / 2
+        let viewportSize = self.size
+        let cameraScale = GameConstants.cameraScale
+        let spawnBuffer: CGFloat = 100  // Spawn 100 points outside visible area
+
+        // Calculate spawn box based on what's visible on screen
+        let spawnBoxHalfWidth = (viewportSize.width / 2) / cameraScale + spawnBuffer
+        let spawnBoxHalfHeight = (viewportSize.height / 2) / cameraScale + spawnBuffer
 
         let spawnSide = Int.random(in: 0...3)
         var spawnPosition: CGPoint
 
         switch spawnSide {
-        case 0: // Top edge of spawn box
+        case 0: // Top edge
             spawnPosition = CGPoint(
                 x: playerPos.x + CGFloat.random(in: -spawnBoxHalfWidth...spawnBoxHalfWidth),
-                y: playerPos.y + spawnBoxHalfHeight + 50
+                y: playerPos.y + spawnBoxHalfHeight
             )
-        case 1: // Right edge of spawn box
+        case 1: // Right edge
             spawnPosition = CGPoint(
-                x: playerPos.x + spawnBoxHalfWidth + 50,
+                x: playerPos.x + spawnBoxHalfWidth,
                 y: playerPos.y + CGFloat.random(in: -spawnBoxHalfHeight...spawnBoxHalfHeight)
             )
-        case 2: // Bottom edge of spawn box
+        case 2: // Bottom edge
             spawnPosition = CGPoint(
                 x: playerPos.x + CGFloat.random(in: -spawnBoxHalfWidth...spawnBoxHalfWidth),
-                y: playerPos.y - spawnBoxHalfHeight - 50
+                y: playerPos.y - spawnBoxHalfHeight
             )
-        default: // Left edge of spawn box
+        default: // Left edge
             spawnPosition = CGPoint(
-                x: playerPos.x - spawnBoxHalfWidth - 50,
+                x: playerPos.x - spawnBoxHalfWidth,
                 y: playerPos.y + CGFloat.random(in: -spawnBoxHalfHeight...spawnBoxHalfHeight)
             )
         }
@@ -51,8 +57,6 @@ extension GameScene {
         // Add monster to world layer
         renderer?.world.worldLayer.addChild(monster.sprite)
         monsters.append(monster)
-
-        print("Monster spawned at: \(spawnPosition), sprite added to scene, total monsters: \(monsters.count)")
     }
 
     /// Process wave spawning based on current level and elapsed time
@@ -98,7 +102,6 @@ extension GameScene {
 
     /// Spawn a specific wave of monsters
     private func spawnWave(_ wave: SpawnWave, waveIndex: Int, currentTime: TimeInterval) {
-        print("Spawning wave \(waveIndex + 1): \(wave.monsterCount) monsters")
 
         // Spawn monsters over time based on spawn interval
         for i in 0..<wave.monsterCount {
@@ -138,7 +141,7 @@ extension GameScene {
         guard let player = playerEntity else { return }
 
         let playerPos = player.sprite.position
-        let damageRange = player.hitboxRadius + 20.0  // Slightly larger than hitbox
+        let playerRadius = player.hitboxRadius
 
         // Track which monsters are currently touching
         var currentlyTouching = Set<ObjectIdentifier>()
@@ -151,10 +154,15 @@ extension GameScene {
             // Calculate distance to player
             let dx = playerPos.x - monster.sprite.position.x
             let dy = playerPos.y - monster.sprite.position.y
-            let distance = sqrt(dx*dx + dy*dy)
+            let distanceSquared = dx*dx + dy*dy
 
-            // Check if monster is in damage range
-            if distance <= damageRange {
+            // Damage range accounts for both player and monster sizes + small buffer
+            let monsterRadius = monster.boxSize.width / 2.0
+            let damageRange = playerRadius + monsterRadius + 5.0
+            let damageRangeSquared = damageRange * damageRange
+
+            // Check if monster is in damage range (use squared to avoid sqrt)
+            if distanceSquared <= damageRangeSquared {
                 currentlyTouching.insert(monsterId)
             }
         }
@@ -173,7 +181,6 @@ extension GameScene {
 
             if immediateDamage > 0 {
                 player.takeDamage(Double(immediateDamage))
-                print("Initial hit from \(newlyTouching.count) monsters! Damage: \(immediateDamage), Health: \(player.health)")
 
                 // Check if player died
                 if player.health <= 0 {
@@ -204,7 +211,6 @@ extension GameScene {
 
             if totalDamage > 0 {
                 player.takeDamage(Double(totalDamage))
-                print("Periodic damage from \(touchingMonsters.count) monsters! Damage: \(totalDamage), Health: \(player.health)")
 
                 // Check if player died
                 if player.health <= 0 {

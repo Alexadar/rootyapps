@@ -147,4 +147,22 @@ class TutorialController {
         hintCooldownUntil = 0
         isInitialized = false  // Re-initialize on next update
     }
+
+    // MARK: - State Persistence
+
+    /// Get current completion state for saving
+    func getState() -> (moveShown: Bool, shootShown: Bool, killShown: Bool) {
+        return (
+            completedActions.contains(.move),
+            completedActions.contains(.shoot),
+            completedActions.contains(.kill)
+        )
+    }
+
+    /// Restore completion state from saved data
+    func restoreState(moveShown: Bool, shootShown: Bool, killShown: Bool) {
+        if moveShown { completedActions.insert(.move) }
+        if shootShown { completedActions.insert(.shoot) }
+        if killShown { completedActions.insert(.kill) }
+    }
 }

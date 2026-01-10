@@ -16,6 +16,12 @@ class GameHUD {
     private var ammoLabel: SKLabelNode?
     private var healthLabel: SKLabelNode?
 
+    // Pause button (iOS/iPadOS only)
+    #if !os(macOS)
+    private var pauseButton: SKShapeNode?
+    var onPauseTapped: (() -> Void)?
+    #endif
+
     init(scene: SKScene) {
         hudLayer = SKNode()
         hudLayer.zPosition = GameConstants.hudZPosition
@@ -80,7 +86,50 @@ class GameHUD {
             text: "100",
             label: &healthLabel
         )
+
+        // Create pause button (iOS/iPadOS only)
+        #if !os(macOS)
+        createPauseButton(viewportSize: viewportSize, topY: topY)
+        #endif
     }
+
+    #if !os(macOS)
+    /// Create pause button for touch devices
+    private func createPauseButton(viewportSize: CGSize, topY: CGFloat) {
+        let buttonSize: CGFloat = 44  // Touch-friendly size
+        let cornerRadius: CGFloat = 8
+
+        // Position at top-center
+        let button = SKShapeNode(rectOf: CGSize(width: buttonSize, height: buttonSize), cornerRadius: cornerRadius)
+        button.fillColor = UIStyleGuide.Colors.deepSpaceBlue.withAlphaComponent(0.7)
+        button.strokeColor = UIStyleGuide.Colors.white
+        button.lineWidth = 2
+        button.position = CGPoint(x: 0, y: topY - buttonSize / 2)
+        button.name = "pauseButton"
+        hudLayer.addChild(button)
+        pauseButton = button
+
+        // Pause icon (two vertical bars)
+        let icon = SKLabelNode(fontNamed: "System-Bold")
+        icon.text = "❚❚"
+        icon.fontSize = 18
+        icon.fontColor = UIStyleGuide.Colors.white
+        icon.horizontalAlignmentMode = .center
+        icon.verticalAlignmentMode = .center
+        icon.position = button.position
+        hudLayer.addChild(icon)
+    }
+
+    /// Check if a point hits the pause button
+    func handleTouch(at point: CGPoint) -> Bool {
+        guard let button = pauseButton else { return false }
+        if button.contains(point) {
+            onPauseTapped?()
+            return true
+        }
+        return false
+    }
+    #endif
 
     /// Create a simple panel with text
     private func createPanel(

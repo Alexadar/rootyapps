@@ -76,8 +76,6 @@ class Player {
 
         health -= Int(actualDamage)
         if health < 0 { health = 0 }
-
-        print("[Player] Took \(Int(actualDamage)) damage (from \(Int(damage)), defense: \(defense)). Health: \(health)/\(maxHealth)")
     }
 
     /// Apply exoskeleton configuration to player

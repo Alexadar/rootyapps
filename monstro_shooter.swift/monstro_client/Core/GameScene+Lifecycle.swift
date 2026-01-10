@@ -31,6 +31,13 @@ extension GameScene {
             NSApplication.shared.terminate(nil)
             #endif
         }
+
+        // Wire up pause button for touch devices
+        #if !os(macOS)
+        renderer?.hudCamera.onPauseTapped = { [weak self] in
+            self?.pauseGame()
+        }
+        #endif
     }
 
     func setupTutorial() {
@@ -90,6 +97,8 @@ extension GameScene {
     // Background / foreground handlers to pause/resume rendering and avoid Metal submission from background.
     #if !os(macOS)
     @objc func appDidEnterBackground() {
+        // Save game state before backgrounding
+        saveGameState()
         // Pause the SKView to stop metal work when app is backgrounded.
         self.view?.isPaused = true
     }
@@ -97,9 +106,13 @@ extension GameScene {
     @objc func appWillEnterForeground() {
         // Resume rendering when the app returns to foreground.
         self.view?.isPaused = false
+        // Try to restore game state (handles case where app was terminated)
+        // Note: State is restored in didMove if scene was recreated
     }
     #else
     @objc func appWillResignActive(_ notification: Notification) {
+        // Save game state before losing focus
+        saveGameState()
         self.view?.isPaused = true
     }
 
