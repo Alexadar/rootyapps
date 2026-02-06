@@ -1,5 +1,5 @@
 {
-    "mapFilename": "map_0014",
+    "mapFilenames": ["map_0014", "map_0016", "map_0018", "map_0020", "map_0022", "map_0024", "map_0026", "map_0028", "map_0030", "map_0032"],
     "weaponId": 1,
     "exoskeletonId": 1
 }

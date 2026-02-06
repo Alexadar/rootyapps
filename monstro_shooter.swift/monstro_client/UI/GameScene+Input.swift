@@ -16,7 +16,9 @@ extension GameScene {
             #if os(macOS)
             inputController = KeyboardMouseInput()
             #else
-            inputController = TouchInput(scene: self)
+            let touchInput = TouchInput(scene: self)
+            touchInput.swipeDelegate = self
+            inputController = touchInput
             #endif
         }
 
@@ -150,6 +152,13 @@ extension GameScene {
         if isGameOver, let touch = touches.first {
             let location = touch.location(in: self)
             gameOverUI?.handleTouch(at: location)
+            return
+        }
+
+        // Check if pause menu should handle this
+        if isGamePaused, let touch = touches.first {
+            let location = touch.location(in: self)
+            _ = pauseMenuUI?.handleTouch(at: location)
             return
         }
 

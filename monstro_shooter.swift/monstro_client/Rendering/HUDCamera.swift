@@ -20,8 +20,13 @@ class HUDCamera {
     // Pause button (iOS/iPadOS only)
     #if !os(macOS)
     private var pauseButton: SKShapeNode?
+    private var pauseIcon: SKLabelNode?
     var onPauseTapped: (() -> Void)?
     #endif
+
+    // Map name overlay
+    private var mapNameLabel: SKLabelNode?
+    private var mapNameShadow: SKLabelNode?
 
     // Parallax effect settings
     private var currentOffset: CGPoint = .zero
@@ -99,7 +104,7 @@ class HUDCamera {
     }
 
     #if !os(macOS)
-    /// Create pause button for touch devices
+    /// Create pause button for touch devices (starts hidden, shown after map name fades)
     private func createPauseButton(viewportSize: CGSize, topY: CGFloat) {
         let buttonSize: CGFloat = 44  // Touch-friendly size
         let cornerRadius: CGFloat = 8
@@ -111,6 +116,7 @@ class HUDCamera {
         button.lineWidth = 2
         button.position = CGPoint(x: 0, y: topY - buttonSize / 2)
         button.name = "pauseButton"
+        button.alpha = 0  // Start hidden
         hudLayer.addChild(button)
         pauseButton = button
 
@@ -122,7 +128,9 @@ class HUDCamera {
         icon.horizontalAlignmentMode = .center
         icon.verticalAlignmentMode = .center
         icon.position = button.position
+        icon.alpha = 0  // Start hidden
         hudLayer.addChild(icon)
+        pauseIcon = icon
     }
 
     /// Check if a point (in HUD layer coordinates) hits the pause button
@@ -227,5 +235,70 @@ class HUDCamera {
     /// Reposition HUD when viewport changes
     func repositionForViewport(_ viewportSize: CGSize) {
         setup(viewportSize: viewportSize)
+    }
+
+    // MARK: - Map Name Overlay
+
+    /// Show map name centered on screen, then fade out and reveal pause button
+    func showMapName(_ name: String, viewportSize: CGSize) {
+        // Remove any existing map name nodes
+        mapNameLabel?.removeFromParent()
+        mapNameShadow?.removeFromParent()
+
+        // Shadow label
+        let shadow = SKLabelNode(fontNamed: "System-Bold")
+        shadow.text = name
+        shadow.fontSize = 28
+        shadow.fontColor = .black
+        shadow.horizontalAlignmentMode = .center
+        shadow.verticalAlignmentMode = .center
+        shadow.position = CGPoint(x: 2, y: -2)
+        shadow.zPosition = GameConstants.hudZPosition + 10
+        shadow.alpha = 0
+        hudLayer.addChild(shadow)
+        mapNameShadow = shadow
+
+        // Main label
+        let label = SKLabelNode(fontNamed: "System-Bold")
+        label.text = name
+        label.fontSize = 28
+        label.fontColor = .white
+        label.horizontalAlignmentMode = .center
+        label.verticalAlignmentMode = .center
+        label.position = .zero
+        label.zPosition = GameConstants.hudZPosition + 11
+        label.alpha = 0
+        hudLayer.addChild(label)
+        mapNameLabel = label
+
+        // Animation: fade in → hold → fade out → show pause button
+        let fadeIn = SKAction.fadeIn(withDuration: 0.3)
+        let hold = SKAction.wait(forDuration: 1.5)
+        let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+        let sequence = SKAction.sequence([fadeIn, hold, fadeOut])
+
+        shadow.run(sequence)
+        label.run(sequence) { [weak self] in
+            self?.mapNameLabel?.removeFromParent()
+            self?.mapNameShadow?.removeFromParent()
+            self?.showPauseButton()
+        }
+    }
+
+    /// Fade in the pause button
+    func showPauseButton() {
+        #if !os(macOS)
+        let fadeIn = SKAction.fadeIn(withDuration: 0.3)
+        pauseButton?.run(fadeIn)
+        pauseIcon?.run(fadeIn)
+        #endif
+    }
+
+    /// Immediately show pause button (skip animation)
+    func showPauseButtonImmediate() {
+        #if !os(macOS)
+        pauseButton?.alpha = 1
+        pauseIcon?.alpha = 1
+        #endif
     }
 }

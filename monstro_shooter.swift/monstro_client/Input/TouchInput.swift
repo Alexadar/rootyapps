@@ -42,6 +42,17 @@ class TouchInput: InputController {
     private var debugAimMarker: SKNode?
     private var debugLine: SKShapeNode?
 
+    // MARK: - Swipe Detection
+    private var swipeTouch: UITouch?
+    private var swipeStartPosition: CGPoint?
+    private var swipeStartTime: TimeInterval?
+    weak var swipeDelegate: SwipeDelegate?
+
+    // Swipe detection thresholds (vertical TikTok-style)
+    private let swipeMinDistance: CGFloat = 80.0      // Minimum vertical distance
+    private let swipeMaxDuration: TimeInterval = 0.5  // Maximum swipe duration
+    private let swipeMaxHorizontal: CGFloat = 100.0   // Maximum horizontal deviation
+
     init(scene: SKScene? = nil) {
         self.scene = scene
         calculatePhysicalDimensions()
@@ -164,8 +175,15 @@ class TouchInput: InputController {
                     rightOrigin = cameraPos
                     rightRawPosition = cameraPos
                 }
+            } else {
+                // Touch outside control zones - potential swipe
+                // Only allow swipe if player is idle (not moving or shooting)
+                if swipeTouch == nil && leftTouch == nil && rightTouch == nil {
+                    swipeTouch = t
+                    swipeStartPosition = viewPos
+                    swipeStartTime = CACurrentMediaTime()
+                }
             }
-            // Touches outside control zones are ignored (prevents accidental dragging)
         }
     }
 
@@ -190,6 +208,61 @@ class TouchInput: InputController {
     }
 
     func touchesEnded(_ touches: Set<UITouch>, in scene: SKScene) {
+        guard let view = scene.view else { return }
+
+        for t in touches {
+            if let lt = leftTouch, t == lt {
+                leftTouch = nil
+                leftCurrent = nil
+            } else if let rt = rightTouch, t == rt {
+                rightTouch = nil
+                rightRawPosition = nil
+                rightOrigin = nil
+            } else if let st = swipeTouch, t == st {
+                // Check for vertical swipe gesture (TikTok-style)
+                if let startPos = swipeStartPosition,
+                   let startTime = swipeStartTime {
+                    let endPos = t.location(in: view)
+                    let duration = CACurrentMediaTime() - startTime
+                    let deltaX = endPos.x - startPos.x
+                    let deltaY = endPos.y - startPos.y
+
+                    // Check vertical swipe criteria
+                    if duration <= swipeMaxDuration &&
+                       abs(deltaY) >= swipeMinDistance &&
+                       abs(deltaX) <= swipeMaxHorizontal {
+                        // Valid vertical swipe detected
+                        // UIKit Y: positive = down on screen
+                        // Swipe UP (finger moves up) = deltaY negative in UIKit
+                        if deltaY < 0 {
+                            // Finger moved up on screen → next map
+                            swipeDelegate?.didSwipe(direction: .up)
+                        } else {
+                            // Finger moved down on screen → previous map
+                            swipeDelegate?.didSwipe(direction: .down)
+                        }
+                        print("[TouchInput] Swipe detected: \(deltaY < 0 ? "UP" : "DOWN"), deltaY=\(deltaY), duration=\(duration)")
+                    }
+                }
+
+                // Clear swipe state
+                swipeTouch = nil
+                swipeStartPosition = nil
+                swipeStartTime = nil
+            }
+        }
+    }
+
+    func touchesCancelled(_ touches: Set<UITouch>, in scene: SKScene) {
+        // Clear swipe state on cancel (don't trigger swipe)
+        for t in touches {
+            if let st = swipeTouch, t == st {
+                swipeTouch = nil
+                swipeStartPosition = nil
+                swipeStartTime = nil
+            }
+        }
+        // Handle joystick cancellation
         for t in touches {
             if let lt = leftTouch, t == lt {
                 leftTouch = nil
@@ -200,11 +273,6 @@ class TouchInput: InputController {
                 rightOrigin = nil
             }
         }
-    }
-
-    func touchesCancelled(_ touches: Set<UITouch>, in scene: SKScene) {
-        // Treat cancelled as ended
-        touchesEnded(touches, in: scene)
     }
 
     // InputController conformance

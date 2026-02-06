@@ -53,6 +53,9 @@ class GameScene: SKScene {
     var isCursorHidden: Bool = false  // Track cursor state to avoid counter issues
     #endif
 
+    // MARK: - Map Transition
+    var mapTransitionManager: MapTransitionManager?
+
     // MARK: - Damage System
     var touchingMonsters: Set<ObjectIdentifier> = []  // Monsters currently touching player
     var lastDamageTime: TimeInterval = 0
@@ -70,6 +73,7 @@ class GameScene: SKScene {
     override func didMove(to view: SKView) {
         setupScene()
         setupRenderer()
+        setupMapTransitionManager()
         setupPlayer()
         setupCrosshair()
         setupPhysics()
@@ -79,8 +83,8 @@ class GameScene: SKScene {
         setupTutorial()
 
         // Load level from GameConfig (prod.json or SettingsManager based on mode)
-        let config = GameConfig.current
-        let mapFilename = config.mapFilename
+        _ = GameConfig.current  // Initialize config manager
+        let mapFilename = GameConfig.shared.currentMapFilename
         print("[GameScene] Loading map: \(mapFilename)")
         if let mapConfig = MapConfig.load(filename: mapFilename) {
             print("[GameScene] Loaded MapConfig: \(mapConfig.getLocalizedName()), monsters: \(mapConfig.monsterTypes)")
@@ -96,6 +100,17 @@ class GameScene: SKScene {
 
         // Reset game state to ensure clean start
         resetGame()
+
+        // Teleport player in + show map name
+        if let player = playerEntity, let worldLayer = renderer?.world.worldLayer {
+            TeleportVFX.teleportIn(node: player.sprite, at: .zero, in: worldLayer) {}
+        }
+        if let mapConfig = MapConfig.load(filename: mapFilename),
+           let viewSize = view.bounds.size as CGSize? {
+            renderer?.hudCamera.showMapName(mapConfig.getLocalizedName(), viewportSize: viewSize)
+        } else {
+            renderer?.hudCamera.showPauseButton()
+        }
 
         // Try to restore saved game state (if app was terminated while backgrounded)
         restoreGameState()
@@ -151,12 +166,16 @@ class GameScene: SKScene {
     }
 
     override func didChangeSize(_ oldSize: CGSize) {
-        // Handle viewport changes through renderer
+        // Handle viewport changes through renderer (repositions HUD)
         if let view = view {
             renderer?.handleViewportChange(view.bounds.size)
         }
 
-        // Debug visuals are now managed by InputController - no need to update here
+        // Rebuild input debug visuals for new orientation/size
+        inputController?.setupDebugVisuals(in: self)
+
+        // Ensure pause button is visible after rotation
+        renderer?.hudCamera.showPauseButtonImmediate()
 
         // Keep crosshair centered if needed
         if let ch = crosshair {
@@ -310,18 +329,58 @@ class GameScene: SKScene {
         tutorialController?.reset(at: 0)
     }
 
-    // MARK: - Game Over
+    // MARK: - Game Over / Advance
+
+    /// On death: teleport out → advance to next map with full health
     func handlePlayerDeath() {
         guard !isGameOver else { return }
         isGameOver = true
-
-        // Clear saved state - game is over
         clearSavedGameState()
 
-        // Don't pause scene, just stop game logic via isGameOver flag
+        advanceToNextMap()
+    }
 
-        // Show game over UI
-        showGameOverUI()
+    /// On victory: teleport out → advance to next map with full health
+    func handleVictory() {
+        guard !isGameOver else { return }
+        isGameOver = true
+        clearSavedGameState()
+
+        advanceToNextMap()
+    }
+
+    /// Teleport out, then move to next map with 100 health
+    private func advanceToNextMap() {
+        let nextMapFilename = GameConfig.shared.nextMap()
+        print("[GameScene] Advancing to next map: \(nextMapFilename)")
+
+        if let player = playerEntity, let worldLayer = renderer?.world.worldLayer {
+            TeleportVFX.teleportOut(node: player.sprite, in: worldLayer) { [weak self] in
+                self?.performMapAdvance(to: nextMapFilename)
+            }
+        } else {
+            performMapAdvance(to: nextMapFilename)
+        }
+    }
+
+    /// Perform the actual map switch after teleport out
+    private func performMapAdvance(to filename: String) {
+        isGameOver = false
+        gameOverUI?.hide()
+
+        #if os(macOS)
+        updateCursorVisibility()
+        #endif
+
+        // Use transition manager for animated switch
+        if let manager = mapTransitionManager, !manager.isTransitioning {
+            manager.transitionToMap(filename, direction: .up) { [weak self] incomingNode in
+                self?.completeMapTransition(filename: filename, tempNode: incomingNode)
+            }
+        } else {
+            // Fallback: direct switch without animation
+            completeMapTransition(filename: filename, tempNode: nil)
+        }
     }
 
     func showGameOverUI(mode: EndGameMode = .death) {
@@ -349,16 +408,6 @@ class GameScene: SKScene {
         )
     }
 
-    func handleVictory() {
-        guard !isGameOver else { return }
-        isGameOver = true
-
-        // Clear saved state - game is over
-        clearSavedGameState()
-
-        showGameOverUI(mode: .victory)
-    }
-
     func restartGame() {
         isGameOver = false
         gameOverUI?.hide()
@@ -371,6 +420,15 @@ class GameScene: SKScene {
         #endif
 
         resetGame()
+
+        // Restore player visibility (teleport out left it at alpha 0)
+        playerEntity?.sprite.alpha = 1.0
+        playerEntity?.sprite.setScale(1.0)
+
+        // Teleport in on restart
+        if let player = playerEntity, let worldLayer = renderer?.world.worldLayer {
+            TeleportVFX.teleportIn(node: player.sprite, at: .zero, in: worldLayer) {}
+        }
     }
 
     func returnToMenu() {
@@ -394,4 +452,120 @@ class GameScene: SKScene {
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
+
+    // MARK: - Map Transition Setup
+    func setupMapTransitionManager() {
+        mapTransitionManager = MapTransitionManager(scene: self)
+    }
+
+    /// Switch to a new map with animated vertical transition
+    func switchToMap(filename: String, direction: SwipeDirection) {
+        guard let manager = mapTransitionManager, !manager.isTransitioning else { return }
+        guard !isGameOver else { return }
+
+        print("[GameScene] switchToMap: \(filename), direction=\(direction)")
+
+        // Clear saved state - new game
+        clearSavedGameState()
+
+        // Teleport player out, then start map transition
+        if let player = playerEntity, let worldLayer = renderer?.world.worldLayer {
+            // Freeze game logic during teleport out
+            isGamePaused = true
+            TeleportVFX.teleportOut(node: player.sprite, in: worldLayer) { [weak self] in
+                self?.isGamePaused = false
+                manager.transitionToMap(filename, direction: direction) { [weak self] incomingNode in
+                    self?.completeMapTransition(filename: filename, tempNode: incomingNode)
+                }
+            }
+        } else {
+            manager.transitionToMap(filename, direction: direction) { [weak self] incomingNode in
+                self?.completeMapTransition(filename: filename, tempNode: incomingNode)
+            }
+        }
+    }
+
+    /// Called after map transition animation completes
+    private func completeMapTransition(filename: String, tempNode: SKNode?) {
+        // Load new map config
+        if let mapConfig = MapConfig.load(filename: filename) {
+            let level = convertMapConfigToLevel(mapConfig)
+
+            // Update current level
+            currentLevel = level
+            currentMapSize = level.mapSize
+            currentSpawnBoxSize = level.spawnBoxSize
+
+            // Tear down old renderer completely (world + camera + HUD)
+            renderer?.world.worldLayer.removeFromParent()
+            renderer?.worldCamera.cameraNode.removeFromParent()
+
+            // Remove the temporary transition preview node
+            tempNode?.removeFromParent()
+
+            // Create fresh renderer
+            renderer = GameRenderer(scene: self, mapSize: currentMapSize)
+            renderer?.setup()
+
+            // Re-setup HUD
+            if let view = view {
+                renderer?.hudCamera.setup(viewportSize: view.bounds.size)
+            }
+
+            // Re-wire pause menu + button to new renderer/camera
+            setupPauseMenu()
+
+            // Re-setup player in new world
+            setupPlayer()
+            resetPlayer()
+
+            // Reset game state (waves, bullets, monsters, timers)
+            resetGame()
+
+            // Re-setup input debug visuals (they're on the camera which was recreated)
+            inputController?.setupDebugVisuals(in: self)
+
+            // Resume game
+            isGamePaused = false
+
+            // Teleport player in
+            if let player = playerEntity, let worldLayer = renderer?.world.worldLayer {
+                TeleportVFX.teleportIn(node: player.sprite, at: .zero, in: worldLayer) {}
+            }
+
+            // Show map name overlay, pause button appears after fade
+            let mapName = mapConfig.getLocalizedName()
+            if let viewSize = view?.bounds.size {
+                renderer?.hudCamera.showMapName(mapName, viewportSize: viewSize)
+            }
+
+            print("[GameScene] Transitioned to map: \(filename)")
+        } else {
+            print("[GameScene] Failed to load map after transition: \(filename)")
+            // Clean up temp node even on failure
+            tempNode?.removeFromParent()
+            isGamePaused = false
+        }
+    }
 }
+
+// MARK: - SwipeDelegate
+#if !os(macOS)
+extension GameScene: SwipeDelegate {
+    func didSwipe(direction: SwipeDirection) {
+        // Don't allow swipe during transition or game over
+        guard mapTransitionManager?.isTransitioning != true else { return }
+        guard !isGameOver else { return }
+
+        let newMapFilename: String
+        switch direction {
+        case .up:
+            newMapFilename = GameConfig.shared.nextMap()
+        case .down:
+            newMapFilename = GameConfig.shared.previousMap()
+        }
+
+        switchToMap(filename: newMapFilename, direction: direction)
+    }
+}
+#endif

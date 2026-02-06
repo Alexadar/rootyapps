@@ -6,10 +6,10 @@ import AppKit
 #endif
 
 #if !os(macOS)
-/// AppDelegate used to enforce supported interface orientations (lock to landscape on mobile).
+/// AppDelegate - supports all orientations for portrait/landscape auto-rotation.
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
-        return [.landscapeLeft, .landscapeRight]
+        return .all
     }
 }
 #else
