@@ -77,13 +77,8 @@ class SettingsManager {
             return identifier + String(UnicodeScalar(UInt8(value)))
         }
 
-        // Pro/Max models and newer iPads get 120 FPS
-        if identifier.contains("iPhone14") || identifier.contains("iPhone15") || identifier.contains("iPhone16") ||
-           identifier.contains("iPad13") || identifier.contains("iPad14") {
-            return 120
-        }
-        // Older devices get 60 FPS
-        return 60
+        // Device-tier → FPS mapping lives in DeviceFPS (pure, unit-tested).
+        return DeviceFPS.fps(forDeviceIdentifier: identifier)
         #endif
     }
 
@@ -170,8 +165,8 @@ class SettingsManager {
             return Self.fpsOptions.contains(fps) ? fps : Self.detectOptimalFPS()
         }
         set {
-            // Only allow valid FPS values
-            let validFPS = Self.fpsOptions.contains(newValue) ? newValue : 60
+            // Only allow valid FPS values (validation extracted to DeviceFPS).
+            let validFPS = DeviceFPS.validated(newValue, options: Self.fpsOptions)
             userDefaults.set(validFPS, forKey: Keys.targetFPS)
             print("[SettingsManager] Target FPS: \(validFPS)")
         }

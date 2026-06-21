@@ -44,18 +44,10 @@ extension Monster {
 
         print("[Monster+Textures] Filtered \(filteredNames.count) textures with prefix '\(prefix)'")
 
-        // IMPORTANT: Use .last not .first to extract frame number!
-        // "Bird5/dying_01" splits to [5, 1] - .first returns 5 (monster ID), .last returns 1 (frame)
-        // Using .first caused all frames to have same sort key = random order = glitchy animations
-        let sortedNames = filteredNames.sorted { (a, b) -> Bool in
-            let numA = a.components(separatedBy: CharacterSet.decimalDigits.inverted)
-                .compactMap { Int($0) }
-                .last ?? 0  // .last = frame number, NOT .first
-            let numB = b.components(separatedBy: CharacterSet.decimalDigits.inverted)
-                .compactMap { Int($0) }
-                .last ?? 0
-            return numA < numB
-        }
+        // IMPORTANT: frame number is the LAST numeric run, not the first!
+        // "Bird5/dying_01" splits to [5, 1] - first is monster ID, last is frame number.
+        // (Sorting by first key caused glitchy animations.) Extracted to FrameOrder for testability.
+        let sortedNames = FrameOrder.sortedFrameNames(filteredNames)
 
         for textureName in sortedNames {
             let texture = atlas.textureNamed(textureName)

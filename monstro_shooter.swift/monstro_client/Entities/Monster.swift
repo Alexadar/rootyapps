@@ -100,50 +100,24 @@ class Monster {
     func update(deltaTime: TimeInterval, playerPosition: CGPoint, playerHitboxRadius: CGFloat) {
         guard !isDying else { return }
 
-        let dx = playerPosition.x - sprite.position.x
-        let dy = playerPosition.y - sprite.position.y
-        let distance = sqrt(dx*dx + dy*dy)
-
         let stopDistance = playerHitboxRadius + (boxSize.width / 2.0)
 
-        if distance > stopDistance {
-            if useDirectSteering {
-                // Direct steering (bugs, walkers) - move straight to target
-                let dirX = dx / distance
-                let dirY = dy / distance
-
-                velocityX = dirX * speed
-                velocityY = dirY * speed
-
-                sprite.position.x += velocityX * CGFloat(deltaTime)
-                sprite.position.y += velocityY * CGFloat(deltaTime)
-
-                let angle = atan2(velocityY, velocityX)
-                sprite.zRotation = angle + rotationOffset
-            } else {
-                // Arc steering (birds) - smooth turning with momentum
-                let distanceTotal = distance
-
-                // Steering toward target
-                let moveDistanceX = turnRate * dx / distanceTotal
-                let moveDistanceY = turnRate * dy / distanceTotal
-
-                velocityX += moveDistanceX * CGFloat(deltaTime)
-                velocityY += moveDistanceY * CGFloat(deltaTime)
-
-                // Normalize velocity and apply speed
-                let totalVelocity = sqrt(velocityX*velocityX + velocityY*velocityY)
-                if totalVelocity > 0 {
-                    velocityX = speed * velocityX / totalVelocity
-                    velocityY = speed * velocityY / totalVelocity
-                }
-
-                sprite.position.x += velocityX * CGFloat(deltaTime)
-                sprite.position.y += velocityY * CGFloat(deltaTime)
-
-                let angle = atan2(velocityY, velocityX)
-                sprite.zRotation = angle + rotationOffset
-            }
+        // Steering math lives in SteeringMath so it can be unit-tested without a sprite.
+        if let result = SteeringMath.step(
+            from: sprite.position,
+            toward: playerPosition,
+            velocity: CGVector(dx: velocityX, dy: velocityY),
+            speed: speed,
+            turnRate: turnRate,
+            rotationOffset: rotationOffset,
+            useDirectSteering: useDirectSteering,
+            stopDistance: stopDistance,
+            deltaTime: deltaTime
+        ) {
+            velocityX = result.velocity.dx
+            velocityY = result.velocity.dy
+            sprite.position = result.position
+            sprite.zRotation = result.rotation
         }
 
         sprite.size = boxSize

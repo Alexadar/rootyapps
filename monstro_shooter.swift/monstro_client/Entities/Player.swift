@@ -68,11 +68,8 @@ class Player {
     func takeDamage(_ damage: Double) {
         hitCount += 1
 
-        // Calculate minimum damage (0.4 every 4th hit to prevent zero damage)
-        let minDamage = (hitCount % 4 == 0) ? 0.4 : 0.0
-
-        // Apply armor formula from old game
-        let actualDamage = max(damage - defense, minDamage)
+        // Apply armor formula from old game (extracted to CombatMath for testability)
+        let actualDamage = CombatMath.actualDamage(incoming: damage, defense: defense, hitCount: hitCount)
 
         health -= Int(actualDamage)
         if health < 0 { health = 0 }
@@ -104,32 +101,14 @@ class Player {
     /// Move the player by a normalized movement vector scaled by speed and deltaTime.
     /// mapSize parameter defines the actual map boundaries (not viewport size)
     func move(by movement: CGVector, deltaTime: TimeInterval, mapSize: CGSize) {
-        var mv = movement
-        // Already expected to be normalized or in range -1..1; guard division by zero
-        let length = sqrt(mv.dx * mv.dx + mv.dy * mv.dy)
-        if length > 0 {
-            mv.dx /= length
-            mv.dy /= length
-
-            // Match old game's 0.75 diagonal multiplier (not normalized 0.707)
-            let isDiagonal = abs(mv.dx) > 0.1 && abs(mv.dy) > 0.1
-            let multiplier: CGFloat = isDiagonal ? 0.75 : 1.0
-
-            let newX = sprite.position.x + mv.dx * speed * multiplier * CGFloat(deltaTime)
-            let newY = sprite.position.y + mv.dy * speed * multiplier * CGFloat(deltaTime)
-
-            // Keep player within map bounds (not viewport bounds).
-            // Scene uses center anchor point (0.5, 0.5), so map coordinates are -mapSize/2 to +mapSize/2
-            let halfWidth = sprite.size.width / 2
-            let halfHeight = sprite.size.height / 2
-
-            let minX = -mapSize.width / 2 + halfWidth
-            let maxX = mapSize.width / 2 - halfWidth
-            let minY = -mapSize.height / 2 + halfHeight
-            let maxY = mapSize.height / 2 - halfHeight
-
-            sprite.position.x = max(minX, min(maxX, newX))
-            sprite.position.y = max(minY, min(maxY, newY))
-        }
+        // Movement/clamping math lives in MovementMath so it can be unit-tested without a sprite.
+        sprite.position = MovementMath.nextPosition(
+            from: sprite.position,
+            movement: movement,
+            speed: speed,
+            deltaTime: deltaTime,
+            spriteSize: sprite.size,
+            mapSize: mapSize
+        )
     }
 }

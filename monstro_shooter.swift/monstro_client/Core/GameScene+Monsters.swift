@@ -70,31 +70,20 @@ extension GameScene {
 
         let elapsedTime = currentTime - levelStartTime
 
-        // Check all waves to see if any should spawn
-        for (index, wave) in level.spawnWaves.enumerated() {
-            // Skip if this wave has already been spawned
-            if spawnedWaves.contains(index) {
-                continue
-            }
-
-            // Check if it's time to spawn this wave
-            if elapsedTime >= wave.startTime {
-                spawnWave(wave, waveIndex: index, currentTime: currentTime)
-                spawnedWaves.insert(index)
-            }
+        // Wave-due decision lives in WaveScheduler (pure, unit-tested).
+        for index in WaveScheduler.wavesDue(at: elapsedTime, alreadySpawned: spawnedWaves, waves: level.spawnWaves) {
+            spawnWave(level.spawnWaves[index], waveIndex: index, currentTime: currentTime)
+            spawnedWaves.insert(index)
         }
 
-        // Check for victory: all waves spawned and no monsters left
+        // Check for victory: all expected monsters killed
         checkVictoryCondition(level: level)
     }
 
     /// Check if player has won (killed all expected monsters)
     private func checkVictoryCondition(level: GameLevel) {
-        // Calculate total expected monsters from all waves
-        let expectedTotal = level.spawnWaves.reduce(0) { $0 + $1.monsterCount }
-
-        // Victory when all expected monsters have been killed
-        guard killCount >= expectedTotal else { return }
+        // Victory math lives in WaveScheduler (pure, unit-tested).
+        guard WaveScheduler.isVictory(killCount: killCount, waves: level.spawnWaves) else { return }
 
         // Trigger victory
         handleVictory()

@@ -71,7 +71,7 @@ extension GameScene {
             // Apply angular deviation perpendicular to aim direction
             // deviation is max spread in pixels at some reference distance
             // Convert to angular spread: at 500px distance, deviation pixels = angle radians approx
-            let angularDeviation = atan2(bulletInfo.deviation, 500.0) // Convert pixel deviation to angle
+            let angularDeviation = SpreadMath.deviationToAngle(bulletInfo.deviation) // Convert pixel deviation to angle
             let randomSpread = CGFloat.random(in: -angularDeviation...angularDeviation)
             let finalAngle = baseAngle + randomSpread
 

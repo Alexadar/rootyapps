@@ -18,6 +18,10 @@ class Weapon {
     private var lastShotTime: TimeInterval = 0
     private var reloadStartTime: TimeInterval = 0
 
+    /// Invoked when a reload starts. Defaults to the real reload SFX; overridable so the
+    /// ammo/reload state machine can be unit-tested without triggering audio.
+    var reloadSoundHandler: () -> Void = { AudioManager.shared.playReloadSound() }
+
     init(config: WeaponConfig) {
         self.config = config
         self.currentAmmo = config.magazineSize
@@ -95,8 +99,8 @@ class Weapon {
         reloadStartTime = currentTime
         delegate?.weaponDidStartReload(self)
 
-        // Play reload sound
-        AudioManager.shared.playReloadSound()
+        // Play reload sound (injectable for tests)
+        reloadSoundHandler()
 
         print("[\(config.name)] Reloading... (\(config.reloadTime)s)")
     }
