@@ -16,6 +16,8 @@ let package = Package(
         .library(name: "MonstroSimGPU", targets: ["MonstroSimGPU"]),
         // CLI: eval / train / autoconfig / parity / bench.
         .executable(name: "monstrosim", targets: ["MonstroCLI"]),
+        // Track A: state-buffer -> compute tick -> instanced sprite render (no SpriteKit).
+        .executable(name: "monstro-render", targets: ["MetalRender"]),
     ],
     dependencies: [
         .package(url: "https://github.com/ml-explore/mlx-swift", from: "0.31.0"),
@@ -28,6 +30,7 @@ let package = Package(
             .product(name: "MLXRandom", package: "mlx-swift"),
         ]),
         .executableTarget(name: "MonstroCLI", dependencies: ["MonstroSim", "MonstroSimGPU"]),
+        .executableTarget(name: "MetalRender"),
         .testTarget(name: "MonstroSimTests", dependencies: ["MonstroSim", "MonstroSimGPU"]),
     ]
 )
