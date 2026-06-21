@@ -1,0 +1,6 @@
+.build/
+.swiftpm/
+*.xcodeproj
+net.json
+generated_map.json
+default.metallib
