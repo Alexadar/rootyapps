@@ -18,6 +18,8 @@ let package = Package(
         .executable(name: "monstrosim", targets: ["MonstroCLI"]),
         // Track A: state-buffer -> compute tick -> instanced sprite render (no SpriteKit).
         .executable(name: "monstro-render", targets: ["MetalRender"]),
+        // Track A: the actual game (full loop in Metal compute) — headless verify + playable window.
+        .executable(name: "monstro-game", targets: ["MetalGame"]),
     ],
     dependencies: [
         .package(url: "https://github.com/ml-explore/mlx-swift", from: "0.31.0"),
@@ -31,6 +33,7 @@ let package = Package(
         ]),
         .executableTarget(name: "MonstroCLI", dependencies: ["MonstroSim", "MonstroSimGPU"]),
         .executableTarget(name: "MetalRender"),
+        .executableTarget(name: "MetalGame"),
         .testTarget(name: "MonstroSimTests", dependencies: ["MonstroSim", "MonstroSimGPU"]),
     ]
 )
