@@ -1,0 +1,6 @@
+# Dev (CPU, e.g. the Mac): pip install -r requirements.txt
+jax>=0.4
+PyYAML>=6
+numpy>=1.26
+# On the RTX 3090 (CUDA), install the CUDA build instead of plain jax:
+#   pip install "jax[cuda12]"
