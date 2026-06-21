@@ -19,7 +19,7 @@ from coremltools.models import datatypes
 from coremltools.models.neural_network import NeuralNetworkBuilder
 
 src = sys.argv[1] if len(sys.argv) > 1 else "models/player.json"
-dst = sys.argv[2] if len(sys.argv) > 2 else "models/player.mlpackage"
+dst = sys.argv[2] if len(sys.argv) > 2 else "models/player.mlmodel"
 
 d = json.load(open(src))
 sizes, W, B = d["sizes"], d["w"], d["b"]          # GPUPolicy: weights stored [in, out]

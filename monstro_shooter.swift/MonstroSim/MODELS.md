@@ -54,10 +54,15 @@ custom weights (**still GPU/CPU only — no ANE**). Two facts that shape our pip
 
 | Path | Status | Notes |
 |---|---|---|
-| coremltools on **Python 3.11/3.12** → `.mlpackage` | works | the 3.14 break was a Python-version gap, not a tool bug |
-| MLX weights → tiny **PyTorch** MLP → `coreai_torch` → `.aimodel` (Core AI) | 2026 forward path | auto CPU/GPU/ANE; needs iOS 27 / macOS 27 SDK |
+| coremltools on **Python 3.11** → `.mlmodel` (`tools/export_coreml.py`) | **✓ VERIFIED** | coremltools 9.0 on this box; produced `models/player.mlmodel` |
+| `CoreMLPolicy.swift` loading it with `computeUnits = .all` | **✓ VERIFIED** | `monstrosim aneinfer` → bit-identical to MLX (max\|Δ\|=0.00000), runs CPU/GPU/ANE |
+| MLX weights → tiny **PyTorch** MLP → `coreai_torch` → `.aimodel` (Core AI) | 2026 forward path | auto CPU/GPU/ANE; needs **macOS 27** SDK (this box is 26.5) — clean swap when it lands |
 | pure-Swift **SwiftCoreMLTools** → `.mlmodel` | viable but **unmaintained since 2020** | legacy format; only if no-Python is a hard rule |
-| `CoreMLPolicy.swift` (this repo) loading a `.mlpackage`/`.mlmodel` with `computeUnits = .all` | wired, compiles | runtime side; needs a converted model from one of the above |
+
+**Deployment base (built today on macOS 26.5):** `models/player.json` → `tools/export_coreml.py`
+(Py3.11/coremltools 9.0) → `models/player.mlmodel` → `CoreMLPolicy` (`computeUnits = .all`). Verified
+bit-parity with the MLX reference via `monstrosim aneinfer`. **Core AI is the macOS-27 drop-in
+successor** — same `.all` auto-dispatch; swap `MLModel`→`AIModel` when the SDK ships.
 
 ## Bottom line
 

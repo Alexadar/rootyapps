@@ -37,6 +37,13 @@ public struct GPUPolicy {
         return h
     }
 
+    /// Single-sample host inference (for parity checks vs a Core ML / ANE export).
+    public func predictSingle(_ obs: [Float]) -> [Float] {
+        let y = self(MLXArray(obs, [1, obs.count]))
+        eval(y)
+        return y.asArray(Float.self)
+    }
+
     /// Flat parameter list (for the ES trainer to perturb / rebuild).
     public var flatParams: [MLXArray] { weights + biases }
     public var paramCount: Int { sizes.indices.dropFirst().reduce(0) { $0 + sizes[$1 - 1] * sizes[$1] + sizes[$1] } }

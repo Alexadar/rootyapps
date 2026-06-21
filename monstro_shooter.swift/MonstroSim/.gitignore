@@ -4,3 +4,4 @@
 net.json
 generated_map.json
 default.metallib
+.venv/

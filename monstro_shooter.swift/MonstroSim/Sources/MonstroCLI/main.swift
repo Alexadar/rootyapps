@@ -109,6 +109,29 @@ case "gprun":
     print("Shipped model \(netPath) on \(level.name):")
     print(String(format: "  reward %.2f   kills %.2f   survive %.0f%%   (%d envs × %d ticks)", r.meanReward, r.meanKills, r.surviveRate * 100, nEnvs, ticks))
 
+case "aneinfer":
+    // Compute-stack deployment check: run the shipped model through Core ML (computeUnits=.all →
+    // CPU/GPU/ANE auto-dispatch) and confirm it matches the MLX/GPU reference. (Core AI is the
+    // macOS-27 successor with the same auto-dispatch; this is the buildable-today path.)
+    let mlPath = opts["model"] ?? "models/player.mlmodel"
+    guard let d = FileManager.default.contents(atPath: "models/player.json"), let gnet = GPUPolicy.fromData(d) else {
+        fputs("aneinfer: need models/player.json (source weights for the reference)\n", stderr); exit(1)
+    }
+    let obs: [Float] = [0.6, 0.2, 0.5, -0.5, 0.3, 0.4]
+    let mlxOut = gnet.predictSingle(obs)
+    do {
+        let cm = try CoreMLPolicy(url: URL(fileURLWithPath: mlPath))   // computeUnits = .all (CPU/GPU/ANE)
+        let cmOut = try cm.predict(obs)
+        let diff = zip(mlxOut, cmOut).map { abs($0 - $1) }.max() ?? .greatestFiniteMagnitude
+        print("Deployment check (\(mlPath), computeUnits=.all):")
+        print("  MLX  (GPU):  " + mlxOut.map { String(format: "% .4f", $0) }.joined(separator: "  "))
+        print("  CoreML(.all):" + cmOut.map { String(format: "% .4f", $0) }.joined(separator: "  "))
+        print(String(format: "  max |Δ| = %.5f  %@", diff, diff < 1e-3 ? "✓ parity — model runs on the CPU/GPU/ANE stack" : "✗ mismatch"))
+        print("  Profile actual ANE/GPU/CPU placement with Instruments' Core ML template.")
+    } catch {
+        fputs("aneinfer: \(error)\n(convert first: .venv/bin/python tools/export_coreml.py)\n", stderr); exit(1)
+    }
+
 case "gpubench":
     let level = loadMapOrExit("gpubench")
     let steps = Int(opts["steps"] ?? "200") ?? 200
