@@ -2,4 +2,8 @@ torch
 numpy
 pyyaml
 tqdm
-# export only (Python 3.11 venv): coremltools
+# rendering (3x3 eval grid video)
+pillow
+imageio
+imageio-ffmpeg
+# export only (Python 3.11 / conda env): coremltools

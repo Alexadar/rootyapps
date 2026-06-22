@@ -9,5 +9,7 @@ __pycache__
 MonstroSim/models/*.json
 MonstroSim/models/*.mlmodel
 MonstroSim/models/*.mlpackage
-# local launch scripts (carry intermediate/tuning args)
-torchsim/train.sh
+# rendered eval media (regenerated; keep the eval map JSONs tracked)
+torchsim/datasets/**/*.mp4
+torchsim/datasets/**/*.gif
+torchsim/datasets/**/*.png

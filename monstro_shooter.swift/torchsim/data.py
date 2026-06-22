@@ -51,12 +51,18 @@ def sim_level(mapcfg):
              for w in mapcfg.get("monsterSpawnWaves", []) if int(w["count"]) > 0 and all_types]
     name = (mapcfg.get("defaultNameLocalizations") or {}).get("ru-ru") \
         or (mapcfg.get("defaultNameLocalizations") or {}).get("en-us") or f"map {mapcfg.get('id')}"
+    # Spatial params (new, optional): arena half-size + spawn radius. Defaults preserve the legacy
+    # hardcoded values so existing maps load unchanged. spawnRadius sets a square spawn box.
+    spawn_r = mapcfg.get("spawnRadius")
     return {
         "id": int(mapcfg.get("id", 0)),
         "name": name,
         "duration": float(mapcfg.get("landingDuration", 60)),
         "waves": waves,
         "expected_total": sum(c for _, c, _ in waves),
+        "arena_half": float(mapcfg.get("arenaHalf", 6000.0)),
+        "spawn_half_w": float(spawn_r) if spawn_r is not None else 830.0,
+        "spawn_half_h": float(spawn_r) if spawn_r is not None else 650.0,
     }
 
 

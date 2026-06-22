@@ -15,19 +15,21 @@ DT = 1.0 / 30.0
 PLAYER_SPEED = 300.0
 PLAYER_HALF = 30.0
 PLAYER_RADIUS = 30.0
-MAP_HALF = 6000.0
+MAP_HALF = 6000.0        # default arena half (per-map overridable via sched["arena_half"])
 BUFFER = 5.0
 BULLET_RADIUS = 6.0
 TURN_RATE = 34.0
 DAMAGE_INTERVAL = 1.0
 EPS = 1e-6
-MON_SPEED_NORM = 300.0   # obs normalizer for monster speed
+MON_SPEED_NORM = 300.0     # obs normalizer for monster speed
+MONSTER_COUNT_NORM = 64.0  # fixed count normalizer (NOT the per-env cap) -> train/eval consistent
+BULLET_NORM = 1000.0       # obs normalizer for nearest-bullet distance
 
 
 class EnvTorch:
-    player_obs = 6
+    player_obs = 8         # hp, count, threatXY, nearest, mean, wallX, wallY
     player_act = 4
-    enemy_obs = 7
+    enemy_obs = 10        # dirXY, dist, velXY, speed, hp, bulletDirXY, bulletDist
     enemy_act = 2
 
     def __init__(self, sched, weapon, exo, device="cpu", bullets=32):
@@ -43,6 +45,8 @@ class EnvTorch:
         self.mon_dmg = t(sched["dmg"])
         self.mon_direct = t(sched["direct"])
         self.hp0 = t(sched["hp0"])                    # [N,M]
+        ah = sched.get("arena_half")
+        self.map_half = t(ah) if ah is not None else torch.full((self.N,), MAP_HALF, device=device)  # [N]
         self.bullet_speed = float(weapon.get("bulletSpeed", 800))
         self.bullet_damage = float(weapon["damage"])
         self.bullet_range = float(weapon["shotRange"])
@@ -73,8 +77,9 @@ class EnvTorch:
         masked = torch.where(alive > 0.5, dist, torch.full_like(dist, 1e9))
         nearest = masked.min(-1).values
         meanD = (dist * alive).sum(-1) / (cnt + EPS)
-        return torch.cat([(s["player_hp"] / 100.0)[..., None], (cnt / self.M)[..., None],
-                          threatN, (nearest / 1000.0)[..., None], (meanD / 1000.0)[..., None]], -1)
+        wall = s["player_pos"] / self.map_half.view(1, self.N, 1)    # [P,N,2] in [-1,1]: arena-size-invariant
+        return torch.cat([(s["player_hp"] / 100.0)[..., None], (cnt / MONSTER_COUNT_NORM)[..., None],
+                          threatN, (nearest / 1000.0)[..., None], (meanD / 1000.0)[..., None], wall], -1)
 
     def enemy_obs_vec(self, s):
         rel = s["player_pos"][:, :, None, :] - s["mon_pos"]          # [P,N,M,2] toward player
@@ -82,9 +87,21 @@ class EnvTorch:
         dirv = rel / dist[..., None]
         spd = self.mon_speed[None, :, :]                            # [1,N,M]
         vel_n = s["mon_vel"] / (spd[..., None] + EPS)
+        # nearest in-flight bullet per monster (so the enemy can learn to dodge) — [P,N,M,B]
+        brel = s["bul_pos"][:, :, None, :, :] - s["mon_pos"][:, :, :, None, :]   # [P,N,M,B,2] toward bullet
+        bd2 = (brel * brel).sum(-1)
+        bd2 = torch.where(s["bul_alive"][:, :, None, :] > 0.5, bd2, torch.full_like(bd2, 1e18))
+        bmin, bidx = bd2.min(-1)                                                  # [P,N,M]
+        has = (bmin < 1e17).float()
+        idx = bidx[..., None, None].expand(*bidx.shape, 1, 2)                     # [P,N,M,1,2]
+        bnear = torch.gather(brel, 3, idx).squeeze(3)                             # [P,N,M,2] vec to bullet
+        bdist = torch.sqrt(bmin.clamp(min=0.0)) + EPS
+        bdir = bnear / bdist[..., None] * has[..., None]                          # 0 when no live bullet
+        bdist_n = torch.where(has > 0.5, (bdist / BULLET_NORM).clamp(max=2.0), torch.full_like(bdist, 2.0))
         return torch.cat([dirv, (dist / 1000.0)[..., None], vel_n,
                           (spd / MON_SPEED_NORM)[..., None].expand_as(dist[..., None]),
-                          (s["mon_hp"] / (self.hp0[None] + EPS))[..., None]], -1)   # [P,N,M,7]
+                          (s["mon_hp"] / (self.hp0[None] + EPS))[..., None],
+                          bdir, bdist_n[..., None]], -1)   # [P,N,M,10]
 
     # ---- one tick. player_fn: obs[P,N,6]->[P,N,4]; enemy_fn: obs[P,N,M,7]->[P,N,M,2] or None ----
     def step(self, s, t, player_fn, enemy_fn):
@@ -156,7 +173,9 @@ class EnvTorch:
         player_hp = s["player_hp"] - applied
 
         mv = torch.tanh(a_move)
-        player_pos = torch.clamp(s["player_pos"] + mv * (PLAYER_SPEED * DT), -MAP_HALF + PLAYER_HALF, MAP_HALF - PLAYER_HALF)
+        lo = (-self.map_half + PLAYER_HALF).view(1, N, 1)            # per-env arena bounds
+        hi = (self.map_half - PLAYER_HALF).view(1, N, 1)
+        player_pos = torch.minimum(torch.maximum(s["player_pos"] + mv * (PLAYER_SPEED * DT), lo), hi)
 
         # player reward (env.py:150-155)
         threat_raw = ((mon_pos - player_pos[:, :, None, :]) * alive_a.float()[..., None]).sum(2)

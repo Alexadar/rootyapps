@@ -20,6 +20,8 @@ SPAWN_INTERVAL = 1.0
 def _fill_env(arrays, row, level, monsters, seed, M):
     """Fill row `row` of the preallocated arrays from one level, RNG seeded by `seed`."""
     spawn_tick, off, hp0, speed, boxW, dmg, direct = arrays
+    shw = level.get("spawn_half_w", SPAWN_HALF_W)     # per-map spawn radius (defaults to legacy box)
+    shh = level.get("spawn_half_h", SPAWN_HALF_H)
     rng = np.random.default_rng(seed)
     slot = 0
     for (start, count, types) in level["waves"]:
@@ -30,13 +32,13 @@ def _fill_env(arrays, row, level, monsters, seed, M):
             typ = int(types[rng.integers(0, len(types))])
             side = int(rng.integers(0, 4))
             if side == 0:
-                ox, oy = rng.uniform(-SPAWN_HALF_W, SPAWN_HALF_W), SPAWN_HALF_H
+                ox, oy = rng.uniform(-shw, shw), shh
             elif side == 1:
-                ox, oy = SPAWN_HALF_W, rng.uniform(-SPAWN_HALF_H, SPAWN_HALF_H)
+                ox, oy = shw, rng.uniform(-shh, shh)
             elif side == 2:
-                ox, oy = rng.uniform(-SPAWN_HALF_W, SPAWN_HALF_W), -SPAWN_HALF_H
+                ox, oy = rng.uniform(-shw, shw), -shh
             else:
-                ox, oy = -SPAWN_HALF_W, rng.uniform(-SPAWN_HALF_H, SPAWN_HALF_H)
+                ox, oy = -shw, rng.uniform(-shh, shh)
             spawn_tick[row, slot] = t
             off[row, slot] = (ox, oy)
             m = monsters.get(typ)
@@ -102,11 +104,18 @@ def _build_rows(levels, assign, monsters, base_seed, n_envs, M, workers):
     return arrays
 
 
+def _arena(levels, assign, n_envs):
+    """Per-env arena half-size (from the level each env is assigned)."""
+    return np.array([float(levels[assign[e]].get("arena_half", 6000.0)) for e in range(n_envs)], np.float32)
+
+
 def build(level, monsters, base_seed, n_envs, cap=512, workers=None):
     M = max(min(level["expected_total"], cap), 1)
     assign = np.zeros(n_envs, np.int32)
     arrays = _build_rows([level], assign, monsters, base_seed, n_envs, M, workers)
-    return _pack(arrays, M)
+    out = _pack(arrays, M)
+    out["arena_half"] = _arena([level], assign, n_envs)
+    return out
 
 
 def build_multi(levels, monsters, base_seed, n_envs, cap=512, workers=None):
@@ -119,4 +128,5 @@ def build_multi(levels, monsters, base_seed, n_envs, cap=512, workers=None):
     arrays = _build_rows(levels, assign, monsters, base_seed, n_envs, M, workers)
     out = _pack(arrays, M)
     out["assign"] = assign
+    out["arena_half"] = _arena(levels, assign, n_envs)
     return out

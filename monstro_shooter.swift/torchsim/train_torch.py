@@ -1,13 +1,13 @@
-"""Torch co-evolution trainer — POC. Two models trained adversarially by alternating ES:
+"""Torch co-evolution trainer. Two models trained adversarially by alternating ES:
   player_net (survive + kill)   vs   shared enemy_net (damage + approach, one net for all monster types).
 
-Trains on the 10 swiper maps (prod.json mapFilenames), batched N = maps × per-map permutations.
-Tiny by default so a few iters run on the Mac CPU in < 1 min (guard aborts + defers to the 3090).
+Map source: --dataset <dir> (train/ + eval/ folds), else --map, else the 10 swiper maps. Batched
+N = maps × --perm. Device auto-detected (cuda -> mps -> cpu). --budget caps wall-time (stops + saves).
 
-  python train_torch.py --perm 4 --pop 8 --ticks 150 --iters 8 --device cpu
-  python train_torch.py --perm 32 --pop 64 --ticks 600 --iters 200 --device cuda   # 3090
+  python train_torch.py --dataset datasets/tiny --perm 8 --pop 12 --ticks 200 --cap 16 --eval
+  python train_torch.py --dataset datasets/tiny --pop 64 --ticks 400 --budget 3600   # 3090
 """
-import argparse, json, os, time
+import argparse, glob, json, os, time
 import torch
 from tqdm import tqdm
 import data, schedule
@@ -40,9 +40,25 @@ def swiper_maps(client):
     return [os.path.join(client, "Resources", "MapConfigs", n + ".json") for n in names]
 
 
+def train_paths(args):
+    """--dataset <dir> -> <dir>/train/*.json ; else --map ; else the 10 swiper maps."""
+    if args.dataset:
+        return sorted(glob.glob(os.path.join(args.dataset, "train", "*.json")))
+    return [args.map] if args.map else swiper_maps(args.client)
+
+
+def eval_paths(args):
+    """--eval-map override ; else --dataset/eval/*.json ; else the single held-out unseen map."""
+    if args.eval_map:
+        return [args.eval_map]
+    if args.dataset:
+        return sorted(glob.glob(os.path.join(args.dataset, "eval", "*.json")))
+    return [EVAL_MAP_DEFAULT]
+
+
 def build_env(args):
     gd = data.GameData(args.client)
-    paths = [args.map] if args.map else swiper_maps(args.client)
+    paths = train_paths(args)
     levels = [data.sim_level(data.load_map(p)) for p in paths]
     n_envs = len(levels) * args.perm
     sched = schedule.build_multi(levels, gd.monsters, base_seed=1, n_envs=n_envs, cap=args.cap)
@@ -52,43 +68,60 @@ def build_env(args):
     return env, len(levels), n_envs
 
 
-def eval_play(args, player, enemy, dev):
-    """Play ONE headless game on the eval map with the trained center nets (on device), running to
-    the tick timeout OR until every monster is killed (whichever first), then report."""
-    gd = data.GameData(args.client)
-    mpath = args.eval_map or EVAL_MAP_DEFAULT
-    level = data.sim_level(data.load_map(mpath))
-    total = max(level["expected_total"], 1)
-    sched = schedule.build(level, gd.monsters, base_seed=999, n_envs=1, cap=min(total, 1024))
-    weapon = gd.weapons.get(1) or next(iter(gd.weapons.values()))
-    exo = gd.exoskeletons.get(1) or next(iter(gd.exoskeletons.values()))
-    env = EnvTorch(sched, weapon, exo, device=dev, bullets=args.bullets)
+def _play_once(env, ticks_max, pf, ef):
+    """One headless game: to tick-timeout OR all-killed. Returns (survived, kills, M, damage)."""
     M = env.M
-    ticks_max = args.eval_ticks or int(level["duration"] * 30)
-    pf = lambda obs: P.apply_mlp(player, obs)
-    ef = lambda obs: P.apply_enemy(enemy, obs)
-
     s = env.reset(1)
-    outcome, played = "timeout", ticks_max
-    t0 = time.time()
     with torch.no_grad():
         for tk in range(1, ticks_max + 1):
             s, _, _ = env.step(s, tk, pf, ef)
             hp = float(s["player_hp"][0, 0]); kills = int(s["kills"][0, 0])
-            if hp <= 0:
-                outcome, played = "died", tk; break
-            if kills >= M:
-                outcome, played = "cleared", tk; break
+            if hp <= 0 or kills >= M:
+                break
     hp = max(float(s["player_hp"][0, 0]), 0.0); kills = int(s["kills"][0, 0])
-    wall = (time.time() - t0) * 1000
-    print(f"\nEval: {os.path.basename(mpath)}  (map {level['duration']:.0f}s, {M} monsters, dev={dev})")
-    print(f"  outcome: {outcome.upper()} at tick {played} ({played/30:.1f}s game-time)   [{wall:.0f}ms wall]")
-    print(f"  kills {kills}/{M} ({100*kills/max(M,1):.0f}%)   hp {hp:.0f}/100   damage taken {100-hp:.0f}")
+    return hp > 0, kills, M, 100.0 - hp
+
+
+def run_eval(gd, weapon, exo, args, player, enemy, dev, seeds):
+    """Play each held-out eval map × `seeds` headless. Returns (rows, maps); row=(name,survived,kills,M,dmg)."""
+    pf = lambda obs: P.apply_mlp(player, obs)
+    ef = lambda obs: P.apply_enemy(enemy, obs)
+    maps = eval_paths(args)
+    rows = []
+    for mpath in maps:
+        level = data.sim_level(data.load_map(mpath))
+        total = max(level["expected_total"], 1)
+        ticks_max = args.eval_ticks or int(level["duration"] * 30)
+        for sd in range(seeds):
+            sched = schedule.build(level, gd.monsters, base_seed=1000 + sd * 7919, n_envs=1, cap=min(total, 1024))
+            env = EnvTorch(sched, weapon, exo, device=dev, bullets=args.bullets)
+            rows.append((os.path.basename(mpath),) + _play_once(env, ticks_max, pf, ef))
+    return rows, maps
+
+
+def eval_line(rows):
+    n = len(rows)
+    surv = sum(r[1] for r in rows)
+    mk = sum(r[2] for r in rows) / n
+    mclear = sum(r[2] / max(r[3], 1) for r in rows) / n
+    mdmg = sum(r[4] for r in rows) / n
+    return f"survival {surv}/{n} ({100*surv/n:.0f}%)  kills {mk:.1f}  clear {100*mclear:.0f}%  dmg {mdmg:.0f}"
+
+
+def eval_report(rows, maps, seeds, dev):
+    print(f"\nEval ({len(maps)} held-out maps x {seeds} seeds = {len(rows)} games, dev={dev}):")
+    print(f"  {eval_line(rows)}")
+    for mpath in maps:
+        name = os.path.basename(mpath)
+        mr = [r for r in rows if r[0] == name]
+        print(f"    {name:14s} survived {sum(r[1] for r in mr)}/{len(mr)}  "
+              f"kills {sum(r[2] for r in mr)/len(mr):.1f}/{mr[0][3]}  dmg {sum(r[4] for r in mr)/len(mr):.0f}")
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--client", default=data.DEFAULT_CLIENT)
+    ap.add_argument("--dataset", default="")             # <dir> with train/ + eval/ folds (overrides --map)
     ap.add_argument("--map", default="")                 # single map override (else 10 swiper maps)
     ap.add_argument("--perm", type=int, default=4)       # envs per map  -> N = maps * perm
     ap.add_argument("--pop", type=int, default=8)        # ES population (rollout uses 2*pop)
@@ -101,8 +134,11 @@ def main():
     ap.add_argument("--device", default="auto")          # auto: cuda -> mps -> cpu (explicit value respected)
     ap.add_argument("--budget", type=float, default=0.0)   # wall-time cap in seconds (0=off); stops + saves
     ap.add_argument("--eval", action="store_true")       # after training, play one UNSEEN map headless
-    ap.add_argument("--eval-map", default="")            # default: held-out eval_unseen.json
+    ap.add_argument("--eval-map", default="")            # default: dataset/eval/*.json or eval_unseen.json
     ap.add_argument("--eval-ticks", type=int, default=0)  # 0 -> landingDuration*30 (full map)
+    ap.add_argument("--eval-seeds", type=int, default=3)  # seeds per eval map (held-out distribution)
+    ap.add_argument("--eval-every", type=int, default=0)  # run a quick 1-seed eval every K iters (0=off)
+    ap.add_argument("--render", default="")              # render a 3x3 eval grid video to this path at end
     ap.add_argument("--player-out", default="../MonstroSim/models/player.json")
     ap.add_argument("--enemy-out", default="../MonstroSim/models/monster.json")
     args = ap.parse_args()
@@ -110,8 +146,12 @@ def main():
     dev = pick_device(args.device)
     args.device = dev
     env, n_maps, n_envs = build_env(args)
+    gd_eval = data.GameData(args.client)                  # loaded once; reused by periodic + final eval
+    weapon_eval = gd_eval.weapons.get(1) or next(iter(gd_eval.weapons.values()))
+    exo_eval = gd_eval.exoskeletons.get(1) or next(iter(gd_eval.exoskeletons.values()))
     Ppop = 2 * args.pop
-    print(f"Torch co-evolution: {n_maps} swiper maps x {args.perm} = N={n_envs} envs, M={env.M}, "
+    src = os.path.basename(args.dataset.rstrip("/")) if args.dataset else ("map" if args.map else "swiper")
+    print(f"Torch co-evolution [{src}]: {n_maps} maps x {args.perm} = N={n_envs} envs, M={env.M}, "
           f"B={env.B}, ticks={args.ticks}, pop={args.pop}, iters={args.iters}, dev={dev}")
 
     player = P.init_mlp(PLAYER_SIZES, device=dev, seed=7)
@@ -152,6 +192,9 @@ def main():
             pbar.update(1)
         pbar.set_postfix(it=it, phase="player" if train_player else "enemy",
                          player=f"{last['player']:.2f}", enemy=f"{last['enemy']:.3f}", best=f"{best:.2f}")
+        if args.eval_every and it > 0 and it % args.eval_every == 0:
+            rows, _ = run_eval(gd_eval, weapon_eval, exo_eval, args, player, enemy, dev, seeds=1)
+            tqdm.write(f"  [eval @ it{it:4d}]  {eval_line(rows)}")
         it += 1
         if use_budget and elapsed > args.budget:
             print(f"\n>>> reached {args.budget:.0f}s budget at iter {it} — stopping (models saved below).", flush=True)
@@ -169,7 +212,12 @@ def main():
     print(f"saved -> {args.player_out}  +  {args.enemy_out}")
 
     if args.eval:
-        eval_play(args, player, enemy, dev)
+        rows, maps = run_eval(gd_eval, weapon_eval, exo_eval, args, player, enemy, dev, max(1, args.eval_seeds))
+        eval_report(rows, maps, args.eval_seeds, dev)
+
+    if args.render:
+        import render_eval
+        render_eval.render_grid(gd_eval, weapon_eval, exo_eval, args, player, enemy, dev, args.render)
 
 
 if __name__ == "__main__":
