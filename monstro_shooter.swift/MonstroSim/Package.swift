@@ -1,37 +1,22 @@
 // swift-tools-version: 5.9
 import PackageDescription
 
-// MonstroSim — GPU-batched headless training engine for the Monstro Shooter game.
-// MonstroSim   : shared infra (seedable RNG, constants, map/unit-config loaders).
-// MonstroSimGPU: the engine (BatchWorld + on-device player policy + Evolution Strategies),
-//                MLX-Swift (Metal); + a Core ML/ANE inference connector.
-// MetalGame    : the playable GPU game (full loop in Metal compute, no SpriteKit).
-// Python is NOT used; the JAX scale-training port lives separately in ../brax.
+// MonstroSim — the Monstro Shooter GPU game on Metal. One batched MLX sim (GridSim) drives the playable
+// window (N=1), the 3x3 grid (N=9), the headless demo, and torch-parity replay. Models are trained in
+// ../torchsim (Python) and loaded as {sizes,w,b} JSON. (The old MLX-Swift ES trainer was retired —
+// training lives in torchsim.)
 let package = Package(
     name: "MonstroSim",
     platforms: [.macOS(.v14)],   // mlx-swift requires macOS 14+
     products: [
-        .library(name: "MonstroSim", targets: ["MonstroSim"]),
-        .library(name: "MonstroSimGPU", targets: ["MonstroSimGPU"]),
-        // CLI: gputrain / gpueval / gprun / aneinfer / gpubench / gpuprofile.
-        .executable(name: "monstrosim", targets: ["MonstroCLI"]),
-        // Track A: the GPU game — full loop in Metal compute, instanced sprites (no SpriteKit).
         .executable(name: "monstro-game", targets: ["MetalGame"]),
     ],
     dependencies: [
         .package(url: "https://github.com/ml-explore/mlx-swift", from: "0.31.0"),
     ],
     targets: [
-        .target(name: "MonstroSim"),
-        .target(name: "MonstroSimGPU", dependencies: [
-            "MonstroSim",
-            .product(name: "MLX", package: "mlx-swift"),
-            .product(name: "MLXRandom", package: "mlx-swift"),
-        ]),
-        .executableTarget(name: "MonstroCLI", dependencies: ["MonstroSim", "MonstroSimGPU"]),
         .executableTarget(name: "MetalGame", dependencies: [
             .product(name: "MLX", package: "mlx-swift"),
         ]),
-        .testTarget(name: "MonstroSimTests", dependencies: ["MonstroSim"]),
     ]
 )
