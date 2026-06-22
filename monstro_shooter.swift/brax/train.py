@@ -1,22 +1,49 @@
 """Braxify CLI. Dev (here): JAX-CPU, tiny N/ticks/iters. Scale: run on the 3090 with jax[cuda12].
   python train.py train  --map <map.json> --envs 256 --ticks 400 --iters 40 --pop 20 --out player.json
+  python train.py train  --maps-dir ../monstro_client/Resources/MapConfigs --envs 512 --pop 64   (generalist)
+  python train.py train  --maps a.json,b.json,c.json --envs 512 --pop 64                          (subset)
   python train.py eval   --map <map.json> --net player.json
   python train.py parity --net ../MonstroSim/models/player.json   (forward == Swift/MLX)
 """
-import argparse, json, time
+import argparse, glob, json, os, time
 import numpy as np
 import jax, jax.numpy as jnp
 import data, schedule, policy, es
 from env import Env
 
 
+def _map_paths(args):
+    """Resolve --map / --maps / --maps-dir into an ordered list of map file paths."""
+    if args.maps_dir:
+        paths = sorted(p for p in glob.glob(os.path.join(args.maps_dir, "*.json"))
+                       if "all_maps" not in os.path.basename(p))
+        if not paths:
+            raise SystemExit(f"no map_*.json under {args.maps_dir}")
+        return paths
+    if args.maps:
+        return [p.strip() for p in args.maps.split(",") if p.strip()]
+    if args.map:
+        return [args.map]
+    raise SystemExit("pass --map, --maps a,b,c, or --maps-dir <dir>")
+
+
 def build(args, base_seed):
     gd = data.GameData(args.client)
-    level = data.sim_level(data.load_map(args.map))
-    sched = schedule.build(level, gd.monsters, base_seed=base_seed, n_envs=args.envs, cap=args.cap)
+    paths = _map_paths(args)
+    levels = [data.sim_level(data.load_map(p)) for p in paths]
     weapon = gd.weapons.get(1) or next(iter(gd.weapons.values()))
     exo = gd.exoskeletons.get(1) or next(iter(gd.exoskeletons.values()))
-    return level, Env(level, sched, weapon, exo)
+    if len(levels) == 1:
+        sched = schedule.build(levels[0], gd.monsters, base_seed=base_seed, n_envs=args.envs, cap=args.cap)
+        return levels[0], Env(levels[0], sched, weapon, exo)
+    sched = schedule.build_multi(levels, gd.monsters, base_seed=base_seed, n_envs=args.envs, cap=args.cap)
+    # synthetic level wrapper for Env (duration/name only); M comes from the combined schedule
+    meta = {"name": f"multi({len(levels)} maps)",
+            "duration": max(lv["duration"] for lv in levels),
+            "expected_total": sched["M"]}
+    per = np.bincount(sched["assign"], minlength=len(levels))
+    print("Maps:", ", ".join(f"{os.path.basename(p)}×{n}" for p, n in zip(paths, per)))
+    return meta, Env(meta, sched, weapon, exo)
 
 
 def save_params(params, sizes, path):
@@ -72,6 +99,8 @@ if __name__ == "__main__":
         s = sub.add_parser(name)
         s.add_argument("--client", default=data.DEFAULT_CLIENT)
         s.add_argument("--map", default="")
+        s.add_argument("--maps", default="", help="comma-separated map paths (domain randomization)")
+        s.add_argument("--maps-dir", default="", help="dir of map_*.json — train across all of them")
         s.add_argument("--net", default="")
         s.add_argument("--out", default="")
         s.add_argument("--envs", type=int, default=16)
