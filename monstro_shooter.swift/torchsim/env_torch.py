@@ -110,14 +110,46 @@ class EnvTorch:
                           (s["mon_hp"] / (self.hp0[None] + c.eps))[..., None],
                           bdir, bdist_n[..., None]], -1)   # [P,N,M,10]
 
+    def _precompute(self, ticks):
+        """Precompute per-tick spread (cos/sin), ring-slot one-hots, fire/contact gates, and elapsed —
+        ONCE, as device tensors indexed by t. Removes the per-tick numpy + host->device copy from step()
+        (the only CPU<->GPU boundary in the loop), which is what blocks fusion / CUDA-graph capture.
+        Parity-exact: same det_rand hash / values as the inline version."""
+        self._pc_ticks = ticks
+        dev = self.device
+        K, B, fi, ci = self.bullets_per_shot, self.B, self.fire_interval, self.contact_interval
+        t_arr = np.arange(1, ticks + 1, dtype=np.int64)                          # [T]
+        ks = np.arange(K, dtype=np.int64)                                        # [K]
+        h = (t_arr[:, None] * 2654435761 + ks[None, :] * 340573 + 12345) & 0xffffffff
+        dr = h / 2147483647.5 - 1.0                                              # det_rand(t,k) [T,K]
+        theta = np.arctan2(self.max_dev * dr, 500.0)
+        self._ct = torch.tensor(np.cos(theta), dtype=torch.float32, device=dev)  # [T,K]
+        self._st = torch.tensor(np.sin(theta), dtype=torch.float32, device=dev)  # [T,K]
+        slots = ((t_arr // fi)[:, None] * K + ks[None, :]) % B                   # [T,K]
+        oh = np.zeros((ticks, K, B), np.float32)
+        oh[np.arange(ticks)[:, None], np.arange(K)[None, :], slots] = 1.0
+        self._onehot = torch.tensor(oh, device=dev)                              # [T,K,B]
+        self._gate_fire = torch.tensor((t_arr % fi == 0).astype(np.float32), device=dev)     # [T]
+        self._gate_contact = torch.tensor((t_arr % ci == 0).astype(np.float32), device=dev)  # [T]
+        self._elapsed = torch.tensor((t_arr * self.cfg.dt).astype(np.float32), device=dev)   # [T]
+
     # ---- one tick. player_fn: obs[P,N,8]->[P,N,4]; enemy_fn: obs[P,N,M,10]->[P,N,M,2] or None ----
     def step(self, s, t, player_fn, enemy_fn):
+        if not hasattr(self, "_pc_ticks") or t > self._pc_ticks:
+            self._precompute(max(t * 2, 256))                       # cached; grows rarely
+        i = t - 1
+        # Per-tick scalars/tensors are sliced HERE (eager) and passed into _core, so _core has no
+        # python-int guard -> torch.compile traces it ONCE and CUDA-graph capture is possible (static
+        # shapes, no host<->device boundary). self._core may be rebound to a compiled version.
+        return self._core(s, self._elapsed[i], self._gate_fire[i], self._gate_contact[i],
+                          self._ct[i], self._st[i], self._onehot[i], player_fn, enemy_fn)
+
+    def _core(self, s, elapsed, gate_fire, gate_contact, pct, pst, onehot, player_fn, enemy_fn):
         c = self.cfg
         P, N, M = s["mon_pos"].shape[0], self.N, self.M
         a_player = player_fn(self.player_obs_vec(s))                 # pre-step player obs
         a_move, a_aim = a_player[..., 0:2], a_player[..., 2:4]
 
-        elapsed = float(t) * c.dt
         st = self.spawn_tick[None]                                  # [1,N,M]
         due = st <= elapsed
         just = due & (s["mon_act"] < 0.5)
@@ -150,7 +182,7 @@ class EnvTorch:
         reload_t = torch.clamp(s["reload_t"] - 1.0, min=0.0)
         just_reloaded = (s["reload_t"] > 0) & (reload_t == 0)
         ammo = torch.where(just_reloaded, torch.full_like(s["ammo"], float(self.mag_size)), s["ammo"])
-        gate = torch.full_like(ammo, 1.0 if (t % self.fire_interval == 0) else 0.0)
+        gate = gate_fire
         fire = ((gate > 0.5) & (ammo > 0) & (reload_t == 0)).float()        # [P,N] envs firing this tick
         ammo = ammo - fire
         need_reload = (ammo <= 0) & (reload_t == 0)
@@ -160,23 +192,10 @@ class EnvTorch:
         aim = a_aim / (torch.sqrt((a_aim * a_aim).sum(-1, keepdim=True)) + c.eps)   # [P,N,2]
         bul_pos, bul_vel = s["bul_pos"], s["bul_vel"]
         bul_alive, bul_dist, bul_pen = s["bul_alive"], s["bul_dist"], s["bul_pen"]
-        shot = t // self.fire_interval
-        ar = torch.arange(self.B, device=self.device)
-        # Vectorized over the K=bullets_per_shot pellets (NO Python loop): each pellet k gets its fixed
-        # spread angle from det_rand(t,k) and a distinct ring-buffer slot (K<=B => no collision), then ONE
-        # gated scatter writes all pellets at once. Parity-identical to the old per-k loop.
-        K = self.bullets_per_shot
-        assert K <= self.B, "bullets_per_shot must be <= bullet buffer B"
-        ks = np.arange(K, dtype=np.int64)
-        dr = ((t * 2654435761 + ks * 340573 + 12345) & 0xffffffff) / 2147483647.5 - 1.0      # det_rand(t,k)
-        theta = np.arctan2(self.max_dev * dr, 500.0)
-        ct = torch.tensor(np.cos(theta), dtype=torch.float32, device=self.device)            # [K]
-        st = torch.tensor(np.sin(theta), dtype=torch.float32, device=self.device)            # [K]
-        slots = torch.tensor((shot * K + ks) % self.B, dtype=torch.long, device=self.device)  # [K]
+        # pct/pst/onehot (spread cos/sin + ring-slot one-hot for this tick) are passed in as args.
         aimx, aimy = aim[..., 0:1], aim[..., 1:2]                                             # [P,N,1]
-        pa = torch.stack([aimx * ct - aimy * st, aimx * st + aimy * ct], -1)                  # [P,N,K,2]
+        pa = torch.stack([aimx * pct - aimy * pst, aimx * pst + aimy * pct], -1)              # [P,N,K,2]
         vel_k = pa * self.bullet_speed                                                        # [P,N,K,2]
-        onehot = (slots[:, None] == ar[None, :]).float()                                      # [K,B]
         write_b = onehot.sum(0).clamp(max=1.0)                                                # [B] slots touched
         vel_b = torch.einsum("kb,pnkc->pnbc", onehot, vel_k)                                  # [P,N,B,2]
         writeB = write_b[None, None, :] * fire[:, :, None]                                    # [P,N,B]
@@ -209,7 +228,7 @@ class EnvTorch:
         contact_now = (alive_a & (dist < (c.player_radius + self.mon_boxW[None] / 2 + c.buffer))).float()
         newly = contact_now * (1.0 - s["mon_contact"])
         sustained = contact_now * s["mon_contact"]
-        gate_c = 1.0 if (t % self.contact_interval == 0) else 0.0
+        gate_c = gate_contact
         dmg = ((newly + sustained * gate_c) * self.mon_dmg[None]).sum(2)
         applied = torch.where(dmg > 0, torch.clamp(dmg - self.defense, min=c.defense_min_floor), torch.zeros_like(dmg))
         player_hp = s["player_hp"] - applied

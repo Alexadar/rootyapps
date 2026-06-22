@@ -23,6 +23,6 @@ echo "device=$DEV  perm=$PERM pop=$POP ticks=$TICKS bullets=$BULLETS budget=${BU
 "$PY" train_torch.py \
   --dataset datasets/tiny \
   --perm $PERM --pop $POP --ticks $TICKS --cap 16 --bullets $BULLETS \
-  --iters 40000 --budget $BUDGET \
+  --iters 40000 --budget $BUDGET --compile \
   --eval --eval-seeds 3 --eval-every 30 \
   --render datasets/tiny/eval/grid.mp4

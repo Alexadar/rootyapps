@@ -34,6 +34,17 @@ def pick_device(pref="auto"):
     return "cpu"
 
 
+def _perf_setup(dev):
+    """Standard torch perf flags. On cuda: TF32 fast-path for the (tiny) MLP matmuls — only affects the
+    net, parity-safe. cudnn.benchmark is a no-op for us (no convs). The sim stays fp32; bf16/fp16 are NOT
+    used (d² overflows fp16 at world scale, bf16 mantissa too coarse for collision thresholds)."""
+    torch.backends.cudnn.benchmark = True
+    if dev == "cuda":
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        torch.set_float32_matmul_precision("high")
+
+
 def swiper_maps(client):
     prod = json.load(open(os.path.join(client, "Resources", "prod.json")))
     names = prod["mapFilenames"]
@@ -146,6 +157,7 @@ def main():
     ap.add_argument("--sigma", type=float, default=0.1)
     ap.add_argument("--lr", type=float, default=0.05)
     ap.add_argument("--device", default="auto")          # auto: cuda -> mps -> cpu (explicit value respected)
+    ap.add_argument("--compile", action="store_true")    # torch.compile the env step (CUDA-graphs on cuda)
     ap.add_argument("--budget", type=float, default=0.0)   # wall-time cap in seconds (0=off); stops + saves
     ap.add_argument("--eval", action="store_true")       # after training, play one UNSEEN map headless
     ap.add_argument("--eval-map", default="")            # default: dataset/eval/*.json or eval_unseen.json
@@ -159,7 +171,13 @@ def main():
 
     dev = pick_device(args.device)
     args.device = dev
+    _perf_setup(dev)
     env, n_maps, n_envs = build_env(args)
+    if args.compile:
+        # CUDA-graph trees on cuda (the big win); Inductor fusion on mps/cpu. _core is compile-clean
+        # (per-tick tensors passed as args), so it traces ONCE. First iter pays the compile warmup.
+        env._core = torch.compile(env._core, mode="reduce-overhead" if dev == "cuda" else None)
+        print(f"  torch.compile: ON (mode={'reduce-overhead' if dev=='cuda' else 'default'})")
     gd_eval = data.GameData(args.client)                  # loaded once; reused by periodic + final eval
     weapon_eval = gd_eval.weapons.get(1) or next(iter(gd_eval.weapons.values()))
     exo_eval = gd_eval.exoskeletons.get(1) or next(iter(gd_eval.exoskeletons.values()))
