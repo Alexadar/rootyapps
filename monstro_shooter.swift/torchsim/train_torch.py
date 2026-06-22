@@ -68,34 +68,48 @@ def build_env(args):
     return env, len(levels), n_envs
 
 
-def _play_once(env, ticks_max, pf, ef):
-    """One headless game: to tick-timeout OR all-killed. Returns (survived, kills, M, damage)."""
-    M = env.M
+def _play_batch(env, ticks_max, real_tot, env_ticks, pf, ef):
+    """Play ALL eval games at once, vectorized over the N-env batch (exactly like training rolls N
+    envs) — NO per-game loop. Each env runs to its own timeout / cleared / death; metrics are frozen
+    per-env at the first crossing via masks, so this is byte-identical to playing each game alone and
+    breaking. The only loop is the unavoidable per-tick time loop. Returns (survived[N], kills[N], dmg[N])."""
     s = env.reset(1)
+    N = s["player_hp"].shape[1]
+    dev = s["player_hp"].device
+    hp_max = float(env.cfg.player_max_hp)
+    done = torch.zeros(N, device=dev)
+    fk = torch.zeros(N, device=dev)
+    fhp = torch.full((N,), hp_max, device=dev)
     with torch.no_grad():
         for tk in range(1, ticks_max + 1):
             s, _, _ = env.step(s, tk, pf, ef)
-            hp = float(s["player_hp"][0, 0]); kills = int(s["kills"][0, 0])
-            if hp <= 0 or kills >= M:
+            hp = s["player_hp"][0]; k = s["kills"][0]                       # [N]
+            cross = ((hp <= 0) | (k >= real_tot) | (tk >= env_ticks)).float()
+            newly = (1.0 - done) * cross
+            fk = torch.where(newly > 0.5, k, fk)
+            fhp = torch.where(newly > 0.5, hp.clamp(min=0.0), fhp)
+            done = torch.maximum(done, cross)
+            if float(done.min()) > 0.5:
                 break
-    hp = max(float(s["player_hp"][0, 0]), 0.0); kills = int(s["kills"][0, 0])
-    return hp > 0, kills, M, 100.0 - hp
+    return fhp > 0, fk, hp_max - fhp
 
 
 def run_eval(gd, weapon, exo, args, player, enemy, dev, seeds):
-    """Play each held-out eval map × `seeds` headless. Returns (rows, maps); row=(name,survived,kills,M,dmg)."""
+    """Play every held-out (map x seed) game in ONE batched rollout (no map/seed loop).
+    Returns (rows, maps); row = (name, survived, kills, M, dmg)."""
     pf = lambda obs: P.apply_mlp(player, obs)
     ef = lambda obs: P.apply_enemy(enemy, obs)
     maps = eval_paths(args)
-    rows = []
-    for mpath in maps:
-        level = data.sim_level(data.load_map(mpath))
-        total = max(level["expected_total"], 1)
-        ticks_max = args.eval_ticks or int(level["duration"] * 30)
-        for sd in range(seeds):
-            sched = schedule.build(level, gd.monsters, base_seed=1000 + sd * 7919, n_envs=1, cap=min(total, 1024))
-            env = EnvTorch(sched, weapon, exo, device=dev, bullets=args.bullets)
-            rows.append((os.path.basename(mpath),) + _play_once(env, ticks_max, pf, ef))
+    levels = [data.sim_level(data.load_map(m)) for m in maps]
+    names = [os.path.basename(m) for m in maps]
+    sched, real_tot, assign = schedule.build_eval(levels, gd.monsters, seeds, cap=1024)
+    env = EnvTorch(sched, weapon, exo, device=dev, bullets=args.bullets)
+    per_ticks = [args.eval_ticks or int(lv["duration"] * 30) for lv in levels]
+    env_ticks = torch.tensor([per_ticks[assign[e]] for e in range(len(assign))], device=dev, dtype=torch.float32)
+    rt = torch.tensor(real_tot, device=dev)
+    surv, fk, dmg = _play_batch(env, int(env_ticks.max()), rt, env_ticks, pf, ef)
+    rows = [(names[assign[e]], bool(surv[e]), int(fk[e]), int(real_tot[e]), float(dmg[e]))
+            for e in range(len(assign))]
     return rows, maps
 
 

@@ -127,6 +127,40 @@ final class SpriteRenderer {
         return base + UInt32(frame % cnt)
     }
 
+    /// one cell of a batched grid: a viewport rectangle + its own camera + its slice of the instance buffer
+    struct GridCell {
+        var x, y, w, h: Double
+        var camCenter: SIMD2<Float>, camHalf: SIMD2<Float>
+        var start: Int, count: Int
+    }
+
+    /// Abstract batched render layer: draw N games, each into its own viewport with its own camera, from
+    /// ONE concatenated instance buffer. The live game is just this with a single full-screen cell (N=1).
+    func encodeGrid(into cmd: MTLCommandBuffer, rp: MTLRenderPassDescriptor, instances: [SpriteInstance], cells: [GridCell]) {
+        if !instances.isEmpty {
+            let ptr = instBuf.contents().bindMemory(to: SpriteInstance.self, capacity: instances.count)
+            for (i, e) in instances.enumerated() { ptr[i] = e }
+        }
+        var tw: Float = 512
+        let e = cmd.makeRenderCommandEncoder(descriptor: rp)!
+        for c in cells {
+            e.setViewport(MTLViewport(originX: c.x, originY: c.y, width: c.w, height: c.h, znear: 0, zfar: 1))
+            var cc = c.camCenter, ch = c.camHalf
+            e.setRenderPipelineState(bgPSO)
+            e.setVertexBytes(&cc, length: 8, index: 0); e.setVertexBytes(&ch, length: 8, index: 1)
+            e.setVertexBytes(&tw, length: 4, index: 2); e.setFragmentTexture(bgTex, index: 0)
+            e.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
+            if c.count > 0 {
+                e.setRenderPipelineState(pso)
+                e.setVertexBuffer(instBuf, offset: c.start * MemoryLayout<SpriteInstance>.stride, index: 0)
+                e.setVertexBytes(&cc, length: 8, index: 1); e.setVertexBytes(&ch, length: 8, index: 2)
+                e.setFragmentTexture(tex, index: 0)
+                e.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: c.count)
+            }
+        }
+        e.endEncoding()
+    }
+
     func encode(into cmd: MTLCommandBuffer, rp: MTLRenderPassDescriptor, instances: [SpriteInstance],
                 camCenter: SIMD2<Float>, camHalf: SIMD2<Float>) {
         let ptr = instBuf.contents().bindMemory(to: SpriteInstance.self, capacity: instances.count)

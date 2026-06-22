@@ -162,18 +162,30 @@ class EnvTorch:
         bul_alive, bul_dist, bul_pen = s["bul_alive"], s["bul_dist"], s["bul_pen"]
         shot = t // self.fire_interval
         ar = torch.arange(self.B, device=self.device)
-        for k in range(self.bullets_per_shot):
-            slot_k = (shot * self.bullets_per_shot + k) % self.B
-            theta = math.atan2(self.max_dev * det_rand(t, k), 500.0)
-            ct, st = math.cos(theta), math.sin(theta)
-            pa = torch.stack([aim[..., 0] * ct - aim[..., 1] * st, aim[..., 0] * st + aim[..., 1] * ct], -1)
-            write = (ar == slot_k).float()[None, None, :] * fire[:, :, None]        # [P,N,B]
-            w1 = write[..., None]
-            bul_pos = torch.where(w1 > 0.5, s["player_pos"][:, :, None, :], bul_pos)
-            bul_vel = torch.where(w1 > 0.5, (pa * self.bullet_speed)[:, :, None, :], bul_vel)
-            bul_alive = torch.where(write > 0.5, torch.ones_like(bul_alive), bul_alive)
-            bul_dist = torch.where(write > 0.5, torch.zeros_like(bul_dist), bul_dist)
-            bul_pen = torch.where(write > 0.5, torch.full_like(bul_pen, float(self.penetration)), bul_pen)
+        # Vectorized over the K=bullets_per_shot pellets (NO Python loop): each pellet k gets its fixed
+        # spread angle from det_rand(t,k) and a distinct ring-buffer slot (K<=B => no collision), then ONE
+        # gated scatter writes all pellets at once. Parity-identical to the old per-k loop.
+        K = self.bullets_per_shot
+        assert K <= self.B, "bullets_per_shot must be <= bullet buffer B"
+        ks = np.arange(K, dtype=np.int64)
+        dr = ((t * 2654435761 + ks * 340573 + 12345) & 0xffffffff) / 2147483647.5 - 1.0      # det_rand(t,k)
+        theta = np.arctan2(self.max_dev * dr, 500.0)
+        ct = torch.tensor(np.cos(theta), dtype=torch.float32, device=self.device)            # [K]
+        st = torch.tensor(np.sin(theta), dtype=torch.float32, device=self.device)            # [K]
+        slots = torch.tensor((shot * K + ks) % self.B, dtype=torch.long, device=self.device)  # [K]
+        aimx, aimy = aim[..., 0:1], aim[..., 1:2]                                             # [P,N,1]
+        pa = torch.stack([aimx * ct - aimy * st, aimx * st + aimy * ct], -1)                  # [P,N,K,2]
+        vel_k = pa * self.bullet_speed                                                        # [P,N,K,2]
+        onehot = (slots[:, None] == ar[None, :]).float()                                      # [K,B]
+        write_b = onehot.sum(0).clamp(max=1.0)                                                # [B] slots touched
+        vel_b = torch.einsum("kb,pnkc->pnbc", onehot, vel_k)                                  # [P,N,B,2]
+        writeB = write_b[None, None, :] * fire[:, :, None]                                    # [P,N,B]
+        w1 = writeB[..., None]
+        bul_pos = torch.where(w1 > 0.5, s["player_pos"][:, :, None, :], bul_pos)
+        bul_vel = torch.where(w1 > 0.5, vel_b, bul_vel)
+        bul_alive = torch.where(writeB > 0.5, torch.ones_like(bul_alive), bul_alive)
+        bul_dist = torch.where(writeB > 0.5, torch.zeros_like(bul_dist), bul_dist)
+        bul_pen = torch.where(writeB > 0.5, torch.full_like(bul_pen, float(self.penetration)), bul_pen)
 
         bul_pos = bul_pos + bul_vel * c.dt
         bul_dist = bul_dist + torch.sqrt((bul_vel * bul_vel).sum(-1)) * c.dt

@@ -40,7 +40,7 @@ if CommandLine.arguments.contains("--demo") {
         try? FileManager.default.removeItem(atPath: "\(dir)/\(p)")
     }
     let nframes = arg("frames", 900), size = arg("size", 800)
-    let game = try Game(playerPath: argS("player", "models/player.mlmodel"))
+    let game = try Game(playerPath: argS("player", "models/player.json"))
     let td = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: size, height: size, mipmapped: false)
     td.usage = [.renderTarget, .shaderRead]; td.storageMode = .shared
     let tex = game.device.makeTexture(descriptor: td)!
@@ -53,6 +53,13 @@ if CommandLine.arguments.contains("--demo") {
     print("demo: \(fi) frames -> \(dir)  (kills \(game.kills), hp \(Int(max(game.php, 0))))")
     exit(0)
 }
+
+// Grid mode: play the 3x3 (maps x seeds) grid as ONE batched MLX rollout, record a replay script, then
+// draw all games with the real Swift sprite renderer: `monstro-game --grid [--out /tmp/grid]`.
+if CommandLine.arguments.contains("--grid") { runGrid(); exit(0) }
+
+// Gate: parity-replay the 9 games through the BATCHED sim at N=1 -> swift_*.json for parity_diff.py.
+if CommandLine.arguments.contains("--portgrid") { runPortGrid(); exit(0) }
 
 // Interactive window mode (play it): `monstro-game --window`. Blocks until you quit.
 if CommandLine.arguments.contains("--window") { runGameWindow(); exit(0) }

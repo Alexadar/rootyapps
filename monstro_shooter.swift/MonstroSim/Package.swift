@@ -29,7 +29,9 @@ let package = Package(
             .product(name: "MLXRandom", package: "mlx-swift"),
         ]),
         .executableTarget(name: "MonstroCLI", dependencies: ["MonstroSim", "MonstroSimGPU"]),
-        .executableTarget(name: "MetalGame"),
+        .executableTarget(name: "MetalGame", dependencies: [
+            .product(name: "MLX", package: "mlx-swift"),
+        ]),
         .testTarget(name: "MonstroSimTests", dependencies: ["MonstroSim"]),
     ]
 )

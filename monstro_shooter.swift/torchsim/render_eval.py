@@ -29,25 +29,40 @@ def _pick_device(pref="auto"):
     return "mps" if (mps is not None and mps.is_available()) else "cpu"
 
 
-def _capture(env, ticks_max, pf, ef, stride):
-    """Play one game, snapshot (player, monsters, bullets, kills, hp) every `stride` ticks."""
-    s = env.reset(1); M = env.M
-    boxW = env.mon_boxW[0].detach().cpu().numpy()                 # [M]
-    caps = []
+def _capture_batch(env, ticks_max, real_tot, env_ticks, pf, ef, stride):
+    """Capture ALL grid games in ONE batched rollout (vectorized over the N envs, no per-game loop —
+    same shape as training). Snapshots the whole [N,...] batch every `stride` ticks; each game freezes
+    on its own death / cleared / timeout via `end_idx` (a finished game holds its last frame, matching
+    the old one-game-at-a-time renderer). Only the per-tick time loop remains.
+    Returns (snaps, end_idx[N], boxW[N,M]); snaps[i] is a dict of [N,...] arrays."""
+    s = env.reset(1)
+    N = s["player_hp"].shape[1]
+    dev = s["player_hp"].device
+    boxW = env.mon_boxW.detach().cpu().numpy()                    # [N,M]
+    snaps = []
+    done = torch.zeros(N, device=dev)
+    end_idx = torch.full((N,), -1, dtype=torch.long, device=dev)
     with torch.no_grad():
         for tk in range(1, ticks_max + 1):
             s, _, _ = env.step(s, tk, pf, ef)
             if tk == 1 or tk % stride == 0:
-                pp = s["player_pos"][0, 0].detach().cpu().numpy()
-                mp = s["mon_pos"][0, 0].detach().cpu().numpy()
-                al = ((s["mon_act"][0, 0] > 0.5) & (s["mon_hp"][0, 0] > 0)).detach().cpu().numpy()
-                bp = s["bul_pos"][0, 0].detach().cpu().numpy()
-                ba = (s["bul_alive"][0, 0] > 0.5).detach().cpu().numpy()
-                caps.append((pp.copy(), mp.copy(), al.copy(), bp.copy(), ba.copy(),
-                             int(s["kills"][0, 0]), max(float(s["player_hp"][0, 0]), 0.0)))
-            if float(s["player_hp"][0, 0]) <= 0 or int(s["kills"][0, 0]) >= M:
+                snaps.append(dict(
+                    pp=s["player_pos"][0].detach().cpu().numpy(),                          # [N,2]
+                    mp=s["mon_pos"][0].detach().cpu().numpy(),                             # [N,M,2]
+                    al=((s["mon_act"][0] > 0.5) & (s["mon_hp"][0] > 0)).detach().cpu().numpy(),  # [N,M]
+                    bp=s["bul_pos"][0].detach().cpu().numpy(),                             # [N,B,2]
+                    ba=(s["bul_alive"][0] > 0.5).detach().cpu().numpy(),                   # [N,B]
+                    kills=s["kills"][0].detach().cpu().numpy(),                            # [N]
+                    hp=s["player_hp"][0].clamp(min=0.0).detach().cpu().numpy()))           # [N]
+            hp = s["player_hp"][0]; k = s["kills"][0]
+            cross = ((hp <= 0) | (k >= real_tot) | (tk >= env_ticks)).float()
+            newly = (1.0 - done) * cross
+            end_idx = torch.where(newly > 0.5, torch.full_like(end_idx, len(snaps) - 1), end_idx)
+            done = torch.maximum(done, cross)
+            if float(done.min()) > 0.5:
                 break
-    return caps, boxW
+    end_idx = torch.where(end_idx < 0, torch.full_like(end_idx, len(snaps) - 1), end_idx)
+    return snaps, end_idx.detach().cpu().numpy(), boxW
 
 
 def _draw(cap, boxW, ah, size, name):
@@ -89,28 +104,31 @@ def render_grid(gd, weapon, exo, args, player, enemy, dev, out_path):
     panel = getattr(args, "render_panel", 240)
     bullets = getattr(args, "bullets", 24)
     maps = _eval_maps(dataset)[:3]
-    games = []
-    for mp in maps:
-        level = data.sim_level(data.load_map(mp))
-        total = max(level["expected_total"], 1)
-        ah = level["arena_half"]
-        ticks = getattr(args, "eval_ticks", 0) or int(level["duration"] * 30)
-        for sd in range(seeds):
-            sched = schedule.build(level, gd.monsters, base_seed=1000 + sd * 7919, n_envs=1, cap=min(total, 1024))
-            env = EnvTorch(sched, weapon, exo, device=dev, bullets=bullets)
-            caps, boxW = _capture(env, ticks, pf, ef, stride)
-            games.append((caps, boxW, ah, f"{os.path.basename(mp).replace('.json', '')}#{sd}"))
+    levels = [data.sim_level(data.load_map(m)) for m in maps]
+    names = [os.path.basename(m).replace(".json", "") for m in maps]
+    # one batched env for all (maps x seeds) games — captured in a single rollout (no per-game loop)
+    sched, real_tot, assign = schedule.build_eval(levels, gd.monsters, seeds, cap=1024)
+    env = EnvTorch(sched, weapon, exo, device=dev, bullets=bullets)
+    per_ticks = [getattr(args, "eval_ticks", 0) or int(lv["duration"] * 30) for lv in levels]
+    env_ticks = torch.tensor([per_ticks[assign[e]] for e in range(len(assign))], device=dev, dtype=torch.float32)
+    rt = torch.tensor(real_tot, device=dev)
+    snaps, end_idx, boxW = _capture_batch(env, int(env_ticks.max()), rt, env_ticks, pf, ef, stride)
+    ah = sched["arena_half"]                                       # [N]
+    game_name = [f"{names[assign[e]]}#{e % seeds}" for e in range(len(assign))]
     rows, cols = len(maps), seeds
-    maxlen = max(len(g[0]) for g in games)
+    maxlen = len(snaps)
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
     w = imageio.get_writer(out_path, fps=fps, macro_block_size=None)
-    for t in range(maxlen):
+    for t in range(maxlen):                                       # frame compose (visualization)
         rowimgs = []
-        for r in range(rows):
+        for r in range(rows):                                     # grid tiling (visualization)
             pans = []
             for c in range(cols):
-                caps, boxW, ah, name = games[r * cols + c]
-                pans.append(_draw(caps[min(t, len(caps) - 1)], boxW, ah, panel, name))
+                e = r * cols + c
+                sn = snaps[min(t, int(end_idx[e]))]
+                cap = (sn["pp"][e], sn["mp"][e], sn["al"][e], sn["bp"][e], sn["ba"][e],
+                       int(sn["kills"][e]), float(sn["hp"][e]))
+                pans.append(_draw(cap, boxW[e], float(ah[e]), panel, game_name[e]))
             rowimgs.append(np.concatenate(pans, axis=1))
         w.append_data(np.concatenate(rowimgs, axis=0))
     w.close()

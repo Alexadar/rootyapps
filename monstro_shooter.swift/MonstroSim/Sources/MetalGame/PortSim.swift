@@ -1,12 +1,14 @@
 import Foundation
-import CoreML
 import simd
+import MLX
 
-// Faithful Swift port of torchsim/env_torch.py `step` (single game, N=1). Reads the shared WorldConfig
-// + the baked per-game schedule (exported by export_world.py) and drives BOTH the player and every
-// monster via Core ML — exactly the canonical ruleset. Captures per-tick positions so the Python side
-// can diff this trajectory against the torch reference (two-env parity). Step ORDER mirrors env_torch
-// precisely (player obs pre-spawn; enemy obs post-spawn/pre-fire; contact uses pre-move distance).
+// Loop-free Swift port of torchsim/env_torch.py `step` (single game). Every per-entity operation is an
+// MLX tensor op on the Metal GPU — NO Swift `for` loop over monsters or bullets. Both the player and the
+// shared enemy net are in-graph MLX MLPs (matmul+relu over [M,10]/[1,8]), so the whole tick — spawn,
+// steering, multi-pellet fire, penetrating collision, contact damage, player move — is one fused GPU
+// graph. Step ORDER mirrors env_torch precisely. After each tick the state is materialized to plain Swift
+// arrays (one host readback) for the sprite renderer. The only loops left are the per-tick time loop (in
+// Game/runPort) and the 2-layer MLP-depth loop (network layers, not entities).
 
 struct WorldJSON: Codable {
     var dt, player_speed, player_half, player_radius, map_half, turn_rate, buffer, bullet_radius: Float
@@ -30,226 +32,312 @@ func detRand(_ t: Int, _ k: Int) -> Float {
     return Float(Double(h) / 2147483647.5 - 1.0)
 }
 
-/// Generic Core ML net: obs [Float] -> action [Float]. Input feature "obs", output "action".
-final class CoreMLNet {
-    private let model: MLModel
+/// In-graph MLP loaded from the shared {sizes,w,b} JSON (same file Core ML exports from). Weights [in,out],
+/// relu on hidden layers, linear out — mirrors torchsim/policy_torch.py::apply_mlp exactly. Batched: an
+/// [M,in] input runs all M monsters in one matmul.
+final class MLXMLP {
+    struct NetJSON: Codable { var sizes: [Int]; var w: [[Float]]; var b: [[Float]] }
+    private var W: [MLXArray] = []
+    private var bias: [MLXArray] = []
     init?(path: String) {
-        guard let compiled = try? MLModel.compileModel(at: URL(fileURLWithPath: path)) else { return nil }
-        let cfg = MLModelConfiguration(); cfg.computeUnits = .all
-        guard let m = try? MLModel(contentsOf: compiled, configuration: cfg) else { return nil }
-        model = m
+        guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
+              let d = try? JSONDecoder().decode(NetJSON.self, from: data) else { return nil }
+        for i in 0..<d.w.count {
+            W.append(MLXArray(d.w[i], [d.sizes[i], d.sizes[i + 1]]))
+            bias.append(MLXArray(d.b[i], [d.sizes[i + 1]]))
+        }
     }
-    func predict(_ obs: [Float]) -> [Float] {
-        guard let arr = try? MLMultiArray(shape: [NSNumber(value: obs.count)], dataType: .float32) else { return [] }
-        for (i, v) in obs.enumerated() { arr[i] = NSNumber(value: v) }
-        guard let prov = try? MLDictionaryFeatureProvider(dictionary: ["obs": MLFeatureValue(multiArray: arr)]),
-              let out = try? model.prediction(from: prov),
-              let o = out.featureValue(for: "action")?.multiArrayValue else { return [] }
-        return (0..<o.count).map { o[$0].floatValue }
+    func callAsFunction(_ x: MLXArray) -> MLXArray {
+        var h = x
+        let n = W.count
+        for i in 0..<n {                       // MLP-depth loop (network layers, not entities)
+            h = matmul(h, W[i]) + bias[i]
+            if i < n - 1 { h = maximum(h, MLXArray(0.0)) }
+        }
+        return h
     }
 }
 
 final class PortSim {
     let w: WorldJSON
     let s: SchedJSON
-    let player: CoreMLNet?       // nil in the playable game (human moves the player)
-    let enemy: CoreMLNet
+    let player: MLXMLP?          // nil in the playable game (human moves the player)
+    let enemy: MLXMLP
     let M: Int, B: Int
     let mapHalf: Float
 
-    // state
+    // ---- MLX state (single game; shapes mirror env_torch with the P,N dims dropped) ----
+    private var mPlayerPos: MLXArray          // [2]
+    private var mPlayerHP: MLXArray           // [1]
+    private var mMonPos: MLXArray             // [M,2]
+    private var mMonVel: MLXArray             // [M,2]
+    private var mMonHP: MLXArray              // [M]
+    private var mMonAct: MLXArray             // [M]
+    private var mMonContact: MLXArray         // [M]
+    private var mBulPos: MLXArray             // [B,2]
+    private var mBulVel: MLXArray             // [B,2]
+    private var mBulAlive: MLXArray           // [B]
+    private var mBulDist: MLXArray            // [B]
+    private var mBulPen: MLXArray             // [B]
+    private var mAmmo: MLXArray               // [1]
+    private var mReloadT: MLXArray            // [1]
+    private var mLastAim: MLXArray            // [2]
+    // constant schedule tensors
+    private let cSpawn: MLXArray, cOffset: MLXArray, cHP0: MLXArray, cSpeed: MLXArray
+    private let cBoxW: MLXArray, cDmg: MLXArray
+
+    // ---- host mirrors for the renderer (materialized each tick straight from .asArray — NO loops) ----
     var playerPos = SIMD2<Float>(0, 0)
     var playerHP: Float
-    var monPos: [SIMD2<Float>]
-    var monVel: [SIMD2<Float>]
-    var monHP: [Float]
-    var monAct: [Float]
-    var bulPos: [SIMD2<Float>]
-    var bulVel: [SIMD2<Float>]
-    var bulAlive: [Float]
-    var bulDist: [Float]
-    var bulPen: [Float]
-    var monContact: [Float]
-    var ammo: Float
-    var reloadT: Float = 0
-    var lastAim = SIMD2<Float>(0, 1)     // player aim this tick (for sprite facing)
+    var monPosF: [Float] = [], monVelF: [Float] = []   // flat [x0,y0,x1,y1,...]; renderer indexes via accessors
+    var bulPosF: [Float] = [], bulVelF: [Float] = []
+    var monHP: [Float] = []
+    var monAct: [Float] = []
+    var bulAlive: [Float] = []
+    var lastAim = SIMD2<Float>(0, 1)
     var kills = 0
-    let offset: [SIMD2<Float>]
+    // index accessors (read by the render loop, which already iterates sprites — not the inference path)
+    func monPos(_ i: Int) -> SIMD2<Float> { SIMD2(monPosF[2 * i], monPosF[2 * i + 1]) }
+    func monVel(_ i: Int) -> SIMD2<Float> { SIMD2(monVelF[2 * i], monVelF[2 * i + 1]) }
+    func bulPos(_ i: Int) -> SIMD2<Float> { SIMD2(bulPosF[2 * i], bulPosF[2 * i + 1]) }
+    func bulVel(_ i: Int) -> SIMD2<Float> { SIMD2(bulVelF[2 * i], bulVelF[2 * i + 1]) }
 
-    init(w: WorldJSON, s: SchedJSON, player: CoreMLNet?, enemy: CoreMLNet) {
+    private let eps: Float = 1e-6
+
+    init(w: WorldJSON, s: SchedJSON, player: MLXMLP?, enemy: MLXMLP) {
         self.w = w; self.s = s; self.player = player; self.enemy = enemy
         M = s.M; B = s.B; mapHalf = s.arena_half
         playerHP = w.player_max_hp
-        monPos = Array(repeating: .zero, count: M)
-        monVel = Array(repeating: .zero, count: M)
-        monHP = s.hp0
-        monAct = Array(repeating: 0, count: M)
-        bulPos = Array(repeating: .zero, count: B)
-        bulVel = Array(repeating: .zero, count: B)
-        bulAlive = Array(repeating: 0, count: B)
-        bulDist = Array(repeating: 0, count: B)
-        bulPen = Array(repeating: 0, count: B)
-        monContact = Array(repeating: 0, count: M)
-        ammo = Float(s.mag_size)
-        offset = s.offset.map { SIMD2<Float>($0[0], $0[1]) }
+        cSpawn = MLXArray(s.spawn_tick, [M])
+        cOffset = MLXArray(s.offset.flatMap { $0 }, [M, 2])
+        cHP0 = MLXArray(s.hp0, [M])
+        cSpeed = MLXArray(s.speed, [M])
+        cBoxW = MLXArray(s.boxW, [M])
+        cDmg = MLXArray(s.dmg, [M])
+        mPlayerPos = MLXArray.zeros([2])
+        mPlayerHP = MLXArray([w.player_max_hp], [1])
+        mMonPos = MLXArray.zeros([M, 2])
+        mMonVel = MLXArray.zeros([M, 2])
+        mMonHP = MLXArray(s.hp0, [M])
+        mMonAct = MLXArray.zeros([M])
+        mMonContact = MLXArray.zeros([M])
+        mBulPos = MLXArray.zeros([B, 2])
+        mBulVel = MLXArray.zeros([B, 2])
+        mBulAlive = MLXArray.zeros([B])
+        mBulDist = MLXArray.zeros([B])
+        mBulPen = MLXArray.zeros([B])
+        mAmmo = MLXArray([Float(s.mag_size)], [1])
+        mReloadT = MLXArray.zeros([1])
+        mLastAim = MLXArray([0, 1] as [Float], [2])
+        sync()
     }
 
-    // player obs (8) — from PRE-spawn state, mirrors env_torch.player_obs_vec
-    private func playerObs() -> [Float] {
-        let eps = w.eps
-        var cnt: Float = 0, nearest: Float = 1e9, sumDist: Float = 0
-        var threat = SIMD2<Float>(0, 0)
-        for m in 0..<M {
-            let rel = monPos[m] - playerPos                 // toward monster
-            let dist = simd_length(rel) + eps
-            let alive: Float = (monAct[m] > 0.5 && monHP[m] > 0) ? 1 : 0
-            cnt += alive
-            threat += (rel / dist) * alive
-            sumDist += dist * alive
-            if alive > 0.5 && dist < nearest { nearest = dist }
+    // player obs (8) from PRE-spawn state — mirrors env_torch.player_obs_vec → [1,8]
+    private func playerObs() -> MLXArray {
+        let rel = mMonPos - mPlayerPos                                  // [M,2] toward monster
+        let dist = sqrt((rel * rel).sum(axis: 1)) + eps                 // [M]
+        let alive = which(logicalAnd(greater(mMonAct, 0.5), greater(mMonHP, 0)), MLXArray(1.0), MLXArray(0.0))
+        let cnt = alive.sum()                                           // scalar
+        let dirv = rel / dist.expandedDimensions(axis: 1)              // [M,2]
+        let threat = (dirv * alive.expandedDimensions(axis: 1)).sum(axis: 0)  // [2]
+        let threatN = threat / (sqrt((threat * threat).sum()) + eps)   // [2]
+        let masked = which(greater(alive, 0.5), dist, MLXArray(1e9))
+        let nearest = masked.min()                                     // scalar
+        let meanD = (dist * alive).sum() / (cnt + eps)
+        let wall = mPlayerPos / mapHalf                                // [2]
+        let s1 = { (a: MLXArray) in a.reshaped([1]) }
+        return concatenated([
+            s1(mPlayerHP / w.player_max_hp),
+            s1(cnt / w.monster_count_norm),
+            threatN,
+            s1(nearest / w.dist_norm),
+            s1(meanD / w.dist_norm),
+            wall,
+        ], axis: 0).reshaped([1, 8])
+    }
+
+    // enemy obs (10) per monster — post-spawn/pre-fire, mirrors env_torch.enemy_obs_vec → [M,10]
+    private func enemyObs() -> MLXArray {
+        let rel = mPlayerPos - mMonPos                                 // [M,2] toward player
+        let dist = sqrt((rel * rel).sum(axis: 1)) + eps                // [M]
+        let dirv = rel / dist.expandedDimensions(axis: 1)             // [M,2]
+        let velN = mMonVel / (cSpeed.expandedDimensions(axis: 1) + eps) // [M,2]
+        let brel = mBulPos.expandedDimensions(axis: 0) - mMonPos.expandedDimensions(axis: 1) // [M,B,2]
+        var bd2 = (brel * brel).sum(axis: 2)                           // [M,B]
+        bd2 = which(greater(mBulAlive.expandedDimensions(axis: 0), 0.5), bd2, MLXArray(1e18))
+        let bidx = bd2.argMin(axis: 1)                                 // [M]
+        let idxB = broadcast(bidx.reshaped([M, 1, 1]), to: [M, 1, 2])
+        let bnear = takeAlong(brel, idxB, axis: 1).squeezed(axis: 1)   // [M,2]
+        let bmin = bd2.min(axis: 1)                                    // [M]
+        let has = which(less(bmin, 1e17), MLXArray(1.0), MLXArray(0.0))// [M]
+        let bdist = sqrt(maximum(bmin, MLXArray(0.0))) + eps          // [M]
+        let bdir = bnear / bdist.expandedDimensions(axis: 1) * has.expandedDimensions(axis: 1)
+        let bdistN = which(greater(has, 0.5), clip(bdist / w.bullet_norm, max: MLXArray(2.0)), MLXArray(2.0))
+        let col = { (a: MLXArray) in a.expandedDimensions(axis: 1) }   // [M] -> [M,1]
+        return concatenated([
+            dirv,
+            col(dist / w.dist_norm),
+            velN,
+            col(cSpeed / w.monster_speed_norm),
+            col(mMonHP / (cHP0 + eps)),
+            bdir,
+            col(bdistN),
+        ], axis: 1)                                                    // [M,10]
+    }
+
+    // parity / training: player driven by the net
+    func step(_ t: Int) {
+        if let p = player {
+            let a = p(playerObs()).reshaped([4])                       // [moveX,moveY,aimX,aimY]
+            core(t, a[0 ..< 2], a[2 ..< 4])
+        } else {
+            core(t, MLXArray([0, 0] as [Float], [2]), MLXArray([0, 1] as [Float], [2]))
         }
-        let tl = simd_length(threat)
-        let threatN = tl > eps ? threat / (tl + eps) : SIMD2<Float>(0, 0)
-        let meanD = sumDist / (cnt + eps)
-        let wall = playerPos / mapHalf
-        return [playerHP / w.player_max_hp, cnt / w.monster_count_norm, threatN.x, threatN.y,
-                nearest / w.dist_norm, meanD / w.dist_norm, wall.x, wall.y]
     }
 
-    // enemy obs (10) for monster m — post-spawn/pre-fire, mirrors env_torch.enemy_obs_vec
-    private func enemyObs(_ m: Int) -> [Float] {
-        let eps = w.eps
-        let rel = playerPos - monPos[m]                     // toward player
-        let dist = simd_length(rel) + eps
-        let dirv = rel / dist
-        let spd = s.speed[m]
-        let velN = monVel[m] / (spd + eps)
-        var bmin: Float = 1e18, bidx = -1
-        for b in 0..<B where bulAlive[b] > 0.5 {
-            let d = bulPos[b] - monPos[m]
-            let d2 = simd_dot(d, d)
-            if d2 < bmin { bmin = d2; bidx = b }
-        }
-        var bdir = SIMD2<Float>(0, 0); var bdistN: Float = 2
-        if bmin < 1e17 && bidx >= 0 {
-            let bdist = sqrtf(max(bmin, 0)) + eps
-            bdir = (bulPos[bidx] - monPos[m]) / bdist
-            bdistN = min(bdist / w.bullet_norm, 2)
-        }
-        return [dirv.x, dirv.y, dist / w.dist_norm, velN.x, velN.y, spd / w.monster_speed_norm,
-                monHP[m] / (s.hp0[m] + eps), bdir.x, bdir.y, bdistN]
+    // playable game: human move + auto-aim at nearest monster (monsters still net-driven)
+    func stepGame(_ t: Int, _ humanMove: SIMD2<Float>) {
+        core(t, MLXArray([humanMove.x, humanMove.y], [2]), nearestVecMLX())
     }
 
-    func step(_ t: Int) {                              // parity / training: player driven by Core ML
-        let pa = player?.predict(playerObs()) ?? []
-        core(t, SIMD2<Float>(pa.count > 1 ? pa[0] : 0, pa.count > 1 ? pa[1] : 0),
-             SIMD2<Float>(pa.count > 3 ? pa[2] : 0, pa.count > 3 ? pa[3] : 1))
+    /// direction toward the nearest alive monster, as MLX [2] (no host loop: argMin + take)
+    private func nearestVecMLX() -> MLXArray {
+        let rel = mMonPos - mPlayerPos                                 // [M,2]
+        let d2 = (rel * rel).sum(axis: 1)                              // [M]
+        let masked = which(logicalAnd(greater(mMonAct, 0.5), greater(mMonHP, 0)), d2, MLXArray(1e18))
+        let idx = masked.argMin()                                     // scalar
+        let idxB = broadcast(idx.reshaped([1, 1]), to: [1, 2])
+        return takeAlong(rel, idxB, axis: 0).reshaped([2])
     }
 
-    // playable game: human move + auto-aim at nearest monster (monsters still driven by Core ML)
-    func stepGame(_ t: Int, _ humanMove: SIMD2<Float>) { core(t, humanMove, nearestVec()) }
-
+    /// host SIMD2 nearest direction (for the headless kite driver) — one argMin + readback, no loop
     func nearestVec() -> SIMD2<Float> {
-        var best: Float = 1e18, v = SIMD2<Float>(0, 1)
-        for m in 0..<M where monAct[m] > 0.5 && monHP[m] > 0 {
-            let d = monPos[m] - playerPos; let dd = simd_dot(d, d)
-            if dd < best { best = dd; v = d }
-        }
-        return v
+        let v = nearestVecMLX(); eval(v); let a = v.asArray(Float.self)
+        return SIMD2<Float>(a[0], a[1])
     }
 
-    func core(_ t: Int, _ aMove: SIMD2<Float>, _ aAim: SIMD2<Float>) {
-        let eps = w.eps, dt = w.dt
-        var aim = aAim
+    func core(_ t: Int, _ aMove: MLXArray, _ aAim: MLXArray) {
+        let dt = w.dt
+        let elapsed = Float(t) * dt
 
         // 2) spawn (relative to current player pos)
-        let elapsed = Float(t) * dt
-        for m in 0..<M where s.spawn_tick[m] <= elapsed && monAct[m] < 0.5 {
-            monPos[m] = playerPos + offset[m]; monAct[m] = 1
-        }
+        let due = lessEqual(cSpawn, elapsed)                           // [M] bool
+        let just = logicalAnd(due, less(mMonAct, 0.5))
+        mMonPos = which(just.expandedDimensions(axis: 1), mPlayerPos + cOffset, mMonPos)
+        mMonAct = maximum(mMonAct, which(just, MLXArray(1.0), MLXArray(0.0)))
+        let aliveB = logicalAnd(due, greater(mMonHP, 0))               // [M] bool (pre-collision)
 
-        // 3) per-monster: enemy net velocity (uses post-spawn pos, pre-fire bullets); save PRE-move dist
-        var distPre = [Float](repeating: 0, count: M)
-        for m in 0..<M {
-            let due = s.spawn_tick[m] <= elapsed
-            let aliveB = due && monHP[m] > 0
-            let rel = playerPos - monPos[m]
-            let dist = simd_length(rel) + eps
-            distPre[m] = dist
-            let stop = w.player_radius + s.boxW[m] / 2
-            let moveMask = (aliveB && dist > stop)
-            if moveMask {
-                let ea = enemy.predict(enemyObs(m))
-                let v = SIMD2<Float>(tanhf(ea.count > 1 ? ea[0] : 0), tanhf(ea.count > 1 ? ea[1] : 0))
-                let vn = v / (simd_length(v) + eps)
-                monVel[m] = vn * s.speed[m]
-            } else {
-                monVel[m] = .zero
-            }
-            monPos[m] += monVel[m] * dt
-        }
+        // 3) per-monster enemy-net velocity (post-spawn pos, pre-fire bullets); PRE-move distance
+        let rel = mPlayerPos - mMonPos                                 // [M,2]
+        let distPre = sqrt((rel * rel).sum(axis: 1)) + eps            // [M]
+        let stop = w.player_radius + cBoxW / 2                         // [M]
+        let moveMask = which(logicalAnd(aliveB, greater(distPre, stop)), MLXArray(1.0), MLXArray(0.0))
+        let ea = enemy(enemyObs())                                    // [M,2]
+        let v = tanh(ea)
+        let vn = v / (sqrt((v * v).sum(axis: 1, keepDims: true)) + eps)
+        mMonVel = vn * cSpeed.expandedDimensions(axis: 1) * moveMask.expandedDimensions(axis: 1)
+        mMonPos = mMonPos + mMonVel * dt
 
         // 4) ammo/reload + fire bulletsPerShot pellets (deterministic spread)
-        let an = simd_length(aim); aim = an > eps ? aim / (an + eps) : SIMD2<Float>(0, 1)
-        lastAim = aim
-        let wasReloading = reloadT > 0
-        reloadT = max(reloadT - 1, 0)
-        if wasReloading && reloadT == 0 { ammo = Float(s.mag_size) }
-        if t % s.fire_interval == 0 && ammo > 0 && reloadT == 0 {
-            ammo -= 1
-            if ammo <= 0 { reloadT = Float(s.reload_ticks) }
-            let shot = t / s.fire_interval
-            for k in 0..<s.bullets_per_shot {
-                let slot = (shot * s.bullets_per_shot + k) % B
-                let theta = atan2f(s.max_dev * detRand(t, k), 500)
-                let ct = cosf(theta), st = sinf(theta)
-                let pa = SIMD2<Float>(aim.x * ct - aim.y * st, aim.x * st + aim.y * ct)
-                bulPos[slot] = playerPos; bulVel[slot] = pa * s.bullet_speed
-                bulAlive[slot] = 1; bulDist[slot] = 0; bulPen[slot] = Float(s.penetration)
-            }
-        }
+        let aim = aAim / (sqrt((aAim * aAim).sum()) + eps)            // [2]
+        mLastAim = aim
+        let reloadPrev = mReloadT
+        mReloadT = maximum(reloadPrev - 1, MLXArray(0.0))
+        let justReloaded = logicalAnd(greater(reloadPrev, 0), lessEqual(mReloadT, 0))
+        mAmmo = which(justReloaded, MLXArray(Float(s.mag_size)), mAmmo)
+        let gate = (t % s.fire_interval == 0)
+        let fireF = gate
+            ? which(logicalAnd(greater(mAmmo, 0), lessEqual(mReloadT, 0)), MLXArray(1.0), MLXArray(0.0))
+            : MLXArray.zeros([1])
+        mAmmo = mAmmo - fireF
+        let needReload = logicalAnd(lessEqual(mAmmo, 0), lessEqual(mReloadT, 0))
+        mReloadT = which(needReload, MLXArray(Float(s.reload_ticks)), mReloadT)
+
+        // pellets vectorized over K — NO loop: det_rand(t,k) as an int64 hash + one-hot ring slots, all
+        // MLX (matches env_torch's vectorized pellet scatter; `& 0xffffffff` == `% 2^32` for this hash > 0).
+        let K = s.bullets_per_shot
+        let shot = t / s.fire_interval
+        let kIdx = MLXArray.arange(K, dtype: .int64)                  // [K]
+        let hbase = Int(t) * 2654435761 + 12345
+        let hsh = (kIdx * 340573 + hbase) % 4294967296               // [K] int64 det_rand hash
+        let dr = hsh.asType(.float32) / 2147483647.5 - 1.0           // [K] in [-1,1]
+        let theta = atan2(s.max_dev * dr, MLXArray(Float(500)))      // [K]
+        let ctA = cos(theta), stA = sin(theta)                       // [K]
+        let slots = (kIdx + (shot * K)) % B                          // [K] int64 ring slots
+        let bIdx = MLXArray.arange(B, dtype: .int64)                 // [B]
+        let oh = which(equal(slots.expandedDimensions(axis: 1), bIdx.expandedDimensions(axis: 0)),
+                       MLXArray(1.0), MLXArray(0.0))                  // [K,B]
+        let ax = aim[0], ay = aim[1]
+        let paX = ax * ctA - ay * stA, paY = ax * stA + ay * ctA      // [K]
+        let velK = stacked([paX, paY], axis: 1) * s.bullet_speed       // [K,2]
+        let velB = matmul(oh.transposed(), velK)                       // [B,2]
+        let writeB = clip(oh.sum(axis: 0), max: MLXArray(1.0)) * fireF // [B]
+        let wcol = writeB.expandedDimensions(axis: 1)
+        mBulPos = which(greater(wcol, 0.5), broadcast(mPlayerPos, to: [B, 2]), mBulPos)
+        mBulVel = which(greater(wcol, 0.5), velB, mBulVel)
+        mBulAlive = which(greater(writeB, 0.5), MLXArray(1.0), mBulAlive)
+        mBulDist = which(greater(writeB, 0.5), MLXArray(0.0), mBulDist)
+        mBulPen = which(greater(writeB, 0.5), MLXArray(Float(s.penetration)), mBulPen)
+
         // 5) move bullets, expire by range
-        for b in 0..<B {
-            bulPos[b] += bulVel[b] * dt
-            bulDist[b] += simd_length(bulVel[b]) * dt
-            if bulAlive[b] > 0.5 && bulDist[b] >= s.bullet_range { bulAlive[b] = 0 }
-        }
+        mBulPos = mBulPos + mBulVel * dt
+        mBulDist = mBulDist + sqrt((mBulVel * mBulVel).sum(axis: 1)) * dt
+        mBulAlive = which(logicalAnd(greater(mBulAlive, 0.5), less(mBulDist, s.bullet_range)),
+                          MLXArray(1.0), MLXArray(0.0))
+
         // 6) collision with penetration (bullet damages every overlap; dies after `pen` hits)
-        var aliveB = [Bool](repeating: false, count: M)
-        for m in 0..<M { aliveB[m] = (s.spawn_tick[m] <= elapsed) && monHP[m] > 0 }
-        for b in 0..<B where bulAlive[b] > 0.5 {
-            var hits: Float = 0
-            for m in 0..<M where aliveB[m] {
-                let hitR = w.bullet_radius + s.boxW[m] / 2
-                let d = bulPos[b] - monPos[m]
-                if simd_dot(d, d) < hitR * hitR { monHP[m] -= s.bullet_damage; hits += 1 }
-            }
-            bulPen[b] -= hits
-            if bulPen[b] <= 0 { bulAlive[b] = 0 }
-        }
+        let diff = mBulPos.expandedDimensions(axis: 1) - mMonPos.expandedDimensions(axis: 0) // [B,M,2]
+        let d2 = (diff * diff).sum(axis: 2)                           // [B,M]
+        let hitR = w.bullet_radius + cBoxW / 2                         // [M]
+        let hitRsq = (hitR * hitR).expandedDimensions(axis: 0)       // [1,M]
+        let hitMask = logicalAnd(logicalAnd(less(d2, hitRsq),
+                                            greater(mBulAlive, 0.5).expandedDimensions(axis: 1)),
+                                 aliveB.expandedDimensions(axis: 0))  // [B,M]
+        let hitF = which(hitMask, MLXArray(1.0), MLXArray(0.0))
+        mMonHP = mMonHP - (hitF * s.bullet_damage).sum(axis: 0)       // [M]
+        mBulPen = mBulPen - hitF.sum(axis: 1)                         // [B]
+        mBulAlive = which(logicalAnd(greater(mBulAlive, 0.5), greater(mBulPen, 0.5)),
+                          MLXArray(1.0), MLXArray(0.0))
+
         // 7) kills
-        var killed = 0
-        for m in 0..<M where aliveB[m] && !(monHP[m] > 0) { killed += 1 }
-        kills += killed
+        let aliveA = logicalAnd(due, greater(mMonHP, 0))
+        let killed = which(logicalAnd(aliveB, logicalNot(aliveA)), MLXArray(1.0), MLXArray(0.0)).sum()
+        eval(killed); kills += Int(killed.item(Float.self))
+
         // 8) contact: immediate pulse on newly-touching + periodic for sustained; defense + min floor
         let gateC: Float = (t % s.contact_interval == 0) ? 1 : 0
-        var dmg: Float = 0
-        for m in 0..<M {
-            let aliveA = (s.spawn_tick[m] <= elapsed) && monHP[m] > 0
-            let now: Float = (aliveA && distPre[m] < (w.player_radius + s.boxW[m] / 2 + w.buffer)) ? 1 : 0
-            dmg += (now * (1 - monContact[m]) + now * monContact[m] * gateC) * s.dmg[m]
-            monContact[m] = now
-        }
-        if dmg > 0 { playerHP -= max(dmg - s.defense, w.defense_min_floor) }
+        let contactNow = which(logicalAnd(aliveA, less(distPre, w.player_radius + cBoxW / 2 + w.buffer)),
+                               MLXArray(1.0), MLXArray(0.0))           // [M]
+        let newly = contactNow * (1 - mMonContact)
+        let sustained = contactNow * mMonContact
+        let dmg = ((newly + sustained * gateC) * cDmg).sum()          // scalar
+        let applied = which(greater(dmg, 0), clip(dmg - s.defense, min: MLXArray(w.defense_min_floor)), MLXArray(0.0))
+        mPlayerHP = mPlayerHP - applied
+        mMonContact = contactNow
+
         // 9) player move (tanh, exo speed, per-arena clamp)
-        let mv = SIMD2<Float>(tanhf(aMove.x), tanhf(aMove.y))
+        let mv = tanh(aMove)
         let lo = -mapHalf + w.player_half, hi = mapHalf - w.player_half
-        playerPos += mv * (w.player_speed * s.exo_speed * dt)
-        playerPos = simd_clamp(playerPos, SIMD2<Float>(lo, lo), SIMD2<Float>(hi, hi))
+        mPlayerPos = clip(mPlayerPos + mv * (w.player_speed * s.exo_speed * dt),
+                          min: MLXArray(lo), max: MLXArray(hi))
+
+        sync()
+    }
+
+    /// materialize MLX state into the host arrays the renderer reads (one GPU readback per tick)
+    private func sync() {
+        eval(mPlayerPos, mPlayerHP, mMonPos, mMonVel, mMonHP, mMonAct, mBulPos, mBulVel, mBulAlive, mLastAim)
+        let pp = mPlayerPos.asArray(Float.self); playerPos = SIMD2(pp[0], pp[1])
+        playerHP = mPlayerHP.asArray(Float.self)[0]
+        let la = mLastAim.asArray(Float.self); lastAim = SIMD2(la[0], la[1])
+        monPosF = mMonPos.asArray(Float.self); monVelF = mMonVel.asArray(Float.self)
+        monHP = mMonHP.asArray(Float.self); monAct = mMonAct.asArray(Float.self)
+        bulPosF = mBulPos.asArray(Float.self); bulVelF = mBulVel.asArray(Float.self)
+        bulAlive = mBulAlive.asArray(Float.self)
     }
 }
 
-// ---- parity runner: replay the 9 exported games through the Swift port, dump positions ----
+// ---- parity runner: replay the exported games through the MLX port, dump positions ----
 struct IndexJSON: Codable { var games: [String]; var bullets: Int }
 struct FrameOut: Codable {
     var t: Int; var player: [Float]; var mon_alive: [Int]; var mon_pos: [Float]
@@ -262,10 +350,10 @@ func runPort() {
         if let i = args.firstIndex(of: k), i + 1 < args.count { return args[i + 1] }; return d
     }
     let dir = val("--port", "parity")
-    let playerPath = val("--player", "\(dir)/../../MonstroSim/models/player.mlmodel")
-    let enemyPath = val("--enemy", "\(dir)/../../MonstroSim/models/monster.mlmodel")
-    guard let player = CoreMLNet(path: playerPath), let enemy = CoreMLNet(path: enemyPath) else {
-        FileHandle.standardError.write("port: failed to load Core ML models (\(playerPath), \(enemyPath))\n".data(using: .utf8)!)
+    let playerPath = val("--player", "\(dir)/../../MonstroSim/models/player.json")
+    let enemyPath = val("--enemy", "\(dir)/../../MonstroSim/models/monster.json")
+    guard let player = MLXMLP(path: playerPath), let enemy = MLXMLP(path: enemyPath) else {
+        FileHandle.standardError.write("port: failed to load MLX nets (\(playerPath), \(enemyPath))\n".data(using: .utf8)!)
         exit(1)
     }
     let dec = JSONDecoder(), enc = JSONEncoder()
@@ -280,9 +368,9 @@ func runPort() {
             sim.step(t)
             let alive = (0..<sim.M).map { (sim.monAct[$0] > 0.5 && sim.monHP[$0] > 0) ? 1 : 0 }
             frames.append(FrameOut(t: t, player: [sim.playerPos.x, sim.playerPos.y],
-                                   mon_alive: alive, mon_pos: sim.monPos.flatMap { [$0.x, $0.y] },
+                                   mon_alive: alive, mon_pos: sim.monPosF,
                                    bul_alive: sim.bulAlive.map { $0 > 0.5 ? 1 : 0 },
-                                   bul_pos: sim.bulPos.flatMap { [$0.x, $0.y] },
+                                   bul_pos: sim.bulPosF,
                                    kills: sim.kills, hp: sim.playerHP))
             if sim.playerHP <= 0 || sim.kills >= sim.M { break }
         }

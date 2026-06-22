@@ -132,3 +132,30 @@ def build_multi(levels, monsters, base_seed, n_envs, cap=512, workers=None):
     out["assign"] = assign
     out["arena_half"] = _arena(levels, assign, n_envs)
     return out
+
+
+def build_eval(levels, monsters, seeds, cap=1024, base_seed=1000, seed_stride=7919):
+    """Batched schedule for the (len(levels) x seeds) eval games packed into ONE env batch, so eval
+    plays every held-out game in a single vectorized rollout instead of one game at a time. Game
+    (map i, seed s) -> env e = i*seeds + s, filled with seed `base_seed + s*seed_stride` so it is
+    byte-identical to an independent single-env build() of that map+seed (slot fill is cap-independent;
+    shorter maps leave the tail as never-spawn). Returns (sched, real_tot[N], assign[N]); real_tot[e]
+    = that game's spawnable-monster count (the per-game "all cleared" threshold), assign[e] = map index.
+    The `for e` here is schedule SETUP (config baking, not the per-tick sim)."""
+    L, S = len(levels), seeds
+    N = L * S
+    M = max(max(min(lv["expected_total"], cap) for lv in levels), 1)
+    arrays = _alloc(N, M)
+    arena = np.empty(N, np.float32)
+    real_tot = np.empty(N, np.float32)
+    assign = np.empty(N, np.int32)
+    for e in range(N):
+        li, sd = e // S, e % S
+        lv = levels[li]
+        _fill_env(arrays, e, lv, monsters, base_seed + sd * seed_stride, M)
+        arena[e] = float(lv.get("arena_half", 6000.0))
+        real_tot[e] = float(min(max(lv["expected_total"], 1), M))
+        assign[e] = li
+    out = _pack(arrays, M)
+    out["arena_half"] = arena
+    return out, real_tot, assign
