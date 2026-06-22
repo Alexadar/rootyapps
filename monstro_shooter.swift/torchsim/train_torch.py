@@ -18,6 +18,8 @@ from env_torch import EnvTorch
 H = 32                                   # hidden width (tiny for POC)
 PLAYER_SIZES = [EnvTorch.player_obs, H, H, EnvTorch.player_act]
 ENEMY_SIZES = [EnvTorch.enemy_obs, H, H, EnvTorch.enemy_act]
+# Held-out map the models never train on (training uses the 10 swiper maps from prod.json).
+EVAL_MAP_DEFAULT = os.path.join(os.path.dirname(__file__), "eval_maps", "eval_unseen.json")
 
 
 def pick_device(pref="auto"):
@@ -50,6 +52,40 @@ def build_env(args):
     return env, len(levels), n_envs
 
 
+def eval_play(args, player, enemy, dev):
+    """Play ONE headless game on the eval map with the trained center nets (on device), running to
+    the tick timeout OR until every monster is killed (whichever first), then report."""
+    gd = data.GameData(args.client)
+    mpath = args.eval_map or EVAL_MAP_DEFAULT
+    level = data.sim_level(data.load_map(mpath))
+    total = max(level["expected_total"], 1)
+    sched = schedule.build(level, gd.monsters, base_seed=999, n_envs=1, cap=min(total, 1024))
+    weapon = gd.weapons.get(1) or next(iter(gd.weapons.values()))
+    exo = gd.exoskeletons.get(1) or next(iter(gd.exoskeletons.values()))
+    env = EnvTorch(sched, weapon, exo, device=dev, bullets=args.bullets)
+    M = env.M
+    ticks_max = args.eval_ticks or int(level["duration"] * 30)
+    pf = lambda obs: P.apply_mlp(player, obs)
+    ef = lambda obs: P.apply_enemy(enemy, obs)
+
+    s = env.reset(1)
+    outcome, played = "timeout", ticks_max
+    t0 = time.time()
+    with torch.no_grad():
+        for tk in range(1, ticks_max + 1):
+            s, _, _ = env.step(s, tk, pf, ef)
+            hp = float(s["player_hp"][0, 0]); kills = int(s["kills"][0, 0])
+            if hp <= 0:
+                outcome, played = "died", tk; break
+            if kills >= M:
+                outcome, played = "cleared", tk; break
+    hp = max(float(s["player_hp"][0, 0]), 0.0); kills = int(s["kills"][0, 0])
+    wall = (time.time() - t0) * 1000
+    print(f"\nEval: {os.path.basename(mpath)}  (map {level['duration']:.0f}s, {M} monsters, dev={dev})")
+    print(f"  outcome: {outcome.upper()} at tick {played} ({played/30:.1f}s game-time)   [{wall:.0f}ms wall]")
+    print(f"  kills {kills}/{M} ({100*kills/max(M,1):.0f}%)   hp {hp:.0f}/100   damage taken {100-hp:.0f}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--client", default=data.DEFAULT_CLIENT)
@@ -62,8 +98,11 @@ def main():
     ap.add_argument("--bullets", type=int, default=32)
     ap.add_argument("--sigma", type=float, default=0.1)
     ap.add_argument("--lr", type=float, default=0.05)
-    ap.add_argument("--device", default="auto")          # auto: cuda -> mps -> cpu
+    ap.add_argument("--device", default="auto")          # auto: cuda -> mps -> cpu (explicit value respected)
     ap.add_argument("--cpu-budget", type=float, default=60.0)   # abort guard (seconds)
+    ap.add_argument("--eval", action="store_true")       # after training, play one UNSEEN map headless
+    ap.add_argument("--eval-map", default="")            # default: held-out eval_unseen.json
+    ap.add_argument("--eval-ticks", type=int, default=0)  # 0 -> landingDuration*30 (full map)
     ap.add_argument("--player-out", default="../MonstroSim/models/player.json")
     ap.add_argument("--enemy-out", default="../MonstroSim/models/monster.json")
     args = ap.parse_args()
@@ -121,6 +160,9 @@ def main():
     P.to_json(player, PLAYER_SIZES, args.player_out)
     P.to_json(enemy, ENEMY_SIZES, args.enemy_out)
     print(f"saved -> {args.player_out}  +  {args.enemy_out}")
+
+    if args.eval:
+        eval_play(args, player, enemy, dev)
 
 
 if __name__ == "__main__":
