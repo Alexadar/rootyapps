@@ -2,10 +2,9 @@ import Foundation
 import Metal
 import simd
 
-// The playable game on Metal: canonical logic in PortSim (parity-verified mirror of torchsim, monsters
-// driven by Core ML), human moves the player, and the REAL game sprites (monster Walk animations,
-// player, bullet from Assets.xcassets) are drawn as textured instanced quads via SpriteRenderer. Fixed
-// 1/30 simulation with render interpolation (lerp prev→cur) for smooth 60/120 Hz. No hardcoded constants.
+// The playable game on Metal: it's the batched sim (GridSim) at N=1 — the SAME engine that plays the 3x3
+// grid, just one env. The human moves player[0] (monsters net-driven), and the REAL game sprites are drawn
+// via SpriteRenderer. Fixed 1/30 simulation with render interpolation (lerp prev→cur) for smooth 60/120 Hz.
 
 private func lerp(_ a: SIMD2<Float>, _ b: SIMD2<Float>, _ t: Float) -> SIMD2<Float> { a + (b - a) * t }
 
@@ -13,7 +12,7 @@ final class Game {
     let device: MTLDevice
     let queue: MTLCommandQueue
     let sprites: SpriteRenderer
-    let sim: PortSim
+    let sim: GridSim
     let simDt: Float
     let viewHalf: Float
     let modelDriven: Bool          // true = trained player model drives the player (demo); else human/scripted
@@ -28,7 +27,7 @@ final class Game {
     var monRot: [Float], bulRot: [Float], playerRot: Float = 0   // last facing (held when idle)
 
     var php: Float { sim.playerHP }
-    var kills: UInt32 { UInt32(sim.kills) }
+    var kills: UInt32 { UInt32(sim.killsInt) }
     var alive: Bool { sim.playerHP > 0 }
 
     init(mapPath: String = "../torchsim/datasets/tiny/eval/e3.json",
@@ -50,7 +49,7 @@ final class Game {
         }
         let modelPlayer = playerPath.isEmpty ? nil : MLXMLP(path: playerPath)
         modelDriven = modelPlayer != nil
-        sim = PortSim(w: world, s: sched, player: modelPlayer, enemy: enemy)
+        sim = GridSim(w: world, scheds: [sched], player: modelPlayer ?? enemy, enemy: enemy)  // N=1
         simDt = world.dt
         viewHalf = min(sched.arena_half, 700)
         let typesInUse = Array(Set(sched.type)).sorted()
@@ -62,6 +61,7 @@ final class Game {
         prevBul = Array(repeating: .zero, count: sched.B); curBul = prevBul
         prevAct = Array(repeating: 0, count: sched.M); prevBulAlive = Array(repeating: 0, count: sched.B)
         monRot = Array(repeating: 0, count: sched.M); bulRot = Array(repeating: 0, count: sched.B)
+        sim.materialize()
         snapshot()
     }
 
@@ -79,7 +79,8 @@ final class Game {
         while accum >= simDt {
             prevPlayer = curPlayer; prevMon = curMon; prevBul = curBul
             tick += 1
-            if modelDriven { sim.step(tick) } else { sim.stepGame(tick, mv) }
+            if modelDriven { sim.step(tick) } else { sim.stepHuman(tick, move: mv, aim: sim.nearestVec()) }
+            sim.materialize()
             snapshot()
             // facing (hold last when ~idle) + no-lerp on spawn frame
             playerRot = atan2f(sim.lastAim.y, sim.lastAim.x) - .pi / 2
@@ -87,7 +88,7 @@ final class Game {
                 // face velocity + the type's atlas-orientation offset (from the YAML; 0 for these types,
                 // NOT the GameConstants π/4 default — that's what made them face sideways)
                 let v = sim.monVel(m)
-                if simd_length(v) > 1 { monRot[m] = atan2f(v.y, v.x) + (typeRot[sim.s.type[m]] ?? .pi / 4) }
+                if simd_length(v) > 1 { monRot[m] = atan2f(v.y, v.x) + (typeRot[sim.monType[0][m]] ?? .pi / 4) }
                 let now: Float = (sim.monAct[m] > 0.5 && sim.monHP[m] > 0) ? 1 : 0
                 if now > 0.5 && prevAct[m] < 0.5 { prevMon[m] = curMon[m] }
                 prevAct[m] = now
@@ -107,8 +108,8 @@ final class Game {
         // monsters (real Walk sprite, animated, sized by hitbox)
         for m in 0..<sim.M where sim.monAct[m] > 0.5 && sim.monHP[m] > 0 {
             let pos = lerp(prevMon[m], curMon[m], alpha)
-            out.append(SpriteInstance(pos: pos, rot: monRot[m], size: sim.s.boxW[m] * 0.8,
-                                      slice: sprites.monsterSlice(sim.s.type[m], frame), pad: 0))
+            out.append(SpriteInstance(pos: pos, rot: monRot[m], size: sim.monBox[0][m] * 0.8,
+                                      slice: sprites.monsterSlice(sim.monType[0][m], frame), pad: 0))
         }
         // bullets (real weapons.png art, ~12px, facing travel)
         for b in 0..<sim.B where sim.bulAlive[b] > 0.5 {

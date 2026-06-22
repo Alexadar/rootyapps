@@ -27,7 +27,7 @@ func writePNG(_ tex: MTLTexture, _ path: String) {
     CGImageDestinationAddImage(dest, img, nil); CGImageDestinationFinalize(dest)
 }
 
-// Parity mode: replay the exported games through the faithful Swift port (PortSim) and dump positions
+// Parity mode: replay the exported games through the batched sim at N=1 and dump positions
 // for the Python parity diff.  `monstro-game --port <dir> [--player x.mlmodel] [--enemy y.mlmodel]`
 if CommandLine.arguments.contains("--port") { runPort(); exit(0) }
 
@@ -58,9 +58,6 @@ if CommandLine.arguments.contains("--demo") {
 // draw all games with the real Swift sprite renderer: `monstro-game --grid [--out /tmp/grid]`.
 if CommandLine.arguments.contains("--grid") { runGrid(); exit(0) }
 
-// Gate: parity-replay the 9 games through the BATCHED sim at N=1 -> swift_*.json for parity_diff.py.
-if CommandLine.arguments.contains("--portgrid") { runPortGrid(); exit(0) }
-
 // Interactive window mode (play it): `monstro-game --window`. Blocks until you quit.
 if CommandLine.arguments.contains("--window") { runGameWindow(); exit(0) }
 
@@ -75,8 +72,8 @@ let td = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, widt
 td.usage = [.renderTarget, .shaderRead]; td.storageMode = .shared
 let tex = game.device.makeTexture(descriptor: td)!
 
-// Headless smoke: canonical game (PortSim logic + Core ML monsters), player kites the nearest monster.
-print("Headless: PortSim game (Core ML monsters), scripted-kite player, \(frames) frames @60fps")
+// Headless smoke: canonical game (GridSim N=1, MLX monster net), player kites the nearest monster.
+print("Headless: GridSim N=1 game (MLX monsters), scripted-kite player, \(frames) frames @60fps")
 print("  frame   kills   hp")
 var snapped = false, gameOverAt = -1
 let t0 = DispatchTime.now()

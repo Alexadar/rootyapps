@@ -3,7 +3,8 @@ import simd
 import MLX
 
 // Batched (N games at once) MLX port of env_torch — plays the whole grid in ONE GPU rollout, exactly the
-// way training rolls N envs. It mirrors PortSim.core with a leading [N] batch dim on every tensor, then
+// way training rolls N envs. The ONE sim — every tensor carries a leading [N] batch dim (the live game is
+// N=1, the grid is N=9). It
 // records a per-tick replay "script" (positions + velocities + alive, per game) that a renderer just
 // plays back. No per-game loop in the sim; the only loops are the time loop and host-side capture/setup.
 
@@ -42,6 +43,41 @@ final class GridSim {
     private var pPos, pHP, pAim, mPos, mVel, mHP, mAct, mContact: MLXArray
     private var bPos, bVel, bAlive, bDist, bPen, ammo, reloadT: MLXArray
     private var kills: MLXArray
+
+    // ---- host mirror for the live game (env 0; N=1) — materialized each tick, NO entity loops ----
+    var playerPos = SIMD2<Float>(0, 0)
+    var playerHP: Float = 0
+    var lastAim = SIMD2<Float>(0, 1)
+    var killsInt = 0
+    var monPosF: [Float] = [], monVelF: [Float] = [], bulPosF: [Float] = [], bulVelF: [Float] = []
+    var monHP: [Float] = [], monAct: [Float] = [], bulAlive: [Float] = []
+    func monPos(_ m: Int) -> SIMD2<Float> { SIMD2(monPosF[m * 2], monPosF[m * 2 + 1]) }
+    func monVel(_ m: Int) -> SIMD2<Float> { SIMD2(monVelF[m * 2], monVelF[m * 2 + 1]) }
+    func bulPos(_ b: Int) -> SIMD2<Float> { SIMD2(bulPosF[b * 2], bulPosF[b * 2 + 1]) }
+    func bulVel(_ b: Int) -> SIMD2<Float> { SIMD2(bulVelF[b * 2], bulVelF[b * 2 + 1]) }
+
+    /// materialize env-0 state into the host arrays the renderer reads (one GPU readback per tick)
+    func materialize() {
+        eval(pPos, pHP, pAim, mPos, mVel, mHP, mAct, bPos, bVel, bAlive, kills)
+        let pp = pPos.asArray(Float.self); playerPos = SIMD2(pp[0], pp[1])
+        playerHP = pHP.asArray(Float.self)[0]
+        let la = pAim.asArray(Float.self); lastAim = SIMD2(la[0], la[1])
+        monPosF = mPos.asArray(Float.self); monVelF = mVel.asArray(Float.self)
+        monHP = mHP.asArray(Float.self); monAct = mAct.asArray(Float.self)
+        bulPosF = bPos.asArray(Float.self); bulVelF = bVel.asArray(Float.self)
+        bulAlive = bAlive.asArray(Float.self)
+        killsInt = Int(kills.asArray(Float.self)[0])
+    }
+
+    /// direction to the nearest alive monster for env 0 (auto-aim) — MLX argMin, no host loop
+    func nearestVec() -> SIMD2<Float> {
+        let rel = mPos[0] - pPos[0]                                   // [M,2]
+        let d2 = (rel * rel).sum(axis: 1)
+        let masked = which(logicalAnd(greater(mAct[0], 0.5), greater(mHP[0], 0)), d2, MLXArray(1e18))
+        let idxB = broadcast(masked.argMin().reshaped([1, 1]), to: [1, 2])
+        let v = takeAlong(rel, idxB, axis: 0).reshaped([2])
+        eval(v); let a = v.asArray(Float.self); return SIMD2(a[0], a[1])
+    }
 
     private let eps: Float = 1e-6
 
@@ -89,7 +125,7 @@ final class GridSim {
         kills = MLXArray.zeros([nn])
     }
 
-    // ---- parity replay (N=1): per-tick env-0 trajectory, same shape PortSim.runPort dumps ----
+    // ---- parity replay (N=1): per-tick env-0 trajectory in the shape parity_diff.py expects ----
     func parityRun() -> [FrameOut] {
         var out: [FrameOut] = []
         for t in 1...ticks {
@@ -148,8 +184,14 @@ final class GridSim {
         ], axis: 2)                                                   // [N,M,10]
     }
 
-    func step(_ t: Int) {
-        let a = player(playerObs())                                   // [N,4]
+    func step(_ t: Int) { core(t, player(playerObs())) }   // all players net-driven (training / grid / demo)
+
+    /// live game (N=1): human move on player[0] + auto-aim; monsters stay net-driven
+    func stepHuman(_ t: Int, move: SIMD2<Float>, aim: SIMD2<Float>) {
+        core(t, MLXArray([move.x, move.y, aim.x, aim.y] as [Float], [1, 4]))
+    }
+
+    func core(_ t: Int, _ a: MLXArray) {                              // a: [N,4] player action
         let dt = w.dt
         let elapsed = Float(t) * dt
 

@@ -108,17 +108,17 @@ func runGrid() {
     print("grid: wrote \(frames.count) frames -> \(dir) (\(cols)x\(rows), panel \(panel)px)")
 }
 
-// Gate test: replay the 9 parity games through the BATCHED sim at N=1 (GridSim) and dump trajectories,
-// so parity_diff.py can confirm GridSim.step matches torch (== PortSim) before we retire PortSim.
-func runPortGrid() {
+// Parity replay: run the exported games through the (one) batched sim at N=1 and dump trajectories for
+// torchsim/parity_diff.py. `monstro-game --port <dir>`.
+func runPort() {
     let args = CommandLine.arguments
     func val(_ k: String, _ d: String) -> String {
         if let i = args.firstIndex(of: k), i + 1 < args.count { return args[i + 1] }; return d
     }
-    let dir = val("--portgrid", "parity")
+    let dir = val("--port", "parity")
     guard let player = MLXMLP(path: val("--player", "\(dir)/../../MonstroSim/models/player.json")),
           let enemy = MLXMLP(path: val("--enemy", "\(dir)/../../MonstroSim/models/monster.json")) else {
-        FileHandle.standardError.write("portgrid: no models\n".data(using: .utf8)!); exit(1)
+        FileHandle.standardError.write("port: no models\n".data(using: .utf8)!); exit(1)
     }
     let dec = JSONDecoder(), enc = JSONEncoder()
     func load<T: Decodable>(_ p: String) -> T { try! dec.decode(T.self, from: Data(contentsOf: URL(fileURLWithPath: p))) }
