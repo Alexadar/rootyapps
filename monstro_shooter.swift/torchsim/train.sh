@@ -4,7 +4,8 @@
 # Same script, both machines. Override the python via:  PY=/path/python ./train.sh
 set -e
 cd "$(dirname "$0")"
-PY="${PY:-../.venv-torch/bin/python}"
+# PY override > the mac dev venv (if present) > whatever python is active (e.g. the 3090 venv)
+PY="${PY:-$([ -x ../.venv-torch/bin/python ] && echo ../.venv-torch/bin/python || command -v python3 || command -v python)}"
 
 DEV=$("$PY" - <<'PYEOF'
 import torch
