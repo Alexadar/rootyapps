@@ -8,6 +8,12 @@
 import argparse, glob, json, os, time
 import numpy as np
 import jax, jax.numpy as jnp
+# Persistent XLA compilation cache: the first jit/vmap(scan) compile is slow (large fused graph);
+# cache it on disk so re-runs (and resumed sessions) skip recompiling. One-time cost per graph shape.
+jax.config.update("jax_compilation_cache_dir",
+                  os.environ.get("JAX_CACHE_DIR", os.path.expanduser("~/.cache/monstro_jax")))
+jax.config.update("jax_persistent_cache_min_entry_size_bytes", -1)
+jax.config.update("jax_persistent_cache_min_compile_time_secs", 1.0)
 import data, schedule, policy, es
 from env import Env
 
@@ -34,9 +40,9 @@ def build(args, base_seed):
     weapon = gd.weapons.get(1) or next(iter(gd.weapons.values()))
     exo = gd.exoskeletons.get(1) or next(iter(gd.exoskeletons.values()))
     if len(levels) == 1:
-        sched = schedule.build(levels[0], gd.monsters, base_seed=base_seed, n_envs=args.envs, cap=args.cap)
+        sched = schedule.build(levels[0], gd.monsters, base_seed=base_seed, n_envs=args.envs, cap=args.cap, workers=args.jobs)
         return levels[0], Env(levels[0], sched, weapon, exo)
-    sched = schedule.build_multi(levels, gd.monsters, base_seed=base_seed, n_envs=args.envs, cap=args.cap)
+    sched = schedule.build_multi(levels, gd.monsters, base_seed=base_seed, n_envs=args.envs, cap=args.cap, workers=args.jobs)
     # synthetic level wrapper for Env (duration/name only); M comes from the combined schedule
     meta = {"name": f"multi({len(levels)} maps)",
             "duration": max(lv["duration"] for lv in levels),
@@ -108,5 +114,6 @@ if __name__ == "__main__":
         s.add_argument("--iters", type=int, default=4)
         s.add_argument("--pop", type=int, default=8)
         s.add_argument("--cap", type=int, default=128)
+        s.add_argument("--jobs", type=int, default=0, help="CPU procs for schedule build (0=all cores)")
     a = ap.parse_args()
     {"train": cmd_train, "eval": cmd_eval, "parity": cmd_parity}[a.cmd](a)
