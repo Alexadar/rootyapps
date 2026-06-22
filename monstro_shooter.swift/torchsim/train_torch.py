@@ -124,8 +124,13 @@ def main():
     hist = {"player": [], "enemy": []}
     last = {"player": float("nan"), "enemy": float("nan")}
     t0 = time.time()
-    pbar = tqdm(range(args.iters), desc="co-evo", unit="it", dynamic_ncols=True)
-    for it in pbar:
+    use_budget = args.budget > 0
+    # When budgeted, the bar tracks WALL-TIME (fills to --budget seconds) so the ETA is the real
+    # stop time — not tqdm projecting all --iters (which the budget halts long before).
+    pbar = tqdm(total=(round(args.budget) if use_budget else args.iters), desc="co-evo",
+                unit=("s" if use_budget else "it"), dynamic_ncols=True)
+    it = 0
+    while it < args.iters:
         train_player = (it % 2 == 0)
         if train_player:
             def fitness(stacked):
@@ -140,15 +145,18 @@ def main():
             enemy, best, mean = ES.es_step(enemy, fitness, args.pop, gen, dev, args.sigma, args.lr)
             hist["enemy"].append(mean); last["enemy"] = mean
 
-        pbar.set_postfix(phase="player" if train_player else "enemy",
+        elapsed = time.time() - t0
+        if use_budget:
+            pbar.n = min(round(elapsed), round(args.budget)); pbar.refresh()
+        else:
+            pbar.update(1)
+        pbar.set_postfix(it=it, phase="player" if train_player else "enemy",
                          player=f"{last['player']:.2f}", enemy=f"{last['enemy']:.3f}", best=f"{best:.2f}")
-
-        if args.budget and (time.time() - t0) > args.budget:
-            pbar.close()
-            print(f">>> reached {args.budget:.0f}s budget at iter {it} — stopping (models saved below).", flush=True)
+        it += 1
+        if use_budget and elapsed > args.budget:
+            print(f"\n>>> reached {args.budget:.0f}s budget at iter {it} — stopping (models saved below).", flush=True)
             break
-    else:
-        pbar.close()
+    pbar.close()
 
     def trend(xs):
         return f"{xs[0]:.3f} -> {xs[-1]:.3f}  (+{xs[-1]-xs[0]:.3f})" if len(xs) >= 2 else (f"{xs[0]:.3f}" if xs else "n/a")
