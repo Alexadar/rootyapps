@@ -72,8 +72,14 @@ def cmd_train(args):
     fitness = lambda p: jnp.mean(e.rollout(policy.apply_mlp, p, args.ticks)["reward"])
     print(f"JAX ES on {level['name']}: N={e.N} M={e.M} ticks={args.ticks} pop={args.pop} iters={args.iters} dev={jax.devices()[0].platform}")
     t0 = time.time()
+    t_prev = [time.time()]
+    def on_it(it, best, ctr):
+        now = time.time(); dt = now - t_prev[0]; t_prev[0] = now
+        # iter 0's dt includes the one-time compile, so only show s/it + ETA from iter 1 on.
+        tail = "" if it == 0 else f"  {dt:4.1f}s/it  ETA {((args.iters - 1 - it) * dt) / 60:.1f}m"
+        print(f"  iter {it:3d}  center {ctr:.2f}  popBest {best:.2f}{tail}", flush=True)
     trained = es.train(fitness, params0, jax.random.PRNGKey(42), iters=args.iters, pop=args.pop, sigma=0.1, lr=0.05,
-                       on_iter=lambda it, best, ctr: print(f"  iter {it:3d}  center {ctr:.2f}  popBest {best:.2f}"))
+                       on_iter=on_it)
     out = jax.jit(lambda p: e.rollout(policy.apply_mlp, p, args.ticks))(trained)
     print(f"final: reward {float(jnp.mean(out['reward'])):.2f}  kills {float(jnp.mean(out['kills'])):.2f}  ({time.time()-t0:.1f}s)")
     if args.out:
