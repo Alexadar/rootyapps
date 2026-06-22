@@ -6,6 +6,11 @@
   python train.py parity --net ../MonstroSim/models/player.json   (forward == Swift/MLX)
 """
 import argparse, glob, json, os, time
+# The multi-minute GPU compile is XLA autotuning — it benchmarks fusion candidates on-device, and
+# our huge [N,B,M] collision makes each trial slow. Level 0 skips it (compile s→min instead of 15+min);
+# our kernels are elementwise/reduction (no big GEMM), so runtime is ~unaffected. Override via XLA_FLAGS.
+# Must be set BEFORE importing jax. Compile parallelism also helps the one big graph.
+os.environ.setdefault("XLA_FLAGS", "--xla_gpu_autotune_level=0 --xla_gpu_force_compilation_parallelism=0")
 import numpy as np
 import jax, jax.numpy as jnp
 # Persistent XLA compilation cache: the first jit/vmap(scan) compile is slow (large fused graph);
