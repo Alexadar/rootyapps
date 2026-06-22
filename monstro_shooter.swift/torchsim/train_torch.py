@@ -45,6 +45,17 @@ def _perf_setup(dev):
         torch.set_float32_matmul_precision("high")
 
 
+def tick_at(it, args):
+    """Tick curriculum: ramp rollout length from --tick-start to --ticks over --tick-warmup iters. Short
+    early episodes cost ~ticks and are enough to learn basic survive/aim; lengthen as policies mature.
+    Off when --tick-start<=0. Eval always uses full ticks. (ticks is the loop count, not a tensor shape,
+    so varying it does NOT trigger torch.compile recompiles.)"""
+    s = args.tick_start
+    if s <= 0 or it >= args.tick_warmup:
+        return args.ticks
+    return int(s + (args.ticks - s) * (it / max(args.tick_warmup, 1)))
+
+
 def swiper_maps(client):
     prod = json.load(open(os.path.join(client, "Resources", "prod.json")))
     names = prod["mapFilenames"]
@@ -152,6 +163,8 @@ def main():
     ap.add_argument("--pop", type=int, default=8)        # ES population (rollout uses 2*pop)
     ap.add_argument("--ticks", type=int, default=150)
     ap.add_argument("--iters", type=int, default=8)      # alternating player/enemy
+    ap.add_argument("--tick-start", type=int, default=0)   # tick curriculum start len (0=off -> full ticks)
+    ap.add_argument("--tick-warmup", type=int, default=40) # iters to ramp tick-start -> ticks
     ap.add_argument("--cap", type=int, default=64)       # monster slots
     ap.add_argument("--bullets", type=int, default=32)
     ap.add_argument("--sigma", type=float, default=0.1)
@@ -204,15 +217,16 @@ def main():
     it = 0
     while it < args.iters:
         train_player = (it % 2 == 0)
+        cur_ticks = tick_at(it, args)                          # curriculum: short rollouts early -> full
         if train_player:
             def fitness(stacked):
-                out = env.rollout(Ppop, args.ticks, pf(stacked), ef(enemy))
+                out = env.rollout(Ppop, cur_ticks, pf(stacked), ef(enemy))
                 return out["reward_player"].mean(1)
             player, best, mean = ES.es_step(player, fitness, args.pop, gen, dev, args.sigma, args.lr)
             hist["player"].append(mean); last["player"] = mean
         else:
             def fitness(stacked):
-                out = env.rollout(Ppop, args.ticks, pf(player), ef(stacked))
+                out = env.rollout(Ppop, cur_ticks, pf(player), ef(stacked))
                 return out["reward_enemy"].mean(1)
             enemy, best, mean = ES.es_step(enemy, fitness, args.pop, gen, dev, args.sigma, args.lr)
             hist["enemy"].append(mean); last["enemy"] = mean
