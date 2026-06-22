@@ -99,7 +99,7 @@ def main():
     ap.add_argument("--sigma", type=float, default=0.1)
     ap.add_argument("--lr", type=float, default=0.05)
     ap.add_argument("--device", default="auto")          # auto: cuda -> mps -> cpu (explicit value respected)
-    ap.add_argument("--cpu-budget", type=float, default=60.0)   # abort guard (seconds)
+    ap.add_argument("--budget", type=float, default=0.0)   # wall-time cap in seconds (0=off); stops + saves
     ap.add_argument("--eval", action="store_true")       # after training, play one UNSEEN map headless
     ap.add_argument("--eval-map", default="")            # default: held-out eval_unseen.json
     ap.add_argument("--eval-ticks", type=int, default=0)  # 0 -> landingDuration*30 (full map)
@@ -143,10 +143,9 @@ def main():
         pbar.set_postfix(phase="player" if train_player else "enemy",
                          player=f"{last['player']:.2f}", enemy=f"{last['enemy']:.3f}", best=f"{best:.2f}")
 
-        if dev == "cpu" and (time.time() - t0) > args.cpu_budget:
+        if args.budget and (time.time() - t0) > args.budget:
             pbar.close()
-            print(f">>> exceeded {args.cpu_budget:.0f}s on CPU — stopping. Run on the 3090: --device cuda "
-                  f"(scale --perm/--pop/--ticks up).", flush=True)
+            print(f">>> reached {args.budget:.0f}s budget at iter {it} — stopping (models saved below).", flush=True)
             break
     else:
         pbar.close()
