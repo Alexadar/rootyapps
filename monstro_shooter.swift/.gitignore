@@ -9,3 +9,5 @@ __pycache__
 MonstroSim/models/*.json
 MonstroSim/models/*.mlmodel
 MonstroSim/models/*.mlpackage
+# local launch scripts (carry intermediate/tuning args)
+torchsim/run_poc.sh
