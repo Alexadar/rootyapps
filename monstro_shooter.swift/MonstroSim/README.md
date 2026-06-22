@@ -40,7 +40,17 @@ swift build -c release          # build metallib once — see GPU_SETUP.md, then
 # --- the playable game (separate Metal engine) ---
 swift run -c release monstro-game --window        # WASD; auto-fire at nearest
 swift run -c release monstro-game --frames 600    # headless playthrough (stats + PNG)
+swift run -c release monstro-game --frames 600 --agent models/player.mlmodel   # player driven by Core ML
 ```
+
+## Architecture (Apple-blessed, WWDC 2026)
+
+Metal-4 rendering for the game + **Core ML / Core AI for the learned agents** (the split Apple
+showcased — their flagship Core AI demo is a learned game NPC). Training is off-runtime: **MLX on
+Mac** (`MonstroSimGPU`) or **JAX on a 3090** (`../brax`, optional accelerator). The connector is the
+portable weights JSON → Core ML `.mlmodel` (verified `aneinfer`) → Core AI `.aimodel` on macOS 27.
+We deliberately do **not** run the whole sim on GPU compute (off Apple's path); the agent runs via
+Core ML, the game via Metal.
 
 ## Status (proven on M1 Pro)
 

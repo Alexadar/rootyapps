@@ -204,6 +204,27 @@ final class Game {
         ptr[0].px = ppos.x; ptr[0].py = ppos.y
     }
 
+    /// Egocentric observation matching training (brax/env.obs / BatchWorld.buildPlayerObs):
+    /// [healthNorm, aliveNorm, threatX, threatY, nearestDist/1000, meanDist/1000]. `monsterNorm`
+    /// is the training M (alive-count normalizer) so the obs scale matches the trained policy.
+    func buildObs(monsterNorm: Float = 100) -> [Float] {
+        var alive: Float = 0, nearest: Float = 1e9, sumDist: Float = 0
+        var threat = SIMD2<Float>(0, 0)
+        for i in 1..<(1 + maxMon) {
+            let e = ptr[i]
+            if e.alive == 0 || e.kind != 0 { continue }
+            let d = SIMD2<Float>(e.px - ppos.x, e.py - ppos.y)
+            let dist = max(simd_length(d), 1e-3)
+            alive += 1; threat += d / dist; sumDist += dist
+            if dist < nearest { nearest = dist }
+        }
+        let tl = simd_length(threat)
+        let threatN = tl > 0 ? threat / tl : SIMD2<Float>(0, 0)
+        let meanD = alive > 0 ? sumDist / alive : 0
+        if nearest > 1e8 { nearest = 0 }
+        return [php / 100, alive / monsterNorm, threatN.x, threatN.y, nearest / 1000, meanD / 1000]
+    }
+
     /// Instanced render of the whole entity buffer into `tex`.
     func render(into tex: MTLTexture) {
         let rp = MTLRenderPassDescriptor()

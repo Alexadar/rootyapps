@@ -41,12 +41,19 @@ let td = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, widt
 td.usage = [.renderTarget, .shaderRead]; td.storageMode = .shared
 let tex = game.device.makeTexture(descriptor: td)!
 
-print("Headless playthrough: scripted kite+auto-fire agent, \(frames) frames @60fps")
+// Optional: drive the player with a Core ML agent (Apple-blessed inference path).
+let agentPath = argS("agent", "")
+let agent = agentPath.isEmpty ? nil : CoreMLAgent(path: agentPath)
+if !agentPath.isEmpty && agent == nil { fputs("warning: could not load Core ML agent at \(agentPath)\n", stderr) }
+
+print(agent != nil ? "Headless: player driven by Core ML agent (\(agentPath)), \(frames) frames @60fps"
+                   : "Headless: scripted kite+auto-fire agent, \(frames) frames @60fps")
 print("  frame   kills   hp")
 var snapped = false, gameOverAt = -1
 let t0 = DispatchTime.now()
 for f in 0..<frames {
-    let mv = length(game.aim) > 0.001 ? -game.aim : SIMD2<Float>(0, 0)   // kite away from nearest
+    let mv = agent.map { $0.act(game.buildObs()).move }                  // Core ML decides movement
+        ?? (length(game.aim) > 0.001 ? -game.aim : SIMD2<Float>(0, 0))   // else scripted kite
     game.step(dt: 1.0 / 60.0, moveDir: mv)
     if !game.alive && gameOverAt < 0 { gameOverAt = f }
     if (f == snapAt || (gameOverAt == f)) && !snapped { game.render(into: tex); writePNG(tex, out); snapped = true }

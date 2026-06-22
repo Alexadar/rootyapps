@@ -160,10 +160,6 @@ case "gpuprofile":
         print("  \(label.padding(toLength: 20, withPad: " ", startingAt: 0)) \(String(format: "%7.1f ms  %5.1f%%", s * 1000, s / grand * 100))")
     }
 
-case "mtlbridge":
-    // Phase-0 spike: can a raw Metal kernel mutate an MLX array in-place (asMTLBuffer noCopy)?
-    print(MetalBridgeSpike.run())
-
 default:
     print("""
     MonstroSim — GPU-batched headless training engine (MLX/Metal)
