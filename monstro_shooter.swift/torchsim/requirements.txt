@@ -7,3 +7,7 @@ pillow
 imageio
 imageio-ffmpeg
 # export only (Python 3.11 / conda env): coremltools
+# JAX rollout + bench (optional, the lax.scan path): jax[cuda12]
+#
+# 3090 (Ampere): a standard CUDA-12 torch wheel works as-is. Train with:  ./train.sh
+# (auto-detects cuda -> POP=128 PERM=32 TICKS=600, torch.compile on, renders the geometric eval grid).
