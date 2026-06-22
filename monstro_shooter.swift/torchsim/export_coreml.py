@@ -27,9 +27,9 @@ def numpy_forward(json_path, x):
     return h
 
 
-def export_one(json_path, obs_dim, out_path):
+def export_one(json_path, out_path):
     params, sizes = P.from_json(json_path)
-    assert sizes[0] == obs_dim, f"{json_path}: obs {sizes[0]} != expected {obs_dim}"
+    obs_dim = sizes[0]                                    # derive from the model (never goes stale)
     module = P.MLPModule(params).eval()
     example = torch.zeros(obs_dim)                       # 1-D obs, matches Agent.swift MLMultiArray [count]
     traced = torch.jit.trace(module, example)
@@ -68,11 +68,11 @@ def main():
     ok = True
     pj, mj = os.path.join(MODELS, "player.json"), os.path.join(MODELS, "monster.json")
     if os.path.exists(pj):
-        ok &= export_one(pj, 6, os.path.join(MODELS, "player.mlmodel"))
+        ok &= export_one(pj, os.path.join(MODELS, "player.mlmodel"))
     else:
         print("  player.json missing — run train_torch.py first")
     if os.path.exists(mj):
-        ok &= export_one(mj, 7, os.path.join(MODELS, "monster.mlmodel"))
+        ok &= export_one(mj, os.path.join(MODELS, "monster.mlmodel"))
     else:
         print("  monster.json missing — run train_torch.py first")
     print("Done." if ok else "Done with mismatches.")

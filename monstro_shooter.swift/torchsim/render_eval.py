@@ -12,7 +12,10 @@ from PIL import Image, ImageDraw
 import imageio.v2 as imageio
 import data, schedule
 import policy_torch as P
-from env_torch import EnvTorch, PLAYER_RADIUS
+from env_torch import EnvTorch
+from world_config import WorldConfig
+
+PLAYER_RADIUS = WorldConfig().player_radius
 
 PALETTE = [(235, 90, 90), (245, 165, 70), (95, 205, 130), (120, 165, 250), (215, 120, 235), (245, 225, 95)]
 

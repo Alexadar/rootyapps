@@ -27,6 +27,33 @@ func writePNG(_ tex: MTLTexture, _ path: String) {
     CGImageDestinationAddImage(dest, img, nil); CGImageDestinationFinalize(dest)
 }
 
+// Parity mode: replay the exported games through the faithful Swift port (PortSim) and dump positions
+// for the Python parity diff.  `monstro-game --port <dir> [--player x.mlmodel] [--enemy y.mlmodel]`
+if CommandLine.arguments.contains("--port") { runPort(); exit(0) }
+
+// Demo capture: the TRAINED player model + monster model play; render real sprites to a PNG sequence.
+//   monstro-game --demo [--out /tmp/demo] [--player models/player.mlmodel] [--frames 900]
+if CommandLine.arguments.contains("--demo") {
+    let dir = argS("out", "/tmp/demo")
+    try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+    for p in (try? FileManager.default.contentsOfDirectory(atPath: dir)) ?? [] where p.hasSuffix(".png") {
+        try? FileManager.default.removeItem(atPath: "\(dir)/\(p)")
+    }
+    let nframes = arg("frames", 900), size = arg("size", 800)
+    let game = try Game(playerPath: argS("player", "models/player.mlmodel"))
+    let td = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: size, height: size, mipmapped: false)
+    td.usage = [.renderTarget, .shaderRead]; td.storageMode = .shared
+    let tex = game.device.makeTexture(descriptor: td)!
+    var fi = 0
+    for f in 0..<nframes {
+        game.step(dt: 1.0 / 60.0, moveDir: .zero)
+        if f % 2 == 0 { game.render(into: tex); writePNG(tex, String(format: "%@/f%04d.png", dir, fi)); fi += 1 }
+        if !game.alive { break }
+    }
+    print("demo: \(fi) frames -> \(dir)  (kills \(game.kills), hp \(Int(max(game.php, 0))))")
+    exit(0)
+}
+
 // Interactive window mode (play it): `monstro-game --window`. Blocks until you quit.
 if CommandLine.arguments.contains("--window") { runGameWindow(); exit(0) }
 
@@ -41,19 +68,14 @@ let td = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, widt
 td.usage = [.renderTarget, .shaderRead]; td.storageMode = .shared
 let tex = game.device.makeTexture(descriptor: td)!
 
-// Optional: drive the player with a Core ML agent (Apple-blessed inference path).
-let agentPath = argS("agent", "")
-let agent = agentPath.isEmpty ? nil : CoreMLAgent(path: agentPath)
-if !agentPath.isEmpty && agent == nil { fputs("warning: could not load Core ML agent at \(agentPath)\n", stderr) }
-
-print(agent != nil ? "Headless: player driven by Core ML agent (\(agentPath)), \(frames) frames @60fps"
-                   : "Headless: scripted kite+auto-fire agent, \(frames) frames @60fps")
+// Headless smoke: canonical game (PortSim logic + Core ML monsters), player kites the nearest monster.
+print("Headless: PortSim game (Core ML monsters), scripted-kite player, \(frames) frames @60fps")
 print("  frame   kills   hp")
 var snapped = false, gameOverAt = -1
 let t0 = DispatchTime.now()
 for f in 0..<frames {
-    let mv = agent.map { $0.act(game.buildObs()).move }                  // Core ML decides movement
-        ?? (length(game.aim) > 0.001 ? -game.aim : SIMD2<Float>(0, 0))   // else scripted kite
+    let nv = game.sim.nearestVec()                                       // toward nearest monster
+    let mv = simd_length(nv) > 0.001 ? -simd_normalize(nv) : SIMD2<Float>(0, 0)   // kite away
     game.step(dt: 1.0 / 60.0, moveDir: mv)
     if !game.alive && gameOverAt < 0 { gameOverAt = f }
     if (f == snapAt || (gameOverAt == f)) && !snapped { game.render(into: tex); writePNG(tex, out); snapped = true }

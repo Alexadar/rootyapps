@@ -13,3 +13,5 @@ MonstroSim/models/*.mlpackage
 torchsim/datasets/**/*.mp4
 torchsim/datasets/**/*.gif
 torchsim/datasets/**/*.png
+# parity harness outputs (generated)
+torchsim/parity/

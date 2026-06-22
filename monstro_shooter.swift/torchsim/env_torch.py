@@ -1,39 +1,34 @@
-"""Torch BatchWorld — port of brax/env.py (Brax-paradigm vectorized game env), with TWO networked
-agents: the player (move+aim) and a SHARED enemy net that drives every monster's velocity
-(egocentric, type-conditioned) instead of the scripted chase. Scripted monster fallback kept.
+"""Torch BatchWorld — the vectorized game env. Two networked agents: the player (move+aim, the
+training adversary / future companion seed) and the SHARED enemy net that drives every monster's
+velocity (the deployed NPC). ALL global physics constants come from a single WorldConfig (the shared
+"model+world setup") so torchsim and the Metal game cannot drift; per-type monster / weapon / exo
+stats come from the YAML configs.
 
 State carries a leading [P, N] dim:  P = ES population (2*pop, mirrored),  N = envs.
-The policy whose turn it is to train carries the population in its weights ([P,in,out]); the frozen
-net uses center weights ([in,out]) that broadcast over P. Masked/branchless via torch.where.
-
-Player reward mirrors env.py. Enemy reward is the adversary: damage dealt + approach − deaths.
 """
+import math
 import numpy as np
 import torch
+from world_config import WorldConfig
 
-DT = 1.0 / 30.0
-PLAYER_SPEED = 300.0
-PLAYER_HALF = 30.0
-PLAYER_RADIUS = 30.0
-MAP_HALF = 6000.0        # default arena half (per-map overridable via sched["arena_half"])
-BUFFER = 5.0
-BULLET_RADIUS = 6.0
-TURN_RATE = 34.0
-DAMAGE_INTERVAL = 1.0
-EPS = 1e-6
-MON_SPEED_NORM = 300.0     # obs normalizer for monster speed
-MONSTER_COUNT_NORM = 64.0  # fixed count normalizer (NOT the per-env cap) -> train/eval consistent
-BULLET_NORM = 1000.0       # obs normalizer for nearest-bullet distance
+
+def det_rand(t, k):
+    """Deterministic pseudo-random in [-1,1] from integer (tick, pellet) — identical in Swift, so
+    bullet spread stays parity-exact across the two engines (no real RNG)."""
+    h = (t * 2654435761 + k * 340573 + 12345) & 0xffffffff
+    return h / 2147483647.5 - 1.0
 
 
 class EnvTorch:
     player_obs = 8         # hp, count, threatXY, nearest, mean, wallX, wallY
     player_act = 4
-    enemy_obs = 10        # dirXY, dist, velXY, speed, hp, bulletDirXY, bulletDist
+    enemy_obs = 10         # dirXY, dist, velXY, speed, hp, bulletDirXY, bulletDist
     enemy_act = 2
 
-    def __init__(self, sched, weapon, exo, device="cpu", bullets=32):
+    def __init__(self, sched, weapon, exo, device="cpu", bullets=32, cfg=None):
         self.device = device
+        self.cfg = cfg or WorldConfig()
+        c = self.cfg
         self.N = int(sched["spawn_tick"].shape[0])
         self.M = int(sched["M"])
         self.B = int(bullets)
@@ -46,47 +41,59 @@ class EnvTorch:
         self.mon_direct = t(sched["direct"])
         self.hp0 = t(sched["hp0"])                    # [N,M]
         ah = sched.get("arena_half")
-        self.map_half = t(ah) if ah is not None else torch.full((self.N,), MAP_HALF, device=device)  # [N]
+        self.map_half = t(ah) if ah is not None else torch.full((self.N,), c.map_half, device=device)  # [N]
         self.bullet_speed = float(weapon.get("bulletSpeed", 800))
         self.bullet_damage = float(weapon["damage"])
         self.bullet_range = float(weapon["shotRange"])
-        self.fire_interval = max(1, round(float(weapon["shotDelay"]) / DT))
-        self.contact_interval = max(1, round(DAMAGE_INTERVAL / DT))
+        self.fire_interval = max(1, round(float(weapon["shotDelay"]) / c.dt))
+        self.contact_interval = max(1, round(c.damage_interval / c.dt))
         self.defense = float(exo.get("defence", 0.0))
+        # OLD-SpriteKit weapon/exo extras (canonical)
+        self.bullets_per_shot = int(weapon.get("bulletsPerShot", 1))
+        self.penetration = max(1, int(weapon.get("penetrationPower", 1)))
+        self.max_dev = float(weapon.get("maxDeviation", weapon.get("bulletDeviation", 0.0)))
+        self.mag_size = int(weapon.get("magazineSize", 10 ** 9))
+        self.reload_ticks = max(1, round(float(weapon.get("reloadTime", 0.0)) / c.dt))
+        self.exo_speed = float(exo.get("speed", 1.0))
 
     def reset(self, P):
         N, M, B, dev = self.N, self.M, self.B, self.device
         z = lambda *s: torch.zeros(*s, device=dev)
         return dict(
-            player_pos=z(P, N, 2), player_hp=torch.full((P, N), 100.0, device=dev),
+            player_pos=z(P, N, 2), player_hp=torch.full((P, N), self.cfg.player_max_hp, device=dev),
             mon_pos=z(P, N, M, 2), mon_vel=z(P, N, M, 2),
             mon_hp=self.hp0.unsqueeze(0).expand(P, N, M).clone(), mon_act=z(P, N, M),
+            mon_contact=z(P, N, M),                                # was-in-contact flag (immediate pulse)
             bul_pos=z(P, N, B, 2), bul_vel=z(P, N, B, 2), bul_alive=z(P, N, B), bul_dist=z(P, N, B),
+            bul_pen=z(P, N, B),                                    # penetration remaining
+            ammo=torch.full((P, N), float(self.mag_size), device=dev), reload_t=z(P, N),
             kills=z(P, N),
         )
 
     # ---- observations ----
     def player_obs_vec(self, s):
+        c = self.cfg
         rel = s["mon_pos"] - s["player_pos"][:, :, None, :]          # [P,N,M,2] toward monster
-        dist = torch.sqrt((rel * rel).sum(-1)) + EPS
+        dist = torch.sqrt((rel * rel).sum(-1)) + c.eps
         alive = ((s["mon_act"] > 0.5) & (s["mon_hp"] > 0)).float()
         cnt = alive.sum(-1)
         dirv = rel / dist[..., None]
         threat = (dirv * alive[..., None]).sum(2)                    # [P,N,2]
-        threatN = threat / (torch.sqrt((threat * threat).sum(-1, keepdim=True)) + EPS)
+        threatN = threat / (torch.sqrt((threat * threat).sum(-1, keepdim=True)) + c.eps)
         masked = torch.where(alive > 0.5, dist, torch.full_like(dist, 1e9))
         nearest = masked.min(-1).values
-        meanD = (dist * alive).sum(-1) / (cnt + EPS)
+        meanD = (dist * alive).sum(-1) / (cnt + c.eps)
         wall = s["player_pos"] / self.map_half.view(1, self.N, 1)    # [P,N,2] in [-1,1]: arena-size-invariant
-        return torch.cat([(s["player_hp"] / 100.0)[..., None], (cnt / MONSTER_COUNT_NORM)[..., None],
-                          threatN, (nearest / 1000.0)[..., None], (meanD / 1000.0)[..., None], wall], -1)
+        return torch.cat([(s["player_hp"] / c.player_max_hp)[..., None], (cnt / c.monster_count_norm)[..., None],
+                          threatN, (nearest / c.dist_norm)[..., None], (meanD / c.dist_norm)[..., None], wall], -1)
 
     def enemy_obs_vec(self, s):
+        c = self.cfg
         rel = s["player_pos"][:, :, None, :] - s["mon_pos"]          # [P,N,M,2] toward player
-        dist = torch.sqrt((rel * rel).sum(-1)) + EPS
+        dist = torch.sqrt((rel * rel).sum(-1)) + c.eps
         dirv = rel / dist[..., None]
         spd = self.mon_speed[None, :, :]                            # [1,N,M]
-        vel_n = s["mon_vel"] / (spd[..., None] + EPS)
+        vel_n = s["mon_vel"] / (spd[..., None] + c.eps)
         # nearest in-flight bullet per monster (so the enemy can learn to dodge) — [P,N,M,B]
         brel = s["bul_pos"][:, :, None, :, :] - s["mon_pos"][:, :, :, None, :]   # [P,N,M,B,2] toward bullet
         bd2 = (brel * brel).sum(-1)
@@ -95,21 +102,22 @@ class EnvTorch:
         has = (bmin < 1e17).float()
         idx = bidx[..., None, None].expand(*bidx.shape, 1, 2)                     # [P,N,M,1,2]
         bnear = torch.gather(brel, 3, idx).squeeze(3)                             # [P,N,M,2] vec to bullet
-        bdist = torch.sqrt(bmin.clamp(min=0.0)) + EPS
+        bdist = torch.sqrt(bmin.clamp(min=0.0)) + c.eps
         bdir = bnear / bdist[..., None] * has[..., None]                          # 0 when no live bullet
-        bdist_n = torch.where(has > 0.5, (bdist / BULLET_NORM).clamp(max=2.0), torch.full_like(bdist, 2.0))
-        return torch.cat([dirv, (dist / 1000.0)[..., None], vel_n,
-                          (spd / MON_SPEED_NORM)[..., None].expand_as(dist[..., None]),
-                          (s["mon_hp"] / (self.hp0[None] + EPS))[..., None],
+        bdist_n = torch.where(has > 0.5, (bdist / c.bullet_norm).clamp(max=2.0), torch.full_like(bdist, 2.0))
+        return torch.cat([dirv, (dist / c.dist_norm)[..., None], vel_n,
+                          (spd / c.monster_speed_norm)[..., None].expand_as(dist[..., None]),
+                          (s["mon_hp"] / (self.hp0[None] + c.eps))[..., None],
                           bdir, bdist_n[..., None]], -1)   # [P,N,M,10]
 
-    # ---- one tick. player_fn: obs[P,N,6]->[P,N,4]; enemy_fn: obs[P,N,M,7]->[P,N,M,2] or None ----
+    # ---- one tick. player_fn: obs[P,N,8]->[P,N,4]; enemy_fn: obs[P,N,M,10]->[P,N,M,2] or None ----
     def step(self, s, t, player_fn, enemy_fn):
+        c = self.cfg
         P, N, M = s["mon_pos"].shape[0], self.N, self.M
         a_player = player_fn(self.player_obs_vec(s))                 # pre-step player obs
         a_move, a_aim = a_player[..., 0:2], a_player[..., 2:4]
 
-        elapsed = float(t) * DT
+        elapsed = float(t) * c.dt
         st = self.spawn_tick[None]                                  # [1,N,M]
         due = st <= elapsed
         just = due & (s["mon_act"] < 0.5)
@@ -118,68 +126,93 @@ class EnvTorch:
         alive_b = due & (s["mon_hp"] > 0)
 
         rel = s["player_pos"][:, :, None, :] - mon_pos              # toward player
-        dist = torch.sqrt((rel * rel).sum(-1)) + EPS
+        dist = torch.sqrt((rel * rel).sum(-1)) + c.eps
         dirv = rel / dist[..., None]
         spd = self.mon_speed[None]
-        stop = PLAYER_RADIUS + self.mon_boxW[None] / 2
+        stop = c.player_radius + self.mon_boxW[None] / 2
         move_mask = (alive_b & (dist > stop)).float()
 
-        if enemy_fn is not None:                                    # networked shared enemy
+        if enemy_fn is not None:                                    # networked shared enemy (the NPC)
             s2 = dict(s); s2["mon_pos"] = mon_pos                   # obs from post-spawn positions
             a_e = enemy_fn(self.enemy_obs_vec(s2))                  # [P,N,M,2]
             v = torch.tanh(a_e)
-            vn = v / (torch.sqrt((v * v).sum(-1, keepdim=True)) + EPS)
+            vn = v / (torch.sqrt((v * v).sum(-1, keepdim=True)) + c.eps)
             mon_vel = vn * spd[..., None] * move_mask[..., None]
-        else:                                                       # scripted direct/arc
+        else:                                                       # scripted direct/arc (fallback only)
             direct_vel = dirv * spd[..., None]
-            arc = s["mon_vel"] + dirv * (TURN_RATE * DT)
-            arc_vel = arc / (torch.sqrt((arc * arc).sum(-1, keepdim=True)) + EPS) * spd[..., None]
+            arc = s["mon_vel"] + dirv * (c.turn_rate * c.dt)
+            arc_vel = arc / (torch.sqrt((arc * arc).sum(-1, keepdim=True)) + c.eps) * spd[..., None]
             chosen = torch.where((self.mon_direct[None] > 0.5)[..., None], direct_vel, arc_vel)
             mon_vel = chosen * move_mask[..., None]
-        mon_pos = mon_pos + mon_vel * DT
+        mon_pos = mon_pos + mon_vel * c.dt
 
-        # fire along aim, gated
-        aim = a_aim / (torch.sqrt((a_aim * a_aim).sum(-1, keepdim=True)) + EPS)
-        fire_gate = 1.0 if (t % self.fire_interval == 0) else 0.0
-        slot = (t // self.fire_interval) % self.B
-        onehot = (torch.arange(self.B, device=self.device) == slot).float() * fire_gate
-        wb1 = onehot[None, None, :, None]; wb = onehot[None, None, :]
-        bul_pos = torch.where(wb1 > 0.5, s["player_pos"][:, :, None, :], s["bul_pos"])
-        bul_vel = torch.where(wb1 > 0.5, (aim * self.bullet_speed)[:, :, None, :], s["bul_vel"])
-        bul_alive = torch.where(wb > 0.5, torch.ones_like(s["bul_alive"]), s["bul_alive"])
-        bul_dist = torch.where(wb > 0.5, torch.zeros_like(s["bul_dist"]), s["bul_dist"])
+        # ammo / reload state machine (per-env)
+        reload_t = torch.clamp(s["reload_t"] - 1.0, min=0.0)
+        just_reloaded = (s["reload_t"] > 0) & (reload_t == 0)
+        ammo = torch.where(just_reloaded, torch.full_like(s["ammo"], float(self.mag_size)), s["ammo"])
+        gate = torch.full_like(ammo, 1.0 if (t % self.fire_interval == 0) else 0.0)
+        fire = ((gate > 0.5) & (ammo > 0) & (reload_t == 0)).float()        # [P,N] envs firing this tick
+        ammo = ammo - fire
+        need_reload = (ammo <= 0) & (reload_t == 0)
+        reload_t = torch.where(need_reload, torch.full_like(reload_t, float(self.reload_ticks)), reload_t)
 
-        bul_pos = bul_pos + bul_vel * DT
-        bul_dist = bul_dist + torch.sqrt((bul_vel * bul_vel).sum(-1)) * DT
+        # fire bulletsPerShot pellets (deterministic spread) into the ring buffer
+        aim = a_aim / (torch.sqrt((a_aim * a_aim).sum(-1, keepdim=True)) + c.eps)   # [P,N,2]
+        bul_pos, bul_vel = s["bul_pos"], s["bul_vel"]
+        bul_alive, bul_dist, bul_pen = s["bul_alive"], s["bul_dist"], s["bul_pen"]
+        shot = t // self.fire_interval
+        ar = torch.arange(self.B, device=self.device)
+        for k in range(self.bullets_per_shot):
+            slot_k = (shot * self.bullets_per_shot + k) % self.B
+            theta = math.atan2(self.max_dev * det_rand(t, k), 500.0)
+            ct, st = math.cos(theta), math.sin(theta)
+            pa = torch.stack([aim[..., 0] * ct - aim[..., 1] * st, aim[..., 0] * st + aim[..., 1] * ct], -1)
+            write = (ar == slot_k).float()[None, None, :] * fire[:, :, None]        # [P,N,B]
+            w1 = write[..., None]
+            bul_pos = torch.where(w1 > 0.5, s["player_pos"][:, :, None, :], bul_pos)
+            bul_vel = torch.where(w1 > 0.5, (pa * self.bullet_speed)[:, :, None, :], bul_vel)
+            bul_alive = torch.where(write > 0.5, torch.ones_like(bul_alive), bul_alive)
+            bul_dist = torch.where(write > 0.5, torch.zeros_like(bul_dist), bul_dist)
+            bul_pen = torch.where(write > 0.5, torch.full_like(bul_pen, float(self.penetration)), bul_pen)
+
+        bul_pos = bul_pos + bul_vel * c.dt
+        bul_dist = bul_dist + torch.sqrt((bul_vel * bul_vel).sum(-1)) * c.dt
         bul_alive = ((bul_alive > 0.5) & (bul_dist < self.bullet_range)).float()
 
-        # collision [P,N,B,M]
+        # collision with penetration (a bullet damages every monster it overlaps; dies after `pen` hits)
         diff = bul_pos[:, :, :, None, :] - mon_pos[:, :, None, :, :]
         d2 = (diff * diff).sum(-1)
-        hitR = (BULLET_RADIUS + self.mon_boxW[None] / 2)
+        hitR = (c.bullet_radius + self.mon_boxW[None] / 2)
         hit = ((d2 < (hitR * hitR)[:, :, None, :]) &
                (bul_alive > 0.5)[..., None] & alive_b[:, :, None, :]).float()
         mon_hp = s["mon_hp"] - (hit * self.bullet_damage).sum(2)
-        bul_alive = ((bul_alive > 0.5) & (hit.sum(3) < 0.5)).float()
+        bul_pen = bul_pen - hit.sum(3)
+        bul_alive = ((bul_alive > 0.5) & (bul_pen > 0.5)).float()
 
         alive_a = due & (mon_hp > 0)
         killed = (alive_b & (~alive_a)).float().sum(2)              # [P,N]
         kills = s["kills"] + killed
 
-        contact_gate = 1.0 if (t % self.contact_interval == 0) else 0.0
-        contact = (alive_a & (dist < (PLAYER_RADIUS + self.mon_boxW[None] / 2 + BUFFER))).float()
-        dmg = (contact * self.mon_dmg[None]).sum(2) * contact_gate
-        applied = torch.clamp(dmg - self.defense, min=0.0)
+        # contact: immediate pulse on newly-touching + periodic for sustained; defense + min floor
+        contact_now = (alive_a & (dist < (c.player_radius + self.mon_boxW[None] / 2 + c.buffer))).float()
+        newly = contact_now * (1.0 - s["mon_contact"])
+        sustained = contact_now * s["mon_contact"]
+        gate_c = 1.0 if (t % self.contact_interval == 0) else 0.0
+        dmg = ((newly + sustained * gate_c) * self.mon_dmg[None]).sum(2)
+        applied = torch.where(dmg > 0, torch.clamp(dmg - self.defense, min=c.defense_min_floor), torch.zeros_like(dmg))
         player_hp = s["player_hp"] - applied
+        mon_contact = contact_now
 
+        # player move (tanh, exo speed mult, per-arena clamp)
         mv = torch.tanh(a_move)
-        lo = (-self.map_half + PLAYER_HALF).view(1, N, 1)            # per-env arena bounds
-        hi = (self.map_half - PLAYER_HALF).view(1, N, 1)
-        player_pos = torch.minimum(torch.maximum(s["player_pos"] + mv * (PLAYER_SPEED * DT), lo), hi)
+        lo = (-self.map_half + c.player_half).view(1, N, 1)
+        hi = (self.map_half - c.player_half).view(1, N, 1)
+        player_pos = torch.minimum(torch.maximum(
+            s["player_pos"] + mv * (c.player_speed * self.exo_speed * c.dt), lo), hi)
 
-        # player reward (env.py:150-155)
+        # player reward: survive + aim-shaping + kills − damage taken (alive-gated)
         threat_raw = ((mon_pos - player_pos[:, :, None, :]) * alive_a.float()[..., None]).sum(2)
-        threatN = threat_raw / (torch.sqrt((threat_raw * threat_raw).sum(-1, keepdim=True)) + EPS)
+        threatN = threat_raw / (torch.sqrt((threat_raw * threat_raw).sum(-1, keepdim=True)) + c.eps)
         aim_align = (aim * threatN).sum(-1)
         alive_env = (player_hp > 0).float()
         r_player = (0.01 + 0.005 * aim_align + killed - applied * 0.05) * alive_env
@@ -190,8 +223,9 @@ class EnvTorch:
         r_enemy = 0.1 * applied + 0.0008 * approach - 0.02 * killed
 
         ns = dict(player_pos=player_pos, player_hp=player_hp, mon_pos=mon_pos, mon_vel=mon_vel,
-                  mon_hp=mon_hp, mon_act=mon_act, bul_pos=bul_pos, bul_vel=bul_vel,
-                  bul_alive=bul_alive, bul_dist=bul_dist, kills=kills)
+                  mon_hp=mon_hp, mon_act=mon_act, mon_contact=mon_contact,
+                  bul_pos=bul_pos, bul_vel=bul_vel, bul_alive=bul_alive, bul_dist=bul_dist, bul_pen=bul_pen,
+                  ammo=ammo, reload_t=reload_t, kills=kills)
         return ns, r_player, r_enemy
 
     @torch.no_grad()
