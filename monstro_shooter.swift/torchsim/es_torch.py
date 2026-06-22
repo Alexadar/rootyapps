@@ -23,8 +23,9 @@ def perturb(center, noise, sigma):
 
 
 def sample_noise(center, pop, gen, device):
-    return [(torch.randn(pop, *W.shape, generator=gen, device=device),
-             torch.randn(pop, *b.shape, generator=gen, device=device)) for W, b in center]
+    # gen is a CPU generator (MPS/CUDA generators are finicky); sample on CPU, move to device.
+    return [(torch.randn(pop, *W.shape, generator=gen).to(device),
+             torch.randn(pop, *b.shape, generator=gen).to(device)) for W, b in center]
 
 
 def update(center, noise, fits, pop, sigma, lr):

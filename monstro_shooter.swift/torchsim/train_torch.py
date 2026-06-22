@@ -20,6 +20,18 @@ PLAYER_SIZES = [EnvTorch.player_obs, H, H, EnvTorch.player_act]
 ENEMY_SIZES = [EnvTorch.enemy_obs, H, H, EnvTorch.enemy_act]
 
 
+def pick_device(pref="auto"):
+    """auto: cuda (3090) -> mps (Apple GPU) -> cpu. Explicit value passes through."""
+    if pref and pref != "auto":
+        return pref
+    if torch.cuda.is_available():
+        return "cuda"
+    mps = getattr(torch.backends, "mps", None)
+    if mps is not None and mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 def swiper_maps(client):
     prod = json.load(open(os.path.join(client, "Resources", "prod.json")))
     names = prod["mapFilenames"]
@@ -50,13 +62,14 @@ def main():
     ap.add_argument("--bullets", type=int, default=32)
     ap.add_argument("--sigma", type=float, default=0.1)
     ap.add_argument("--lr", type=float, default=0.05)
-    ap.add_argument("--device", default="cpu")
+    ap.add_argument("--device", default="auto")          # auto: cuda -> mps -> cpu
     ap.add_argument("--cpu-budget", type=float, default=60.0)   # abort guard (seconds)
     ap.add_argument("--player-out", default="../MonstroSim/models/player.json")
     ap.add_argument("--enemy-out", default="../MonstroSim/models/monster.json")
     args = ap.parse_args()
 
-    dev = args.device
+    dev = pick_device(args.device)
+    args.device = dev
     env, n_maps, n_envs = build_env(args)
     Ppop = 2 * args.pop
     print(f"Torch co-evolution: {n_maps} swiper maps x {args.perm} = N={n_envs} envs, M={env.M}, "
@@ -64,7 +77,7 @@ def main():
 
     player = P.init_mlp(PLAYER_SIZES, device=dev, seed=7)
     enemy = P.init_mlp(ENEMY_SIZES, device=dev, seed=11)
-    gen = torch.Generator(device=dev).manual_seed(42)
+    gen = torch.Generator().manual_seed(42)              # CPU generator (noise moved to device in es)
 
     pf = lambda params: (lambda obs: P.apply_mlp(params, obs))
     ef = lambda params: (lambda obs: P.apply_enemy(params, obs))
