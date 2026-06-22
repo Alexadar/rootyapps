@@ -1,0 +1,5 @@
+torch
+numpy
+pyyaml
+tqdm
+# export only (Python 3.11 venv): coremltools

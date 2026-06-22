@@ -1,3 +1,7 @@
 build
 DerivedData
 tmp
+# python
+.venv-torch
+__pycache__
+*.pyc
