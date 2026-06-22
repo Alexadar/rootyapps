@@ -26,7 +26,7 @@ kernel void steer(device Entity* e [[buffer(0)]], constant float2& player [[buff
     if (id >= count) return; device Entity& m = e[id];
     if (m.alive == 0u || m.kind != 0u) return;
     float2 p = float2(m.px, m.py); float2 d = player - p; float dist = max(length(d), 1e-3);
-    float speed = 60.0 + float(m.type) * 28.0;
+    float speed = 130.0 + float(m.type) * 30.0;          // ~real monster speeds (bug 150-ish)
     p += d / dist * speed * dt; m.px = p.x; m.py = p.y;
 }
 
@@ -122,7 +122,9 @@ final class Game {
     let playerSpeed: Float = 300
     var monW = 0, bulW = 0
     var spawnT: Float = 0, fireT: Float = 0
-    let spawnInterval: Float = 0.10, fireInterval: Float = 0.18
+    // aligned to the training regime (BatchWorld/brax) so the Core ML policy transfers:
+    // ~2 spawns/sec, pistol 0.5s fire cadence (vs the old 10/sec + 0.18s demo values).
+    let spawnInterval: Float = 0.5, fireInterval: Float = 0.5
     var rng = SystemRandomNumberGenerator()
     var frames = 0
 
@@ -160,13 +162,13 @@ final class Game {
         let t = UInt32.random(in: 0...4, using: &rng)
         let slot = 1 + (monW % maxMon); monW += 1
         ptr[slot] = Entity(px: ppos.x + cos(ang) * rad, py: ppos.y + sin(ang) * rad, vx: 0, vy: 0,
-                           kind: 0, type: t, hp: Int32(10 + t * 8), alive: 1)
+                           kind: 0, type: t, hp: Int32(6 + t * 4), alive: 1)   // ~real low hp
     }
     private func fireBullet() {
         guard length(aim) > 0.01 else { return }
         let slot = bulletBase + (bulW % bulletCap); bulW += 1
-        ptr[slot] = Entity(px: ppos.x, py: ppos.y, vx: aim.x * 900, vy: aim.y * 900,
-                           kind: 1, type: 0, hp: 70, alive: 1)
+        ptr[slot] = Entity(px: ppos.x, py: ppos.y, vx: aim.x * 800, vy: aim.y * 800,   // pistol speed
+                           kind: 1, type: 0, hp: 40, alive: 1)                          // ~500u range
     }
 
     /// One frame: CPU spawn/fire/move + GPU kernels (steer, bullets, collide, contact, aim).
