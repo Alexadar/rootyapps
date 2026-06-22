@@ -1,60 +1,58 @@
-# MonstroSim — GPU-only RL engine (lego before braxification)
+# MonstroSim — GPU training engine + playable Metal game
 
-A headless, GPU-resident simulation of Monstro Shooter with an on-device RL agent. **One engine
-(`MonstroSimGPU`) is shared by the trainer and (later) the game** — training runs N envs + ES with
-one sync per episode; the game will run the same `BatchWorld` at N=1 with one sync per frame.
-**Models are detached artifacts** (portable JSON weights in `models/`). Pure Swift + MLX (Metal).
-No CPU sim, no Python.
+Two things that share **game data files** and a **portable model-weights artifact** — not (yet) a
+single step function:
+
+- **`MonstroSimGPU`** — a GPU-batched *training* engine (thousands of envs as MLX/Metal tensors,
+  on-device player policy + Evolution Strategies, one sync per episode). Driven by the `monstrosim` CLI.
+- **`monstro-game`** (`Sources/MetalGame`) — the *playable* game: a standalone Metal engine running the
+  whole loop in compute kernels with instanced-sprite rendering, no SpriteKit.
+
+They are independent implementations of the same game (a third, JAX, lives in `../brax` for 3090-scale
+training). The connective tissue is the **model JSON** (`models/player.json`) — trained by MLX or JAX,
+runnable in the Metal game or exported to Core ML/ANE. **Unifying the kinetics into one shared engine
+is future work.** Pure Swift + MLX (Metal). No CPU sim, no Python.
 
 ## Layout
 
 ```
-Sources/MonstroSim/      shared infra: SeededGenerator, SimConstants, config/map loaders, types
-Sources/MonstroSimGPU/   the engine: BatchWorld (vectorized, mx.compile-fused), SpawnSchedule,
-                         GPUPolicy (MLP in-graph), GPUES (Evolution Strategies)
-Sources/MonstroCLI/      gputrain / gpueval / gprun / gpubench / gpuprofile
-models/                  shipped trained weights (detached artifact; CI/CD regen later)
+Sources/MonstroSim/      shared infra: SeededGenerator, SimConstants, config/map loaders
+Sources/MonstroSimGPU/   training engine: BatchWorld (mx.compile-fused), SpawnSchedule,
+                         GPUPolicy (MLP in-graph), GPUES (ES), CoreMLPolicy (ANE connector)
+Sources/MonstroCLI/      monstrosim: gputrain / gpueval / gprun / aneinfer / gpubench / gpuprofile
+Sources/MetalGame/       monstro-game: the playable GPU game (Metal compute + instanced render)
+models/                  detached artifacts: player.json (weights), player.mlmodel (Core ML)
+tools/export_coreml.py   offline: player.json -> player.mlmodel (coremltools, Py3.11)
 ```
-
-## Architecture (one engine, two callers)
-
-```
-TRAINER (headless):  N = maps×seeds envs → rolloutPlayer → ES → per-EPISODE sync
-GAME (later):        N = 1 env          → step + render   → per-FRAME sync
-                     ▲ both use the SAME BatchWorld.step + GPUPolicy ▲
-```
-
-The whole episode runs in-graph on the GPU (policy forward fused with the sim); the CPU syncs once
-per episode (training) or once per frame (game). See the conversation/plan for the per-tick-sync
-analysis that motivated this.
 
 ## Use
 
 ```sh
 swift build -c release          # build metallib once — see GPU_SETUP.md, then stage it
-# train a player (ES, on-device, per-episode sync)
+
+# --- training engine (MonstroSimGPU) ---
 .build/release/monstrosim gputrain --map <map.json> --envs 512 --ticks 400 --pop 20 --iters 40 --out models/player.json
-# does it play? trained vs random on HELD-OUT seeds
-.build/release/monstrosim gpueval  --map <map.json> --net models/player.json
-# run a shipped model through the engine (the game's inference path, headless)
-.build/release/monstrosim gprun    --map <map.json> --net models/player.json
-# throughput / per-phase profile
-.build/release/monstrosim gpubench  --map <map.json> --envs 4096
-.build/release/monstrosim gpuprofile --map <map.json>
+.build/release/monstrosim gpueval  --map <map.json> --net models/player.json   # trained vs random, held-out
+.build/release/monstrosim gprun    --map <map.json> --net models/player.json   # run a model headless
+.build/release/monstrosim aneinfer                                             # Core ML CPU/GPU/ANE parity vs MLX
+.build/release/monstrosim gpubench --map <map.json> --envs 4096                # throughput / profile
+
+# --- the playable game (separate Metal engine) ---
+swift run -c release monstro-game --window        # WASD; auto-fire at nearest
+swift run -c release monstro-game --frames 600    # headless playthrough (stats + PNG)
 ```
 
 ## Status (proven on M1 Pro)
 
 - BatchWorld: thousands of envs as batched tensors, `mx.compile` fusion (~1.5× over unfused).
-- On-device player policy + ES: **learns** — 5.5 vs 2.3 kills vs random on held-out seeds.
-- One sync per episode (no per-tick CPU bottleneck). Memory gentle (~50 MB host).
-- The M1 GPU is *marginal vs a 10-core CPU* on sparse maps (dispatch-bound); it wins on dense
-  scenes and big nets. The real scale-up is the **3090 / Brax (JAX)** port — same design, ~7×
-  hardware, `jax.jit` fusion, batched-population eval, per-type monster nets + co-evolution.
+- On-device player policy + ES **learns** — 5.5 vs 2.3 kills vs random on held-out seeds; one sync
+  per episode; ~50 MB host.
+- The M1 GPU is *marginal vs a 10-core CPU* on sparse maps (dispatch-bound); it wins on dense scenes
+  and big nets. The real scale-up is the **3090 / JAX** port (`../brax`) — same design, ~7× hardware,
+  `jax.jit` fusion, batched-population, per-type monster nets + co-evolution.
 
-## Models, portability, and NPU — see [MODELS.md](MODELS.md)
+## Models, portability, NPU — see [MODELS.md](MODELS.md)
 
-The JSON weights are the **lego connector**: same artifact → GPU inference now (recommended),
-Core ML/ANE export later (optional), Brax/JAX later. Short version: keep inference **on the GPU
-in-graph** (lag-free); the Apple Neural Engine is inference-only and *re-introduces* a per-tick
-GPU↔ANE handoff for a reactive policy, so it's not wired (correctly) — details in MODELS.md.
+The JSON weights are the **connector**: same artifact → MLX (now) / Metal game / Core ML+ANE
+(`aneinfer`, verified) / JAX. Keep the *reactive per-tick* policy **GPU-in-graph** (lag-free); the
+Core ML/ANE path is for a **decoupled/shipped** model (details + the 2026 Core AI note in MODELS.md).

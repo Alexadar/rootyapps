@@ -17,30 +17,6 @@ public struct SeededGenerator: RandomNumberGenerator {
     }
 }
 
-// MARK: - 2D vector (Double precision, Foundation-only)
-public struct Vec2: Equatable, Codable {
-    public var x: Double
-    public var y: Double
-    public init(_ x: Double = 0, _ y: Double = 0) { self.x = x; self.y = y }
-
-    public static let zero = Vec2(0, 0)
-
-    public static func + (a: Vec2, b: Vec2) -> Vec2 { Vec2(a.x + b.x, a.y + b.y) }
-    public static func - (a: Vec2, b: Vec2) -> Vec2 { Vec2(a.x - b.x, a.y - b.y) }
-    public static func * (a: Vec2, s: Double) -> Vec2 { Vec2(a.x * s, a.y * s) }
-
-    public var lengthSquared: Double { x * x + y * y }
-    public var length: Double { lengthSquared.squareRoot() }
-    public var angle: Double { atan2(y, x) }
-
-    public var normalized: Vec2 {
-        let l = length
-        return l > 0 ? Vec2(x / l, y / l) : .zero
-    }
-
-    public func distance(to o: Vec2) -> Double { (self - o).length }
-}
-
 // MARK: - Simulation constants (mirrors GameConstants subset used by the sim)
 public enum SimConstants {
     public static let tickDelta: Double = 1.0 / 30.0      // fixed sim timestep

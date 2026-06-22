@@ -35,28 +35,21 @@ public struct MonsterCfg {
     public let typeID: Int
     public let speed: Double
     public let boxWidth: Double
-    public let boxHeight: Double
     public let damage: Double
     public let health: Double
-    public let hitCooldown: Double
-    public let rotationOffset: Double
     public let useDirectSteering: Bool
 
     init?(_ d: [String: String]) {
         guard let id = d["monsterTypeID"].flatMap(Int.init),
               let speed = d["speed"].flatMap(Double.init),
               let bw = d["boxWidth"].flatMap(Double.init),
-              let bh = d["boxHeight"].flatMap(Double.init),
               let dmg = d["damage"].flatMap(Double.init),
               let hp = d["health"].flatMap(Double.init) else { return nil }
         self.typeID = id
         self.speed = speed
         self.boxWidth = bw
-        self.boxHeight = bh
         self.damage = dmg
         self.health = hp
-        self.hitCooldown = d["hitCooldown"].flatMap(Double.init) ?? 1.0
-        self.rotationOffset = d["rotationOffset"].flatMap(Double.init) ?? 0
         self.useDirectSteering = (d["useDirectSteering"] ?? "false") == "true"
     }
 }
@@ -66,30 +59,18 @@ public struct WeaponCfg {
     public let damage: Double
     public let shotRange: Double
     public let shotDelay: Double
-    public let magazineSize: Int
-    public let reloadTime: Double
-    public let bulletsPerShot: Int
     public let bulletSpeed: Double
-    public let bulletDeviation: Double
-    public let penetrationPower: Int
 
     init?(_ d: [String: String]) {
         guard let id = d["id"].flatMap(Int.init),
               let dmg = d["damage"].flatMap(Double.init),
               let range = d["shotRange"].flatMap(Double.init),
-              let delay = d["shotDelay"].flatMap(Double.init),
-              let mag = d["magazineSize"].flatMap(Int.init),
-              let reload = d["reloadTime"].flatMap(Double.init) else { return nil }
+              let delay = d["shotDelay"].flatMap(Double.init) else { return nil }
         self.id = id
         self.damage = dmg
         self.shotRange = range
         self.shotDelay = delay
-        self.magazineSize = mag
-        self.reloadTime = reload
-        self.bulletsPerShot = d["bulletsPerShot"].flatMap(Int.init) ?? 1
         self.bulletSpeed = d["bulletSpeed"].flatMap(Double.init) ?? 800
-        self.bulletDeviation = d["bulletDeviation"].flatMap(Double.init) ?? 0
-        self.penetrationPower = d["penetrationPower"].flatMap(Int.init) ?? 1
     }
 }
 
@@ -140,7 +121,6 @@ public struct SimWave {
 public struct SimLevel {
     public let id: Int
     public let name: String
-    public let durationSeconds: Double
     public let waves: [SimWave]
     public var expectedTotal: Int { waves.reduce(0) { $0 + $1.count } }
 
@@ -149,7 +129,6 @@ public struct SimLevel {
     public init(_ map: MapCfg) {
         self.id = map.id
         self.name = map.name
-        self.durationSeconds = Double(map.landingDuration)
         let allTypes = map.monsterTypes.flatMap { $0.monsterTypeIds }
         var w: [SimWave] = []
         for sw in map.monsterSpawnWaves where sw.count > 0 && !allTypes.isEmpty {
@@ -200,12 +179,6 @@ public enum ConfigLoader {
     public static func loadMap(path: String) -> MapCfg? {
         guard let data = FileManager.default.contents(atPath: path) else { return nil }
         return try? JSONDecoder().decode(MapCfg.self, from: data)
-    }
-
-    public static func saveMap(_ map: MapCfg, path: String) throws {
-        let enc = JSONEncoder()
-        enc.outputFormatting = [.prettyPrinted, .sortedKeys]
-        try enc.encode(map).write(to: URL(fileURLWithPath: path))
     }
 }
 

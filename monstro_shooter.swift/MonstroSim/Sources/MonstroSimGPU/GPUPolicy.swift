@@ -46,7 +46,6 @@ public struct GPUPolicy {
 
     /// Flat parameter list (for the ES trainer to perturb / rebuild).
     public var flatParams: [MLXArray] { weights + biases }
-    public var paramCount: Int { sizes.indices.dropFirst().reduce(0) { $0 + sizes[$1 - 1] * sizes[$1] + sizes[$1] } }
 
     public func withParams(_ flat: [MLXArray]) -> GPUPolicy {
         let n = weights.count

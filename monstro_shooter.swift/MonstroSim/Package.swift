@@ -1,24 +1,21 @@
 // swift-tools-version: 5.9
 import PackageDescription
 
-// MonstroSim — headless, dependency-free simulation of the Monstro Shooter game.
-// Used for: automated playtesting, map-difficulty evaluation, training an ML
-// player agent (pure-Swift Evolution Strategies), and procedural map generation
-// (autoconfig) that uses the agent/policy as the fitness function.
-//
-// 100% Swift, no Python. The CPU sim/agent/generator have zero dependencies; only the
-// optional GPU-batched sim target (MonstroSimGPU) pulls Apple's MLX-Swift (Metal).
+// MonstroSim — GPU-batched headless training engine for the Monstro Shooter game.
+// MonstroSim   : shared infra (seedable RNG, constants, map/unit-config loaders).
+// MonstroSimGPU: the engine (BatchWorld + on-device player policy + Evolution Strategies),
+//                MLX-Swift (Metal); + a Core ML/ANE inference connector.
+// MetalGame    : the playable GPU game (full loop in Metal compute, no SpriteKit).
+// Python is NOT used; the JAX scale-training port lives separately in ../brax.
 let package = Package(
     name: "MonstroSim",
     platforms: [.macOS(.v14)],   // mlx-swift requires macOS 14+
     products: [
         .library(name: "MonstroSim", targets: ["MonstroSim"]),
         .library(name: "MonstroSimGPU", targets: ["MonstroSimGPU"]),
-        // CLI: eval / train / autoconfig / parity / bench.
+        // CLI: gputrain / gpueval / gprun / aneinfer / gpubench / gpuprofile.
         .executable(name: "monstrosim", targets: ["MonstroCLI"]),
-        // Track A: state-buffer -> compute tick -> instanced sprite render (no SpriteKit).
-        .executable(name: "monstro-render", targets: ["MetalRender"]),
-        // Track A: the actual game (full loop in Metal compute) — headless verify + playable window.
+        // Track A: the GPU game — full loop in Metal compute, instanced sprites (no SpriteKit).
         .executable(name: "monstro-game", targets: ["MetalGame"]),
     ],
     dependencies: [
@@ -32,8 +29,7 @@ let package = Package(
             .product(name: "MLXRandom", package: "mlx-swift"),
         ]),
         .executableTarget(name: "MonstroCLI", dependencies: ["MonstroSim", "MonstroSimGPU"]),
-        .executableTarget(name: "MetalRender"),
         .executableTarget(name: "MetalGame"),
-        .testTarget(name: "MonstroSimTests", dependencies: ["MonstroSim", "MonstroSimGPU"]),
+        .testTarget(name: "MonstroSimTests", dependencies: ["MonstroSim"]),
     ]
 )

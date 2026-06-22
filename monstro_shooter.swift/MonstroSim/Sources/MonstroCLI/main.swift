@@ -2,14 +2,14 @@ import Foundation
 import MonstroSim
 import MonstroSimGPU
 
-// GPU-only CLI. The same MonstroSimGPU engine (BatchWorld + GPUPolicy) is shared by the trainer
-// and (later) the game — training uses N envs + ES + per-episode sync; the game will use the same
-// BatchWorld at N=1 + per-frame sync. Models are detached artifacts (JSON weights).
+// GPU training/eval CLI for the MonstroSimGPU engine (BatchWorld + GPUPolicy + ES). The playable
+// game is a separate Metal engine (monstro-game); models are detached JSON artifacts.
 //
-//   monstrosim gputrain  --map m.json [--envs 512] [--ticks 400] [--pop 20] [--iters 40] [--out player.json]
-//   monstrosim gpueval   --map m.json --net player.json        (trained vs random, held-out seeds)
-//   monstrosim gprun     --map m.json [--net models/player.json] [--envs 64] [--ticks 600]   (run a shipped model)
-//   monstrosim gpubench  --map m.json [--envs 4096] [--steps 200]
+//   monstrosim gputrain   --map m.json [--envs 512] [--ticks 400] [--pop 20] [--iters 40] [--out player.json]
+//   monstrosim gpueval    --map m.json --net player.json        (trained vs random, held-out seeds)
+//   monstrosim gprun      --map m.json [--net models/player.json] [--envs 64] [--ticks 600]
+//   monstrosim aneinfer   [--model models/player.mlmodel]        (Core ML CPU/GPU/ANE parity vs MLX)
+//   monstrosim gpubench   --map m.json [--envs 4096] [--steps 200]
 //   monstrosim gpuprofile --map m.json [--envs 1024] [--steps 60]
 
 func args() -> (cmd: String, opts: [String: String]) {
@@ -162,11 +162,12 @@ case "gpuprofile":
 
 default:
     print("""
-    MonstroSim — GPU-only headless engine (training + game share it)
+    MonstroSim — GPU-batched headless training engine (MLX/Metal)
 
       gputrain   --map m.json [--envs 512] [--ticks 400] [--pop 20] [--iters 40] [--out player.json]
       gpueval    --map m.json --net player.json          trained vs random on held-out seeds
       gprun      --map m.json [--net models/player.json]  run a shipped model through the engine
+      aneinfer   [--model models/player.mlmodel]          Core ML CPU/GPU/ANE parity vs MLX
       gpubench   --map m.json [--envs 4096] [--steps 200] fused-step throughput
       gpuprofile --map m.json [--envs 1024]               per-phase GPU time breakdown
 

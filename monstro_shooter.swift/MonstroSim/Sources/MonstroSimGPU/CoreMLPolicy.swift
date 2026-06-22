@@ -35,10 +35,4 @@ public final class CoreMLPolicy {
         guard let o = out.featureValue(for: outputName)?.multiArrayValue else { return [] }
         return (0..<o.count).map { o[$0].floatValue }
     }
-
-    /// Which compute unit Core ML actually used is not directly queryable; verify via Xcode
-    /// Instruments (Core ML / ANE template) or `MLComputePlan` (macOS 14.4+) when profiling.
-    public static var aneNote: String {
-        "Use computeUnits = .all and profile with Instruments' Core ML template to confirm ANE placement."
-    }
 }

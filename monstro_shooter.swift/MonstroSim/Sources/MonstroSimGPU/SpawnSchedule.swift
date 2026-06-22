@@ -36,7 +36,6 @@ public struct SpawnSchedule {
         direct = [Float](repeating: 1, count: count)
 
         let hw = SimConstants.spawnHalfWidth, hh = SimConstants.spawnHalfHeight
-        let dt = SimConstants.tickDelta
 
         for e in 0..<nEnvs {
             var rng = SeededGenerator(seed: baseSeed &+ UInt64(e))
