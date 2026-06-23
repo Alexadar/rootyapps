@@ -171,7 +171,8 @@ def main():
     ap.add_argument("--lr", type=float, default=0.05)
     ap.add_argument("--device", default="auto")          # auto: cuda -> mps -> cpu (explicit value respected)
     ap.add_argument("--compile", action="store_true")    # torch.compile the env step (CUDA-graphs on cuda)
-    ap.add_argument("--compile-mode", default="reduce-overhead")  # cuda; use "default" if CUDA-graphs error
+    ap.add_argument("--compile-mode", default="default")  # "default"=Inductor fusion (robust). "reduce-overhead"
+    #                                                       adds CUDA-graphs but breaks on our recurrent rollout.
     ap.add_argument("--budget", type=float, default=0.0)   # wall-time cap in seconds (0=off); stops + saves
     ap.add_argument("--eval", action="store_true")       # after training, play one UNSEEN map headless
     ap.add_argument("--eval-map", default="")            # default: dataset/eval/*.json or eval_unseen.json
@@ -188,10 +189,10 @@ def main():
     _perf_setup(dev)
     env, n_maps, n_envs = build_env(args)
     if args.compile:
-        # CUDA-graph trees on cuda (the big win); Inductor fusion on mps/cpu. _core is compile-clean
-        # (per-tick tensors passed as args), so it traces ONCE. First iter pays the compile warmup.
-        # If CUDA-graphs misbehave on a given torch build, run with `--compile-mode default` (fusion only).
-        mode = args.compile_mode if dev == "cuda" else None
+        # Inductor FUSION is the win (compile-clean _core traces once; the 5.3x on mps was fusion alone,
+        # no CUDA-graphs). 'default' is robust everywhere. 'reduce-overhead' adds CUDA-graphs but its
+        # static-buffer reuse clobbers our carried rollout state -> off by default. First iter = warmup.
+        mode = None if (args.compile_mode == "default" or dev != "cuda") else args.compile_mode
         env._core = torch.compile(env._core, mode=mode)
         print(f"  torch.compile: ON (mode={mode or 'default'})")
     gd_eval = data.GameData(args.client)                  # loaded once; reused by periodic + final eval
