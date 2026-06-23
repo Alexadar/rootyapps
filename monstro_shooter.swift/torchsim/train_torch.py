@@ -170,6 +170,7 @@ def main():
     ap.add_argument("--sigma", type=float, default=0.1)
     ap.add_argument("--lr", type=float, default=0.05)
     ap.add_argument("--device", default="auto")          # auto: cuda -> mps -> cpu (explicit value respected)
+    ap.add_argument("--engine", default="torch", choices=["torch", "jax"])  # jax: lax.scan rollout (~1.23x, T3)
     ap.add_argument("--compile", action="store_true")    # torch.compile the env step (CUDA-graphs on cuda)
     ap.add_argument("--compile-mode", default="default")  # "default"=Inductor fusion (robust). "reduce-overhead"
     #                                                       adds CUDA-graphs but breaks on our recurrent rollout.
@@ -188,7 +189,16 @@ def main():
     args.device = dev
     _perf_setup(dev)
     env, n_maps, n_envs = build_env(args)
-    if args.compile:
+    Ppop = 2 * args.pop
+    jr = None
+    if args.engine == "jax":
+        # Hybrid: torch ES/eval/save, JAX lax.scan rollout for fitness (the only hot path). ~1.23x over
+        # torch-fusion on cuda (T3); env_jax is parity-proven so trained models still run in the Swift game.
+        assert args.tick_start <= 0, "--engine jax bakes a fixed tick count; tick curriculum is unsupported"
+        import jax_engine
+        jr = jax_engine.JaxRollout(env, args.ticks, Ppop, dev)
+        print(f"  engine: JAX (lax.scan rollout, P={Ppop})")
+    elif args.compile:
         # Inductor FUSION is the win (compile-clean _core traces once; the 5.3x on mps was fusion alone,
         # no CUDA-graphs). 'default' is robust everywhere. 'reduce-overhead' adds CUDA-graphs but its
         # static-buffer reuse clobbers our carried rollout state -> off by default. First iter = warmup.
@@ -198,7 +208,6 @@ def main():
     gd_eval = data.GameData(args.client)                  # loaded once; reused by periodic + final eval
     weapon_eval = gd_eval.weapons.get(1) or next(iter(gd_eval.weapons.values()))
     exo_eval = gd_eval.exoskeletons.get(1) or next(iter(gd_eval.exoskeletons.values()))
-    Ppop = 2 * args.pop
     src = os.path.basename(args.dataset.rstrip("/")) if args.dataset else ("map" if args.map else "swiper")
     print(f"Torch co-evolution [{src}]: {n_maps} maps x {args.perm} = N={n_envs} envs, M={env.M}, "
           f"B={env.B}, ticks={args.ticks}, pop={args.pop}, iters={args.iters}, dev={dev}")
@@ -224,12 +233,16 @@ def main():
         cur_ticks = tick_at(it, args)                          # curriculum: short rollouts early -> full
         if train_player:
             def fitness(stacked):
+                if jr is not None:
+                    return jr.reward_player(stacked, enemy)
                 out = env.rollout(Ppop, cur_ticks, pf(stacked), ef(enemy))
                 return out["reward_player"].mean(1)
             player, best, mean = ES.es_step(player, fitness, args.pop, gen, dev, args.sigma, args.lr)
             hist["player"].append(mean); last["player"] = mean
         else:
             def fitness(stacked):
+                if jr is not None:
+                    return jr.reward_enemy(player, stacked)
                 out = env.rollout(Ppop, cur_ticks, pf(player), ef(stacked))
                 return out["reward_enemy"].mean(1)
             enemy, best, mean = ES.es_step(enemy, fitness, args.pop, gen, dev, args.sigma, args.lr)
