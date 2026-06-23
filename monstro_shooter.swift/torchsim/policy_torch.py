@@ -17,26 +17,31 @@ def init_mlp(sizes, device="cpu", seed=0, scale=0.1):
     return params
 
 
-def apply_mlp(params, x):
+def apply_mlp(params, x, mm_dtype=None):
     """params: list of (W,b). Single net: W [in,out], x [...,in]. Batched population: W [P,in,out],
-    x [P,N,in] -> [P,N,out] (torch.matmul broadcasts the batched P dim)."""
-    h = x
+    x [P,N,in] -> [P,N,out] (torch.matmul broadcasts the batched P dim).
+    mm_dtype (e.g. torch.bfloat16): run the matmuls in low precision and return fp32. The MLPs are the
+    per-monster bottleneck (~43% of the tick) and MEMORY-bound, so bf16 halves their traffic -> ~1.3x on
+    the full rollout. The SIM stays fp32 (only the policy forward is cast) — game logic is unaffected; this
+    only changes the learned policy's training trajectory (and the parity checksum), so it's opt-in."""
+    h = x if mm_dtype is None else x.to(mm_dtype)
     n = len(params)
     for i, (W, b) in enumerate(params):
-        h = torch.matmul(h, W) + (b.unsqueeze(-2) if W.dim() == 3 else b)
+        Wd, bd = (W, b) if mm_dtype is None else (W.to(mm_dtype), b.to(mm_dtype))
+        h = torch.matmul(h, Wd) + (bd.unsqueeze(-2) if W.dim() == 3 else bd)
         if i < n - 1:
             h = torch.relu(h)
-    return h
+    return h if mm_dtype is None else h.float()
 
 
-def apply_enemy(params, obs):
+def apply_enemy(params, obs, mm_dtype=None):
     """Per-monster apply. obs [P,N,M,in]. Center params (W [in,out]) broadcast over P,N,M.
     Population params (W [P,in,out]) need N,M flattened so the batched matmul lines up with P."""
     W0 = params[0][0]
     if W0.dim() == 2:
-        return apply_mlp(params, obs)
+        return apply_mlp(params, obs, mm_dtype)
     Pn, N, M, inp = obs.shape
-    out = apply_mlp(params, obs.reshape(Pn, N * M, inp))
+    out = apply_mlp(params, obs.reshape(Pn, N * M, inp), mm_dtype)
     return out.reshape(Pn, N, M, -1)
 
 

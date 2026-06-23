@@ -21,7 +21,9 @@ def det_rand(t, k):
 
 class EnvTorch:
     player_obs = 8         # hp, count, threatXY, nearest, mean, wallX, wallY
-    player_act = 4
+    player_act = 4         # NOTE: a per-type obs (8+4·6=32, "recognize monster type") was tried + reverted —
+    #   it hurt ES (49% vs ~92% clear): 4.5x more params slows ES black-box search, and the obs is slower.
+    #   Revisit only with a gradient method (PPO scales with params); keep the aggregate 8-dim obs for ES.
     enemy_obs = 10         # dirXY, dist, velXY, speed, hp, bulletDirXY, bulletDist
     enemy_act = 2
 

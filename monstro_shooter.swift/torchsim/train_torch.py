@@ -199,6 +199,8 @@ def main():
     #   parity-safe — sim uses det_rand, NOT global RNG. seed=0 reproduces the original fixed-seed run).
     ap.add_argument("--device", default="auto")          # auto: cuda -> mps -> cpu (explicit value respected)
     ap.add_argument("--engine", default="torch", choices=["torch", "jax"])  # jax: lax.scan rollout (~1.23x, T3)
+    ap.add_argument("--policy-bf16", action="store_true")  # bf16 policy MLP forward (~1.3x; sim stays fp32,
+    #   game logic unaffected — only the learned policy trajectory + parity checksum change, so opt-in).
     ap.add_argument("--compile", action="store_true")    # torch.compile the env step (CUDA-graphs on cuda)
     ap.add_argument("--compile-mode", default="default")  # "default"=Inductor fusion (robust). "reduce-overhead"
     #                                                       adds CUDA-graphs but breaks on our recurrent rollout.
@@ -274,8 +276,9 @@ def main():
         n = len(rows)
         return sum(r[2] / max(r[3], 1) for r in rows) / n + 0.25 * (sum(r[1] for r in rows) / n)
 
-    pf = lambda params: (lambda obs: P.apply_mlp(params, obs))
-    ef = lambda params: (lambda obs: P.apply_enemy(params, obs))
+    pdt = torch.bfloat16 if args.policy_bf16 else None   # bf16 policy forward (sim stays fp32); ~1.3x rollout
+    pf = lambda params: (lambda obs: P.apply_mlp(params, obs, mm_dtype=pdt))
+    ef = lambda params: (lambda obs: P.apply_enemy(params, obs, mm_dtype=pdt))
 
     grpo = ppo = None
     if args.algo == "grpo":
@@ -288,7 +291,7 @@ def main():
     elif args.algo == "ppo":
         import grpo_torch as G, ppo_torch as PPO          # PPO: clipped surrogate + critic + GAE
         gparams, glog = G.init_player(PLAYER_SIZES, dev, seed=7 + sd, std0=args.ppo_std)
-        vparams = PPO.init_value(dev, seed=23 + sd)
+        vparams = PPO.init_value(dev, seed=23 + sd, in_dim=EnvTorch.player_obs)   # critic sees the full obs
         popt = torch.optim.Adam(G.opt_params(gparams, glog) + PPO.value_params_flat(vparams), lr=args.ppo_lr)
         player = G.mean_params(gparams)
         ppo = (PPO, G, gparams, glog, vparams, popt)

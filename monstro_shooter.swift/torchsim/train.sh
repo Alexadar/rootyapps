@@ -24,9 +24,14 @@ if [ "$DEV" = "cuda" ]; then     # 3090: big enemy-ES population + full-map epis
   # launch-bound micro optimizer steps/iter (tiny matmuls) — starving the GPU AND adding gradient
   # noise. group=128 beats 256 (more, equally-good iters); mb past 262144 underfits (too few steps).
   PPO_GROUP=128; PPO_MB=262144
+  # PERF (3090, profiled): the per-monster enemy MLP is ~43% of the tick and MEMORY-bound, so bf16 halves
+  # its traffic -> ~1.3x rollout AND ~1.4x more ES iters/budget (40s A/B: fp32 15 iters/16% clear vs bf16
+  # 21 iters/46%). SIM stays fp32 (game logic unaffected) — only the policy forward + parity checksum change.
+  POLICY_BF16="--policy-bf16"
 else                             # Mac (mps/cpu): fast dev loop
   PERM=16; POP=48;  TICKS=200; BULLETS=24; BUDGET=300
   PPO_GROUP=64;  PPO_MB=16384                            # small GPU: keep the lightweight defaults
+  POLICY_BF16=""                                         # bf16 unreliable on mps -> fp32 on the mac
 fi
 # DEFAULT = ES (mirrored-sampling Evolution Strategies) + torch.compile fusion. Enemy also ES (co-evolution).
 # Honest validation (3090, 5-seed, 60s, eval vs the FIXED scripted reference — clear% = absolute player skill,
@@ -37,7 +42,7 @@ fi
 # Co-evo is seed-FRAGILE (some seeds collapse for every algo). Stabilization knobs --enemy-every K (slow the
 # enemy) / --enemy-pool N (PSRO-lite league) were tested and did NOT help here (slowing the enemy under-trains
 # the player vs the hard scripted reference: ES+stab 33.6%, pool-only 61.2%) -> left OFF by default.
-ACCEL="--algo es --compile"
+ACCEL="--algo es --compile $POLICY_BF16"
 echo "device=$DEV  perm=$PERM pop=$POP ticks=$TICKS bullets=$BULLETS budget=${BUDGET}s  accel=$ACCEL"
 
 # --eval-vs scripted = a FIXED, game-realistic opponent held constant across the run, so the eval-every
