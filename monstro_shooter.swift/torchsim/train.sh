@@ -42,9 +42,15 @@ echo "device=$DEV  perm=$PERM pop=$POP ticks=$TICKS bullets=$BULLETS budget=${BU
 
 # --eval-vs scripted = a FIXED, game-realistic opponent held constant across the run, so the eval-every
 # trace is interpretable player progress (the old live-enemy metric bounced 6->94->2% as the enemy evolved).
+# --keep-best = save the PEAK fixed-eval checkpoint, not the final weights. Diagnosis (3090, fine traces):
+# co-evo collapse is LATE + OSCILLATORY — the enemy runs away (fitness 2.2->5.6) and the player's skill-vs-
+# fixed swings ±50pts iter-to-iter, so the final weight is a lottery (same seed ended 23% at 60s, 75% at 90s).
+# keep-best captures the ~85-94% peak regardless of stop point: 5-seed mean 65->75%, max 88->92%. For the most
+# reliable model, run train_multi.py (best-of-K restarts + keep-best) -> ~92% in ~5 min; it dodges the rare
+# seed that fails EARLY and never recovers (keep-best alone can't save those).
 "$PY" train_torch.py \
   --dataset datasets/tiny \
   --perm $PERM --pop $POP --ticks $TICKS --cap 16 --bullets $BULLETS \
   --iters 40000 --budget $BUDGET $ACCEL \
-  --eval --eval-seeds 3 --eval-every 30 --eval-vs scripted \
+  --eval --eval-seeds 3 --eval-every 30 --eval-vs scripted --keep-best \
   --render datasets/tiny/eval/grid.mp4

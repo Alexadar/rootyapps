@@ -212,6 +212,9 @@ def main():
     #   scripted = canonical scripted monster steering (fixed, game-realistic, harder reference);
     #   live = the co-evolving enemy (the OLD metric — measures the arms race, clear% bounces. diagnostic only).
     ap.add_argument("--eval-every", type=int, default=0)  # run a quick 1-seed eval every K iters (0=off)
+    ap.add_argument("--keep-best", action="store_true")   # save the PEAK fixed-eval checkpoint, not the final
+    #   weights. Diagnosis: co-evo collapse is LATE — bad seeds peak mid-run (77-85%) then degrade to 23-53%
+    #   by the end. Keeping the best-along-trajectory checkpoint dodges the tail collapse (needs --eval-every).
     ap.add_argument("--render", default="")              # render a 3x3 eval grid video to this path at end
     ap.add_argument("--player-out", default="../MonstroSim/models/player.json")
     ap.add_argument("--enemy-out", default="../MonstroSim/models/monster.json")
@@ -264,6 +267,12 @@ def main():
     # which opponent eval/render run against (see --eval-vs): fixed snapshot, scripted (None), or live enemy.
     eval_enemy = lambda: (enemy_ref if args.eval_vs == "fixed"
                           else None if args.eval_vs == "scripted" else enemy)
+    if args.keep_best and args.eval_every <= 0:           # keep-best needs periodic fixed-eval to score on
+        args.eval_every = 20
+    best_keep = {"score": -1.0, "player": None, "enemy": None, "it": -1}
+    def keep_score(rows):                                 # clear-dominant, small survival bonus (both 0..1)
+        n = len(rows)
+        return sum(r[2] / max(r[3], 1) for r in rows) / n + 0.25 * (sum(r[1] for r in rows) / n)
 
     pf = lambda params: (lambda obs: P.apply_mlp(params, obs))
     ef = lambda params: (lambda obs: P.apply_enemy(params, obs))
@@ -342,8 +351,13 @@ def main():
         pbar.set_postfix(it=it, phase="player" if train_player else "enemy",
                          player=f"{last['player']:.2f}", enemy=f"{last['enemy']:.3f}", best=f"{best:.2f}")
         if args.eval_every and it > 0 and it % args.eval_every == 0:
-            rows, _ = run_eval(gd_eval, weapon_eval, exo_eval, args, player, eval_enemy(), dev, seeds=1)
+            ev_seeds = 2 if args.keep_best else 1         # keep-best: 2 seeds for a less noisy checkpoint score
+            rows, _ = run_eval(gd_eval, weapon_eval, exo_eval, args, player, eval_enemy(), dev, seeds=ev_seeds)
             tqdm.write(f"  [eval @ it{it:4d} vs {args.eval_vs}]  {eval_line(rows)}")
+            if args.keep_best:
+                sc = keep_score(rows)
+                if sc > best_keep["score"]:
+                    best_keep.update(score=sc, player=snap(player), enemy=snap(enemy), it=it)
         it += 1
         if use_budget and elapsed > args.budget:
             print(f"\n>>> reached {args.budget:.0f}s budget at iter {it} — stopping (models saved below).", flush=True)
@@ -355,10 +369,16 @@ def main():
     print(f"Player fitness: {trend(hist['player'])}")
     print(f"Enemy  fitness: {trend(hist['enemy'])}")
 
+    save_player, save_enemy = player, enemy
+    if args.keep_best and best_keep["player"] is not None:   # save the PEAK checkpoint, not the collapsed final
+        save_player, save_enemy = best_keep["player"], best_keep["enemy"]
+        print(f"keep-best: saving the it{best_keep['it']} checkpoint (peak fixed-eval score "
+              f"{best_keep['score']:.3f}) instead of the final weights.")
     os.makedirs(os.path.dirname(os.path.abspath(args.player_out)), exist_ok=True)
-    P.to_json(player, PLAYER_SIZES, args.player_out)
-    P.to_json(enemy, ENEMY_SIZES, args.enemy_out)
+    P.to_json(save_player, PLAYER_SIZES, args.player_out)
+    P.to_json(save_enemy, ENEMY_SIZES, args.enemy_out)
     print(f"saved -> {args.player_out}  +  {args.enemy_out}")
+    player, enemy = save_player, save_enemy               # final --eval / --render reflect the deployed model
 
     if args.eval:
         print(f"  (eval opponent: --eval-vs {args.eval_vs})")

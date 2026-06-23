@@ -90,11 +90,35 @@ didn't help (rw_damage 0.02 ≈ same; 0.05 destabilizes; rw_kill 2.0 lowers clea
 - **T7 (async APPO/IMPALA):** would address the residual ~6% util bubble but makes PPO off-policy — overkill;
   scan-fusion (T4) is the better lever.
 
-## What's actually capping model quality (next work)
-Not the algorithm (PPO≈ES) and not GPU util (95%+). It's **co-evolution seed-fragility**: some seeds collapse
-regardless of algo/stabilization. Promising directions not yet tried: a real population/league with fitness
-sharing, enemy-update trust regions, or decoupling the eval target (deploy-vs-live-enemy vs skill-vs-scripted)
-and optimizing the one that matters for the shipped game.
+## Collapse diagnosis + the fix that works (keep-best)
+The std *was* the story: both algos collapse on ~2/5 seeds (~24% next to ~90%). Fine-resolution traces
+(eval-every 6, vs scripted) show **the collapse is LATE and OSCILLATORY**, not cold-start:
+
+    seed 3:  it6:81 it12:85▲ it18:83 it24:52 it30:42 it36:44 it42:75   (final 75)
+    seed 0:  it6:77 it12:35  it18:31 it24:79 it30:94▲ it36:92 it42:83   (final 86)
+    enemy fitness over the same run: 2.2 -> 5.6 (monotone runaway)
+
+The enemy wins the arms race; the player's skill-vs-fixed swings ±50 pts iter-to-iter, so **the final weight
+is a lottery** (the *same* seed 3 ended 23% at a 60 s budget, 75% at 90 s). Every seed has a peak ≥85%.
+
+**Fix = keep-best checkpoint** (`--keep-best`): eval vs the fixed reference during training, save the PEAK
+weights, not the final. 5-seed ES (60 s, scripted):
+
+| | clear% (5 seeds) | mean | max |
+|---|---|---|---|
+| baseline (final weights) | 23,53,76,85,88 | 65.0 | 88 |
+| **+ keep-best** | 27,81,81,92,92 | **74.6** | **92** |
+
+keep-best rescues the late-collapse seeds (23→92, 53→92). The one residual (seed 2: 27%) failed *early*
+(0,7,26 — no good checkpoint existed); **multi-restart dodges it** — `train_multi.py` (best-of-K restarts +
+keep-best) reliably yields a **~92% model in ~5 min**. Scripted-bootstrap was considered but the diagnosis
+(late, not cold-start) does NOT indicate it. `train.sh` now defaults to `--keep-best`.
+
+## Still open (next work)
+The underlying co-evo instability is dodged, not cured. To actually stabilize: enemy-update trust regions
+(cap the per-iter enemy change), or decouple the eval/deploy target (skill-vs-scripted vs vs-live-enemy) and
+optimize the one the shipped game cares about. The eval-tax (frequent fixed-eval steals training time) means
+`--eval-every` should be tuned, not minimized.
 
 ## Render crash fix (the `sh train.sh` traceback)
 Root cause: base conda lacks `imageio-ffmpeg` → imageio's PyAV fallback can't open h264. Fixes: (1) `train.sh`
@@ -109,3 +133,6 @@ prefers the `fantastic` env, (2) render fails fast with a clear message instead 
 - `env_jax.py` — `step`→`step_pa` split (parity-neutral).
 - `render_eval.py` — backend-aware writer (clear error without imageio-ffmpeg).
 - `jax_ppo.py` — NEW fully-fused JAX PPO + A/B benchmark.
+- `train_torch.py` — `--keep-best` (save the peak fixed-eval checkpoint, not the collapsed final).
+- `train_multi.py` — NEW best-of-K multi-restart wrapper (composes with keep-best → ~92% model in ~5 min).
+- `train.sh` — defaults to `--keep-best`.
