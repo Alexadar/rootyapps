@@ -169,6 +169,24 @@ def main():
     ap.add_argument("--bullets", type=int, default=32)
     ap.add_argument("--sigma", type=float, default=0.1)
     ap.add_argument("--lr", type=float, default=0.05)
+    ap.add_argument("--algo", default="es", choices=["es", "grpo", "ppo"])  # policy-gradient player (+ ES enemy)
+    ap.add_argument("--grpo-lr", type=float, default=3e-3)
+    ap.add_argument("--grpo-group", type=int, default=64)  # P = group size (action samples per env)
+    ap.add_argument("--grpo-gamma", type=float, default=0.99)
+    ap.add_argument("--grpo-std", type=float, default=0.6)  # initial action std
+    ap.add_argument("--grpo-ent", type=float, default=0.0)  # entropy bonus coef
+    ap.add_argument("--ppo-lr", type=float, default=3e-4)
+    ap.add_argument("--ppo-epochs", type=int, default=4)
+    ap.add_argument("--ppo-clip", type=float, default=0.2)
+    ap.add_argument("--ppo-gae", type=float, default=0.95)
+    ap.add_argument("--ppo-gamma", type=float, default=0.99)
+    ap.add_argument("--ppo-minibatch", type=int, default=16384)
+    ap.add_argument("--ppo-vcoef", type=float, default=0.5)
+    ap.add_argument("--ppo-ent", type=float, default=0.0)
+    ap.add_argument("--ppo-group", type=int, default=64)
+    ap.add_argument("--ppo-std", type=float, default=0.6)
+    ap.add_argument("--rw-kill", type=float, default=1.0)     # reward shaping (training-only, parity-safe)
+    ap.add_argument("--rw-survive", type=float, default=0.01)
     ap.add_argument("--device", default="auto")          # auto: cuda -> mps -> cpu (explicit value respected)
     ap.add_argument("--engine", default="torch", choices=["torch", "jax"])  # jax: lax.scan rollout (~1.23x, T3)
     ap.add_argument("--compile", action="store_true")    # torch.compile the env step (CUDA-graphs on cuda)
@@ -189,6 +207,7 @@ def main():
     args.device = dev
     _perf_setup(dev)
     env, n_maps, n_envs = build_env(args)
+    env.rw_kill, env.rw_survive = args.rw_kill, args.rw_survive   # reward shaping (set BEFORE compile bakes it)
     Ppop = 2 * args.pop
     jr = None
     if args.engine == "jax":
@@ -219,6 +238,25 @@ def main():
     pf = lambda params: (lambda obs: P.apply_mlp(params, obs))
     ef = lambda params: (lambda obs: P.apply_enemy(params, obs))
 
+    grpo = ppo = None
+    if args.algo == "grpo":
+        import grpo_torch as G                            # policy-gradient player (the deployed agent)
+        gparams, glog = G.init_player(PLAYER_SIZES, dev, seed=7, std0=args.grpo_std)
+        gopt = torch.optim.Adam(G.opt_params(gparams, glog), lr=args.grpo_lr)
+        player = G.mean_params(gparams)                   # eval/save/opponent use the deterministic mean
+        grpo = (G, gparams, glog, gopt)
+        print(f"  algo: GRPO player (group={args.grpo_group} lr={args.grpo_lr} std={args.grpo_std}) + ES enemy")
+    elif args.algo == "ppo":
+        import grpo_torch as G, ppo_torch as PPO          # PPO: clipped surrogate + critic + GAE
+        gparams, glog = G.init_player(PLAYER_SIZES, dev, seed=7, std0=args.ppo_std)
+        vparams = PPO.init_value(dev, seed=23)
+        popt = torch.optim.Adam(G.opt_params(gparams, glog) + PPO.value_params_flat(vparams), lr=args.ppo_lr)
+        player = G.mean_params(gparams)
+        ppo = (PPO, G, gparams, glog, vparams, popt)
+        print(f"  algo: PPO player (group={args.ppo_group} lr={args.ppo_lr} epochs={args.ppo_epochs} "
+              f"clip={args.ppo_clip}) + ES enemy   rw_kill={args.rw_kill} rw_survive={args.rw_survive}")
+
+    best = 0.0
     hist = {"player": [], "enemy": []}
     last = {"player": float("nan"), "enemy": float("nan")}
     t0 = time.time()
@@ -232,13 +270,28 @@ def main():
         train_player = (it % 2 == 0)
         cur_ticks = tick_at(it, args)                          # curriculum: short rollouts early -> full
         if train_player:
-            def fitness(stacked):
-                if jr is not None:
-                    return jr.reward_player(stacked, enemy)
-                out = env.rollout(Ppop, cur_ticks, pf(stacked), ef(enemy))
-                return out["reward_player"].mean(1)
-            player, best, mean = ES.es_step(player, fitness, args.pop, gen, dev, args.sigma, args.lr)
-            hist["player"].append(mean); last["player"] = mean
+            if ppo is not None:                                 # PPO player step vs the frozen ES enemy
+                PPO, G, gparams, glog, vparams, popt = ppo
+                _pl, _vl, ret = PPO.ppo_step(env, cur_ticks, gparams, glog, vparams, popt, enemy, args.ppo_group,
+                                             gamma=args.ppo_gamma, lam=args.ppo_gae, clip=args.ppo_clip,
+                                             epochs=args.ppo_epochs, minibatch=args.ppo_minibatch,
+                                             vcoef=args.ppo_vcoef, ent=args.ppo_ent)
+                player = G.mean_params(gparams)
+                best = ret; hist["player"].append(ret); last["player"] = ret
+            elif grpo is not None:                              # GRPO player step vs the frozen ES enemy
+                G, gparams, glog, gopt = grpo
+                _loss, ret = G.grpo_player_step(env, cur_ticks, gparams, glog, gopt, enemy,
+                                                args.grpo_group, gamma=args.grpo_gamma, ent_coef=args.grpo_ent)
+                player = G.mean_params(gparams)                 # refresh the deterministic mean for eval/opponent
+                best = ret; hist["player"].append(ret); last["player"] = ret
+            else:
+                def fitness(stacked):
+                    if jr is not None:
+                        return jr.reward_player(stacked, enemy)
+                    out = env.rollout(Ppop, cur_ticks, pf(stacked), ef(enemy))
+                    return out["reward_player"].mean(1)
+                player, best, mean = ES.es_step(player, fitness, args.pop, gen, dev, args.sigma, args.lr)
+                hist["player"].append(mean); last["player"] = mean
         else:
             def fitness(stacked):
                 if jr is not None:

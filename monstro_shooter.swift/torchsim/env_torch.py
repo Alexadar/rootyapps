@@ -55,6 +55,10 @@ class EnvTorch:
         self.mag_size = int(weapon.get("magazineSize", 10 ** 9))
         self.reload_ticks = max(1, round(float(weapon.get("reloadTime", 0.0)) / c.dt))
         self.exo_speed = float(exo.get("speed", 1.0))
+        # player reward shaping (TRAINING ONLY — rewards are NOT in the Swift parity contract). Defaults
+        # reproduce the original r_player exactly (checksum-neutral); train_torch may reweight via --rw-*.
+        self.rw_survive = 0.01   # per-tick alive baseline
+        self.rw_kill = 1.0       # reward per kill
 
     def reset(self, P):
         N, M, B, dev = self.N, self.M, self.B, self.device
@@ -135,19 +139,24 @@ class EnvTorch:
 
     # ---- one tick. player_fn: obs[P,N,8]->[P,N,4]; enemy_fn: obs[P,N,M,10]->[P,N,M,2] or None ----
     def step(self, s, t, player_fn, enemy_fn):
+        # the player obs is pre-step, so the action is computed HERE (eager) and passed into _core; this
+        # keeps the policy call OUT of the compiled core (no side-effecting closure inside compile) and
+        # lets GRPO inject a grad-tracked action via step_pa. Numerically identical in eager.
+        a_player = player_fn(self.player_obs_vec(s))
+        return self.step_pa(s, t, a_player, enemy_fn)
+
+    def step_pa(self, s, t, a_player, enemy_fn):
+        """Step with the player ACTION precomputed [P,N,4] (GRPO samples it with grad/log_prob outside)."""
         if not hasattr(self, "_pc_ticks") or t > self._pc_ticks:
             self._precompute(max(t * 2, 256))                       # cached; grows rarely
         i = t - 1
-        # Per-tick scalars/tensors are sliced HERE (eager) and passed into _core, so _core has no
-        # python-int guard -> torch.compile traces it ONCE and CUDA-graph capture is possible (static
-        # shapes, no host<->device boundary). self._core may be rebound to a compiled version.
+        # Per-tick tensors sliced HERE (eager) -> _core has no python-int guard, traces ONCE.
         return self._core(s, self._elapsed[i], self._gate_fire[i], self._gate_contact[i],
-                          self._ct[i], self._st[i], self._onehot[i], player_fn, enemy_fn)
+                          self._ct[i], self._st[i], self._onehot[i], a_player, enemy_fn)
 
-    def _core(self, s, elapsed, gate_fire, gate_contact, pct, pst, onehot, player_fn, enemy_fn):
+    def _core(self, s, elapsed, gate_fire, gate_contact, pct, pst, onehot, a_player, enemy_fn):
         c = self.cfg
         P, N, M = s["mon_pos"].shape[0], self.N, self.M
-        a_player = player_fn(self.player_obs_vec(s))                 # pre-step player obs
         a_move, a_aim = a_player[..., 0:2], a_player[..., 2:4]
 
         st = self.spawn_tick[None]                                  # [1,N,M]
@@ -246,7 +255,7 @@ class EnvTorch:
         threatN = threat_raw / (torch.sqrt((threat_raw * threat_raw).sum(-1, keepdim=True)) + c.eps)
         aim_align = (aim * threatN).sum(-1)
         alive_env = (player_hp > 0).float()
-        r_player = (0.01 + 0.005 * aim_align + killed - applied * 0.05) * alive_env
+        r_player = (self.rw_survive + 0.005 * aim_align + self.rw_kill * killed - applied * 0.05) * alive_env
 
         # enemy reward: damage dealt + approach proximity − deaths
         approach = torch.clamp(1.0 - dist / 3000.0, min=0.0)

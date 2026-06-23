@@ -14,17 +14,15 @@ print("cuda" if torch.cuda.is_available() else ("mps" if mps and mps.is_availabl
 PYEOF
 )
 
-if [ "$DEV" = "cuda" ]; then     # 3090: big ES population + full-map episodes + long budget
-  # POP=256 wins fitness/min over 128 & 512 (T4 sweep): the player net actually improves (+3.7) and
-  # holds the co-evo balance; 128 lets the enemy run away, 512 is too few iters. VRAM ~0.5/24 GiB.
-  PERM=32; POP=256; TICKS=600; BULLETS=32; BUDGET=1800
-  # JAX lax.scan rollout = the fastest engine here: ~1.21x more iters/wall-time than torch-fusion
-  # end-to-end (T3), same model quality (env_jax is parity-proven). Needs jax[cuda12].
-  ACCEL="--engine jax"
-else                             # Mac (mps/cpu): fast dev loop. jax would be CPU-only here, so use
-  PERM=16; POP=48;  TICKS=200; BULLETS=24; BUDGET=300   # torch.compile fusion (5.3x on mps) instead.
-  ACCEL="--compile"
+if [ "$DEV" = "cuda" ]; then     # 3090: big enemy-ES population + full-map episodes + long budget
+  PERM=32; POP=256; TICKS=600; BULLETS=32; BUDGET=300    # POP=256 = enemy-ES sweet spot (T4). BUDGET secs (5 min)
+else                             # Mac (mps/cpu): fast dev loop
+  PERM=16; POP=48;  TICKS=200; BULLETS=24; BUDGET=300
 fi
+# PPO player (clipped surrogate + critic + GAE) beat ES ~2.25x on eval-per-wall-time (clear 18% vs 8% in a
+# 110s mps A/B) — the sample-efficiency win. + torch.compile fusion. Enemy still ES (co-evolution).
+# Fallbacks still selectable: --algo es | --algo grpo | --engine jax.
+ACCEL="--algo ppo --compile"
 echo "device=$DEV  perm=$PERM pop=$POP ticks=$TICKS bullets=$BULLETS budget=${BUDGET}s  accel=$ACCEL"
 
 "$PY" train_torch.py \
