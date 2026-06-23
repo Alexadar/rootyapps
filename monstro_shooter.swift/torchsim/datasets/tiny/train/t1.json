@@ -3,7 +3,7 @@
   "landingDuration": 20,
   "arenaHalf": 450,
   "spawnRadius": 350,
-  "defaultNameLocalizations": { "en-us": "tiny-t1-1mon" },
+  "defaultNameLocalizations": { "en-us": "tiny-t1-fundamentals-3bug" },
   "monsterTypes": [ { "startTime": 0, "monsterTypeIds": [1] } ],
-  "monsterSpawnWaves": [ { "startTime": 1, "count": 1 } ]
+  "monsterSpawnWaves": [ { "startTime": 1, "count": 3 } ]
 }

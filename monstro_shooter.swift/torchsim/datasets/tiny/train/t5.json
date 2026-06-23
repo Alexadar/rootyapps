@@ -1,0 +1,15 @@
+{
+  "id": 10005,
+  "landingDuration": 20,
+  "arenaHalf": 550,
+  "spawnRadius": 430,
+  "defaultNameLocalizations": { "en-us": "tiny-t5-drip-sustained-15" },
+  "monsterTypes": [ { "startTime": 0, "monsterTypeIds": [1, 3] } ],
+  "monsterSpawnWaves": [
+    { "startTime": 1, "count": 3 },
+    { "startTime": 4, "count": 3 },
+    { "startTime": 7, "count": 3 },
+    { "startTime": 10, "count": 3 },
+    { "startTime": 13, "count": 3 }
+  ]
+}
