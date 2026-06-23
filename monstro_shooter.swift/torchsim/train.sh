@@ -28,34 +28,41 @@ if [ "$DEV" = "cuda" ]; then     # 3090: big enemy-ES population + full-map epis
   # its traffic -> ~1.3x rollout AND ~1.4x more ES iters/budget (40s A/B: fp32 15 iters/16% clear vs bf16
   # 21 iters/46%). SIM stays fp32 (game logic unaffected) — only the policy forward + parity checksum change.
   POLICY_BF16="--policy-bf16"
+  RESTARTS=5                                             # co-evo is seed-fragile; best-of-5 dodges collapses
 else                             # Mac (mps/cpu): fast dev loop
   PERM=16; POP=48;  TICKS=200; BULLETS=24; BUDGET=300
   PPO_GROUP=64;  PPO_MB=16384                            # small GPU: keep the lightweight defaults
   POLICY_BF16=""                                         # bf16 unreliable on mps -> fp32 on the mac
+  RESTARTS=3                                             # fewer restarts on the slow dev box
 fi
+RBUDGET=$((BUDGET / RESTARTS))                           # per-restart budget so total wall-time ≈ BUDGET
 # DEFAULT = ES (mirrored-sampling Evolution Strategies) + torch.compile fusion. Enemy also ES (co-evolution).
 # Honest validation (3090, 5-seed, 60s, eval vs the FIXED scripted reference — clear% = absolute player skill,
 # not the co-evolving arms race): PPO and ES are a STATISTICAL TIE — PPO 67.8% clear (std ~28) vs ES 65.0%
 # (std ~27); the 2.8pt edge is far inside the noise, so the earlier single-seed "PPO 2.25x" does NOT hold.
-# ES is simpler + more robust -> it's the default. Tuned PPO is selectable and fully GPU-filled:
-#   ACCEL="--algo ppo --compile --ppo-group $PPO_GROUP --ppo-minibatch $PPO_MB"   (lr/ent/std tuned in train_torch.py)
+# ES is simpler + more robust -> it's the default. To use tuned PPO instead, pass it through train_multi:
+#   --algo ppo --extra="--compile --keep-best $POLICY_BF16 --ppo-group $PPO_GROUP --ppo-minibatch $PPO_MB"
 # Co-evo is seed-FRAGILE (some seeds collapse for every algo). Stabilization knobs --enemy-every K (slow the
 # enemy) / --enemy-pool N (PSRO-lite league) were tested and did NOT help here (slowing the enemy under-trains
 # the player vs the hard scripted reference: ES+stab 33.6%, pool-only 61.2%) -> left OFF by default.
-ACCEL="--algo es --compile $POLICY_BF16"
-echo "device=$DEV  perm=$PERM pop=$POP ticks=$TICKS bullets=$BULLETS budget=${BUDGET}s  accel=$ACCEL"
+echo "device=$DEV  perm=$PERM pop=$POP ticks=$TICKS bullets=$BULLETS  best-of-${RESTARTS} x ${RBUDGET}s  bf16=${POLICY_BF16:-off}"
 
-# --eval-vs scripted = a FIXED, game-realistic opponent held constant across the run, so the eval-every
-# trace is interpretable player progress (the old live-enemy metric bounced 6->94->2% as the enemy evolved).
-# --keep-best = save the PEAK fixed-eval checkpoint, not the final weights. Diagnosis (3090, fine traces):
-# co-evo collapse is LATE + OSCILLATORY — the enemy runs away (fitness 2.2->5.6) and the player's skill-vs-
-# fixed swings ±50pts iter-to-iter, so the final weight is a lottery (same seed ended 23% at 60s, 75% at 90s).
-# keep-best captures the ~85-94% peak regardless of stop point: 5-seed mean 65->75%, max 88->92%. For the most
-# reliable model, run train_multi.py (best-of-K restarts + keep-best) -> ~92% in ~5 min; it dodges the rare
-# seed that fails EARLY and never recovers (keep-best alone can't save those).
-"$PY" train_torch.py \
-  --dataset datasets/tiny \
-  --perm $PERM --pop $POP --ticks $TICKS --cap 16 --bullets $BULLETS \
-  --iters 40000 --budget $BUDGET $ACCEL \
-  --eval --eval-seeds 3 --eval-every 30 --eval-vs scripted --keep-best \
-  --render datasets/tiny/eval/grid.mp4
+# Why train_multi (best-of-K) instead of a single run: co-evo is seed-FRAGILE — collapse is LATE +
+# OSCILLATORY (the enemy runs away, fitness 2.2->5.6; the player's skill-vs-fixed swings ±50pts iter-to-iter,
+# so a single run's final weight is a lottery: the SAME seed ended 23% at 60s, 75% at 90s). Two fixes stack:
+#  --keep-best  saves the PEAK fixed-eval checkpoint (not the collapsed final) — captures the ~85% peak; and
+#  best-of-K restarts dodges the rare seed that fails EARLY and never peaks (keep-best alone can't save those).
+# Measured (3090, new maps, 8-dim obs + bf16): best-of-5 = 85% clear vs a single run's 21-85% lottery.
+# --eval-vs scripted = a FIXED, game-realistic opponent, so the eval-every trace is interpretable player skill
+# (the old live-enemy metric bounced 6->94->2% as the co-evolving enemy strengthened).
+"$PY" train_multi.py \
+  --restarts $RESTARTS --dataset datasets/tiny --algo es \
+  --perm $PERM --pop $POP --ticks $TICKS --bullets $BULLETS \
+  --budget $RBUDGET --eval-vs scripted --eval-every 6 \
+  --extra="--keep-best $POLICY_BF16" \
+  --player-out ../MonstroSim/models/player.json --enemy-out ../MonstroSim/models/monster.json
+
+# render a 3x3 eval grid of the BEST model (player vs its co-evolved enemy = the deployed pair)
+"$PY" render_eval.py --dataset datasets/tiny \
+  --player ../MonstroSim/models/player.json --enemy ../MonstroSim/models/monster.json \
+  --out datasets/tiny/eval/grid.mp4 || echo "  [render skipped — needs imageio-ffmpeg]"
