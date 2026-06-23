@@ -96,7 +96,7 @@ def _eval_maps(dataset):
 def render_grid(gd, weapon, exo, args, player, enemy, dev, out_path):
     """Render the 3x3 (maps x seeds) synchronized grid video to out_path."""
     pf = lambda o: P.apply_mlp(player, o)
-    ef = lambda o: P.apply_enemy(enemy, o)
+    ef = (lambda o: P.apply_enemy(enemy, o)) if enemy is not None else None   # None -> scripted steering
     dataset = getattr(args, "dataset", "") or os.path.join(os.path.dirname(__file__), "datasets", "tiny")
     seeds = max(1, getattr(args, "eval_seeds", 3))
     stride = getattr(args, "render_stride", 2)
@@ -118,6 +118,14 @@ def render_grid(gd, weapon, exo, args, player, enemy, dev, out_path):
     rows, cols = len(maps), seeds
     maxlen = len(snaps)
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
+    # Needs the FFMPEG plugin (imageio-ffmpeg). Without it imageio falls back to PyAV, which can't open
+    # an h264/mp4 codec here and dies cryptically — so fail fast with a clear, actionable message instead
+    # (the trainer wraps this call so the run still saves models). The 3090's `fantastic` env has it.
+    try:
+        import imageio_ffmpeg  # noqa: F401
+    except Exception:
+        raise RuntimeError("render needs imageio-ffmpeg (`pip install imageio-ffmpeg`, or run in the "
+                           "conda env that has it, e.g. `fantastic`). Models are unaffected.")
     w = imageio.get_writer(out_path, fps=fps, macro_block_size=None)
     for t in range(maxlen):                                       # frame compose (visualization)
         rowimgs = []

@@ -118,9 +118,11 @@ def _play_batch(env, ticks_max, real_tot, env_ticks, pf, ef):
 
 def run_eval(gd, weapon, exo, args, player, enemy, dev, seeds):
     """Play every held-out (map x seed) game in ONE batched rollout (no map/seed loop).
-    Returns (rows, maps); row = (name, survived, kills, M, dmg)."""
+    Returns (rows, maps); row = (name, survived, kills, M, dmg). enemy=None -> scripted monster steering
+    (the fixed, game-realistic reference opponent), so eval measures absolute player skill, not the
+    co-evolving arms race (which makes clear% bounce as the enemy strengthens)."""
     pf = lambda obs: P.apply_mlp(player, obs)
-    ef = lambda obs: P.apply_enemy(enemy, obs)
+    ef = (lambda obs: P.apply_enemy(enemy, obs)) if enemy is not None else None
     maps = eval_paths(args)
     levels = [data.sim_level(data.load_map(m)) for m in maps]
     names = [os.path.basename(m) for m in maps]
@@ -169,24 +171,32 @@ def main():
     ap.add_argument("--bullets", type=int, default=32)
     ap.add_argument("--sigma", type=float, default=0.1)
     ap.add_argument("--lr", type=float, default=0.05)
+    # co-evolution stabilization (Red-Queen / runaway-enemy fixes). Defaults reproduce the old 50/50 loop.
+    ap.add_argument("--enemy-every", type=int, default=2)   # train enemy 1-in-K iters (K=2: old 50/50; K>2:
+    #   asymmetric cadence — slow the enemy so the player can converge instead of chasing a moving target).
+    ap.add_argument("--enemy-pool", type=int, default=1)    # league size: player trains vs a random snapshot
+    #   from the last N enemies (1 = latest only = old behavior; N>1 = PSRO-lite, damps oscillation).
     ap.add_argument("--algo", default="es", choices=["es", "grpo", "ppo"])  # policy-gradient player (+ ES enemy)
     ap.add_argument("--grpo-lr", type=float, default=3e-3)
     ap.add_argument("--grpo-group", type=int, default=64)  # P = group size (action samples per env)
     ap.add_argument("--grpo-gamma", type=float, default=0.99)
     ap.add_argument("--grpo-std", type=float, default=0.6)  # initial action std
     ap.add_argument("--grpo-ent", type=float, default=0.0)  # entropy bonus coef
-    ap.add_argument("--ppo-lr", type=float, default=3e-4)
+    ap.add_argument("--ppo-lr", type=float, default=1e-4)    # T3: 3e-4 was unstable (policy collapse); 1e-4 stable
     ap.add_argument("--ppo-epochs", type=int, default=4)
     ap.add_argument("--ppo-clip", type=float, default=0.2)
     ap.add_argument("--ppo-gae", type=float, default=0.95)
     ap.add_argument("--ppo-gamma", type=float, default=0.99)
     ap.add_argument("--ppo-minibatch", type=int, default=16384)
     ap.add_argument("--ppo-vcoef", type=float, default=0.5)
-    ap.add_argument("--ppo-ent", type=float, default=0.0)
+    ap.add_argument("--ppo-ent", type=float, default=0.003)  # T3: light entropy bonus aids stability
     ap.add_argument("--ppo-group", type=int, default=64)
-    ap.add_argument("--ppo-std", type=float, default=0.6)
+    ap.add_argument("--ppo-std", type=float, default=0.5)    # T3: 0.5 > 0.6 (less collapse from over-exploration)
     ap.add_argument("--rw-kill", type=float, default=1.0)     # reward shaping (training-only, parity-safe)
     ap.add_argument("--rw-survive", type=float, default=0.01)
+    ap.add_argument("--rw-damage", type=float, default=0.0)   # dense damage-dealt shaping (0=off, parity-safe)
+    ap.add_argument("--seed", type=int, default=0)       # training-only RNG offset (multi-seed validation;
+    #   parity-safe — sim uses det_rand, NOT global RNG. seed=0 reproduces the original fixed-seed run).
     ap.add_argument("--device", default="auto")          # auto: cuda -> mps -> cpu (explicit value respected)
     ap.add_argument("--engine", default="torch", choices=["torch", "jax"])  # jax: lax.scan rollout (~1.23x, T3)
     ap.add_argument("--compile", action="store_true")    # torch.compile the env step (CUDA-graphs on cuda)
@@ -197,6 +207,10 @@ def main():
     ap.add_argument("--eval-map", default="")            # default: dataset/eval/*.json or eval_unseen.json
     ap.add_argument("--eval-ticks", type=int, default=0)  # 0 -> landingDuration*30 (full map)
     ap.add_argument("--eval-seeds", type=int, default=3)  # seeds per eval map (held-out distribution)
+    ap.add_argument("--eval-vs", default="fixed", choices=["fixed", "scripted", "live"])  # eval opponent:
+    #   fixed = frozen iter-0 enemy snapshot (held constant -> clean absolute player-progress metric);
+    #   scripted = canonical scripted monster steering (fixed, game-realistic, harder reference);
+    #   live = the co-evolving enemy (the OLD metric — measures the arms race, clear% bounces. diagnostic only).
     ap.add_argument("--eval-every", type=int, default=0)  # run a quick 1-seed eval every K iters (0=off)
     ap.add_argument("--render", default="")              # render a 3x3 eval grid video to this path at end
     ap.add_argument("--player-out", default="../MonstroSim/models/player.json")
@@ -206,8 +220,10 @@ def main():
     dev = pick_device(args.device)
     args.device = dev
     _perf_setup(dev)
+    torch.manual_seed(args.seed)                          # training RNG (PPO/GRPO action sampling); parity-safe
     env, n_maps, n_envs = build_env(args)
     env.rw_kill, env.rw_survive = args.rw_kill, args.rw_survive   # reward shaping (set BEFORE compile bakes it)
+    env.rw_damage = args.rw_damage
     Ppop = 2 * args.pop
     jr = None
     if args.engine == "jax":
@@ -231,9 +247,23 @@ def main():
     print(f"Torch co-evolution [{src}]: {n_maps} maps x {args.perm} = N={n_envs} envs, M={env.M}, "
           f"B={env.B}, ticks={args.ticks}, pop={args.pop}, iters={args.iters}, dev={dev}")
 
-    player = P.init_mlp(PLAYER_SIZES, device=dev, seed=7)
-    enemy = P.init_mlp(ENEMY_SIZES, device=dev, seed=11)
-    gen = torch.Generator().manual_seed(42)              # CPU generator (noise moved to device in es)
+    sd = args.seed                                        # net-init offset (multi-seed validation; sd=0 = original)
+    player = P.init_mlp(PLAYER_SIZES, device=dev, seed=7 + sd)
+    enemy = P.init_mlp(ENEMY_SIZES, device=dev, seed=11 + sd)
+    enemy_ref = [(W.clone(), b.clone()) for W, b in enemy]   # frozen iter-0 snapshot = the fixed eval opponent
+    gen = torch.Generator().manual_seed(42 + sd)         # CPU generator (noise moved to device in es)
+    # enemy league (PSRO-lite): pool of past enemy snapshots the player trains against (see --enemy-pool).
+    import random as _random
+    pool_rng = _random.Random(1234 + sd)
+    snap = lambda net: [(W.detach().clone(), b.detach().clone()) for W, b in net]
+    enemy_pool = [snap(enemy)]
+    def opponent():                                      # the enemy the player trains against this iter
+        if args.enemy_pool <= 1:
+            return enemy                                 # latest only (old behavior, exact)
+        return enemy_pool[pool_rng.randrange(len(enemy_pool))]
+    # which opponent eval/render run against (see --eval-vs): fixed snapshot, scripted (None), or live enemy.
+    eval_enemy = lambda: (enemy_ref if args.eval_vs == "fixed"
+                          else None if args.eval_vs == "scripted" else enemy)
 
     pf = lambda params: (lambda obs: P.apply_mlp(params, obs))
     ef = lambda params: (lambda obs: P.apply_enemy(params, obs))
@@ -241,15 +271,15 @@ def main():
     grpo = ppo = None
     if args.algo == "grpo":
         import grpo_torch as G                            # policy-gradient player (the deployed agent)
-        gparams, glog = G.init_player(PLAYER_SIZES, dev, seed=7, std0=args.grpo_std)
+        gparams, glog = G.init_player(PLAYER_SIZES, dev, seed=7 + sd, std0=args.grpo_std)
         gopt = torch.optim.Adam(G.opt_params(gparams, glog), lr=args.grpo_lr)
         player = G.mean_params(gparams)                   # eval/save/opponent use the deterministic mean
         grpo = (G, gparams, glog, gopt)
         print(f"  algo: GRPO player (group={args.grpo_group} lr={args.grpo_lr} std={args.grpo_std}) + ES enemy")
     elif args.algo == "ppo":
         import grpo_torch as G, ppo_torch as PPO          # PPO: clipped surrogate + critic + GAE
-        gparams, glog = G.init_player(PLAYER_SIZES, dev, seed=7, std0=args.ppo_std)
-        vparams = PPO.init_value(dev, seed=23)
+        gparams, glog = G.init_player(PLAYER_SIZES, dev, seed=7 + sd, std0=args.ppo_std)
+        vparams = PPO.init_value(dev, seed=23 + sd)
         popt = torch.optim.Adam(G.opt_params(gparams, glog) + PPO.value_params_flat(vparams), lr=args.ppo_lr)
         player = G.mean_params(gparams)
         ppo = (PPO, G, gparams, glog, vparams, popt)
@@ -267,12 +297,13 @@ def main():
                 unit=("s" if use_budget else "it"), dynamic_ncols=True)
     it = 0
     while it < args.iters:
-        train_player = (it % 2 == 0)
+        train_player = (it % args.enemy_every != args.enemy_every - 1)   # enemy trains 1-in-K; player otherwise
         cur_ticks = tick_at(it, args)                          # curriculum: short rollouts early -> full
         if train_player:
+            opp = opponent()                                    # league opponent (latest, or sampled snapshot)
             if ppo is not None:                                 # PPO player step vs the frozen ES enemy
                 PPO, G, gparams, glog, vparams, popt = ppo
-                _pl, _vl, ret = PPO.ppo_step(env, cur_ticks, gparams, glog, vparams, popt, enemy, args.ppo_group,
+                _pl, _vl, ret = PPO.ppo_step(env, cur_ticks, gparams, glog, vparams, popt, opp, args.ppo_group,
                                              gamma=args.ppo_gamma, lam=args.ppo_gae, clip=args.ppo_clip,
                                              epochs=args.ppo_epochs, minibatch=args.ppo_minibatch,
                                              vcoef=args.ppo_vcoef, ent=args.ppo_ent)
@@ -280,15 +311,15 @@ def main():
                 best = ret; hist["player"].append(ret); last["player"] = ret
             elif grpo is not None:                              # GRPO player step vs the frozen ES enemy
                 G, gparams, glog, gopt = grpo
-                _loss, ret = G.grpo_player_step(env, cur_ticks, gparams, glog, gopt, enemy,
+                _loss, ret = G.grpo_player_step(env, cur_ticks, gparams, glog, gopt, opp,
                                                 args.grpo_group, gamma=args.grpo_gamma, ent_coef=args.grpo_ent)
                 player = G.mean_params(gparams)                 # refresh the deterministic mean for eval/opponent
                 best = ret; hist["player"].append(ret); last["player"] = ret
             else:
                 def fitness(stacked):
                     if jr is not None:
-                        return jr.reward_player(stacked, enemy)
-                    out = env.rollout(Ppop, cur_ticks, pf(stacked), ef(enemy))
+                        return jr.reward_player(stacked, opp)
+                    out = env.rollout(Ppop, cur_ticks, pf(stacked), ef(opp))
                     return out["reward_player"].mean(1)
                 player, best, mean = ES.es_step(player, fitness, args.pop, gen, dev, args.sigma, args.lr)
                 hist["player"].append(mean); last["player"] = mean
@@ -300,6 +331,8 @@ def main():
                 return out["reward_enemy"].mean(1)
             enemy, best, mean = ES.es_step(enemy, fitness, args.pop, gen, dev, args.sigma, args.lr)
             hist["enemy"].append(mean); last["enemy"] = mean
+            if args.enemy_pool > 1:                             # add the freshly-trained enemy to the league
+                enemy_pool.append(snap(enemy)); enemy_pool[:] = enemy_pool[-args.enemy_pool:]
 
         elapsed = time.time() - t0
         if use_budget:
@@ -309,8 +342,8 @@ def main():
         pbar.set_postfix(it=it, phase="player" if train_player else "enemy",
                          player=f"{last['player']:.2f}", enemy=f"{last['enemy']:.3f}", best=f"{best:.2f}")
         if args.eval_every and it > 0 and it % args.eval_every == 0:
-            rows, _ = run_eval(gd_eval, weapon_eval, exo_eval, args, player, enemy, dev, seeds=1)
-            tqdm.write(f"  [eval @ it{it:4d}]  {eval_line(rows)}")
+            rows, _ = run_eval(gd_eval, weapon_eval, exo_eval, args, player, eval_enemy(), dev, seeds=1)
+            tqdm.write(f"  [eval @ it{it:4d} vs {args.eval_vs}]  {eval_line(rows)}")
         it += 1
         if use_budget and elapsed > args.budget:
             print(f"\n>>> reached {args.budget:.0f}s budget at iter {it} — stopping (models saved below).", flush=True)
@@ -328,12 +361,17 @@ def main():
     print(f"saved -> {args.player_out}  +  {args.enemy_out}")
 
     if args.eval:
-        rows, maps = run_eval(gd_eval, weapon_eval, exo_eval, args, player, enemy, dev, max(1, args.eval_seeds))
+        print(f"  (eval opponent: --eval-vs {args.eval_vs})")
+        rows, maps = run_eval(gd_eval, weapon_eval, exo_eval, args, player, eval_enemy(), dev, max(1, args.eval_seeds))
         eval_report(rows, maps, args.eval_seeds, dev)
 
     if args.render:
-        import render_eval
-        render_eval.render_grid(gd_eval, weapon_eval, exo_eval, args, player, enemy, dev, args.render)
+        try:                                                  # non-fatal: models are already saved above
+            import render_eval
+            render_eval.render_grid(gd_eval, weapon_eval, exo_eval, args, player, eval_enemy(), dev, args.render)
+        except Exception as e:
+            print(f"  [render skipped] {type(e).__name__}: {e}\n  (models saved OK; video needs imageio-ffmpeg "
+                  f"— `pip install imageio-ffmpeg`, or run in the conda env that has it.)")
 
 
 if __name__ == "__main__":

@@ -59,6 +59,7 @@ class EnvTorch:
         # reproduce the original r_player exactly (checksum-neutral); train_torch may reweight via --rw-*.
         self.rw_survive = 0.01   # per-tick alive baseline
         self.rw_kill = 1.0       # reward per kill
+        self.rw_damage = 0.0     # dense per-tick reward per HP of damage DEALT (0 = off, checksum-neutral)
 
     def reset(self, P):
         N, M, B, dev = self.N, self.M, self.B, self.device
@@ -232,6 +233,9 @@ class EnvTorch:
         alive_a = due & (mon_hp > 0)
         killed = (alive_b & (~alive_a)).float().sum(2)              # [P,N]
         kills = s["kills"] + killed
+        # dense damage-DEALT shaping signal (training-only, capped at the monster's available HP so it
+        # rewards landing shots, not overkill). Enters r_player only via rw_damage → 0.0 keeps parity.
+        dmg_dealt = torch.minimum((hit * self.bullet_damage).sum(2), torch.clamp(s["mon_hp"], min=0.0)).sum(-1)
 
         # contact: immediate pulse on newly-touching + periodic for sustained; defense + min floor
         contact_now = (alive_a & (dist < (c.player_radius + self.mon_boxW[None] / 2 + c.buffer))).float()
@@ -255,7 +259,8 @@ class EnvTorch:
         threatN = threat_raw / (torch.sqrt((threat_raw * threat_raw).sum(-1, keepdim=True)) + c.eps)
         aim_align = (aim * threatN).sum(-1)
         alive_env = (player_hp > 0).float()
-        r_player = (self.rw_survive + 0.005 * aim_align + self.rw_kill * killed - applied * 0.05) * alive_env
+        r_player = (self.rw_survive + 0.005 * aim_align + self.rw_kill * killed
+                    + self.rw_damage * dmg_dealt - applied * 0.05) * alive_env
 
         # enemy reward: damage dealt + approach proximity − deaths
         approach = torch.clamp(1.0 - dist / 3000.0, min=0.0)

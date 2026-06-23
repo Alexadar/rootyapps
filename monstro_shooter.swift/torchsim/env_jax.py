@@ -105,10 +105,17 @@ def enemy_obs(cfg, sched, s):
 
 
 def step(cfg, sched, player_params, enemy_params, s, xs):
+    """ES/eval rollout: the player action is computed from player_params inside the step."""
+    a_player = apply_mlp(player_params, player_obs(cfg, sched, s))
+    return step_pa(cfg, sched, a_player, enemy_params, s, xs)
+
+
+def step_pa(cfg, sched, a_player, enemy_params, s, xs):
+    """Step with the player ACTION precomputed [P,N,4] (PPO samples it w/ a PRNG key outside the sim).
+    Identical dynamics to step() — only the action source differs (parity-neutral, same as torch step_pa)."""
     elapsed, gate_fire, gate_contact = xs["elapsed"], xs["gate_fire"], xs["gate_contact"]
     pct, pst, onehot = xs["ct"], xs["st"], xs["onehot"]            # lax.scan slices the tables dict
     eps, dt = cfg.eps, cfg.dt
-    a_player = apply_mlp(player_params, player_obs(cfg, sched, s))
     a_move, a_aim = a_player[..., 0:2], a_player[..., 2:4]
 
     st = sched["spawn_tick"][None]                                  # [1,N,M]
