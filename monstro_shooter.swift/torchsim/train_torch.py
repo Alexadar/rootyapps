@@ -171,6 +171,7 @@ def main():
     ap.add_argument("--lr", type=float, default=0.05)
     ap.add_argument("--device", default="auto")          # auto: cuda -> mps -> cpu (explicit value respected)
     ap.add_argument("--compile", action="store_true")    # torch.compile the env step (CUDA-graphs on cuda)
+    ap.add_argument("--compile-mode", default="reduce-overhead")  # cuda; use "default" if CUDA-graphs error
     ap.add_argument("--budget", type=float, default=0.0)   # wall-time cap in seconds (0=off); stops + saves
     ap.add_argument("--eval", action="store_true")       # after training, play one UNSEEN map headless
     ap.add_argument("--eval-map", default="")            # default: dataset/eval/*.json or eval_unseen.json
@@ -189,8 +190,10 @@ def main():
     if args.compile:
         # CUDA-graph trees on cuda (the big win); Inductor fusion on mps/cpu. _core is compile-clean
         # (per-tick tensors passed as args), so it traces ONCE. First iter pays the compile warmup.
-        env._core = torch.compile(env._core, mode="reduce-overhead" if dev == "cuda" else None)
-        print(f"  torch.compile: ON (mode={'reduce-overhead' if dev=='cuda' else 'default'})")
+        # If CUDA-graphs misbehave on a given torch build, run with `--compile-mode default` (fusion only).
+        mode = args.compile_mode if dev == "cuda" else None
+        env._core = torch.compile(env._core, mode=mode)
+        print(f"  torch.compile: ON (mode={mode or 'default'})")
     gd_eval = data.GameData(args.client)                  # loaded once; reused by periodic + final eval
     weapon_eval = gd_eval.weapons.get(1) or next(iter(gd_eval.weapons.values()))
     exo_eval = gd_eval.exoskeletons.get(1) or next(iter(gd_eval.exoskeletons.values()))

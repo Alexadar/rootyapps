@@ -261,11 +261,17 @@ class EnvTorch:
 
     @torch.no_grad()
     def rollout(self, P, ticks, player_fn, enemy_fn):
-        """Returns per-(P,N) accumulated player & enemy reward, kills, hp. One pass, no grad (ES)."""
+        """Returns per-(P,N) accumulated player & enemy reward, kills, hp. One pass, no grad (ES).
+        The rollout carries state `s` across many compiled `_core` calls, so under CUDA-graph trees
+        (torch.compile mode='reduce-overhead') we mark each tick as a new step — otherwise the next
+        tick's graph replay clobbers the buffers the carried `s`/rewards still point to."""
         s = self.reset(P)
         rp = torch.zeros(P, self.N, device=self.device)
         re = torch.zeros(P, self.N, device=self.device)
+        mark = getattr(torch.compiler, "cudagraph_mark_step_begin", lambda: None)
         for t in range(1, ticks + 1):
+            mark()                                              # new CUDA-graph step (no-op when eager)
             s, r_p, r_e = self.step(s, t, player_fn, enemy_fn)
-            rp += r_p; re += r_e
-        return dict(reward_player=rp, reward_enemy=re, kills=s["kills"], hp=s["player_hp"])
+            rp = rp + r_p; re = re + r_e                        # out-of-place: don't alias graph buffers
+        return dict(reward_player=rp, reward_enemy=re,
+                    kills=s["kills"].clone(), hp=s["player_hp"].clone())
