@@ -21,7 +21,7 @@ def main():
     args = ap.parse_args()
     assert torch.cuda.is_available()
     dev = "cuda"; T._perf_setup(dev); Pp = 2 * args.pop
-    a = type("A", (), {})(); a.client = T.data.DEFAULT_CLIENT; a.dataset = "datasets/tiny"; a.map = ""
+    a = type("A", (), {})(); a.client = T.data.DEFAULT_CLIENT; a.dataset = "datasets/surround"; a.map = ""
     a.perm = args.perm; a.cap = 16; a.bullets = 32; a.device = dev
     env, nm, ne = T.build_env(a)
     pl = P.stack_population([P.init_mlp(T.PLAYER_SIZES, device=dev, seed=i) for i in range(Pp)])

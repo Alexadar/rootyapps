@@ -15,7 +15,7 @@ import policy_torch as P
 
 def build_env(pop, perm, ticks, cap, bullets, dev):
     a = type("A", (), {})()
-    a.client = T.data.DEFAULT_CLIENT; a.dataset = "datasets/tiny"; a.map = ""
+    a.client = T.data.DEFAULT_CLIENT; a.dataset = "datasets/surround"; a.map = ""
     a.perm = perm; a.cap = cap; a.bullets = bullets; a.device = dev
     env, n_maps, n_envs = T.build_env(a)
     return env, n_maps, n_envs

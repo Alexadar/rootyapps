@@ -26,7 +26,8 @@ def run_seed(args, seed, pout, eout):
         cmd += ["--ppo-group", str(args.ppo_group), "--ppo-minibatch", str(args.ppo_minibatch)]
     if args.extra:
         cmd += args.extra.split()
-    out = subprocess.run(cmd, cwd=HERE, capture_output=True, text=True).stdout
+    # capture STDOUT (eval lines, for parsing) but let STDERR inherit -> the live tqdm progress bar shows
+    out = subprocess.run(cmd, cwd=HERE, stdout=subprocess.PIPE, text=True).stdout
     # final eval = the LAST "survival ... clear ..." line that is NOT an eval-every trace line
     finals = [m for m in EVAL_RE.finditer(out) if "[eval @" not in out[max(0, m.start() - 12):m.start()]]
     fin = finals[-1] if finals else None
@@ -39,13 +40,13 @@ def run_seed(args, seed, pout, eout):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--restarts", type=int, default=5)
-    ap.add_argument("--dataset", default="datasets/tiny")
+    ap.add_argument("--dataset", default="datasets/surround")
     ap.add_argument("--algo", default="es")
     ap.add_argument("--budget", type=float, default=60)
     ap.add_argument("--perm", type=int, default=32)
     ap.add_argument("--pop", type=int, default=256)
     ap.add_argument("--ticks", type=int, default=600)
-    ap.add_argument("--bullets", type=int, default=32)
+    ap.add_argument("--bullets", type=int, default=8)    # ring slots; >= weapon's max simultaneous alive bullets
     ap.add_argument("--eval-seeds", type=int, default=3)
     ap.add_argument("--eval-vs", default="scripted")
     ap.add_argument("--eval-every", type=int, default=20)
@@ -64,6 +65,7 @@ def main():
     for s in range(args.restarts):
         pout = os.path.join(args.workdir, f"player_s{s}.json")
         eout = os.path.join(args.workdir, f"enemy_s{s}.json")
+        print(f"--- restart {s + 1}/{args.restarts} (seed {s}) ---", flush=True)
         r = run_seed(args, s, pout, eout)
         r["pout"], r["eout"] = pout, eout
         results.append(r)

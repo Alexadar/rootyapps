@@ -1,9 +1,0 @@
-{
-  "id": 10002,
-  "landingDuration": 20,
-  "arenaHalf": 450,
-  "spawnRadius": 350,
-  "defaultNameLocalizations": { "en-us": "tiny-t2-tanks-4berserker" },
-  "monsterTypes": [ { "startTime": 0, "monsterTypeIds": [2] } ],
-  "monsterSpawnWaves": [ { "startTime": 1, "count": 4 } ]
-}

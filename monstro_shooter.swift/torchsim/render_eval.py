@@ -2,7 +2,7 @@
 3x3 grid video (rows=maps, cols=seeds). Draws player + monsters as contours and bullets as bright dots.
 CPU draw via PIL — offline, tiny scenes, runs anywhere (Mac + 3090).
 
-Standalone:  python render_eval.py            # uses the saved models, writes datasets/tiny/eval/grid.mp4
+Standalone:  python render_eval.py            # uses the saved models, writes datasets/surround/eval/grid.mp4
 From trainer: train_torch.py --render <path>  (calls render_grid at end of training)
 """
 import argparse, glob, os
@@ -97,7 +97,7 @@ def render_grid(gd, weapon, exo, args, player, enemy, dev, out_path):
     """Render the 3x3 (maps x seeds) synchronized grid video to out_path."""
     pf = lambda o: P.apply_mlp(player, o)
     ef = (lambda o: P.apply_enemy(enemy, o)) if enemy is not None else None   # None -> scripted steering
-    dataset = getattr(args, "dataset", "") or os.path.join(os.path.dirname(__file__), "datasets", "tiny")
+    dataset = getattr(args, "dataset", "") or os.path.join(os.path.dirname(__file__), "datasets", "surround")
     seeds = max(1, getattr(args, "eval_seeds", 3))
     stride = getattr(args, "render_stride", 2)
     fps = getattr(args, "render_fps", 30)
@@ -147,7 +147,7 @@ def render_grid(gd, weapon, exo, args, player, enemy, dev, out_path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--client", default=data.DEFAULT_CLIENT)
-    ap.add_argument("--dataset", default=os.path.join(os.path.dirname(__file__), "datasets", "tiny"))
+    ap.add_argument("--dataset", default=os.path.join(os.path.dirname(__file__), "datasets", "surround"))
     ap.add_argument("--player", default="../MonstroSim/models/player.json")
     ap.add_argument("--enemy", default="../MonstroSim/models/monster.json")
     ap.add_argument("--out", default="")                 # default: <dataset>/eval/grid.mp4

@@ -61,7 +61,17 @@ class EnvTorch:
         # reproduce the original r_player exactly (checksum-neutral); train_torch may reweight via --rw-*.
         self.rw_survive = 0.01   # per-tick alive baseline
         self.rw_kill = 1.0       # reward per kill
+        self.rw_aim = 0.005      # reward for aiming AT the threat centroid (raise -> aim tracks the pack instead
+        #   of staying fixed). NOTE: obs gives only ONE aggregate threat dir, so aim can track the centroid but
+        #   NOT individual monsters — for true per-target aiming you need richer obs + PPO. 0.005 = original.
         self.rw_damage = 0.0     # dense per-tick reward per HP of damage DEALT (0 = off, checksum-neutral)
+        self.rw_hit = 0.05       # penalty per HP of damage TAKEN. raise it to make the player damage-AVERSE
+        #   (minimize damage -> dodge/move instead of tanking). 0.05 = original (checksum-neutral default).
+        self.rw_space = 0.0      # per-tick reward for keeping monsters at distance — but allow up to space_keep
+        #   close (you can't keep ALL away when surrounded). Signal = distance to the (space_keep+1)-th nearest
+        #   monster, SATURATING at space_target (so it rewards spacing/dodging, NOT fleeing). 0 = off (parity).
+        self.space_keep = 2      # how many monsters you're allowed to have close (reward keeps the (k+1)-th+ away)
+        self.space_target = 200.0  # distance (world units) at which the spacing reward saturates
 
     def reset(self, P):
         N, M, B, dev = self.N, self.M, self.B, self.device
@@ -261,8 +271,14 @@ class EnvTorch:
         threatN = threat_raw / (torch.sqrt((threat_raw * threat_raw).sum(-1, keepdim=True)) + c.eps)
         aim_align = (aim * threatN).sum(-1)
         alive_env = (player_hp > 0).float()
-        r_player = (self.rw_survive + 0.005 * aim_align + self.rw_kill * killed
-                    + self.rw_damage * dmg_dealt - applied * 0.05) * alive_env
+        # spacing: reward keeping the (space_keep+1)-th nearest monster at distance (allow space_keep close,
+        # keep the rest away). topk-smallest over alive distances; dead/absent slots = 1e9 -> saturates to 1.
+        kth = min(self.space_keep + 1, M)
+        masked_d = torch.where(alive_a, dist, torch.full_like(dist, 1e9))         # [P,N,M]
+        d_k = torch.topk(masked_d, kth, dim=-1, largest=False).values[..., -1]    # [P,N] (space_keep+1)-th nearest
+        space = torch.clamp(d_k / self.space_target, max=1.0)                     # 0 (3rd on top) .. 1 (>=target)
+        r_player = (self.rw_survive + self.rw_aim * aim_align + self.rw_kill * killed + self.rw_space * space
+                    + self.rw_damage * dmg_dealt - applied * self.rw_hit) * alive_env
 
         # enemy reward: damage dealt + approach proximity − deaths
         approach = torch.clamp(1.0 - dist / 3000.0, min=0.0)

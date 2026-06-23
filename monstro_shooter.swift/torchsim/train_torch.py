@@ -4,8 +4,8 @@
 Map source: --dataset <dir> (train/ + eval/ folds), else --map, else the 10 swiper maps. Batched
 N = maps × --perm. Device auto-detected (cuda -> mps -> cpu). --budget caps wall-time (stops + saves).
 
-  python train_torch.py --dataset datasets/tiny --perm 8 --pop 12 --ticks 200 --cap 16 --eval
-  python train_torch.py --dataset datasets/tiny --pop 64 --ticks 400 --budget 3600   # 3090
+  python train_torch.py --dataset datasets/surround --perm 8 --pop 12 --ticks 200 --cap 16 --eval
+  python train_torch.py --dataset datasets/surround --pop 64 --ticks 400 --budget 3600   # 3090
 """
 import argparse, glob, json, os, time
 import torch
@@ -168,7 +168,9 @@ def main():
     ap.add_argument("--tick-start", type=int, default=0)   # tick curriculum start len (0=off -> full ticks)
     ap.add_argument("--tick-warmup", type=int, default=40) # iters to ramp tick-start -> ticks
     ap.add_argument("--cap", type=int, default=64)       # monster slots
-    ap.add_argument("--bullets", type=int, default=32)
+    ap.add_argument("--bullets", type=int, default=8)    # bullet ring-buffer slots; must be >= max simultaneous
+    #   alive bullets for the weapon (else live bullets get overwritten -> sim changes). Pistol peaks at 2;
+    #   8 = margin (parity-exact vs 32). Size up for fast guns. Collision+dodge are all-pairs over B, so B = cost.
     ap.add_argument("--sigma", type=float, default=0.1)
     ap.add_argument("--lr", type=float, default=0.05)
     # co-evolution stabilization (Red-Queen / runaway-enemy fixes). Defaults reproduce the old 50/50 loop.
@@ -195,6 +197,11 @@ def main():
     ap.add_argument("--rw-kill", type=float, default=1.0)     # reward shaping (training-only, parity-safe)
     ap.add_argument("--rw-survive", type=float, default=0.01)
     ap.add_argument("--rw-damage", type=float, default=0.0)   # dense damage-dealt shaping (0=off, parity-safe)
+    ap.add_argument("--rw-hit", type=float, default=0.05)     # penalty per HP TAKEN; raise to force dodging/moving
+    ap.add_argument("--rw-aim", type=float, default=0.005)    # reward for aiming at the threat centroid (raise -> aim tracks)
+    ap.add_argument("--rw-space", type=float, default=0.0)    # reward for keeping the (space-keep+1)-th monster away
+    ap.add_argument("--space-keep", type=int, default=2)      # how many monsters you may have close (default 2)
+    ap.add_argument("--space-target", type=float, default=200.0)  # distance where the spacing reward saturates
     ap.add_argument("--seed", type=int, default=0)       # training-only RNG offset (multi-seed validation;
     #   parity-safe — sim uses det_rand, NOT global RNG. seed=0 reproduces the original fixed-seed run).
     ap.add_argument("--device", default="auto")          # auto: cuda -> mps -> cpu (explicit value respected)
@@ -229,6 +236,9 @@ def main():
     env, n_maps, n_envs = build_env(args)
     env.rw_kill, env.rw_survive = args.rw_kill, args.rw_survive   # reward shaping (set BEFORE compile bakes it)
     env.rw_damage = args.rw_damage
+    env.rw_hit = args.rw_hit
+    env.rw_space, env.space_keep, env.space_target = args.rw_space, args.space_keep, args.space_target
+    env.rw_aim = args.rw_aim
     Ppop = 2 * args.pop
     jr = None
     if args.engine == "jax":

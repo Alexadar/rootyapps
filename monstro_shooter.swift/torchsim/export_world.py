@@ -20,7 +20,7 @@ from world_config import WorldConfig
 from env_torch import EnvTorch
 
 OUT = "parity"
-DATASET = "datasets/tiny"
+DATASET = "datasets/surround"
 BULLETS = 24
 SEEDS = 3
 PLAYER = "../MonstroSim/models/player.json"

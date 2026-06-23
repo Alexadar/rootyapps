@@ -1,0 +1,16 @@
+{
+  "id": 29003,
+  "landingDuration": 20,
+  "arenaHalf": 280,
+  "spawnRadius": 180,
+  "defaultNameLocalizations": { "en-us": "surround-eval-e3-extrap-fastest-tight" },
+  "monsterTypes": [ { "startTime": 0, "monsterTypeIds": [3, 5, 6] } ],
+  "monsterSpawnWaves": [
+    { "startTime": 1, "count": 3 },
+    { "startTime": 3, "count": 3 },
+    { "startTime": 5, "count": 3 },
+    { "startTime": 7, "count": 3 },
+    { "startTime": 9, "count": 2 },
+    { "startTime": 11, "count": 2 }
+  ]
+}

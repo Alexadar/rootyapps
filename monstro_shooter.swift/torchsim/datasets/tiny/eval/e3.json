@@ -1,9 +1,0 @@
-{
-  "id": 19003,
-  "landingDuration": 20,
-  "arenaHalf": 350,
-  "spawnRadius": 270,
-  "defaultNameLocalizations": { "en-us": "tiny-eval-e3-extrap-18-tight" },
-  "monsterTypes": [ { "startTime": 0, "monsterTypeIds": [1, 2, 4, 5] } ],
-  "monsterSpawnWaves": [ { "startTime": 2, "count": 9 }, { "startTime": 10, "count": 9 } ]
-}

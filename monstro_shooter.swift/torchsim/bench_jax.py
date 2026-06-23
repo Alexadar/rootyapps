@@ -14,7 +14,7 @@ import jax, jax.numpy as jnp, env_jax
 
 def build():
     gd = data.GameData("../monstro_client")
-    lv = data.sim_level(data.load_map("datasets/tiny/eval/e1.json"))
+    lv = data.sim_level(data.load_map("datasets/surround/eval/e1.json"))
     cfg = WorldConfig(); B = 24
     sched = schedule.build(lv, gd.monsters, base_seed=123, n_envs=8, cap=16)
     weapon = gd.weapons.get(1) or next(iter(gd.weapons.values()))
@@ -62,7 +62,7 @@ def bench_big(pop=128, perm=32, ticks=600, bullets=32):
     Same env/schedule (N=maps*perm) and the SAME single net broadcast over P on both engines."""
     import train_torch as T
     dev = "cuda"; T._perf_setup(dev); Pp = 2 * pop
-    a = type("A", (), {})(); a.client = "../monstro_client"; a.dataset = "datasets/tiny"; a.map = ""
+    a = type("A", (), {})(); a.client = "../monstro_client"; a.dataset = "datasets/surround"; a.map = ""
     a.perm = perm; a.cap = 16; a.bullets = bullets; a.device = dev
     env, nmaps, nenv = T.build_env(a)
     pl = P.init_mlp(T.PLAYER_SIZES, device=dev, seed=7); en = P.init_mlp(T.ENEMY_SIZES, device=dev, seed=11)

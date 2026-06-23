@@ -7,7 +7,7 @@ BUDGET="${BUDGET:-100}"
 PERM="${PERM:-32}"
 for POP in 128 256 512; do
   echo "======== POP=$POP PERM=$PERM budget=${BUDGET}s ========"
-  "$PY" train_torch.py --dataset datasets/tiny \
+  "$PY" train_torch.py --dataset datasets/surround \
     --perm $PERM --pop $POP --ticks 600 --cap 16 --bullets 32 \
     --iters 100000 --budget $BUDGET --compile \
     --eval-every 20 \

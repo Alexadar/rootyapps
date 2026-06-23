@@ -219,7 +219,7 @@ def _bench(args):
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dataset", default="datasets/tiny")
+    ap.add_argument("--dataset", default="datasets/surround")
     ap.add_argument("--perm", type=int, default=32)
     ap.add_argument("--bullets", type=int, default=32)
     ap.add_argument("--ticks", type=int, default=600)

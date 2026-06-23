@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Train player + enemy co-evolution on the tiny dataset, then multi-seed eval + a 3x3 grid render.
+# Train player + enemy co-evolution on the surround dataset, then multi-seed eval + a 3x3 grid render.
 # Device is AUTO-DETECTED (cuda -> mps -> cpu) and params AUTO-SCALED: big on the 3090, small here.
 # Same script, both machines. Override the python via:  PY=/path/python ./train.sh
 set -e
@@ -18,7 +18,11 @@ PYEOF
 )
 
 if [ "$DEV" = "cuda" ]; then     # 3090: big enemy-ES population + full-map episodes + long budget
-  PERM=32; POP=256; TICKS=600; BULLETS=32; BUDGET=300    # POP=256 = enemy-ES sweet spot (T4). BUDGET secs (5 min)
+  PERM=32; POP=256                                       # POP=256 = enemy-ES sweet spot (T4)
+  # BULLETS = bullet ring-buffer slots. Collision+dodge are all-pairs over B×M, so B is pure cost — but it
+  # must be >= max SIMULTANEOUS alive bullets for the weapon or a live bullet gets overwritten (changes the
+  # sim). Pistol peaks at 2 alive; 8 gives margin (parity-EXACT vs 32: kills/hp identical). SIZE UP for fast
+  # guns (minigun/shotgun: faster fire × pellets => more alive). Was 32 (16x oversized for the pistol).
   # PPO batch (T1 GPU-fill sweep, 3090): ppo-group=128 + ppo-minibatch=262144 took util 76%->94%,
   # power 280->316W, clear 16%->40% over the old g64/mb16384 default. The OLD mb=16384 ran ~2400
   # launch-bound micro optimizer steps/iter (tiny matmuls) — starving the GPU AND adding gradient
@@ -28,41 +32,46 @@ if [ "$DEV" = "cuda" ]; then     # 3090: big enemy-ES population + full-map epis
   # its traffic -> ~1.3x rollout AND ~1.4x more ES iters/budget (40s A/B: fp32 15 iters/16% clear vs bf16
   # 21 iters/46%). SIM stays fp32 (game logic unaffected) — only the policy forward + parity checksum change.
   POLICY_BF16="--policy-bf16"
-  RESTARTS=5                                             # co-evo is seed-fragile; best-of-5 dodges collapses
 else                             # Mac (mps/cpu): fast dev loop
-  PERM=16; POP=48;  TICKS=200; BULLETS=24; BUDGET=300
+  PERM=16; POP=48                                        # mac: small/fast dev loop
   PPO_GROUP=64;  PPO_MB=16384                            # small GPU: keep the lightweight defaults
   POLICY_BF16=""                                         # bf16 unreliable on mps -> fp32 on the mac
-  RESTARTS=3                                             # fewer restarts on the slow dev box
 fi
-RBUDGET=$((BUDGET / RESTARTS))                           # per-restart budget so total wall-time ≈ BUDGET
+
+# --- dataset / run params (NOT device-scaled; each is env-overridable, e.g. BUDGET=600 ./train.sh) ---
+DATASET="${DATASET:-datasets/surround}"
+TICKS="${TICKS:-600}"      # MUST cover the map round so the game can complete (clear/death). surround = 20s = 600
+CAP="${CAP:-16}"           # monster slots = max simultaneous monsters a map can have (surround totals <=16)
+BULLETS="${BULLETS:-8}"    # bullet ring slots; >= weapon's max simultaneous alive bullets (pistol=2; size up for fast guns)
+BUDGET="${BUDGET:-2400}"   # wall-time seconds (40 min). longer = more convergence (was 300 = 5 min)
+EVAL_SEEDS="${EVAL_SEEDS:-3}"   # 3 eval maps x 3 seeds = the 3x3 render grid
+EVAL_EVERY="${EVAL_EVERY:-30}"
+ITERS="${ITERS:-40000}"
+# reward shaping (training-only, parity-safe). RW_HIT = penalty per HP TAKEN — high so the player is
+# DAMAGE-AVERSE and learns to dodge/move instead of tanking (was 0.05; 0.30 = 6x). Tune via env if needed.
+RW_HIT="${RW_HIT:-0.30}"; RW_KILL="${RW_KILL:-1.0}"; RW_SURVIVE="${RW_SURVIVE:-0.01}"
+# RW_SPACE = reward for keeping monsters spaced (allow SPACE_KEEP close, keep the rest away) -> proactive
+# dodging, not fleeing (saturates). SPACE_KEEP=2 = "max 2 monsters close".
+RW_SPACE="${RW_SPACE:-0.01}"; SPACE_KEEP="${SPACE_KEEP:-2}"
+RW_AIM="${RW_AIM:-0.05}"   # reward for aiming at the threat (raised 0.005->0.05 so aim tracks the pack, not fixed)
 # DEFAULT = ES (mirrored-sampling Evolution Strategies) + torch.compile fusion. Enemy also ES (co-evolution).
 # Honest validation (3090, 5-seed, 60s, eval vs the FIXED scripted reference — clear% = absolute player skill,
 # not the co-evolving arms race): PPO and ES are a STATISTICAL TIE — PPO 67.8% clear (std ~28) vs ES 65.0%
 # (std ~27); the 2.8pt edge is far inside the noise, so the earlier single-seed "PPO 2.25x" does NOT hold.
-# ES is simpler + more robust -> it's the default. To use tuned PPO instead, pass it through train_multi:
-#   --algo ppo --extra="--compile --keep-best $POLICY_BF16 --ppo-group $PPO_GROUP --ppo-minibatch $PPO_MB"
-# Co-evo is seed-FRAGILE (some seeds collapse for every algo). Stabilization knobs --enemy-every K (slow the
-# enemy) / --enemy-pool N (PSRO-lite league) were tested and did NOT help here (slowing the enemy under-trains
-# the player vs the hard scripted reference: ES+stab 33.6%, pool-only 61.2%) -> left OFF by default.
-echo "device=$DEV  perm=$PERM pop=$POP ticks=$TICKS bullets=$BULLETS  best-of-${RESTARTS} x ${RBUDGET}s  bf16=${POLICY_BF16:-off}"
+# ES is simpler + more robust -> it's the default. To use tuned PPO instead:
+#   --algo ppo --ppo-group $PPO_GROUP --ppo-minibatch $PPO_MB   (lr/ent/std tuned in train_torch.py)
+# For the most robust model despite seed-fragility, run best-of-K manually:  python train_multi.py --restarts 5
+ACCEL="--algo es --compile $POLICY_BF16"
+echo "device=$DEV  data=$DATASET  perm=$PERM pop=$POP ticks=$TICKS cap=$CAP bullets=$BULLETS budget=${BUDGET}s  accel=$ACCEL"
 
-# Why train_multi (best-of-K) instead of a single run: co-evo is seed-FRAGILE — collapse is LATE +
-# OSCILLATORY (the enemy runs away, fitness 2.2->5.6; the player's skill-vs-fixed swings ±50pts iter-to-iter,
-# so a single run's final weight is a lottery: the SAME seed ended 23% at 60s, 75% at 90s). Two fixes stack:
-#  --keep-best  saves the PEAK fixed-eval checkpoint (not the collapsed final) — captures the ~85% peak; and
-#  best-of-K restarts dodges the rare seed that fails EARLY and never peaks (keep-best alone can't save those).
-# Measured (3090, new maps, 8-dim obs + bf16): best-of-5 = 85% clear vs a single run's 21-85% lottery.
-# --eval-vs scripted = a FIXED, game-realistic opponent, so the eval-every trace is interpretable player skill
-# (the old live-enemy metric bounced 6->94->2% as the co-evolving enemy strengthened).
-"$PY" train_multi.py \
-  --restarts $RESTARTS --dataset datasets/tiny --algo es \
-  --perm $PERM --pop $POP --ticks $TICKS --bullets $BULLETS \
-  --budget $RBUDGET --eval-vs scripted --eval-every 6 \
-  --extra="--keep-best $POLICY_BF16" \
-  --player-out ../MonstroSim/models/player.json --enemy-out ../MonstroSim/models/monster.json
-
-# render a 3x3 eval grid of the BEST model (player vs its co-evolved enemy = the deployed pair)
-"$PY" render_eval.py --dataset datasets/tiny \
-  --player ../MonstroSim/models/player.json --enemy ../MonstroSim/models/monster.json \
-  --out datasets/tiny/eval/grid.mp4 || echo "  [render skipped — needs imageio-ffmpeg]"
+# ONE full-budget run (long enough to converge). --keep-best saves the PEAK fixed-eval checkpoint, not the
+# final weights — co-evo collapse is LATE + OSCILLATORY (the enemy runs away, the player's skill-vs-fixed
+# swings ±50pts late), so the last weight is a lottery; keep-best grabs the peak instead.
+# --eval-vs scripted = a FIXED game-realistic opponent, so the eval-every trace is interpretable player skill.
+"$PY" train_torch.py \
+  --dataset "$DATASET" \
+  --perm $PERM --pop $POP --ticks $TICKS --cap $CAP --bullets $BULLETS \
+  --iters $ITERS --budget $BUDGET $ACCEL \
+  --rw-hit $RW_HIT --rw-kill $RW_KILL --rw-survive $RW_SURVIVE --rw-space $RW_SPACE --space-keep $SPACE_KEEP --rw-aim $RW_AIM \
+  --eval --eval-seeds $EVAL_SEEDS --eval-every $EVAL_EVERY --eval-vs scripted --keep-best \
+  --render "$DATASET/eval/grid.mp4"
