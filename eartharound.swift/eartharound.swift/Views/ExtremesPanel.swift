@@ -66,92 +66,27 @@ struct EventBadge: View {
     var body: some View {
         HStack(spacing: 12) {
             Text(event.icon)
-                .font(.system(size: 32))
+                .font(.title)
             VStack(alignment: .leading, spacing: 2) {
-                Text(eventName)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                Text(valueString)
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                Text(event.displayName)
+                    .font(.subheadline.weight(.semibold))
+                Text(event.formattedValue)
+                    .font(.footnote.weight(.medium))
                     .opacity(0.9)
             }
             Spacer()
             if event.count > 1 {
                 Text("x\(event.count)")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.headline)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(backgroundColor)
+                .fill(event.themeColor)
         )
         .foregroundColor(.white)
-    }
-
-    var eventName: String {
-        switch event.type {
-        case .cold: return "Cold"
-        case .heat: return "Heat"
-        case .wind: return "Wind"
-        case .gust: return "Gust"
-        case .rain: return "Rain"
-        case .geomagnetic: return "Geomagnetic"
-        case .solarWind: return "Solar Wind"
-        case .solarFlare: return "Solar Flare"
-        }
-    }
-
-    var iconWithCount: String {
-        event.count > 1 ? "\(event.icon)x\(event.count)" : event.icon
-    }
-
-    var valueString: String {
-        if let str = event.stringValue, event.type == .solarFlare {
-            return str
-        }
-        let valueStr = String(format: "%.1f", event.maxValue)
-        switch event.type {
-        case .cold, .heat: return "\(valueStr)°C"
-        case .wind, .gust: return "\(valueStr)km/h"
-        case .rain: return "\(valueStr)mm"
-        case .geomagnetic: return "Kp \(valueStr)"
-        case .solarWind: return "\(valueStr)km/s"
-        case .solarFlare: return valueStr
-        }
-    }
-
-    var backgroundColor: Color {
-        let settings = SettingsLoader.shared.settings
-        if let config = settings?.extremeTypes.first(where: { $0.id == event.type.rawValue }) {
-            return colorFromString(config.color)
-        }
-
-        // Use softer, HIG-inspired colors with proper contrast
-        switch event.type {
-        case .cold: return Color(red: 0.0, green: 0.48, blue: 0.80) // Blue (softer)
-        case .heat: return Color(red: 1.0, green: 0.23, blue: 0.19) // Red (iOS destructive)
-        case .wind: return Color(red: 0.56, green: 0.56, blue: 0.58) // Gray
-        case .gust: return Color(red: 0.69, green: 0.32, blue: 0.87) // Purple (softer)
-        case .rain: return Color(red: 0.20, green: 0.68, blue: 0.90) // Cyan (softer)
-        case .geomagnetic: return Color(red: 0.20, green: 0.78, blue: 0.35) // Green (iOS success)
-        case .solarWind: return Color(red: 1.0, green: 0.58, blue: 0.0) // Orange (iOS)
-        case .solarFlare: return Color(red: 0.85, green: 0.65, blue: 0.15) // Muted gold
-        }
-    }
-
-    private func colorFromString(_ str: String) -> Color {
-        switch str.lowercased() {
-        case "blue": return .blue
-        case "red": return .red
-        case "gray", "grey": return .gray
-        case "purple": return .purple
-        case "cyan": return .cyan
-        case "green": return .green
-        case "orange": return .orange
-        case "yellow": return .yellow
-        default: return .gray
-        }
     }
 }
 

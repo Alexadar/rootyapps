@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreLocation
+import SwiftUI
 
 class HistoricalWeatherService {
     static let shared = HistoricalWeatherService()
@@ -226,17 +227,113 @@ struct AggregatedEvent: Identifiable, Equatable {
 
     var label: String {
         let countStr = count > 1 ? "x\(count)" : ""
-        let valueStr = String(format: "%.1f", maxValue)
+        return "\(icon)\(countStr) \(formattedValue)"
+    }
+
+    var displayName: String {
         switch type {
-        case .cold: return "\(icon)\(countStr) \(valueStr)°C"
-        case .heat: return "\(icon)\(countStr) \(valueStr)°C"
-        case .wind: return "\(icon)\(countStr) \(valueStr)km/h"
-        case .gust: return "\(icon)\(countStr) \(valueStr)km/h"
-        case .rain: return "\(icon)\(countStr) \(valueStr)mm"
-        case .geomagnetic: return "\(icon)\(countStr) Kp \(valueStr)"
-        case .solarWind: return "\(icon)\(countStr) \(valueStr)km/s"
-        case .solarFlare: return "\(icon)\(countStr) \(stringValue ?? "")"
+        case .cold: return "Cold"
+        case .heat: return "Heat"
+        case .wind: return "Wind"
+        case .gust: return "Gust"
+        case .rain: return "Rain"
+        case .geomagnetic: return "Geomagnetic"
+        case .solarWind: return "Solar Wind"
+        case .solarFlare: return "Solar Flare"
         }
+    }
+
+    var shortDisplayName: String {
+        switch type {
+        case .cold: return "Cold"
+        case .heat: return "Heat"
+        case .wind: return "Wind"
+        case .gust: return "Gust"
+        case .rain: return "Rain"
+        case .geomagnetic: return "Geo"
+        case .solarWind: return "Solar"
+        case .solarFlare: return "Flare"
+        }
+    }
+
+    var formattedValue: String {
+        if let str = stringValue, type == .solarFlare { return str }
+        let v = String(format: "%.1f", maxValue)
+        switch type {
+        case .cold, .heat: return "\(v)°C"
+        case .wind, .gust: return "\(v)km/h"
+        case .rain: return "\(v)mm"
+        case .geomagnetic: return "Kp \(v)"
+        case .solarWind: return "\(v)km/s"
+        case .solarFlare: return v
+        }
+    }
+
+    var themeColor: Color {
+        let settings = SettingsLoader.shared.settings
+        if let config = settings?.extremeTypes.first(where: { $0.id == type.rawValue }) {
+            switch config.color.lowercased() {
+            case "blue": return .blue
+            case "red": return .red
+            case "gray", "grey": return .gray
+            case "purple": return .purple
+            case "cyan": return .cyan
+            case "green": return .green
+            case "orange": return .orange
+            case "yellow": return .yellow
+            default: break
+            }
+        }
+        switch type {
+        case .cold: return Color(red: 0.0, green: 0.48, blue: 0.80)
+        case .heat: return Color(red: 1.0, green: 0.23, blue: 0.19)
+        case .wind: return Color(red: 0.56, green: 0.56, blue: 0.58)
+        case .gust: return Color(red: 0.69, green: 0.32, blue: 0.87)
+        case .rain: return Color(red: 0.20, green: 0.68, blue: 0.90)
+        case .geomagnetic: return Color(red: 0.20, green: 0.78, blue: 0.35)
+        case .solarWind: return Color(red: 1.0, green: 0.58, blue: 0.0)
+        case .solarFlare: return Color(red: 0.85, green: 0.65, blue: 0.15)
+        }
+    }
+
+    var severityExplanation: String? {
+        let value = maxValue
+        switch type {
+        case .cold:
+            if value <= -30 { return "Dangerously low. Can cause frostbite in minutes." }
+            else if value <= -20 { return "Very harsh cold. Extreme caution required." }
+            else if value <= -10 { return "Crosses extreme cold threshold." }
+        case .heat:
+            if value >= 45 { return "Dangerous heat. Potentially life-threatening." }
+            else if value >= 40 { return "Intense heat. Stay hydrated." }
+            else if value >= 35 { return "Crosses extreme heat threshold." }
+        case .wind:
+            if value >= 90 { return "Storm-force. Significant damage possible." }
+            else if value >= 70 { return "Very strong. Structural damage risk." }
+            else if value >= 50 { return "Gale force. Minor damage possible." }
+        case .gust:
+            if value >= 120 { return "Violent gusts. Severe damage capable." }
+            else if value >= 100 { return "Dangerous gusts. Major damage risk." }
+            else if value >= 70 { return "Strong gusts. Damage possible." }
+        case .rain:
+            if value >= 30 { return "Torrential. Severe flooding likely." }
+            else if value >= 15 { return "Very heavy. High flood risk." }
+            else if value >= 5 { return "Crosses heavy rain threshold." }
+        case .geomagnetic:
+            if value >= 8 { return "Severe storm (G4-G5). Power grid issues. Mid-latitude aurora." }
+            else if value >= 6 { return "Strong storm (G3). Lower-latitude aurora." }
+            else if value >= 5 { return "Moderate storm (G1-G2). High-latitude aurora." }
+        case .solarWind:
+            if value >= 800 { return "Exceptionally fast. Major storms likely." }
+            else if value >= 650 { return "Very high speed. Disturbances expected." }
+            else if value >= 500 { return "High-speed stream detected." }
+        case .solarFlare:
+            if let str = stringValue {
+                if str.hasPrefix("X") { return "\(str) - Major flare. Radio blackouts possible." }
+                else if str.hasPrefix("M") { return "\(str) - Medium flare. Aurora likely." }
+            }
+        }
+        return nil
     }
 }
 

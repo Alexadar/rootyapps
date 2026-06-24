@@ -1,10 +1,3 @@
-//
-//  IOSContentView.swift
-//  eartharound.swift
-//
-//  Created by Oleksandr Koreniuk on 06.11.2025.
-//
-
 import SwiftUI
 
 #if os(iOS)
@@ -15,12 +8,16 @@ struct IOSContentView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 16) {
-                    // Today's Extremes
+                    if let error = viewModel.error {
+                        ErrorBanner(message: error.shortMessage) {
+                            Task { await viewModel.fetchAllExtremes() }
+                        }
+                    }
+
                     if let today = viewModel.todayExtremes {
                         ExtremesPanel(title: "Today", extremes: today)
                     }
 
-                    // Yesterday's Extremes
                     if let yesterday = viewModel.yesterdayExtremes {
                         ExtremesPanel(title: "Yesterday", extremes: yesterday)
                     }
@@ -34,6 +31,9 @@ struct IOSContentView: View {
             }
             .navigationTitle("Extremes")
             .navigationBarTitleDisplayMode(.large)
+            .refreshable {
+                await viewModel.fetchAllExtremes()
+            }
             .background(
                 LinearGradient(
                     gradient: Gradient(colors: [

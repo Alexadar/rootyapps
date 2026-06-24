@@ -186,41 +186,6 @@ struct ExtremesPreviewContent: View {
     .padding()
 }
 
-#Preview("Space Weather - Geomagnetic Storm") {
-    let space = SpaceWeatherExtremes(
-        currentKIndex: 7.5,
-        kIndexStatus: "Strong Storm (G3)",
-        solarWindSpeed: 450,
-        latestFlare: nil,
-        flareIntensity: "None",
-        lastUpdate: Date()
-    )
-
-    SpaceWeatherPanel(title: "Space Weather", extremes: space)
-        .padding()
-}
-
-#Preview("Space Weather - Solar Wind + Flare") {
-    let flare = SolarFlareEvent(
-        beginTime: "2025-01-10T12:00:00Z",
-        peakTime: "2025-01-10T12:15:00Z",
-        endTime: "2025-01-10T12:30:00Z",
-        classType: "X2.1",
-        sourceLocation: "N15W30"
-    )
-    let space = SpaceWeatherExtremes(
-        currentKIndex: 3.5,
-        kIndexStatus: "Unsettled",
-        solarWindSpeed: 650,
-        latestFlare: flare,
-        flareIntensity: "X-Class (Extreme)",
-        lastUpdate: Date()
-    )
-
-    SpaceWeatherPanel(title: "Space Weather", extremes: space)
-        .padding()
-}
-
 #Preview("Full System - Weather + Space") {
     let today = DailyExtremes(date: Date(), events: [
         .wind(65.2), .wind(72.8), .gust(85.5), .rain(12.5),

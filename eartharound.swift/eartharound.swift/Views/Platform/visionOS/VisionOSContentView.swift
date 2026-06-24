@@ -42,15 +42,11 @@ struct VisionOSContentView: View {
                             .padding(.horizontal, 60)
                     }
 
-                    // Error Message
-                    if let error = viewModel.errorMessage {
-                        Text(error)
-                            .font(.title3)
-                            .foregroundColor(.red)
-                            .padding(32)
-                            .background(Color.red.opacity(0.1))
-                            .cornerRadius(12)
-                            .padding(.horizontal, 60)
+                    if let error = viewModel.error {
+                        ErrorBanner(message: error.shortMessage) {
+                            Task { await viewModel.fetchAllExtremes() }
+                        }
+                        .padding(.horizontal, 60)
                     }
 
                     if viewModel.isLoading {
