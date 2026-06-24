@@ -4,11 +4,12 @@
 # Same script, both machines. Override the python via:  PY=/path/python ./train.sh
 set -e
 cd "$(dirname "$0")"
-# PY override > mac dev venv > conda env 'fantastic' (3090's known-good deps incl. imageio-ffmpeg for
-# --render; `sh train.sh` otherwise picks base python3 which lacks it and the render step errors) > python3.
+# PY override > conda env 'fantastic' (the project's known-good deps: torch, coremltools, imageio-ffmpeg
+# for --render; base python3 lacks them and the render/export steps error) > python3. No venv — this
+# project uses conda 'fantastic' on both machines.
 _cbase="${CONDA_EXE:+$(dirname "$(dirname "$CONDA_EXE")")}"
 _fant="$_cbase/envs/fantastic/bin/python"
-PY="${PY:-$([ -x ../.venv-torch/bin/python ] && echo ../.venv-torch/bin/python || { [ -x "$_fant" ] && echo "$_fant"; } || command -v python3 || command -v python)}"
+PY="${PY:-$([ -x "$_fant" ] && echo "$_fant" || command -v python3 || command -v python)}"
 
 DEV=$("$PY" - <<'PYEOF'
 import torch

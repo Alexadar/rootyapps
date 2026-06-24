@@ -71,6 +71,52 @@ def apply_attn(params, self_feat, mon_feat, alive, mm_dtype=None):
     return mu.float(), val.float()
 
 
+class AttnDeployModule(torch.nn.Module):
+    """CONVERSION-ONLY (export scaffolding — not training, not runtime). Wraps the forward so torch.jit.trace
+    can capture it for Core ML; at runtime the *Core ML model* does inference in Swift, not this module.
+    Fixed-M, single-player forward for Core ML export. REUSES apply_attn so the deployed math is
+    bit-identical to training (no reimplementation = no torch-vs-CoreML drift). Inputs are one tick for
+    one player: self_feat [Fs], mon_feat [M, Fm], alive [M] (1=live slot, 0=dead/empty). Output: mu [act]
+    — the MEAN action (value head + log_std are training-only, dropped at deploy). M is the fixed slot
+    capacity; mask the unused slots and the masked softmax gives them zero weight (count-agnostic)."""
+
+    def __init__(self, params):
+        super().__init__()
+        self._n = len(params)
+        for i, (W, b) in enumerate(params):
+            self.register_buffer(f"W{i}", W.detach().clone().float())
+            self.register_buffer(f"b{i}", b.detach().clone().float())
+
+    def forward(self, self_feat, mon_feat, alive):
+        params = [(getattr(self, f"W{i}"), getattr(self, f"b{i}")) for i in range(self._n)]
+        sf = self_feat.unsqueeze(0).unsqueeze(0)        # [1,1,Fs]
+        mf = mon_feat.unsqueeze(0).unsqueeze(0)         # [1,1,M,Fm]
+        al = alive.unsqueeze(0).unsqueeze(0)            # [1,1,M]
+        mu, _ = apply_attn(params, sf, mf, al)          # mu [1,1,act]
+        return mu.reshape(-1)                           # [act]
+
+
+def numpy_forward(params_np, log_std, meta, self_feat, mon_feat, alive):
+    """CONVERSION-ONLY (export-time parity oracle — does NOT ship / does NOT run in the game). torch-free
+    numpy mirror of apply_attn (mean head only), used to check the converted Core ML model didn't drift
+    when the env can't run CoreML.predict. params_np = list of (W[in,out], b[out]) numpy arrays."""
+    import numpy as np
+    (Wq, bq), (Wk, bk), (Wv, bv), (We, be), (Wp, bp), _value_head = params_np   # value head dropped at deploy
+    d = Wq.shape[1]
+    q = self_feat @ Wq + bq                              # [d]
+    k = mon_feat @ Wk + bk                               # [M,d]
+    v = mon_feat @ Wv + bv                               # [M,d]
+    score = (k * q[None, :]).sum(-1) / np.sqrt(d)        # [M]
+    score = np.where(alive > 0.5, score, np.finfo(np.float32).min)
+    score = score - score.max()
+    w = np.exp(score) * alive
+    denom = w.sum()
+    w = w / (denom if denom > 0 else 1.0)
+    context = (w[:, None] * v).sum(0)                    # [d]
+    h = np.maximum(np.concatenate([q, context]) @ We + be, 0.0)   # [H]
+    return (h @ Wp + bp).astype(np.float32)              # [act]
+
+
 def to_json(params, log_std, meta, path):
     """meta = {Fs,Fm,d,H,act}. Discriminated JSON (kind=attention) — distinct from the MLP {sizes,w,b}."""
     import json
