@@ -1,0 +1,23 @@
+platform: mac
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/ephemeris.swift/marketing/raw/mac
+  output_folder: /Users/oleksandr/Projects/rootyapps/ephemeris.swift/marketing/aso/mac
+
+style:
+  bg_gradient: true
+  bg_color_top: '#0B1020'
+  bg_color_bottom: '#1A1330'
+  title_color: '#ffffff'
+  subtitle_color: '#9FB4FF'
+  screenshot_zoom: 1.7
+  screenshot_move_down: -40
+  border_width: 10
+  border_radius: 36
+  text_padding: 60
+
+texts:
+  - title: "Ephemeris"
+    subtitle: "Positions, aspects & the synodic cycle"
+  - title: "Mercury's Phases"
+    subtitle: "Conjunctions, retrogrades & stations"

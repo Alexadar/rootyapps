@@ -1,0 +1,31 @@
+platform: ipad
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/ephemeris.swift/marketing/raw/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/ephemeris.swift/marketing/aso/ipad
+
+style:
+  bg_gradient: true
+  bg_color_top: '#0B1020'
+  bg_color_bottom: '#1A1330'
+  title_color: '#ffffff'
+  subtitle_color: '#9FB4FF'
+  screenshot_zoom: 0.85
+  text_row_percent: 16
+  screenshot_row_percent: 84
+  border_width: 8
+  border_radius: 30
+  text_padding: 56
+  screenshot_padding: 56
+
+texts:
+  - title: Ephemeris Sky
+    subtitle: Real planetary positions
+  - title: Every Position
+    subtitle: Tropical, geocentric, of date
+  - title: Aspects
+    subtitle: Computed, not guessed
+  - title: Mercury's Phases
+    subtitle: Conjunctions, retrogrades & stations
+  - title: Event Timeline
+    subtitle: Ingresses, lunations & aspects

@@ -2,12 +2,27 @@ indoxtext.react
 tmp
 keys
 build
+.build
+**/.build
+DerivedData
+**/DerivedData
+*.xcarchive
 aso_media
 Bdgilka
 fantastic_website
 **/screenshots/raw
 
 bigpinkcat.unity
+
+# Xcode user state
+**/xcuserdata
+*.xcuserstate
+# SwiftPM local caches
+**/.swiftpm
+# Editor
+**/.vscode
+# xcodegen-generated project (source of truth is project.yml)
+ephemeris.swift/ephemeris.swift.xcodeproj
 
 # .DS_Store
 .DS_Store
