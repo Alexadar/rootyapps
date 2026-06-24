@@ -93,9 +93,14 @@ def _eval_maps(dataset):
     return sorted(glob.glob(os.path.join(dataset, "eval", "*.json")))
 
 
-def render_grid(gd, weapon, exo, args, player, enemy, dev, out_path):
-    """Render the 3x3 (maps x seeds) synchronized grid video to out_path."""
-    pf = lambda o: P.apply_mlp(player, o)
+def render_grid(gd, weapon, exo, args, player, enemy, dev, out_path, arch="mlp"):
+    """Render the 3x3 (maps x seeds) synchronized grid video to out_path.
+    arch='attn' -> player is an attention bundle (env.player_set_obs + apply_attn, mu only)."""
+    if arch == "attn":
+        import policy_attn as AT
+        pf = lambda bundle: AT.apply_attn(player, bundle[0], bundle[1], bundle[2])[0]
+    else:
+        pf = lambda o: P.apply_mlp(player, o)
     ef = (lambda o: P.apply_enemy(enemy, o)) if enemy is not None else None   # None -> scripted steering
     dataset = getattr(args, "dataset", "") or os.path.join(os.path.dirname(__file__), "datasets", "surround")
     seeds = max(1, getattr(args, "eval_seeds", 3))
@@ -109,6 +114,8 @@ def render_grid(gd, weapon, exo, args, player, enemy, dev, out_path):
     # one batched env for all (maps x seeds) games — captured in a single rollout (no per-game loop)
     sched, real_tot, assign = schedule.build_eval(levels, gd.monsters, seeds, cap=1024)
     env = EnvTorch(sched, weapon, exo, device=dev, bullets=bullets)
+    if arch == "attn":
+        env.player_obs_fn = env.player_set_obs
     per_ticks = [getattr(args, "eval_ticks", 0) or int(lv["duration"] * 30) for lv in levels]
     env_ticks = torch.tensor([per_ticks[assign[e]] for e in range(len(assign))], device=dev, dtype=torch.float32)
     rt = torch.tensor(real_tot, device=dev)
