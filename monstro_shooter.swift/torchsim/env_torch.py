@@ -25,13 +25,12 @@ class EnvTorch:
     #   NOTE: a per-type obs (8+4·6=32, "recognize monster type") was tried + reverted —
     #   it hurt ES (49% vs ~92% clear): 4.5x more params slows ES black-box search, and the obs is slower.
     #   Revisit only with a gradient method (PPO scales with params); keep the aggregate 8-dim obs for ES.
-    enemy_obs = 25         # dirXY, dist, velXY, speed, hp, bulletDirXY, bulletDist,
-    #   + playerClosingVelXY, bulletVelXY (dynamics), + meanHeadXY, nearestNbrDirXY, nearestNbrDist (swarm),
-    #   + 6 WEAPON params (so monsters learn weapon-specific counter-tactics; reacts to real-time weapon swaps)
+    enemy_obs = 29         # base19 + 8 weapon params + 2 player ammo/reload (monsters rush reloads, react to weapon swaps)
+    #   + playerClosingVelXY, bulletVelXY (dynamics), + meanHeadXY, nearestNbrDirXY, nearestNbrDist (swarm)
     enemy_act = 2
-    WFEAT = 6              # normalized weapon features fed to BOTH player & enemy: dmg, rate, pellets, pen, range, spread
-    player_set_fs = 14     # attention player obs — self features (hp, count, wallXY, velXY, aimXY) + 6 weapon params
-    player_set_fm = 11     # attention player obs — per-monster features (see player_set_obs)
+    WFEAT = 8              # weapon features (both sides): dmg, rate, pellets, pen, range, spread, mag-capacity, reload-duration
+    player_set_fs = 18     # self feats: hp, count, wallXY, velXY, aimXY + 8 weapon params + ammo/mag, reload-progress
+    player_set_fm = 12     # per-monster feats (see player_set_obs) + in-range ratio (dist/bullet_range)
 
     def __init__(self, sched, weapon, exo, device="cpu", bullets=32, cfg=None):
         self.device = device
@@ -45,6 +44,7 @@ class EnvTorch:
         self.offset = t(sched["offset"])              # [N,M,2]
         self.mon_speed = t(sched["speed"])            # [N,M]
         self.mon_boxW = t(sched["boxW"])
+        self.mon_mass = t(sched["mass"]) if "mass" in sched else torch.ones_like(self.mon_boxW)  # [N,M] body mass
         self.mon_dmg = t(sched["dmg"])
         self.mon_direct = t(sched["direct"])
         self.hp0 = t(sched["hp0"])                    # [N,M]
@@ -108,15 +108,20 @@ class EnvTorch:
         """Return the accumulated per-term RAW sums as python floats (call after the eval rollout)."""
         return {k: float(v) for k, v in self._panel.items()} if self._panel else {}
 
-    def set_weapon(self, weapon):
+    def set_weapon(self, weapon, range_scale=1.0):
         """Swap the active weapon: set its scalars, compute the normalized weapon feature vector (fed to BOTH
         player and enemy obs so both condition on the weapon), and invalidate the precompute tables (fire gate /
         spread / ring-slots depend on shotDelay/maxDeviation/bulletsPerShot). Per-iteration weapon randomization
-        calls this each iter -> one policy generalizes across weapons at ~1x training cost."""
+        calls this each iter -> one policy generalizes across weapons at ~1x training cost.
+        range_scale (training-only) shrinks bullet_range so spawn-distance can exceed range -> the player must
+        learn to HOLD FIRE / close in (range discipline) in the cheap small maps. It's reflected in wfeat so the
+        player perceives the scaled range, and stored as a 0-d tensor (_brange_t) read in the compiled _core so
+        per-iter value changes do NOT trigger torch.compile recompiles."""
         c = self.cfg
         self.bullet_speed = float(weapon.get("bulletSpeed", 800))
         self.bullet_damage = float(weapon["damage"])
-        self.bullet_range = float(weapon["shotRange"])
+        self.bullet_range = float(weapon["shotRange"]) * range_scale
+        self._brange_t = torch.tensor(self.bullet_range, dtype=torch.float32, device=self.device)  # _core reads this
         self.fire_interval = max(1, round(float(weapon["shotDelay"]) / c.dt))
         self.bullets_per_shot = int(weapon.get("bulletsPerShot", 1))
         self.penetration = max(1, int(weapon.get("penetrationPower", 1)))
@@ -124,9 +129,11 @@ class EnvTorch:
         self.mag_size = int(weapon.get("magazineSize", 10 ** 9))
         self.reload_ticks = max(1, round(float(weapon.get("reloadTime", 0.0)) / c.dt))
         rate = 1.0 / (self.fire_interval * c.dt)                       # shots/sec
-        self.wfeat = torch.tensor(                                     # [6] normalized; broadcast into both obs
+        self.wfeat = torch.tensor(                                     # [8] normalized; broadcast into both obs
             [self.bullet_damage / 50.0, rate / 20.0, self.bullets_per_shot / 6.0,
-             self.penetration / 5.0, self.bullet_range / 1000.0, self.max_dev / 100.0],
+             self.penetration / 5.0, self.bullet_range / 1000.0, self.max_dev / 100.0,
+             min(self.mag_size / 200.0, 1.5),                          # magazine CAPACITY (max ammo): pistol .06, minigun 1.0
+             self.reload_ticks / 150.0],                               # reload DURATION: pistol .4, minigun 1.0 -> plan reloads
             dtype=torch.float32, device=self.device)
         if hasattr(self, "_pc_ticks"):
             del self._pc_ticks      # force _precompute rebuild (new fire_interval / max_dev / K)
@@ -182,14 +189,17 @@ class EnvTorch:
         hp_n = s["mon_hp"] / (self.hp0[None] + c.eps)                # [P,N,M]
         spd_n = (spd / snorm).expand_as(dist)                        # [P,N,M] type behavior: max speed
         dmg_n = (self.mon_dmg[None] / 10.0).expand_as(dist)         # [P,N,M] type behavior: damage (~2-5)
+        in_range = (dist / self.bullet_range).clamp(max=2.0)        # [P,N,M] <1 = killable now (range-discipline signal)
         mon_feat = torch.stack([dirv[..., 0], dirv[..., 1], dist / c.dist_norm,
                                 mvel_n[..., 0], mvel_n[..., 1], closing,
-                                hp_n, spd_n, dmg_n, aim_dot, alive], -1)            # [P,N,M,11]
+                                hp_n, spd_n, dmg_n, aim_dot, alive, in_range], -1)  # [P,N,M,12]
         wall = s["player_pos"] / self.map_half.view(1, self.N, 1)    # [P,N,2]
         P, N = wall.shape[0], wall.shape[1]
         wf = self.wfeat.view(1, 1, -1).expand(P, N, -1)              # [P,N,6] current weapon params (player aware)
+        ammo_n = (s["ammo"] / self.mag_size)[..., None]             # [P,N,1] magazine fraction
+        reload_n = (s["reload_t"] / self.reload_ticks)[..., None]   # [P,N,1] reload progress (1=just started, 0=ready)
         self_feat = torch.cat([(s["player_hp"] / c.player_max_hp)[..., None], (cnt / c.monster_count_norm)[..., None],
-                               wall, s["player_vel"], aim, wf], -1)  # [P,N,14]
+                               wall, s["player_vel"], aim, wf, ammo_n, reload_n], -1)  # [P,N,16]
         return self_feat, mon_feat, alive
 
     def enemy_obs_vec(self, s):
@@ -235,13 +245,15 @@ class EnvTorch:
         nn_dist_n = torch.where(nnhas > 0.5, (nn_dist / c.dist_norm).clamp(max=2.0), torch.full_like(nn_dist, 2.0))
         Pn, Nn, Mn = dist.shape
         wf = self.wfeat.view(1, 1, 1, -1).expand(Pn, Nn, Mn, -1)                  # [P,N,M,6] weapon params (monster aware)
+        ammo_m = (s["ammo"] / self.mag_size)[..., None, None].expand(Pn, Nn, Mn, 1)        # [P,N,M,1] player magazine frac
+        reload_m = (s["reload_t"] / self.reload_ticks)[..., None, None].expand(Pn, Nn, Mn, 1)  # [P,N,M,1] -> monsters rush reloads
         return torch.cat([dirv, (dist / c.dist_norm)[..., None], vel_n,
                           (spd / c.monster_speed_norm)[..., None].expand_as(dist[..., None]),
                           (s["mon_hp"] / (self.hp0[None] + c.eps))[..., None],
                           bdir, bdist_n[..., None],
                           pvel_rel, bvel_n,                                       # item 1: player + bullet dynamics
                           mean_head, nn_dir, nn_dist_n[..., None],                # item 2: align + separation
-                          wf], -1)                                  # [P,N,M,25]  weapon params -> weapon-aware monsters
+                          wf, ammo_m, reload_m], -1)                # [P,N,M,27]  weapon + player ammo/reload (rush reloads)
 
     def _precompute(self, ticks):
         """Precompute per-tick spread (cos/sin), ring-slot one-hots, fire/contact gates, and elapsed —
@@ -311,19 +323,13 @@ class EnvTorch:
         stop = c.player_radius + self.mon_boxW[None] / 2
         move_mask = (alive_b & (dist > stop)).float()
 
-        if enemy_fn is not None:                                    # networked shared enemy (the NPC)
-            s2 = dict(s); s2["mon_pos"] = mon_pos                   # obs from post-spawn positions
-            a_e = enemy_fn(self.enemy_obs_vec(s2))                  # [P,N,M,2]
-            v = torch.tanh(a_e)
-            vn = v / (torch.sqrt((v * v).sum(-1, keepdim=True)) + c.eps)
-            mon_vel = vn * spd[..., None] * move_mask[..., None]
-        else:                                                       # scripted direct/arc (fallback only)
-            direct_vel = dirv * spd[..., None]
-            arc = s["mon_vel"] + dirv * (c.turn_rate * c.dt)
-            arc_vel = arc / (torch.sqrt((arc * arc).sum(-1, keepdim=True)) + c.eps) * spd[..., None]
-            chosen = torch.where((self.mon_direct[None] > 0.5)[..., None], direct_vel, arc_vel)
-            mon_vel = chosen * move_mask[..., None]
-        mon_pos = mon_pos + mon_vel * c.dt
+        # neural enemy (the networked NPC) always drives monster velocity — scripted steering removed
+        s2 = dict(s); s2["mon_pos"] = mon_pos                       # obs from post-spawn positions
+        a_e = enemy_fn(self.enemy_obs_vec(s2))                      # [P,N,M,2]
+        v = torch.tanh(a_e)
+        vn = v / (torch.sqrt((v * v).sum(-1, keepdim=True)) + c.eps)
+        mon_vel = vn * spd[..., None] * move_mask[..., None]
+        mon_pos = mon_pos + mon_vel * c.dt                          # policy-driven (momentum/knock dropped)
 
         # ammo / reload state machine (per-env)
         reload_t = torch.clamp(s["reload_t"] - 1.0, min=0.0)
@@ -357,7 +363,7 @@ class EnvTorch:
 
         bul_pos = bul_pos + bul_vel * c.dt
         bul_dist = bul_dist + torch.sqrt((bul_vel * bul_vel).sum(-1)) * c.dt
-        bul_alive = ((bul_alive > 0.5) & (bul_dist < self.bullet_range)).float()
+        bul_alive = ((bul_alive > 0.5) & (bul_dist < self._brange_t)).float()   # _brange_t: tensor -> no recompile on range change
 
         # collision with penetration (a bullet damages every monster it overlaps; dies after `pen` hits)
         diff = bul_pos[:, :, :, None, :] - mon_pos[:, :, None, :, :]
@@ -386,12 +392,41 @@ class EnvTorch:
         player_hp = s["player_hp"] - applied
         mon_contact = contact_now
 
-        # player move (tanh, exo speed mult, per-arena clamp)
+        # player move (tanh + exo speed; per-arena clamp)
         mv = torch.tanh(a_move)
         lo = (-self.map_half + c.player_half).view(1, N, 1)
         hi = (self.map_half - c.player_half).view(1, N, 1)
-        player_pos = torch.minimum(torch.maximum(
-            s["player_pos"] + mv * (c.player_speed * self.exo_speed * c.dt), lo), hi)
+        player_vel = mv * (c.player_speed * self.exo_speed)         # policy-driven (momentum/knock dropped)
+        player_pos = torch.minimum(torch.maximum(s["player_pos"] + player_vel * c.dt, lo), hi)
+
+        # ---- RIGID BODIES: impenetrable circles, mass-weighted positional de-overlap (vectorized) ----
+        af = alive_a.float()                                         # [P,N,M] real bodies
+        mr = self.mon_boxW[None] * 0.5                              # [1,N,M] monster radius
+        mm = self.mon_mass[None]                                    # [1,N,M] monster mass
+        eye = torch.eye(M, device=mon_pos.device)[None, None]
+        pair = af[:, :, :, None] * af[:, :, None, :] * (1.0 - eye)              # [P,N,M,M] valid pairs
+        rsum = mr[..., :, None] + mr[..., None, :]                              # [1,N,M,M] radius sums
+        mi, mj = mm[..., :, None], mm[..., None, :]
+        fj = mj / (mi + mj + c.eps)                                             # i's positional share (lighter i moves more)
+        msum = mm + c.player_mass + c.eps                                       # [1,N,M] monster+player
+        fmon, fpl = c.player_mass / msum, mm / msum                            # player light -> moves more
+        mh = self.map_half.view(1, N, 1, 1)
+        # single-pass positional de-overlap (fully vectorized, no loop; dense piles may keep minor residual overlap)
+        dvec = mon_pos[:, :, :, None, :] - mon_pos[:, :, None, :, :]            # [P,N,M,M,2] i<-j
+        dlen = torch.sqrt((dvec * dvec).sum(-1) + c.eps)
+        overlap = torch.clamp(rsum - dlen, min=0.0) * pair
+        push = (overlap * fj).clamp(max=c.max_overlap_push)
+        mon_pos = mon_pos + (push[..., None] * (dvec / dlen[..., None])).sum(3)     # monster<->monster
+        rp = mon_pos - player_pos[:, :, None, :]                                # [P,N,M,2] player->monster
+        dpl = torch.sqrt((rp * rp).sum(-1) + c.eps)
+        npl = rp / dpl[..., None]
+        opl = torch.clamp((mr + c.player_radius) - dpl, min=0.0) * af           # monster<->player overlap
+        mon_pos = mon_pos + (opl * fmon).clamp(max=c.max_overlap_push)[..., None] * npl
+        player_pos = player_pos - ((opl * fpl).clamp(max=c.max_overlap_push)[..., None] * npl).sum(2)
+        player_pos = torch.minimum(torch.maximum(player_pos, lo), hi)           # re-clamp player
+        mon_pos = torch.minimum(torch.maximum(mon_pos, -mh), mh)                # keep shoved monsters in-arena
+        # NOTE: momentum/knock impulse dropped — positional de-overlap alone gives impenetrability + frictionless
+        # sliding (tangential motion preserved), without the knock channel saturating and overpowering policy motion.
 
         # player reward: survive + aim-shaping + kills − damage taken (alive-gated)
         threat_raw = ((mon_pos - player_pos[:, :, None, :]) * alive_a.float()[..., None]).sum(2)
@@ -439,22 +474,22 @@ class EnvTorch:
         r_enemy = (self.rw_e_dmg * applied + self.rw_e_approach * approach - self.rw_e_deaths * killed
                    + self.rw_align * align - self.rw_separate * sep_pen)
 
-        if self.decompose and self._panel is not None:    # eval-only analysis (compiled out during training)
-            pn, ae = self._panel, alive_env
-            pn["p_kill"] += (killed * ae).sum();   pn["p_aim"] += (aim_align * ae).sum()
-            pn["p_damage"] += (dmg_dealt * ae).sum(); pn["p_hit"] += (applied * ae).sum()
-            pn["p_space"] += (space * ae).sum();   pn["p_ring"] += (ring_pen * ae).sum()
-            pn["p_effort"] += (effort * ae).sum(); pn["p_shot"] += (fire * ae).sum()
-            pn["p_alive"] += ae.sum()
-            pn["e_dmg"] += applied.sum();   pn["e_approach"] += approach.sum(); pn["e_deaths"] += killed.sum()
-            pn["e_align"] += align.sum();   pn["e_separate"] += sep_pen.sum();  pn["ticks"] += 1.0
-
         ns = dict(player_pos=player_pos, player_hp=player_hp, mon_pos=mon_pos, mon_vel=mon_vel,
                   mon_hp=mon_hp, mon_act=mon_act, mon_contact=mon_contact,
                   bul_pos=bul_pos, bul_vel=bul_vel, bul_alive=bul_alive, bul_dist=bul_dist, bul_pen=bul_pen,
                   ammo=ammo, reload_t=reload_t, kills=kills,
-                  player_vel=mv, player_aim=aim)             # carried for the attention obs (not used by sim)
-        return ns, r_player, r_enemy
+                  player_vel=mv, player_aim=aim)             # normalized tanh action for obs (line 225 rescales to world)
+        # eval-only: emit per-tick reward-term sums as a SEPARATE return (never fed back into state, so no recompile);
+        # the harness (_play_batch) accumulates them. None during training -> pruned, zero overhead, core stays pure calc.
+        panel = None
+        if self.decompose:
+            ae = alive_env
+            panel = {"p_kill": (killed * ae).sum(), "p_aim": (aim_align * ae).sum(), "p_damage": (dmg_dealt * ae).sum(),
+                     "p_hit": (applied * ae).sum(), "p_space": (space * ae).sum(), "p_ring": (ring_pen * ae).sum(),
+                     "p_effort": (effort * ae).sum(), "p_shot": (fire * ae).sum(), "p_alive": ae.sum(),
+                     "e_dmg": applied.sum(), "e_approach": approach.sum(), "e_deaths": killed.sum(),
+                     "e_align": align.sum(), "e_separate": sep_pen.sum(), "ticks": torch.ones((), device=ns["kills"].device)}
+        return ns, r_player, r_enemy, panel
 
     @torch.no_grad()
     def rollout(self, P, ticks, player_fn, enemy_fn):
@@ -468,7 +503,7 @@ class EnvTorch:
         mark = getattr(torch.compiler, "cudagraph_mark_step_begin", lambda: None)
         for t in range(1, ticks + 1):
             mark()                                              # new CUDA-graph step (no-op when eager)
-            s, r_p, r_e = self.step(s, t, player_fn, enemy_fn)
+            s, r_p, r_e, _ = self.step(s, t, player_fn, enemy_fn)
             rp = rp + r_p; re = re + r_e                        # out-of-place: don't alias graph buffers
         return dict(reward_player=rp, reward_enemy=re,
                     kills=s["kills"].clone(), hp=s["player_hp"].clone())

@@ -44,7 +44,7 @@ def _capture_batch(env, ticks_max, real_tot, env_ticks, pf, ef, stride):
     end_idx = torch.full((N,), -1, dtype=torch.long, device=dev)
     with torch.no_grad():
         for tk in range(1, ticks_max + 1):
-            s, _, _ = env.step(s, tk, pf, ef)
+            s, _, _, _ = env.step(s, tk, pf, ef)
             if tk == 1 or tk % stride == 0:
                 snaps.append(dict(
                     pp=s["player_pos"][0].detach().cpu().numpy(),                          # [N,2]

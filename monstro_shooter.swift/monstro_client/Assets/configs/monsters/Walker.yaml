@@ -14,3 +14,4 @@ dyingFrameRate: 0.06
 deathSounds:
   - "monster_walker_1.wav"
   - "monster_walker_2.wav"
+mass: 2.5

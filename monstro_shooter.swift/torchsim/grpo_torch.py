@@ -55,7 +55,7 @@ def grpo_player_step(env, ticks, params, log_std, opt, enemy_params, P_group, ga
         a = (mu + std * torch.randn_like(mu)).detach()       # realized action (sampled, no grad)
         logp = (-0.5 * ((a - mu) / std) ** 2 - log_std - 0.5 * LOG2PI).sum(-1)   # [P,N] grad wrt mu,log_std
         with torch.no_grad():
-            s, r_p, _ = env.step_pa(s, t, a, ef)             # sim grad-free (action + enemy detached)
+            s, r_p, _, _ = env.step_pa(s, t, a, ef)          # sim grad-free (action + enemy detached)
         logps.append(logp); rews.append(r_p)
     logp = torch.stack(logps)                                # [T,P,N]  (graph)
     rew = torch.stack(rews)                                  # [T,P,N]  (detached)

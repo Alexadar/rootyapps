@@ -24,6 +24,9 @@ class WorldConfig:
     # --- OLD-SpriteKit combat rules (canonical) ---
     diagonal_factor: float = 0.75   # move-speed mult when both axes active
     defense_min_floor: float = 0.4  # CombatMath minimum applied damage
+    # --- rigid bodies (impenetrable circles, mass-weighted positional de-overlap; momentum/knock dropped) ---
+    player_mass: float = 1.0        # light vs monsters (mass 1.0-2.5) -> heavy types displace the player more
+    max_overlap_push: float = 40.0  # cap positional de-overlap per pass (avoid teleport on deep stacks)
     # --- obs normalizers (must match between train + deploy) ---
     player_max_hp: float = 100.0
     dist_norm: float = 1000.0

@@ -85,7 +85,7 @@ def main():
             frames = []
             with torch.no_grad():
                 for t in range(1, ticks + 1):
-                    s, _, _ = env.step(s, t, pf, ef)
+                    s, _, _, _ = env.step(s, t, pf, ef)
                     al = ((s["mon_act"][0, 0] > 0.5) & (s["mon_hp"][0, 0] > 0)).int().tolist()
                     ba = (s["bul_alive"][0, 0] > 0.5).int().tolist()
                     frames.append(dict(

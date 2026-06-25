@@ -14,3 +14,4 @@ dyingFrameRate: 0.06
 deathSounds:
   - "monster_avia_1.wav"
   - "monster_avia_2.wav"
+mass: 2.5

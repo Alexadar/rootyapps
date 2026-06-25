@@ -47,7 +47,7 @@ def rollout(env, ticks, params, log_std, vparams, enemy_params, P_group):
         a = mu + std * torch.randn_like(mu)                # [P,N,4]
         obs_l.append(obs); a_l.append(a)
         lp_l.append(_logp(a, mu, log_std)); v_l.append(_value(vparams, obs))
-        s, r_p, _ = env.step_pa(s, t, a, ef)
+        s, r_p, _, _ = env.step_pa(s, t, a, ef)
         r_l.append(r_p)
     return (torch.stack(obs_l), torch.stack(a_l), torch.stack(lp_l), torch.stack(r_l), torch.stack(v_l))
 

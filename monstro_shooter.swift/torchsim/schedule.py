@@ -19,7 +19,7 @@ SPAWN_INTERVAL = 1.0
 
 def _fill_env(arrays, row, level, monsters, seed, M):
     """Fill row `row` of the preallocated arrays from one level, RNG seeded by `seed`."""
-    spawn_tick, off, hp0, speed, boxW, dmg, direct, mtype = arrays
+    spawn_tick, off, hp0, speed, boxW, dmg, direct, mtype, mass = arrays
     shw = level.get("spawn_half_w", SPAWN_HALF_W)     # per-map spawn radius (defaults to legacy box)
     shh = level.get("spawn_half_h", SPAWN_HALF_H)
     rng = np.random.default_rng(seed)
@@ -49,6 +49,7 @@ def _fill_env(arrays, row, level, monsters, seed, M):
                 boxW[row, slot] = float(m["boxWidth"])
                 dmg[row, slot] = float(m["damage"])
                 direct[row, slot] = 1.0 if m.get("useDirectSteering") else 0.0
+                mass[row, slot] = float(m.get("mass", 1.0))
             slot += 1
         if slot >= M:
             break
@@ -64,13 +65,14 @@ def _alloc(n_envs, M):
         np.zeros((n_envs, M), np.float32),         # dmg
         np.ones((n_envs, M), np.float32),          # direct
         np.zeros((n_envs, M), np.int32),           # type (monsterTypeID, for sprite selection)
+        np.ones((n_envs, M), np.float32),          # mass (per-type, for body collision/momentum)
     )
 
 
 def _pack(arrays, M):
-    spawn_tick, off, hp0, speed, boxW, dmg, direct, mtype = arrays
+    spawn_tick, off, hp0, speed, boxW, dmg, direct, mtype, mass = arrays
     return dict(M=M, spawn_tick=spawn_tick, offset=off, hp0=hp0,
-                speed=speed, boxW=boxW, dmg=dmg, direct=direct, type=mtype)
+                speed=speed, boxW=boxW, dmg=dmg, direct=direct, type=mtype, mass=mass)
 
 
 def _fill_chunk(payload):

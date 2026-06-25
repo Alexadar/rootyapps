@@ -7,7 +7,7 @@ N = maps × --perm. Device auto-detected (cuda -> mps -> cpu). --budget caps wal
   python train_torch.py --dataset datasets/surround --perm 8 --pop 12 --ticks 200 --cap 16 --eval
   python train_torch.py --dataset datasets/surround --pop 64 --ticks 400 --budget 3600   # 3090
 """
-import argparse, glob, json, os, time
+import argparse, glob, json, os, random, time
 import torch
 from tqdm import tqdm
 import data, schedule
@@ -104,7 +104,10 @@ def _play_batch(env, ticks_max, real_tot, env_ticks, pf, ef):
     fhp = torch.full((N,), hp_max, device=dev)
     with torch.no_grad():
         for tk in range(1, ticks_max + 1):
-            s, _, _ = env.step(s, tk, pf, ef)
+            s, _, _, panel = env.step(s, tk, pf, ef)
+            if panel is not None and env._panel is not None:               # accumulate eval reward-term sums here (out of core)
+                for _k, _v in panel.items():
+                    env._panel[_k] += _v
             hp = s["player_hp"][0]; k = s["kills"][0]                       # [N]
             cross = ((hp <= 0) | (k >= real_tot) | (tk >= env_ticks)).float()
             newly = (1.0 - done) * cross
@@ -241,6 +244,8 @@ def main():
     #   asymmetric cadence — slow the enemy so the player can converge instead of chasing a moving target).
     ap.add_argument("--enemy-pool", type=int, default=1)    # league size: player trains vs a random snapshot
     #   from the last N enemies (1 = latest only = old behavior; N>1 = PSRO-lite, damps oscillation).
+    ap.add_argument("--freeze-enemy", action="store_true")  # freeze the enemy net: never ES-update it; the player
+    #   trains vs a STATIC neural opponent (load a trained enemy via --resume). Stops the arms-race runaway.
     ap.add_argument("--algo", default="es", choices=["es", "grpo", "ppo"])  # policy-gradient player (+ ES enemy)
     ap.add_argument("--player-arch", default="mlp", choices=["mlp", "attn"])  # attn = single-query cross-attention
     #   over the per-monster SET obs (surroundings-aware); requires --algo ppo, not --engine jax.
@@ -293,10 +298,9 @@ def main():
     ap.add_argument("--eval-map", default="")            # default: dataset/eval/*.json or eval_unseen.json
     ap.add_argument("--eval-ticks", type=int, default=0)  # 0 -> landingDuration*30 (full map)
     ap.add_argument("--eval-seeds", type=int, default=3)  # seeds per eval map (held-out distribution)
-    ap.add_argument("--eval-vs", default="fixed", choices=["fixed", "scripted", "live"])  # eval opponent:
-    #   fixed = frozen iter-0 enemy snapshot (held constant -> clean absolute player-progress metric);
-    #   scripted = canonical scripted monster steering (fixed, game-realistic, harder reference);
-    #   live = the co-evolving enemy (the OLD metric — measures the arms race, clear% bounces. diagnostic only).
+    ap.add_argument("--eval-vs", default="live", choices=["fixed", "live"])  # eval opponent (always neural):
+    #   fixed = frozen enemy snapshot (held constant -> clean absolute player-progress metric);
+    #   live = the current enemy (co-evolving, or static if --freeze-enemy). Comparable across iters when frozen.
     ap.add_argument("--eval-every", type=int, default=0)  # run a quick 1-seed eval every K iters (0=off)
     ap.add_argument("--keep-best", action="store_true")   # save the PEAK fixed-eval checkpoint, not the final
     #   weights. Diagnosis: co-evo collapse is LATE — bad seeds peak mid-run (77-85%) then degrade to 23-53%
@@ -309,6 +313,7 @@ def main():
     ap.add_argument("--eval-panel", action="store_true") # decompose eval: print every reward-term RAW sum + sign + weight
     ap.add_argument("--logdir", default="")              # tensorboard dir: per-iter fitness/PPO-loss + per-eval metrics + reward panel
     ap.add_argument("--weapons", default="")             # comma-sep weapon ids to cycle, e.g. 1,5,4 (pistol,shotgun,minigun); "" = id 1
+    ap.add_argument("--range-rand", default="")          # "lo,hi" -> per-iter random bullet_range scale (e.g. 0.3,1.0); forces out-of-range -> range discipline
     args = ap.parse_args()
     if args.player_arch == "attn":
         assert args.algo == "ppo", "--player-arch attn requires --algo ppo (gradients; ES can't scale to it)"
@@ -364,6 +369,8 @@ def main():
         print(f"  resume: loaded {args.resume} (it={_ckpt.get('it', 0)})")
     enemy_ref = [(W.clone(), b.clone()) for W, b in enemy]   # frozen iter-0 snapshot = the fixed eval opponent
     gen = torch.Generator().manual_seed(42 + sd)         # CPU generator (noise moved to device in es)
+    rrng = random.Random(123 + sd)                        # range-randomization RNG (separate, doesn't perturb ES stream)
+    rr = [float(x) for x in args.range_rand.split(",")] if args.range_rand else None
     # enemy league (PSRO-lite): pool of past enemy snapshots the player trains against (see --enemy-pool).
     import random as _random
     pool_rng = _random.Random(1234 + sd)
@@ -373,9 +380,8 @@ def main():
         if args.enemy_pool <= 1:
             return enemy                                 # latest only (old behavior, exact)
         return enemy_pool[pool_rng.randrange(len(enemy_pool))]
-    # which opponent eval/render run against (see --eval-vs): fixed snapshot, scripted (None), or live enemy.
-    eval_enemy = lambda: (enemy_ref if args.eval_vs == "fixed"
-                          else None if args.eval_vs == "scripted" else enemy)
+    # which opponent eval/render run against (see --eval-vs): fixed snapshot or live co-evolving enemy.
+    eval_enemy = lambda: (enemy_ref if args.eval_vs == "fixed" else enemy)
     if args.keep_best and args.eval_every <= 0:           # keep-best needs periodic fixed-eval to score on
         args.eval_every = 20
     best_keep = (_ckpt["best_keep"] if (_ckpt is not None and _ckpt.get("best_keep")) else
@@ -442,8 +448,9 @@ def main():
                 unit=("s" if use_budget else "it"), dynamic_ncols=True)
     it = _ckpt["it"] if _ckpt is not None else 0
     while it < args.iters:
-        env.set_weapon(weapon_cyc[it % len(weapon_cyc)])      # per-iter weapon randomization (1 policy generalizes)
-        train_player = (it % args.enemy_every != args.enemy_every - 1)   # enemy trains 1-in-K; player otherwise
+        rscale = rrng.uniform(rr[0], rr[1]) if rr else 1.0    # per-iter range scale -> forces out-of-range regime
+        env.set_weapon(weapon_cyc[it % len(weapon_cyc)], rscale)   # per-iter weapon + range randomization
+        train_player = args.freeze_enemy or (it % args.enemy_every != args.enemy_every - 1)   # enemy 1-in-K (frozen -> never)
         cur_ticks = tick_at(it, args)                          # curriculum: short rollouts early -> full
         if train_player:
             opp = opponent()                                    # league opponent (latest, or sampled snapshot)

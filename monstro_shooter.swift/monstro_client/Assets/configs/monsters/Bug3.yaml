@@ -14,3 +14,4 @@ dyingFrameRate: 0.06
 deathSounds:
   - "monster_bug_1.wav"
   - "monster_bug_2.wav"
+mass: 1.0

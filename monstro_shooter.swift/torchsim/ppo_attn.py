@@ -49,7 +49,7 @@ def rollout(env, ticks, params, log_std, enemy_params, P_group, mm_dtype=None):
         a = mu + std * torch.randn_like(mu)
         sf_l.append(sf); mf_l.append(mf); al_l.append(al)
         a_l.append(a); lp_l.append(_logp(a, mu, log_std)); v_l.append(val)
-        s, r_p, _ = env.step_pa(s, t, a, ef)
+        s, r_p, _, _ = env.step_pa(s, t, a, ef)
         r_l.append(r_p)
     return (torch.stack(sf_l), torch.stack(mf_l), torch.stack(al_l),
             torch.stack(a_l), torch.stack(lp_l), torch.stack(r_l), torch.stack(v_l))
