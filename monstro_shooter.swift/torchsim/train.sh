@@ -42,7 +42,7 @@ fi
 # --- dataset / run params (NOT device-scaled; each is env-overridable, e.g. BUDGET=600 ./train.sh) ---
 DATASET="${DATASET:-datasets/surround}"
 TICKS="${TICKS:-600}"      # MUST cover the map round so the game can complete (clear/death). surround = 20s = 600
-CAP="${CAP:-16}"           # monster slots = max simultaneous monsters a map can have (surround totals <=16)
+CAP="${CAP:-32}"           # monster slots = max simultaneous monsters a map can have (surround totals <=16)
 BULLETS="${BULLETS:-8}"    # bullet ring slots; >= weapon's max simultaneous alive bullets (pistol=2; size up for fast guns)
 BUDGET="${BUDGET:-300}"    # wall-time seconds (5 min). NOTE: the keep-out-ring reward is PURE-NEURAL (PPO learns
 #   its own monster predictor from discounted return — weaker/longer-horizon than hand-coded), so 5 min may

@@ -116,7 +116,55 @@ def _play_batch(env, ticks_max, real_tot, env_ticks, pf, ef):
     return fhp > 0, fk, hp_max - fhp
 
 
-def run_eval(gd, weapon, exo, args, player, enemy, dev, seeds, arch="mlp"):
+def _print_panel(args, pan):
+    """Print the reward-decomposition panel: per-tick RAW behavioral value, the weight & sign it enters the
+    reward with, and the resulting weighted contribution. Shows which terms are dead/dominant and what the
+    policy is actually DOING (raw value is meaningful even for weight-0 terms). Weights come from args (the
+    actual training weights), not the fresh eval env which carries only defaults."""
+    if not pan:
+        return
+    tk = max(pan.get("ticks", 1.0), 1.0)
+    print("  reward panel (per tick — raw behavioral value, weight, sign, weighted contribution):")
+    for lab, key, sgn, w in _reward_terms(args):
+        raw = pan.get(key, 0.0) / tk
+        print(f"    {lab:11s} raw={raw:11.3f}  w={w:8.4f}  {'+' if sgn > 0 else '-'}  contrib={sgn * w * raw:+11.4f}")
+
+
+def _reward_terms(args):
+    """(label, panel-key, sign-in-reward, weight) for every reward term — single source for panel + tb.
+    The hardcoded enemy weights (0.1/0.0008/0.02) mirror env_torch._core."""
+    return [("kill", "p_kill", +1, args.rw_kill), ("aim", "p_aim", +1, args.rw_aim),
+            ("damage", "p_damage", +1, args.rw_damage), ("hit", "p_hit", -1, args.rw_hit),
+            ("space", "p_space", +1, args.rw_space), ("ring", "p_ring", -1, args.rw_ring),
+            ("effort", "p_effort", -1, args.rw_effort), ("shot", "p_shot", -1, args.rw_shot),
+            ("e_dmg", "e_dmg", +1, args.rw_e_dmg), ("e_approach", "e_approach", +1, args.rw_e_approach),
+            ("e_deaths", "e_deaths", -1, args.rw_e_deaths), ("e_align", "e_align", +1, args.rw_align),
+            ("e_separate", "e_separate", -1, args.rw_separate)]
+
+
+def _tb_eval(writer, args, it, rows, panel):
+    """Log eval metrics + per-tick reward RAW values AND weighted CONTRIBUTIONS. The contrib curves directly
+    expose OVER-powered terms (dominant |contrib|) and UNDER-powered ones (~0) from a single run."""
+    if writer is None:
+        return
+    def agg(rs, tag):
+        n = max(len(rs), 1)
+        writer.add_scalar(f"eval{tag}/survival_pct", 100.0 * sum(r[1] for r in rs) / n, it)
+        writer.add_scalar(f"eval{tag}/kills", sum(r[2] for r in rs) / n, it)
+        writer.add_scalar(f"eval{tag}/clear_pct", 100.0 * sum(r[2] / max(r[3], 1) for r in rs) / n, it)
+        writer.add_scalar(f"eval{tag}/dmg", sum(r[4] for r in rs) / n, it)
+    agg(rows, "")                                         # overall
+    for w in sorted(set(r[0].split(":")[0] for r in rows if ":" in r[0])):   # per-weapon curves
+        agg([r for r in rows if r[0].split(":")[0] == w], "_" + w)
+    if panel:
+        tk = max(panel.get("ticks", 1.0), 1.0)
+        for lab, key, sgn, w in _reward_terms(args):
+            raw = panel.get(key, 0.0) / tk
+            writer.add_scalar(f"reward_raw/{lab}", raw, it)
+            writer.add_scalar(f"reward_contrib/{lab}", sgn * w * raw, it)
+
+
+def run_eval(gd, weapons, exo, args, player, enemy, dev, seeds, arch="mlp"):
     """Play every held-out (map x seed) game in ONE batched rollout (no map/seed loop).
     Returns (rows, maps); row = (name, survived, kills, M, dmg). enemy=None -> scripted monster steering
     (the fixed, game-realistic reference opponent), so eval measures absolute player skill, not the
@@ -132,16 +180,24 @@ def run_eval(gd, weapon, exo, args, player, enemy, dev, seeds, arch="mlp"):
     levels = [data.sim_level(data.load_map(m)) for m in maps]
     names = [os.path.basename(m) for m in maps]
     sched, real_tot, assign = schedule.build_eval(levels, gd.monsters, seeds, cap=1024)
-    env = EnvTorch(sched, weapon, exo, device=dev, bullets=args.bullets)
+    env = EnvTorch(sched, weapons[0], exo, device=dev, bullets=args.bullets)
     if arch == "attn":
         env.player_obs_fn = env.player_set_obs
     per_ticks = [args.eval_ticks or int(lv["duration"] * 30) for lv in levels]
     env_ticks = torch.tensor([per_ticks[assign[e]] for e in range(len(assign))], device=dev, dtype=torch.float32)
     rt = torch.tensor(real_tot, device=dev)
-    surv, fk, dmg = _play_batch(env, int(env_ticks.max()), rt, env_ticks, pf, ef)
-    rows = [(names[assign[e]], bool(surv[e]), int(fk[e]), int(real_tot[e]), float(dmg[e]))
-            for e in range(len(assign))]
-    return rows, maps
+    rows, panel = [], {}
+    for w in weapons:                                    # one weapon-conditioned policy, evaluated per weapon
+        wname = str(w.get("name", w.get("id", "?")))
+        env.set_weapon(w)
+        env.decompose = True; env.reset_panel()          # cheap at eval scale; powers --eval-panel + tensorboard
+        surv, fk, dmg = _play_batch(env, int(env_ticks.max()), rt, env_ticks, pf, ef)
+        panel = env.read_panel()                         # representative (last weapon)
+        rows += [(f"{wname}:{names[assign[e]]}", bool(surv[e]), int(fk[e]), int(real_tot[e]), float(dmg[e]))
+                 for e in range(len(assign))]
+    if getattr(args, "eval_panel", False):
+        _print_panel(args, panel)
+    return rows, maps, panel
 
 
 def eval_line(rows):
@@ -154,13 +210,13 @@ def eval_line(rows):
 
 
 def eval_report(rows, maps, seeds, dev):
-    print(f"\nEval ({len(maps)} held-out maps x {seeds} seeds = {len(rows)} games, dev={dev}):")
-    print(f"  {eval_line(rows)}")
-    for mpath in maps:
-        name = os.path.basename(mpath)
-        mr = [r for r in rows if r[0] == name]
-        print(f"    {name:14s} survived {sum(r[1] for r in mr)}/{len(mr)}  "
-              f"kills {sum(r[2] for r in mr)/len(mr):.1f}/{mr[0][3]}  dmg {sum(r[4] for r in mr)/len(mr):.0f}")
+    print(f"\nEval ({len(maps)} maps x {seeds} seeds = {len(rows)} games, dev={dev}):")
+    print(f"  overall  {eval_line(rows)}")
+    # rows are tagged "weapon:mapname" -> break down per weapon (the generalization readout)
+    weapons = sorted(set(r[0].split(":")[0] for r in rows if ":" in r[0]))
+    for w in (weapons or [None]):
+        wr = [r for r in rows if w is None or r[0].split(":")[0] == w] if w else rows
+        print(f"    {(w or 'all'):10s} {eval_line(wr)}")
 
 
 def main():
@@ -217,6 +273,9 @@ def main():
     ap.add_argument("--ring-radius", type=float, default=90.0)  # personal-space radius (~2 monster bodies, >damage line)
     ap.add_argument("--rw-effort", type=float, default=0.0)   # economical move cost (∝|move|) -> still when safe
     ap.add_argument("--rw-shot", type=float, default=0.0)     # economical fire cost -> trigger discipline (pair w/ rw-damage)
+    ap.add_argument("--rw-e-dmg", type=float, default=0.1)       # enemy: reward per HP dealt to player (was hardcoded)
+    ap.add_argument("--rw-e-approach", type=float, default=0.0008)  # enemy: DENSE closing reward — lower to slow the enemy
+    ap.add_argument("--rw-e-deaths", type=float, default=0.02)   # enemy: penalty per monster killed (was hardcoded)
     ap.add_argument("--rw-align", type=float, default=0.0)    # enemy: reward coherent swarm heading (flocking alignment)
     ap.add_argument("--rw-separate", type=float, default=0.0)  # enemy: penalty for monsters stacking (anti-overlap)
     ap.add_argument("--sep-radius", type=float, default=50.0)  # monster separation circle (~1 body)
@@ -245,6 +304,11 @@ def main():
     ap.add_argument("--render", default="")              # render a 3x3 eval grid video to this path at end
     ap.add_argument("--player-out", default="../MonstroSim/models/player.json")
     ap.add_argument("--enemy-out", default="../MonstroSim/models/monster.json")
+    ap.add_argument("--resume", default="")              # load full training state (attn weights+Adam+glog+enemy+it) if file exists
+    ap.add_argument("--ckpt-out", default="")            # save full training state here at the end (for --resume)
+    ap.add_argument("--eval-panel", action="store_true") # decompose eval: print every reward-term RAW sum + sign + weight
+    ap.add_argument("--logdir", default="")              # tensorboard dir: per-iter fitness/PPO-loss + per-eval metrics + reward panel
+    ap.add_argument("--weapons", default="")             # comma-sep weapon ids to cycle, e.g. 1,5,4 (pistol,shotgun,minigun); "" = id 1
     args = ap.parse_args()
     if args.player_arch == "attn":
         assert args.algo == "ppo", "--player-arch attn requires --algo ppo (gradients; ES can't scale to it)"
@@ -263,6 +327,7 @@ def main():
     env.rw_ring, env.ring_radius = args.rw_ring, args.ring_radius   # keep-out circle (pure-neural predictor)
     env.rw_effort, env.rw_shot = args.rw_effort, args.rw_shot        # economical actions (move/fire cost)
     env.rw_align, env.rw_separate, env.sep_radius = args.rw_align, args.rw_separate, args.sep_radius   # swarm
+    env.rw_e_dmg, env.rw_e_approach, env.rw_e_deaths = args.rw_e_dmg, args.rw_e_approach, args.rw_e_deaths  # enemy core
     Ppop = 2 * args.pop
     jr = None
     if args.engine == "jax":
@@ -280,8 +345,12 @@ def main():
         env._core = torch.compile(env._core, mode=mode)
         print(f"  torch.compile: ON (mode={mode or 'default'})")
     gd_eval = data.GameData(args.client)                  # loaded once; reused by periodic + final eval
-    weapon_eval = gd_eval.weapons.get(1) or next(iter(gd_eval.weapons.values()))
+    if args.weapons:                                      # weapon-conditioned policy: cycle these each iter
+        weapon_cyc = [gd_eval.weapons[int(i)] for i in args.weapons.split(",")]
+    else:
+        weapon_cyc = [gd_eval.weapons.get(1) or next(iter(gd_eval.weapons.values()))]
     exo_eval = gd_eval.exoskeletons.get(1) or next(iter(gd_eval.exoskeletons.values()))
+    print(f"  weapons: {[w.get('name', w.get('id')) for w in weapon_cyc]} (cycled per iter)")
     src = os.path.basename(args.dataset.rstrip("/")) if args.dataset else ("map" if args.map else "swiper")
     print(f"Torch co-evolution [{src}]: {n_maps} maps x {args.perm} = N={n_envs} envs, M={env.M}, "
           f"B={env.B}, ticks={args.ticks}, pop={args.pop}, iters={args.iters}, dev={dev}")
@@ -289,6 +358,10 @@ def main():
     sd = args.seed                                        # net-init offset (multi-seed validation; sd=0 = original)
     player = P.init_mlp(PLAYER_SIZES, device=dev, seed=7 + sd)
     enemy = P.init_mlp(ENEMY_SIZES, device=dev, seed=11 + sd)
+    _ckpt = torch.load(args.resume, map_location=dev) if (args.resume and os.path.exists(args.resume)) else None
+    if _ckpt is not None:                                  # resume: enemy first (closures below capture it)
+        enemy = [(W.to(dev), b.to(dev)) for W, b in _ckpt["enemy"]]
+        print(f"  resume: loaded {args.resume} (it={_ckpt.get('it', 0)})")
     enemy_ref = [(W.clone(), b.clone()) for W, b in enemy]   # frozen iter-0 snapshot = the fixed eval opponent
     gen = torch.Generator().manual_seed(42 + sd)         # CPU generator (noise moved to device in es)
     # enemy league (PSRO-lite): pool of past enemy snapshots the player trains against (see --enemy-pool).
@@ -305,7 +378,8 @@ def main():
                           else None if args.eval_vs == "scripted" else enemy)
     if args.keep_best and args.eval_every <= 0:           # keep-best needs periodic fixed-eval to score on
         args.eval_every = 20
-    best_keep = {"score": -1.0, "player": None, "enemy": None, "it": -1, "log_std": None}
+    best_keep = (_ckpt["best_keep"] if (_ckpt is not None and _ckpt.get("best_keep")) else
+                 {"score": -1.0, "player": None, "enemy": None, "it": -1, "log_std": None})
     def keep_score(rows):                                 # clear-dominant, small survival bonus (both 0..1)
         n = len(rows)
         return sum(r[2] / max(r[3], 1) for r in rows) / n + 0.25 * (sum(r[1] for r in rows) / n)
@@ -334,6 +408,10 @@ def main():
         aparams, glog = AT.init_attn(attn_meta["Fs"], attn_meta["Fm"], attn_meta["d"], attn_meta["H"],
                                      attn_meta["act"], dev, seed=7 + sd, std0=args.ppo_std)
         popt = torch.optim.Adam(AT.opt_params(aparams, glog), lr=args.ppo_lr)
+        if _ckpt is not None:                              # restore attn weights + glog + Adam moments IN PLACE
+            for (W, b), (cW, cb) in zip(aparams, _ckpt["aparams"]):
+                W.data.copy_(cW.to(dev)); b.data.copy_(cb.to(dev))
+            glog.data.copy_(_ckpt["glog"].to(dev)); popt.load_state_dict(_ckpt["popt"])
         player = AT.mean_params(aparams)
         ppo = ("attn", PPOA, AT, aparams, glog, popt)
         print(f"  algo: PPO ATTENTION player (d={args.attn_dim} H={args.attn_hidden} group={args.ppo_group} "
@@ -351,14 +429,20 @@ def main():
     best = 0.0
     hist = {"player": [], "enemy": []}
     last = {"player": float("nan"), "enemy": float("nan")}
+    writer = None
+    if args.logdir:
+        from torch.utils.tensorboard import SummaryWriter
+        writer = SummaryWriter(args.logdir)
+        print(f"  tensorboard -> {args.logdir}   (view: tensorboard --logdir {os.path.dirname(args.logdir) or args.logdir})")
     t0 = time.time()
     use_budget = args.budget > 0
     # When budgeted, the bar tracks WALL-TIME (fills to --budget seconds) so the ETA is the real
     # stop time — not tqdm projecting all --iters (which the budget halts long before).
     pbar = tqdm(total=(round(args.budget) if use_budget else args.iters), desc="co-evo",
                 unit=("s" if use_budget else "it"), dynamic_ncols=True)
-    it = 0
+    it = _ckpt["it"] if _ckpt is not None else 0
     while it < args.iters:
+        env.set_weapon(weapon_cyc[it % len(weapon_cyc)])      # per-iter weapon randomization (1 policy generalizes)
         train_player = (it % args.enemy_every != args.enemy_every - 1)   # enemy trains 1-in-K; player otherwise
         cur_ticks = tick_at(it, args)                          # curriculum: short rollouts early -> full
         if train_player:
@@ -371,6 +455,8 @@ def main():
                                               vcoef=args.ppo_vcoef, ent=args.ppo_ent, mm_dtype=pdt)
                 player = AT.mean_params(aparams)
                 best = ret; hist["player"].append(ret); last["player"] = ret
+                if writer is not None:
+                    writer.add_scalar("ppo/policy_loss", float(_pl), it); writer.add_scalar("ppo/value_loss", float(_vl), it)
             elif ppo is not None:                               # MLP PPO player step vs the frozen ES enemy
                 _, PPO, G, gparams, glog, vparams, popt = ppo
                 _pl, _vl, ret = PPO.ppo_step(env, cur_ticks, gparams, glog, vparams, popt, opp, args.ppo_group,
@@ -379,12 +465,16 @@ def main():
                                              vcoef=args.ppo_vcoef, ent=args.ppo_ent)
                 player = G.mean_params(gparams)
                 best = ret; hist["player"].append(ret); last["player"] = ret
+                if writer is not None:
+                    writer.add_scalar("ppo/policy_loss", float(_pl), it); writer.add_scalar("ppo/value_loss", float(_vl), it)
             elif grpo is not None:                              # GRPO player step vs the frozen ES enemy
                 G, gparams, glog, gopt = grpo
                 _loss, ret = G.grpo_player_step(env, cur_ticks, gparams, glog, gopt, opp,
                                                 args.grpo_group, gamma=args.grpo_gamma, ent_coef=args.grpo_ent)
                 player = G.mean_params(gparams)                 # refresh the deterministic mean for eval/opponent
                 best = ret; hist["player"].append(ret); last["player"] = ret
+                if writer is not None:
+                    writer.add_scalar("ppo/policy_loss", float(_pl), it); writer.add_scalar("ppo/value_loss", float(_vl), it)
             else:
                 def fitness(stacked):
                     if jr is not None:
@@ -411,10 +501,14 @@ def main():
             pbar.update(1)
         pbar.set_postfix(it=it, phase="player" if train_player else "enemy",
                          player=f"{last['player']:.2f}", enemy=f"{last['enemy']:.3f}", best=f"{best:.2f}")
+        if writer is not None:
+            writer.add_scalar("fitness/player", last["player"], it)
+            writer.add_scalar("fitness/enemy", last["enemy"], it)
         if args.eval_every and it > 0 and it % args.eval_every == 0:
             ev_seeds = 2 if args.keep_best else 1         # keep-best: 2 seeds for a less noisy checkpoint score
-            rows, _ = run_eval(gd_eval, weapon_eval, exo_eval, args, player, eval_enemy(), dev, seeds=ev_seeds,
-                               arch=args.player_arch)
+            rows, _, panel = run_eval(gd_eval, weapon_cyc, exo_eval, args, player, eval_enemy(), dev, seeds=ev_seeds,
+                                      arch=args.player_arch)
+            _tb_eval(writer, args, it, rows, panel)
             tqdm.write(f"  [eval @ it{it:4d} vs {args.eval_vs}]  {eval_line(rows)}")
             if args.keep_best:
                 sc = keep_score(rows)
@@ -448,22 +542,30 @@ def main():
         P.to_json(save_player, PLAYER_SIZES, args.player_out)
     P.to_json(save_enemy, ENEMY_SIZES, args.enemy_out)
     print(f"saved -> {args.player_out}  +  {args.enemy_out}")
+    if args.ckpt_out and args.player_arch == "attn":         # full-state checkpoint for --resume (current working state)
+        torch.save({"aparams": aparams, "glog": glog, "popt": popt.state_dict(),
+                    "enemy": enemy, "it": it, "best_keep": best_keep}, args.ckpt_out)
+        print(f"  ckpt -> {args.ckpt_out} (it={it})")
     player, enemy = save_player, save_enemy               # final --eval / --render reflect the deployed model
 
     if args.eval:
         print(f"  (eval opponent: --eval-vs {args.eval_vs})")
-        rows, maps = run_eval(gd_eval, weapon_eval, exo_eval, args, player, eval_enemy(), dev, max(1, args.eval_seeds),
-                              arch=args.player_arch)
+        rows, maps, panel = run_eval(gd_eval, weapon_cyc, exo_eval, args, player, eval_enemy(), dev, max(1, args.eval_seeds),
+                                     arch=args.player_arch)
+        _tb_eval(writer, args, it, rows, panel)
         eval_report(rows, maps, args.eval_seeds, dev)
 
     if args.render:
         try:                                                  # non-fatal: models are already saved above
             import render_eval
-            render_eval.render_grid(gd_eval, weapon_eval, exo_eval, args, player, eval_enemy(), dev, args.render,
+            render_eval.render_grid(gd_eval, weapon_cyc, exo_eval, args, player, eval_enemy(), dev, args.render,
                                     arch=args.player_arch)
         except Exception as e:
             print(f"  [render skipped] {type(e).__name__}: {e}\n  (models saved OK; video needs imageio-ffmpeg "
                   f"— `pip install imageio-ffmpeg`, or run in the conda env that has it.)")
+
+    if writer is not None:
+        writer.close()
 
 
 if __name__ == "__main__":

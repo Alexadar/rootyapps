@@ -58,14 +58,13 @@ def apply_attn(params, self_feat, mon_feat, alive, mm_dtype=None):
     k = torch.matmul(mf, cast(Wk)) + cast(bk)                    # [P,N,M,d]
     v = torch.matmul(mf, cast(Wv)) + cast(bv)                    # [P,N,M,d]
     score = (k * q.unsqueeze(-2)).sum(-1).float() / math.sqrt(d)             # [...,M] -> fp32 for the softmax
-    # ⚠ Core ML / fp16 EXPORT CLIFF (the ONLY fp16-unsafe spot in this forward — everything else runs on
-    # normalized ~O(1) values that fp16 handles). finfo.float32.min ≈ -3.4e38 is OUT of fp16 range (±65504),
-    # so on ANE/fp16 it overflows to -Inf; a fully-masked row then does -Inf - (-Inf) = NaN -> exp(NaN) = NaN,
-    # and NaN·alive(=0) = NaN (not 0), which the denom guard below (NaN<=0 is False) does NOT catch -> the
-    # softmax/context goes NaN -> garbage action. fp32 is clean (finite const: -3.4e38 - -3.4e38 = 0). When we
-    # export to Core ML, FIX this one line for fp16-safety: either pin the export to fp32/CPU, or swap finfo.min
-    # for a finite fp16-safe const like -1e4 (exp(-1e4)=0 identically in fp16 AND fp32, so training is unchanged).
-    neg = torch.finfo(torch.float32).min
+    # fp16-SAFE masked-softmax constant (this was the ONLY fp16-unsafe spot in this forward). finfo.float32.min
+    # ≈ -3.4e38 is OUT of fp16 range (±65504), so on Core ML/ANE it overflowed to -Inf; a fully-masked row then
+    # did -Inf - (-Inf) = NaN -> exp(NaN) = NaN, and NaN·alive(=0) = NaN (not 0), which the denom guard below
+    # (NaN<=0 is False) does NOT catch -> garbage action. -1e4 is finite in fp16 AND fp32, and exp(-1e4) underflows
+    # to exactly 0 in both, so the masked-softmax result is byte-identical to the old finfo.min on fp32 (training
+    # & parity unchanged) while staying clean on ANE/fp16. Do NOT raise toward finfo.min "for sharper masking".
+    neg = -1e4
     score = torch.where(alive > 0.5, score, score.new_full((), neg))        # mask dead (finfo.min, not -inf)
     score = score - score.max(-1, keepdim=True).values                      # stability
     w = torch.exp(score) * alive                                            # zero dead rows explicitly
