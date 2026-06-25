@@ -15,7 +15,7 @@ from world_config import WorldConfig
 def det_rand(t, k):
     """Deterministic pseudo-random in [-1,1] from integer (tick, pellet) — identical in Swift, so
     bullet spread stays parity-exact across the two engines (no real RNG)."""
-    h = (t * 2654435761 + k * 340573 + 12345) & 0xffffffff
+    h = (t * 2654435761 + k * 2246822519 + 12345) & 0xffffffff
     return h / 2147483647.5 - 1.0
 
 
@@ -212,7 +212,7 @@ class EnvTorch:
         K, B, fi, ci = self.bullets_per_shot, self.B, self.fire_interval, self.contact_interval
         t_arr = np.arange(1, ticks + 1, dtype=np.int64)                          # [T]
         ks = np.arange(K, dtype=np.int64)                                        # [K]
-        h = (t_arr[:, None] * 2654435761 + ks[None, :] * 340573 + 12345) & 0xffffffff
+        h = (t_arr[:, None] * 2654435761 + ks[None, :] * 2246822519 + 12345) & 0xffffffff
         dr = h / 2147483647.5 - 1.0                                              # det_rand(t,k) [T,K]
         theta = np.arctan2(self.max_dev * dr, 500.0)
         self._ct = torch.tensor(np.cos(theta), dtype=torch.float32, device=dev)  # [T,K]
