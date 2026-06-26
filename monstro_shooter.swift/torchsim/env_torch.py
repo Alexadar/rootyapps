@@ -25,11 +25,11 @@ class EnvTorch:
     #   NOTE: a per-type obs (8+4·6=32, "recognize monster type") was tried + reverted —
     #   it hurt ES (49% vs ~92% clear): 4.5x more params slows ES black-box search, and the obs is slower.
     #   Revisit only with a gradient method (PPO scales with params); keep the aggregate 8-dim obs for ES.
-    enemy_obs = 29         # base19 + 8 weapon params + 2 player ammo/reload (monsters rush reloads, react to weapon swaps)
+    enemy_obs = 31         # base19 + 8 weapon params + 2 player ammo/reload + 2 rock-flow (monsters route around rocks)
     #   + playerClosingVelXY, bulletVelXY (dynamics), + meanHeadXY, nearestNbrDirXY, nearestNbrDist (swarm)
     enemy_act = 2
     WFEAT = 8              # weapon features (both sides): dmg, rate, pellets, pen, range, spread, mag-capacity, reload-duration
-    player_set_fs = 18     # self feats: hp, count, wallXY, velXY, aimXY + 8 weapon params + ammo/mag, reload-progress
+    player_set_fs = 20     # self feats: hp, count, wallXY, velXY, aimXY + 8 weapon params + ammo/mag, reload + rock-flowXY
     player_set_fm = 12     # per-monster feats (see player_set_obs) + in-range ratio (dist/bullet_range)
 
     def __init__(self, sched, weapon, exo, device="cpu", bullets=32, cfg=None):
@@ -50,6 +50,12 @@ class EnvTorch:
         self.hp0 = t(sched["hp0"])                    # [N,M]
         ah = sched.get("arena_half")
         self.map_half = t(ah) if ah is not None else torch.full((self.N,), c.map_half, device=device)  # [N]
+        rk = sched.get("rocks")                                              # static circle obstacles
+        self.rocks = t(rk) if rk is not None else torch.zeros((self.N, 1, 3), device=device)  # [N,K,3] x,y,r
+        self.rock_xy = self.rocks[..., :2].contiguous()                      # [N,K,2]
+        self.rock_r = self.rocks[..., 2].contiguous()                       # [N,K]
+        self.rock_m = (self.rock_r > 0).float()                            # [N,K] valid-rock mask (padded r=0 -> 0)
+        self._build_flow()                                                   # -> self.flow [N,G,G,2] clearance hint
         self.contact_interval = max(1, round(c.damage_interval / c.dt))
         self.defense = float(exo.get("defence", 0.0))
         self.exo_speed = float(exo.get("speed", 1.0))
@@ -96,6 +102,41 @@ class EnvTorch:
         self.player_obs_fn = self.player_obs_vec   # MLP/ES default; train sets to player_set_obs for attention
         self.decompose = False     # eval-only: accumulate per-reward-term RAW sums into self._panel (analysis)
         self._panel = None
+
+    def _build_flow(self):
+        """Precompute a per-env clearance flow field self.flow [N,G,G,2]: at each grid cell, a unit vector pointing
+        AWAY from the nearest rock surface, scaled by proximity (0 in open space, 1 at the surface, fading over
+        flow_influence). Rocks are static so this is computed ONCE. Fully vectorized — broadcast min over the rock
+        axis, no python loop. Sampled O(1) per agent in the obs via _sample_flow."""
+        c = self.cfg; dev = self.device; N, G = self.N, int(c.flow_grid)
+        self._flow_g = G
+        ah = self.map_half.view(N, 1, 1)                                     # [N,1,1] grid spans +/- arena_half/env
+        axis = torch.linspace(-1.0, 1.0, G, device=dev)                      # [G] normalized cell centers
+        gx = (axis.view(1, 1, G) * ah).expand(N, G, G)                       # x varies along the last (col) axis
+        gy = (axis.view(1, G, 1) * ah).expand(N, G, G)                       # y varies along the middle (row) axis
+        cells = torch.stack([gx, gy], -1)                                    # [N,G,G,2] (row=y, col=x)
+        d = cells[:, :, :, None, :] - self.rock_xy[:, None, None, :, :]      # [N,G,G,K,2] cell - rock center
+        clr = torch.sqrt((d * d).sum(-1) + c.eps) - self.rock_r[:, None, None, :]   # [N,G,G,K] surface clearance
+        big = clr + (1.0 - self.rock_m[:, None, None, :]) * 1e9             # mask padded rocks (r=0) to +inf
+        nidx = big.argmin(-1, keepdim=True)                                 # [N,G,G,1] nearest real rock
+        near_d = torch.gather(d, 3, nidx[..., None].expand(N, G, G, 1, 2)).squeeze(3)   # [N,G,G,2] cell->rock vec
+        near_clr = torch.gather(clr, 3, nidx).squeeze(-1)                   # [N,G,G] nearest clearance
+        away = near_d / (torch.sqrt((near_d * near_d).sum(-1, keepdim=True)) + c.eps)   # unit, away from rock
+        weight = torch.clamp(1.0 - near_clr / c.flow_influence, min=0.0)    # [N,G,G] fades with clearance
+        has_rock = (self.rock_m.sum(-1) > 0).float().view(N, 1, 1)          # rock-free envs -> zero flow
+        self.flow = (away * (weight * has_rock)[..., None]).contiguous()    # [N,G,G,2]
+        self._flow_flat = self.flow.view(N, G * G, 2)                       # [N,G*G,2] for O(1) gather
+
+    def _sample_flow(self, pos):
+        """Sample self.flow at world positions pos [P,N,X,2] -> flow vectors [P,N,X,2]. Per-env grid; loop-free
+        batched gather (quantize world pos -> grid cell -> linear index -> gather)."""
+        G = self._flow_g; P, N, X, _ = pos.shape
+        ah = self.map_half.view(1, N, 1, 1)                                  # [1,N,1,1]
+        norm = (pos / (ah + self.cfg.eps)).clamp(-1.0, 1.0)                  # -> [-1,1]
+        idx = (((norm + 1.0) * 0.5) * (G - 1)).round().long().clamp(0, G - 1)   # [P,N,X,2] (col=x, row=y)
+        lin = idx[..., 1] * G + idx[..., 0]                                  # [P,N,X] row*G + col
+        flat = self._flow_flat[None].expand(P, N, G * G, 2)                  # [P,N,G*G,2]
+        return torch.gather(flat, 2, lin[..., None].expand(P, N, X, 2))      # [P,N,X,2]
 
     PANEL_KEYS = ("p_kill", "p_aim", "p_damage", "p_hit", "p_space", "p_ring", "p_effort", "p_shot", "p_alive",
                   "e_dmg", "e_approach", "e_deaths", "e_align", "e_separate", "ticks")
@@ -198,8 +239,9 @@ class EnvTorch:
         wf = self.wfeat.view(1, 1, -1).expand(P, N, -1)              # [P,N,6] current weapon params (player aware)
         ammo_n = (s["ammo"] / self.mag_size)[..., None]             # [P,N,1] magazine fraction
         reload_n = (s["reload_t"] / self.reload_ticks)[..., None]   # [P,N,1] reload progress (1=just started, 0=ready)
+        flow_p = self._sample_flow(s["player_pos"][:, :, None, :]).squeeze(2)   # [P,N,2] rock-avoidance flow @ player
         self_feat = torch.cat([(s["player_hp"] / c.player_max_hp)[..., None], (cnt / c.monster_count_norm)[..., None],
-                               wall, s["player_vel"], aim, wf, ammo_n, reload_n], -1)  # [P,N,16]
+                               wall, s["player_vel"], aim, wf, ammo_n, reload_n, flow_p], -1)  # [P,N,20]
         return self_feat, mon_feat, alive
 
     def enemy_obs_vec(self, s):
@@ -247,13 +289,14 @@ class EnvTorch:
         wf = self.wfeat.view(1, 1, 1, -1).expand(Pn, Nn, Mn, -1)                  # [P,N,M,6] weapon params (monster aware)
         ammo_m = (s["ammo"] / self.mag_size)[..., None, None].expand(Pn, Nn, Mn, 1)        # [P,N,M,1] player magazine frac
         reload_m = (s["reload_t"] / self.reload_ticks)[..., None, None].expand(Pn, Nn, Mn, 1)  # [P,N,M,1] -> monsters rush reloads
+        flow_m = self._sample_flow(s["mon_pos"])                                 # [P,N,M,2] rock-avoidance flow @ each monster
         return torch.cat([dirv, (dist / c.dist_norm)[..., None], vel_n,
                           (spd / c.monster_speed_norm)[..., None].expand_as(dist[..., None]),
                           (s["mon_hp"] / (self.hp0[None] + c.eps))[..., None],
                           bdir, bdist_n[..., None],
                           pvel_rel, bvel_n,                                       # item 1: player + bullet dynamics
                           mean_head, nn_dir, nn_dist_n[..., None],                # item 2: align + separation
-                          wf, ammo_m, reload_m], -1)                # [P,N,M,27]  weapon + player ammo/reload (rush reloads)
+                          wf, ammo_m, reload_m, flow_m], -1)        # [P,N,M,31]  + rock-avoidance flow
 
     def _precompute(self, ticks):
         """Precompute per-tick spread (cos/sin), ring-slot one-hots, fire/contact gates, and elapsed —
@@ -364,6 +407,11 @@ class EnvTorch:
         bul_pos = bul_pos + bul_vel * c.dt
         bul_dist = bul_dist + torch.sqrt((bul_vel * bul_vel).sum(-1)) * c.dt
         bul_alive = ((bul_alive > 0.5) & (bul_dist < self._brange_t)).float()   # _brange_t: tensor -> no recompile on range change
+        # bullet<->rock occlusion: a bullet entering any rock dies at its surface (rocks block shots; vectorized any-over-K)
+        brk = bul_pos[:, :, :, None, :] - self.rock_xy[None][:, :, None, :, :]   # [P,N,B,K,2]
+        in_rock = (((brk * brk).sum(-1) < (c.bullet_radius + self.rock_r[None][:, :, None, :]) ** 2) &
+                   (self.rock_m[None][:, :, None, :] > 0.5))                     # [P,N,B,K]
+        bul_alive = bul_alive * (~in_rock.any(-1)).float()
 
         # collision with penetration (a bullet damages every monster it overlaps; dies after `pen` hits)
         diff = bul_pos[:, :, :, None, :] - mon_pos[:, :, None, :, :]
@@ -423,6 +471,17 @@ class EnvTorch:
         opl = torch.clamp((mr + c.player_radius) - dpl, min=0.0) * af           # monster<->player overlap
         mon_pos = mon_pos + (opl * fmon).clamp(max=c.max_overlap_push)[..., None] * npl
         player_pos = player_pos - ((opl * fpl).clamp(max=c.max_overlap_push)[..., None] * npl).sum(2)
+        # body<->rock de-overlap: rocks are static/infinite-mass, so only the body moves out (vectorized over K rocks)
+        rxy, rrad, rm = self.rock_xy[None], self.rock_r[None], self.rock_m[None]   # [1,N,K,2] [1,N,K] [1,N,K]
+        mrk = mon_pos[:, :, :, None, :] - rxy[:, :, None, :, :]                    # [P,N,M,K,2] rock->monster
+        mrl = torch.sqrt((mrk * mrk).sum(-1) + c.eps)                            # [P,N,M,K]
+        mov = (torch.clamp((mr[..., None] + rrad[:, :, None, :]) - mrl, min=0.0)
+               * rm[:, :, None, :]).clamp(max=c.max_overlap_push)                 # [P,N,M,K]
+        mon_pos = mon_pos + (mov[..., None] * (mrk / mrl[..., None])).sum(3)
+        prk = player_pos[:, :, None, :] - rxy                                     # [P,N,K,2] rock->player
+        prl = torch.sqrt((prk * prk).sum(-1) + c.eps)                            # [P,N,K]
+        pov = (torch.clamp((c.player_radius + rrad) - prl, min=0.0) * rm).clamp(max=c.max_overlap_push)  # [P,N,K]
+        player_pos = player_pos + (pov[..., None] * (prk / prl[..., None])).sum(2)
         player_pos = torch.minimum(torch.maximum(player_pos, lo), hi)           # re-clamp player
         mon_pos = torch.minimum(torch.maximum(mon_pos, -mh), mh)                # keep shoved monsters in-arena
         # NOTE: momentum/knock impulse dropped — positional de-overlap alone gives impenetrability + frictionless

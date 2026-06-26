@@ -113,12 +113,29 @@ def _arena(levels, assign, n_envs):
     return np.array([float(levels[assign[e]].get("arena_half", 6000.0)) for e in range(n_envs)], np.float32)
 
 
+def _rocks(levels, assign, n_envs, K):
+    """Per-env static rock array [N,K,3] (x,y,radius), padded to a common K (unused slots -> radius 0 =
+    never-collide). Like _arena, rocks are per-MAP, read straight from the level dict and indexed by assign."""
+    out = np.zeros((n_envs, max(K, 1), 3), np.float32)
+    for e in range(n_envs):
+        rk = levels[assign[e]].get("rocks", [])
+        if rk:
+            arr = np.asarray(rk, np.float32)
+            out[e, :arr.shape[0]] = arr
+    return out
+
+
+def _max_rocks(levels):
+    return max((len(lv.get("rocks", [])) for lv in levels), default=0)
+
+
 def build(level, monsters, base_seed, n_envs, cap=512, workers=None):
     M = max(min(level["expected_total"], cap), 1)
     assign = np.zeros(n_envs, np.int32)
     arrays = _build_rows([level], assign, monsters, base_seed, n_envs, M, workers)
     out = _pack(arrays, M)
     out["arena_half"] = _arena([level], assign, n_envs)
+    out["rocks"] = _rocks([level], assign, n_envs, _max_rocks([level]))
     return out
 
 
@@ -133,6 +150,7 @@ def build_multi(levels, monsters, base_seed, n_envs, cap=512, workers=None):
     out = _pack(arrays, M)
     out["assign"] = assign
     out["arena_half"] = _arena(levels, assign, n_envs)
+    out["rocks"] = _rocks(levels, assign, n_envs, _max_rocks(levels))
     return out
 
 
@@ -160,4 +178,5 @@ def build_eval(levels, monsters, seeds, cap=1024, base_seed=1000, seed_stride=79
         assign[e] = li
     out = _pack(arrays, M)
     out["arena_half"] = arena
+    out["rocks"] = _rocks(levels, assign, N, _max_rocks(levels))
     return out, real_tot, assign

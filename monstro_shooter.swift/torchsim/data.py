@@ -63,6 +63,7 @@ def sim_level(mapcfg):
         "arena_half": float(mapcfg.get("arenaHalf", 6000.0)),
         "spawn_half_w": float(spawn_r) if spawn_r is not None else 830.0,
         "spawn_half_h": float(spawn_r) if spawn_r is not None else 650.0,
+        "rocks": [[float(x), float(y), float(r)] for x, y, r in mapcfg.get("rocks", [])],  # static circle obstacles
     }
 
 

@@ -65,21 +65,25 @@ def _capture_batch(env, ticks_max, real_tot, env_ticks, pf, ef, stride):
     return snaps, end_idx.detach().cpu().numpy(), boxW
 
 
-def _draw(cap, boxW, ah, size, name):
+def _draw(cap, boxW, ah, size, name, rocks=None):
     img = Image.new("RGB", (size, size), (12, 14, 22)); d = ImageDraw.Draw(img)
     sc = size / (2.0 * ah)
     def px(xy): return ((xy[0] + ah) * sc, (xy[1] + ah) * sc)
     d.rectangle([1, 1, size - 2, size - 2], outline=(55, 60, 78))
     pp, mp, al, bp, ba, kills, hp = cap
-    # bullets — bright filled dots (visible)
-    for i in range(len(bp)):
-        if ba[i]:
-            x, y = px(bp[i]); d.ellipse([x - 2, y - 2, x + 2, y + 2], fill=(250, 235, 110))
-    # monsters — contour rings, colored by type (boxW proxy)
-    for i in range(len(mp)):
-        if al[i]:
-            x, y = px(mp[i]); r = max(3.0, boxW[i] / 2.0 * sc)
-            d.ellipse([x - r, y - r, x + r, y + r], outline=PALETTE[int(boxW[i] // 10) % len(PALETTE)], width=2)
+    al = al.astype(bool); ba = ba.astype(bool)
+    # NOTE: PIL has no batch-ellipse, so drawing is inherently per-shape — but we pre-FILTER to only the real/alive
+    # entities (numpy mask) so each loop iterates the minimum and carries no per-item branch. These per-shape loops
+    # (and the per-tick capture + per-frame compose loops) are the necessary ones; there's no vectorized PIL path.
+    if rocks is not None:                                          # rocks — filled, beneath everything
+        for rx, ry, rr in rocks[rocks[:, 2] > 0]:
+            x, y = px((rx, ry)); r = rr * sc
+            d.ellipse([x - r, y - r, x + r, y + r], fill=(70, 66, 60), outline=(110, 104, 92))
+    for bx, by in bp[ba]:                                          # bullets — bright filled dots
+        x, y = px((bx, by)); d.ellipse([x - 2, y - 2, x + 2, y + 2], fill=(250, 235, 110))
+    for (mx, my), bw in zip(mp[al], boxW[al]):                     # monsters — contour rings, colored by type
+        x, y = px((mx, my)); r = max(3.0, bw / 2.0 * sc)
+        d.ellipse([x - r, y - r, x + r, y + r], outline=PALETTE[int(bw // 10) % len(PALETTE)], width=2)
     # player — white contour ring + center dot
     x, y = px(pp); r = max(4.0, PLAYER_RADIUS * sc)
     d.ellipse([x - r, y - r, x + r, y + r], outline=(240, 240, 255), width=2)
@@ -122,6 +126,7 @@ def render_grid(gd, weapons, exo, args, player, enemy, dev, out_path, arch="mlp"
     env_ticks = torch.tensor([per_ticks[assign[e]] for e in range(len(assign))], device=dev, dtype=torch.float32)
     rt = torch.tensor(real_tot, device=dev)
     ah = sched["arena_half"]                                       # [N]
+    rocks_np = env.rocks.detach().cpu().numpy()                     # [N,K,3] static -> drawn as filled circles
     ngames = len(assign)
     # capture one synchronized rollout PER WEAPON (each = a grid row)
     wrows = []
@@ -145,7 +150,7 @@ def render_grid(gd, weapons, exo, args, player, enemy, dev, out_path, arch="mlp"
                 sn = snaps[min(t, len(snaps) - 1, int(end_idx[e]))]
                 cap = (sn["pp"][e], sn["mp"][e], sn["al"][e], sn["bp"][e], sn["ba"][e],
                        int(sn["kills"][e]), float(sn["hp"][e]))
-                pans.append(_draw(cap, boxW[e], float(ah[e]), panelpx, f"{wname}/{names[assign[e]]}"))
+                pans.append(_draw(cap, boxW[e], float(ah[e]), panelpx, f"{wname}/{names[assign[e]]}", rocks_np[e]))
             rowimgs.append(np.concatenate(pans, axis=1))
         w.append_data(np.concatenate(rowimgs, axis=0))
     w.close()

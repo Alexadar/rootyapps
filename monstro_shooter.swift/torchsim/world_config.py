@@ -27,6 +27,9 @@ class WorldConfig:
     # --- rigid bodies (impenetrable circles, mass-weighted positional de-overlap; momentum/knock dropped) ---
     player_mass: float = 1.0        # light vs monsters (mass 1.0-2.5) -> heavy types displace the player more
     max_overlap_push: float = 40.0  # cap positional de-overlap per pass (avoid teleport on deep stacks)
+    # --- static rock obstacles + clearance flow field ---
+    flow_grid: int = 48             # per-env flow-field grid resolution (GxG); precomputed once, O(1) sampled
+    flow_influence: float = 120.0   # clearance distance over which the rock-avoidance flow fades to zero
     # --- obs normalizers (must match between train + deploy) ---
     player_max_hp: float = 100.0
     dist_norm: float = 1000.0
