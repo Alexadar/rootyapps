@@ -10,14 +10,18 @@ style:
   bg_color_bottom: '#1A1330'
   title_color: '#ffffff'
   subtitle_color: '#9FB4FF'
-  screenshot_zoom: 1.7
-  screenshot_move_down: -40
+  screenshot_zoom: 1.0
+  screenshot_move_down: 0
   border_width: 10
   border_radius: 36
   text_padding: 60
 
 texts:
-  - title: "Ephemeris"
+  - title: "Ephemeris Sky"
     subtitle: "Positions, aspects & the synodic cycle"
+  - title: "Every Position"
+    subtitle: "Tropical, geocentric, of date"
+  - title: "Aspects"
+    subtitle: "Computed, not guessed"
   - title: "Mercury's Phases"
     subtitle: "Conjunctions, retrogrades & stations"

@@ -40,8 +40,11 @@ public struct BodyPosition: Identifiable, Hashable {
 
     /// "d° mm′" within the sign.
     public var degMinString: String {
-        let dd = Int(degreesInSign)
-        let mm = Int((degreesInSign - Double(dd)) * 60 + 0.5)
+        // Round to whole arcminutes first, then carry, so 10°60′ becomes 11°00′.
+        let totalMinutes = Int((degreesInSign * 60).rounded())
+        var dd = totalMinutes / 60
+        let mm = totalMinutes % 60
+        if dd >= 30 { dd -= 30 }   // keep degrees within the 0–29° sign range
         return "\(dd)° \(String(format: "%02d", mm))′"
     }
 }

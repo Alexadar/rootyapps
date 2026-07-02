@@ -7,7 +7,7 @@ struct ephemeris_swiftApp: App {
             ContentView()
         }
         #if os(macOS)
-        .defaultSize(width: 980, height: 720)
+        .defaultSize(width: 900, height: 1010)
         .windowResizability(.contentSize)
         #endif
     }
