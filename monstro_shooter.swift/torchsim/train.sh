@@ -51,7 +51,8 @@ RW_EFFORT="${RW_EFFORT:-0.005}"; RW_SHOT="${RW_SHOT:-0.01}"
 RW_ALIGN="${RW_ALIGN:-0.01}"; RW_SEPARATE="${RW_SEPARATE:-0.02}"; SEP_RADIUS="${SEP_RADIUS:-50}"
 RW_E_APPROACH="${RW_E_APPROACH:-0.0004}"; RW_E_DEATHS="${RW_E_DEATHS:-0.02}"   # enemy: tame closing gradient; death penalty
 EVAL_VS="${EVAL_VS:-live}"   # eval opponent: live (co-evolving) or fixed (frozen snapshot)
-ACCEL="--algo ppo --player-arch attn --ppo-group $PPO_GROUP --ppo-minibatch $PPO_MB --compile $POLICY_BF16"
+PPO_LR="${PPO_LR:-1e-4}"     # 1e-4 = stable default (3e-4 collapsed pre-small-init; retest 3e-4 now for faster convergence)
+ACCEL="--algo ppo --player-arch attn --ppo-group $PPO_GROUP --ppo-minibatch $PPO_MB --ppo-lr $PPO_LR --compile $POLICY_BF16"
 echo "device=$DEV data=$DATASET perm=$PERM pop=$POP ticks=$TICKS cap=$CAP bullets=$BULLETS budget=${BUDGET}s weapons=$WEAPONS"
 
 "$PY" train_torch.py \

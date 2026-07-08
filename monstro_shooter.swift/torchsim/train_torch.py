@@ -242,6 +242,10 @@ def main():
     # co-evolution stabilization (Red-Queen / runaway-enemy fixes). Defaults reproduce the old 50/50 loop.
     ap.add_argument("--enemy-every", type=int, default=2)   # train enemy 1-in-K iters (K=2: old 50/50; K>2:
     #   asymmetric cadence — slow the enemy so the player can converge instead of chasing a moving target).
+    ap.add_argument("--enemy-algo", default="ppo", choices=["ppo", "es"])  # ppo: gradient enemy (scales to the 31-dim
+    #   obs where ES stalls -> monsters actually learn to chase in a short budget); es = legacy black-box search.
+    ap.add_argument("--enemy-group", type=int, default=8)   # enemy PPO env-copies (small: per-monster already yields
+    #   M x more samples than the player, so a big group would OOM; 8 x N x M x T is plenty for a stable gradient).
     ap.add_argument("--enemy-pool", type=int, default=1)    # league size: player trains vs a random snapshot
     #   from the last N enemies (1 = latest only = old behavior; N>1 = PSRO-lite, damps oscillation).
     ap.add_argument("--freeze-enemy", action="store_true")  # freeze the enemy net: never ES-update it; the player
@@ -432,6 +436,19 @@ def main():
         print(f"  algo: PPO player (group={args.ppo_group} lr={args.ppo_lr} epochs={args.ppo_epochs} "
               f"clip={args.ppo_clip}) + ES enemy   rw_kill={args.rw_kill} rw_survive={args.rw_survive}")
 
+    # --- ENEMY optimizer: gradient PPO (multi-agent, shared team reward) or legacy ES ---
+    e_state = None
+    if args.enemy_algo == "ppo":
+        assert args.player_arch == "attn", "--enemy-algo ppo needs the attn player (the frozen opponent uses AT)"
+        import ppo_enemy as PE, math as _m
+        enemy = [(W.clone().detach().requires_grad_(True), b.clone().detach().requires_grad_(True)) for W, b in enemy]
+        e_log_std = torch.full((EnvTorch.enemy_act,), _m.log(args.ppo_std), device=dev, requires_grad=True)
+        e_vparams = PE.init_value(dev, 23 + sd, EnvTorch.enemy_obs)
+        e_opt = torch.optim.Adam([w for wb in enemy for w in wb] + [e_log_std] + PE.value_params_flat(e_vparams),
+                                 lr=args.ppo_lr)
+        e_state = (PE, e_log_std, e_vparams, e_opt)
+        print(f"  enemy: PPO gradient (multi-agent, shared reward, group={args.enemy_group}, lr={args.ppo_lr}) — replaces ES")
+
     best = 0.0
     hist = {"player": [], "enemy": []}
     last = {"player": float("nan"), "enemy": float("nan")}
@@ -491,13 +508,23 @@ def main():
                 player, best, mean = ES.es_step(player, fitness, args.pop, gen, dev, args.sigma, args.lr)
                 hist["player"].append(mean); last["player"] = mean
         else:
-            def fitness(stacked):
-                if jr is not None:
-                    return jr.reward_enemy(player, stacked)
-                out = env.rollout(Ppop, cur_ticks, pf(player), ef(stacked))
-                return out["reward_enemy"].mean(1)
-            enemy, best, mean = ES.es_step(enemy, fitness, args.pop, gen, dev, args.sigma, args.lr)
-            hist["enemy"].append(mean); last["enemy"] = mean
+            if e_state is not None:                            # PPO enemy (gradient, multi-agent shared reward)
+                PE, e_log_std, e_vparams, e_opt = e_state
+                _epl, _evl, eret = PE.ppo_step(env, cur_ticks, enemy, e_log_std, e_vparams, e_opt, player, AT,
+                                               args.enemy_group, gamma=args.ppo_gamma, lam=args.ppo_gae,
+                                               clip=args.ppo_clip, epochs=args.ppo_epochs, minibatch=args.ppo_minibatch,
+                                               vcoef=args.ppo_vcoef, ent=args.ppo_ent, mm_dtype=pdt)
+                best = eret; hist["enemy"].append(eret); last["enemy"] = eret
+                if writer is not None:
+                    writer.add_scalar("ppo_e/policy_loss", float(_epl), it); writer.add_scalar("ppo_e/value_loss", float(_evl), it)
+            else:
+                def fitness(stacked):
+                    if jr is not None:
+                        return jr.reward_enemy(player, stacked)
+                    out = env.rollout(Ppop, cur_ticks, pf(player), ef(stacked))
+                    return out["reward_enemy"].mean(1)
+                enemy, best, mean = ES.es_step(enemy, fitness, args.pop, gen, dev, args.sigma, args.lr)
+                hist["enemy"].append(mean); last["enemy"] = mean
             if args.enemy_pool > 1:                             # add the freshly-trained enemy to the league
                 enemy_pool.append(snap(enemy)); enemy_pool[:] = enemy_pool[-args.enemy_pool:]
 
