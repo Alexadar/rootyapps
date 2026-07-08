@@ -30,7 +30,7 @@ class EnvTorch:
     enemy_act = 2
     WFEAT = 8              # weapon features (both sides): dmg, rate, pellets, pen, range, spread, mag-capacity, reload-duration
     player_set_fs = 20     # self feats: hp, count, wallXY, velXY, aimXY + 8 weapon params + ammo/mag, reload + rock-flowXY
-    player_set_fm = 12     # per-monster feats (see player_set_obs) + in-range ratio (dist/bullet_range)
+    player_set_fm = 13     # per-monster feats (see player_set_obs) + in-range ratio + clear_shot (line-of-fire)
 
     def __init__(self, sched, weapon, exo, device="cpu", bullets=32, cfg=None):
         self.device = device
@@ -50,11 +50,16 @@ class EnvTorch:
         self.hp0 = t(sched["hp0"])                    # [N,M]
         ah = sched.get("arena_half")
         self.map_half = t(ah) if ah is not None else torch.full((self.N,), c.map_half, device=device)  # [N]
-        rk = sched.get("rocks")                                              # static circle obstacles
-        self.rocks = t(rk) if rk is not None else torch.zeros((self.N, 1, 3), device=device)  # [N,K,3] x,y,r
+        rk = sched.get("rocks")                                              # static obstacles [N,K,3|4]
+        self.rocks = t(rk) if rk is not None else torch.zeros((self.N, 1, 4), device=device)
+        if self.rocks.shape[-1] == 3:                                        # legacy circles-only -> shape col 0
+            self.rocks = torch.cat([self.rocks, torch.zeros_like(self.rocks[..., :1])], -1)
         self.rock_xy = self.rocks[..., :2].contiguous()                      # [N,K,2]
-        self.rock_r = self.rocks[..., 2].contiguous()                       # [N,K]
+        self.rock_r = self.rocks[..., 2].contiguous()                       # [N,K] radius / square half-extent
+        self.rock_sq = (self.rocks[..., 3] > 0.5).float().contiguous()      # [N,K] 1 = axis-aligned square
         self.rock_m = (self.rock_r > 0).float()                            # [N,K] valid-rock mask (padded r=0 -> 0)
+        self._has_sq = bool(((self.rock_sq * self.rock_m).sum() > 0).item())  # py-const -> compile skips square math
+        #   on all-circle batches (fast path); square batches pay the generic branch. Set before torch.compile.
         self._build_flow()                                                   # -> self.flow [N,G,G,2] clearance hint
         self.contact_interval = max(1, round(c.damage_interval / c.dt))
         self.defense = float(exo.get("defence", 0.0))
@@ -103,6 +108,45 @@ class EnvTorch:
         self.decompose = False     # eval-only: accumulate per-reward-term RAW sums into self._panel (analysis)
         self._panel = None
 
+    # ---- OBSTACLE SHAPE BASE ----------------------------------------------------------------------------
+    # The generic shape math (SDF + gradient + segment margin) is the BASE, written as pure tensor functions
+    # over (dvec, size, is_square). An obstacle KIND (today: rocks; future: walls, crates, ...) is just a
+    # tensor bundle (xy, size, shape-flag, mask) BOUND to this base — new kinds reuse the same math verbatim.
+    def _shape_sdf(self, dvec, rr, sq):
+        """SDF only (no gradient — cheaper than _shape_sdf_grad) at points dvec = p - center. dvec [...,K,2],
+        rr/sq [...,K] -> [...,K]. Circle: |dvec|-rr. Square: standard AABB SDF. torch.where by shape."""
+        eps = self.cfg.eps
+        sdf_c = torch.sqrt((dvec * dvec).sum(-1) + eps) - rr
+        if not self._has_sq:                                                # all-circle batch -> skip square math
+            return sdf_c
+        q = dvec.abs() - rr[..., None]
+        sdf_s = torch.clamp(q, min=0.0).pow(2).sum(-1).add(eps).sqrt() + torch.clamp(q.amax(-1), max=0.0)
+        return torch.where(sq > 0.5, sdf_s, sdf_c)
+
+    def _shape_sdf_grad(self, dvec, rr, sq):
+        """Signed distance + outward unit gradient at points dvec = p - shape_center.
+        dvec [...,K,2], rr/sq [...,K] -> (sdf [...,K], grad [...,K,2]). Shape per entry: circle (radius rr) or
+        axis-aligned square (half-extent rr), selected by sq via torch.where — ONE code path for physics
+        de-overlap, the flow field, and the line-of-fire margin. Pure vector ops, no loops."""
+        eps = self.cfg.eps
+        L = torch.sqrt((dvec * dvec).sum(-1) + eps)                          # [...,K]
+        sdf_c = L - rr                                                       # circle SDF
+        grad_c = dvec / L[..., None]
+        if not self._has_sq:                                                # all-circle batch -> skip square math
+            return sdf_c, grad_c
+        a = dvec.abs(); q = a - rr[..., None]                                # [...,K,2] per-axis face distance
+        qp = torch.clamp(q, min=0.0)
+        Lout = torch.sqrt((qp * qp).sum(-1) + eps)
+        inside = q.amax(-1) < 0.0                                            # [...,K] fully inside the box
+        sdf_s = torch.where(inside, q.amax(-1), Lout)                        # standard AABB SDF
+        sgn = torch.where(dvec >= 0, torch.ones_like(dvec), -torch.ones_like(dvec))
+        grad_out = (qp * sgn) / Lout[..., None]
+        ax_x = (q[..., 0] >= q[..., 1]).float()[..., None]                   # inside: push out the CLOSEST face
+        grad_in = torch.cat([sgn[..., :1] * ax_x, sgn[..., 1:] * (1.0 - ax_x)], -1)
+        grad_s = torch.where(inside[..., None], grad_in, grad_out)
+        return (torch.where(sq > 0.5, sdf_s, sdf_c),
+                torch.where(sq[..., None] > 0.5, grad_s, grad_c))
+
     def _build_flow(self):
         """Precompute a per-env clearance flow field self.flow [N,G,G,2]: at each grid cell, a unit vector pointing
         AWAY from the nearest rock surface, scaled by proximity (0 in open space, 1 at the surface, fading over
@@ -116,12 +160,11 @@ class EnvTorch:
         gy = (axis.view(1, G, 1) * ah).expand(N, G, G)                       # y varies along the middle (row) axis
         cells = torch.stack([gx, gy], -1)                                    # [N,G,G,2] (row=y, col=x)
         d = cells[:, :, :, None, :] - self.rock_xy[:, None, None, :, :]      # [N,G,G,K,2] cell - rock center
-        clr = torch.sqrt((d * d).sum(-1) + c.eps) - self.rock_r[:, None, None, :]   # [N,G,G,K] surface clearance
+        clr, grad = self._shape_sdf_grad(d, self.rock_r[:, None, None, :], self.rock_sq[:, None, None, :])
         big = clr + (1.0 - self.rock_m[:, None, None, :]) * 1e9             # mask padded rocks (r=0) to +inf
         nidx = big.argmin(-1, keepdim=True)                                 # [N,G,G,1] nearest real rock
-        near_d = torch.gather(d, 3, nidx[..., None].expand(N, G, G, 1, 2)).squeeze(3)   # [N,G,G,2] cell->rock vec
         near_clr = torch.gather(clr, 3, nidx).squeeze(-1)                   # [N,G,G] nearest clearance
-        away = near_d / (torch.sqrt((near_d * near_d).sum(-1, keepdim=True)) + c.eps)   # unit, away from rock
+        away = torch.gather(grad, 3, nidx[..., None].expand(N, G, G, 1, 2)).squeeze(3)  # SDF grad = away-dir
         weight = torch.clamp(1.0 - near_clr / c.flow_influence, min=0.0)    # [N,G,G] fades with clearance
         has_rock = (self.rock_m.sum(-1) > 0).float().view(N, 1, 1)          # rock-free envs -> zero flow
         self.flow = (away * (weight * has_rock)[..., None]).contiguous()    # [N,G,G,2]
@@ -137,6 +180,27 @@ class EnvTorch:
         lin = idx[..., 1] * G + idx[..., 0]                                  # [P,N,X] row*G + col
         flat = self._flow_flat[None].expand(P, N, G * G, 2)                  # [P,N,G*G,2]
         return torch.gather(flat, 2, lin[..., None].expand(P, N, X, 2))      # [P,N,X,2]
+
+    def _shape_margin(self, p0, d, xy, rr, sq, mask):
+        """GENERIC min signed clearance of the SEGMENT p0 -> p0+d past a bundle of shapes, inflated by
+        bullet_radius. <0 = the segment enters a shape. p0,d [P,N,X,2]; xy [1,N,K,2]; rr/sq/mask [1,N,K] ->
+        [P,N,X]. Lean single-point form: clearance = shape-SDF at the segment point closest to the shape CENTER,
+        minus bullet_radius. Exact for circles; for squares this is exact on faces and slightly optimistic only
+        for a shot grazing a corner far from the center-closest param (acceptable at 6u bullet / obs-hint scale).
+        No slab, no gradient. Pure vector ops (broadcast over K; no python loop)."""
+        c = self.cfg
+        f = xy[:, :, None, :, :] - p0[..., None, :]                            # [P,N,X,K,2] p0 -> shape center
+        t = ((f * d[..., None, :]).sum(-1) /
+             ((d * d).sum(-1)[..., None] + c.eps)).clamp(0.0, 1.0)             # [P,N,X,K] closest approach on segment
+        q = t[..., None] * d[..., None, :] - f                                 # shape center -> closest segment point
+        marg = self._shape_sdf(q, rr[:, :, None, :], sq[:, :, None, :]) - c.bullet_radius
+        return (marg + (1.0 - mask[:, :, None, :]) * 1e9).min(-1).values       # padded entries -> +inf
+
+    def _rock_margin(self, p0, d):
+        """Rocks bound to the generic shape margin. THE single line-of-fire rule: the in-flight bullet kill and
+        the clear_shot obs both derive from this one function, so the obs can never lie about the sim."""
+        return self._shape_margin(p0, d, self.rock_xy[None], self.rock_r[None],
+                                  self.rock_sq[None], self.rock_m[None])
 
     PANEL_KEYS = ("p_kill", "p_aim", "p_damage", "p_hit", "p_space", "p_ring", "p_effort", "p_shot", "p_alive",
                   "e_dmg", "e_approach", "e_deaths", "e_align", "e_separate", "ticks")
@@ -231,9 +295,14 @@ class EnvTorch:
         spd_n = (spd / snorm).expand_as(dist)                        # [P,N,M] type behavior: max speed
         dmg_n = (self.mon_dmg[None] / 10.0).expand_as(dist)         # [P,N,M] type behavior: damage (~2-5)
         in_range = (dist / self.bullet_range).clamp(max=2.0)        # [P,N,M] <1 = killable now (range-discipline signal)
+        # clear_shot: line-of-FIRE only (perception stays top-down/omniscient — no fog-of-war). Soft margin from
+        # the SAME rule that kills bullets on rocks (_rock_margin), so 0 = "a shot along this bearing dies in a
+        # rock" is truthful to the sim; >0 grades how cleanly the path clears (saturates at clear_shot_norm).
+        p0 = s["player_pos"][:, :, None, :].expand_as(rel)          # [P,N,M,2]
+        clear_shot = (self._rock_margin(p0, rel) / c.clear_shot_norm).clamp(0.0, 1.0)   # [P,N,M]
         mon_feat = torch.stack([dirv[..., 0], dirv[..., 1], dist / c.dist_norm,
                                 mvel_n[..., 0], mvel_n[..., 1], closing,
-                                hp_n, spd_n, dmg_n, aim_dot, alive, in_range], -1)  # [P,N,M,12]
+                                hp_n, spd_n, dmg_n, aim_dot, alive, in_range, clear_shot], -1)  # [P,N,M,13]
         wall = s["player_pos"] / self.map_half.view(1, self.N, 1)    # [P,N,2]
         P, N = wall.shape[0], wall.shape[1]
         wf = self.wfeat.view(1, 1, -1).expand(P, N, -1)              # [P,N,6] current weapon params (player aware)
@@ -404,14 +473,13 @@ class EnvTorch:
         bul_dist = torch.where(writeB > 0.5, torch.zeros_like(bul_dist), bul_dist)
         bul_pen = torch.where(writeB > 0.5, torch.full_like(bul_pen, float(self.penetration)), bul_pen)
 
+        bul_p0 = bul_pos                                                       # pre-advance (incl. fresh muzzle spawns)
         bul_pos = bul_pos + bul_vel * c.dt
         bul_dist = bul_dist + torch.sqrt((bul_vel * bul_vel).sum(-1)) * c.dt
         bul_alive = ((bul_alive > 0.5) & (bul_dist < self._brange_t)).float()   # _brange_t: tensor -> no recompile on range change
-        # bullet<->rock occlusion: a bullet entering any rock dies at its surface (rocks block shots; vectorized any-over-K)
-        brk = bul_pos[:, :, :, None, :] - self.rock_xy[None][:, :, None, :, :]   # [P,N,B,K,2]
-        in_rock = (((brk * brk).sum(-1) < (c.bullet_radius + self.rock_r[None][:, :, None, :]) ** 2) &
-                   (self.rock_m[None][:, :, None, :] > 0.5))                     # [P,N,B,K]
-        bul_alive = bul_alive * (~in_rock.any(-1)).float()
+        # bullet<->rock occlusion: SEGMENT test over this tick's travel (_rock_margin, the shared line-of-fire
+        # rule) -> rocks block shots, and fast/grazing bullets can't tunnel a thin rock in one step.
+        bul_alive = bul_alive * (self._rock_margin(bul_p0, bul_vel * c.dt) > 0.0).float()
 
         # collision with penetration (a bullet damages every monster it overlaps; dies after `pen` hits)
         diff = bul_pos[:, :, :, None, :] - mon_pos[:, :, None, :, :]
@@ -462,6 +530,10 @@ class EnvTorch:
         # single-pass positional de-overlap (fully vectorized, no loop; dense piles may keep minor residual overlap)
         dvec = mon_pos[:, :, :, None, :] - mon_pos[:, :, None, :, :]            # [P,N,M,M,2] i<-j
         dlen = torch.sqrt((dvec * dvec).sum(-1) + c.eps)
+        # sep_pen (enemy anti-stacking reward) reuses THIS pairwise dlen instead of re-materializing the [P,N,M,M,2]
+        # tensor post-push (dedup: 1 of 3 M^2 passes removed). Measured pre-de-overlap — a hair larger raw values;
+        # reward-only, NOT in the Swift parity contract, so the sim is unaffected.
+        sep_pen = (torch.clamp(1.0 - dlen / self.sep_radius, min=0.0) * pair).sum((-1, -2))   # [P,N]
         overlap = torch.clamp(rsum - dlen, min=0.0) * pair
         push = (overlap * fj).clamp(max=c.max_overlap_push)
         mon_pos = mon_pos + (push[..., None] * (dvec / dlen[..., None])).sum(3)     # monster<->monster
@@ -471,17 +543,20 @@ class EnvTorch:
         opl = torch.clamp((mr + c.player_radius) - dpl, min=0.0) * af           # monster<->player overlap
         mon_pos = mon_pos + (opl * fmon).clamp(max=c.max_overlap_push)[..., None] * npl
         player_pos = player_pos - ((opl * fpl).clamp(max=c.max_overlap_push)[..., None] * npl).sum(2)
-        # body<->rock de-overlap: rocks are static/infinite-mass, so only the body moves out (vectorized over K rocks)
-        rxy, rrad, rm = self.rock_xy[None], self.rock_r[None], self.rock_m[None]   # [1,N,K,2] [1,N,K] [1,N,K]
+        # body<->rock de-overlap: rocks are static/infinite-mass, so only the body moves out. Shape-generic via
+        # the SDF base (_shape_sdf_grad): overlap = clamp(body_radius - sdf, 0), push along the SDF gradient —
+        # identical to the old circle math for circles, exact for squares. Vectorized over K, no loops.
+        rxy, rrad = self.rock_xy[None], self.rock_r[None]                          # [1,N,K,2] [1,N,K]
+        rm, rsq = self.rock_m[None], self.rock_sq[None]                            # [1,N,K]
         mrk = mon_pos[:, :, :, None, :] - rxy[:, :, None, :, :]                    # [P,N,M,K,2] rock->monster
-        mrl = torch.sqrt((mrk * mrk).sum(-1) + c.eps)                            # [P,N,M,K]
-        mov = (torch.clamp((mr[..., None] + rrad[:, :, None, :]) - mrl, min=0.0)
-               * rm[:, :, None, :]).clamp(max=c.max_overlap_push)                 # [P,N,M,K]
-        mon_pos = mon_pos + (mov[..., None] * (mrk / mrl[..., None])).sum(3)
-        prk = player_pos[:, :, None, :] - rxy                                     # [P,N,K,2] rock->player
-        prl = torch.sqrt((prk * prk).sum(-1) + c.eps)                            # [P,N,K]
-        pov = (torch.clamp((c.player_radius + rrad) - prl, min=0.0) * rm).clamp(max=c.max_overlap_push)  # [P,N,K]
-        player_pos = player_pos + (pov[..., None] * (prk / prl[..., None])).sum(2)
+        msdf, mgrad = self._shape_sdf_grad(mrk, rrad[:, :, None, :], rsq[:, :, None, :])
+        mov = (torch.clamp(mr[..., None] - msdf, min=0.0)
+               * rm[:, :, None, :]).clamp(max=c.max_overlap_push)                  # [P,N,M,K]
+        mon_pos = mon_pos + (mov[..., None] * mgrad).sum(3)
+        prk = player_pos[:, :, None, :] - rxy                                      # [P,N,K,2] rock->player
+        psdf, pgrad = self._shape_sdf_grad(prk, rrad, rsq)
+        pov = (torch.clamp(c.player_radius - psdf, min=0.0) * rm).clamp(max=c.max_overlap_push)  # [P,N,K]
+        player_pos = player_pos + (pov[..., None] * pgrad).sum(2)
         player_pos = torch.minimum(torch.maximum(player_pos, lo), hi)           # re-clamp player
         mon_pos = torch.minimum(torch.maximum(mon_pos, -mh), mh)                # keep shoved monsters in-arena
         # NOTE: momentum/knock impulse dropped — positional de-overlap alone gives impenetrability + frictionless
@@ -518,18 +593,13 @@ class EnvTorch:
         # enemy reward: damage dealt + approach proximity − deaths
         approach = torch.clamp(1.0 - dist / 3000.0, min=0.0)
         approach = (approach * alive_a.float()).sum(2)
-        # swarm shaping (shared/group reward, ES means over envs): alignment = coherent pack heading; separation =
-        # anti-stacking penalty when monsters breach each other's small (sep_radius) personal circle.
-        af = alive_a.float()                                                     # [P,N,M]
-        acnt = af.sum(2, keepdim=True) + c.eps                                   # [P,N,1]
+        # swarm shaping (shared/group reward, ES means over envs): alignment = coherent pack heading; separation
+        # (sep_pen) is computed up in the de-overlap block from the SAME pairwise dlen (M^2 dedup — see there).
+        acnt = af.sum(2, keepdim=True) + c.eps                                   # [P,N,1] (af from the bodies block)
         mvel_mean = (mon_vel * af[..., None]).sum(2) / acnt                      # [P,N,2] swarm mean velocity
         mhead = mvel_mean / (torch.sqrt((mvel_mean * mvel_mean).sum(-1, keepdim=True)) + c.eps)
         mvel_u = mon_vel / (torch.sqrt((mon_vel * mon_vel).sum(-1, keepdim=True)) + c.eps)
         align = ((mvel_u * mhead[:, :, None, :]).sum(-1) * af).sum(2) / acnt.squeeze(-1)   # [P,N] mean cos-alignment
-        pdiff = mon_pos[:, :, :, None, :] - mon_pos[:, :, None, :, :]            # [P,N,M,M,2] all monster pairs
-        pd = torch.sqrt((pdiff * pdiff).sum(-1) + c.eps)                         # [P,N,M,M]
-        pair = af[:, :, :, None] * af[:, :, None, :] * (1.0 - torch.eye(M, device=pd.device)[None, None])
-        sep_pen = (torch.clamp(1.0 - pd / self.sep_radius, min=0.0) * pair).sum((-1, -2))   # [P,N] Σ pairwise breach
         r_enemy = (self.rw_e_dmg * applied + self.rw_e_approach * approach - self.rw_e_deaths * killed
                    + self.rw_align * align - self.rw_separate * sep_pen)
 

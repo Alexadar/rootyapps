@@ -114,13 +114,15 @@ def _arena(levels, assign, n_envs):
 
 
 def _rocks(levels, assign, n_envs, K):
-    """Per-env static rock array [N,K,3] (x,y,radius), padded to a common K (unused slots -> radius 0 =
-    never-collide). Like _arena, rocks are per-MAP, read straight from the level dict and indexed by assign."""
-    out = np.zeros((n_envs, max(K, 1), 3), np.float32)
+    """Per-env static rock array [N,K,4] (x, y, r, shape: 0=circle/1=square half-extent), padded to a common K
+    (unused slots -> r 0 = never-collide). Like _arena, rocks are per-MAP, indexed by assign."""
+    out = np.zeros((n_envs, max(K, 1), 4), np.float32)
     for e in range(n_envs):
         rk = levels[assign[e]].get("rocks", [])
         if rk:
             arr = np.asarray(rk, np.float32)
+            if arr.shape[1] == 3:                      # legacy [x,y,r] -> circles (shape column 0)
+                arr = np.pad(arr, ((0, 0), (0, 1)))
             out[e, :arr.shape[0]] = arr
     return out
 

@@ -10,6 +10,7 @@ import glob, json, os
 import numpy as np
 
 AREA_FRAC = 0.03          # target rock coverage as a fraction of the full arena area
+SQUARE_FRAC = 0.5         # fraction of rocks that are axis-aligned squares (shape 1; r = half-extent)
 ORIGIN_CLEAR = 50.0       # keep rocks this far off the origin (player start)
 SPAWN_BAND = 15.0         # keep rocks this far off the spawn-perimeter shell
 ROCK_SEP = 10.0           # min gap between rocks (no clustering)
@@ -18,24 +19,26 @@ N_CAND = 3000             # candidate pool sampled in one vectorized batch (reje
 
 
 def _gen(arena_half, spawn_r, seed):
-    """Vectorized rejection sampler — no python placement loop. Draw a batch of candidate circles, mask by the
-    independent constraints (origin clearance, spawn-perimeter band), then keep a candidate only if no EARLIER
-    surviving candidate overlaps it (strictly-lower-triangular pairwise test guarantees any two kept circles are
-    disjoint). Finally a cumulative-area cutoff stops at ~AREA_FRAC coverage."""
+    """Vectorized rejection sampler — no python placement loop. Draw a batch of candidate shapes (circle or
+    square by SQUARE_FRAC), mask by the independent constraints (origin clearance, spawn-perimeter band), then
+    keep a candidate only if no EARLIER surviving candidate overlaps it (strictly-lower-triangular pairwise test;
+    squares use their circumscribed radius r*sqrt(2) — conservative). Cumulative-area cutoff at ~AREA_FRAC."""
     rng = np.random.default_rng(seed)
     r = rng.uniform(R_LO_FRAC * arena_half, R_HI_FRAC * arena_half, N_CAND)
-    lim = arena_half - r
+    shp = (rng.random(N_CAND) < SQUARE_FRAC).astype(np.float64)                     # 0=circle, 1=square
+    reff = r * np.where(shp > 0.5, np.sqrt(2.0), 1.0)                               # circumscribed radius
+    lim = arena_half - reff
     cx = rng.uniform(-1.0, 1.0, N_CAND) * lim
     cy = rng.uniform(-1.0, 1.0, N_CAND) * lim
-    ok = ((np.hypot(cx, cy) >= ORIGIN_CLEAR + r) &                                   # (a) origin clearance
-          (np.abs(np.maximum(np.abs(cx), np.abs(cy)) - spawn_r) >= r + SPAWN_BAND))  # (b) spawn-perimeter band
+    ok = ((np.hypot(cx, cy) >= ORIGIN_CLEAR + reff) &                                # (a) origin clearance
+          (np.abs(np.maximum(np.abs(cx), np.abs(cy)) - spawn_r) >= reff + SPAWN_BAND))  # (b) spawn-perimeter band
     d = np.hypot(cx[:, None] - cx[None, :], cy[:, None] - cy[None, :])               # [N,N] pairwise center dist
-    ov = d < (r[:, None] + r[None, :] + ROCK_SEP)                                    # overlapping pairs
+    ov = d < (reff[:, None] + reff[None, :] + ROCK_SEP)                              # overlapping pairs
     keep = ok & ~(np.tril(ov, -1) & ok[None, :]).any(1)                             # (d) no earlier ok candidate overlaps
-    area = np.pi * r * r
+    area = np.where(shp > 0.5, 4.0 * r * r, np.pi * r * r)                          # square (2r)^2 vs circle pi r^2
     target = AREA_FRAC * (2.0 * arena_half) ** 2
     keep &= np.cumsum(np.where(keep, area, 0.0)) <= target                          # cumulative-area cutoff
-    sel = np.stack([cx[keep], cy[keep], r[keep]], 1).round(2)
+    sel = np.stack([cx[keep], cy[keep], r[keep], shp[keep]], 1).round(2)
     return sel.tolist(), float(area[keep].sum()), target
 
 

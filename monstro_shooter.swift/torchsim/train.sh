@@ -64,7 +64,7 @@ echo "device=$DEV data=$DATASET perm=$PERM pop=$POP ticks=$TICKS cap=$CAP bullet
   --rw-ring $RW_RING --ring-radius $RING_RADIUS --rw-effort $RW_EFFORT --rw-shot $RW_SHOT --rw-damage $RW_DAMAGE \
   --rw-align $RW_ALIGN --rw-separate $RW_SEPARATE --sep-radius $SEP_RADIUS \
   --rw-e-approach $RW_E_APPROACH --rw-e-deaths $RW_E_DEATHS \
-  --eval --eval-seeds $EVAL_SEEDS --eval-every $EVAL_EVERY --eval-vs "$EVAL_VS" --eval-panel \
+  --eval --eval-seeds $EVAL_SEEDS --eval-every $EVAL_EVERY --eval-vs "$EVAL_VS" --eval-panel --keep-best \
   --logdir "$LOGDIR" \
   --render "$DATASET/eval/grid.mp4" \
   --player-out "$OUT/p_$RUN.json" --enemy-out "$OUT/m_$RUN.json"

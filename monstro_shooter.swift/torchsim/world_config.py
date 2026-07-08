@@ -30,6 +30,7 @@ class WorldConfig:
     # --- static rock obstacles + clearance flow field ---
     flow_grid: int = 48             # per-env flow-field grid resolution (GxG); precomputed once, O(1) sampled
     flow_influence: float = 120.0   # clearance distance over which the rock-avoidance flow fades to zero
+    clear_shot_norm: float = 100.0  # line-of-fire clearance at which the clear_shot obs saturates to 1
     # --- obs normalizers (must match between train + deploy) ---
     player_max_hp: float = 100.0
     dist_norm: float = 1000.0

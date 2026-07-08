@@ -76,9 +76,14 @@ def _draw(cap, boxW, ah, size, name, rocks=None):
     # entities (numpy mask) so each loop iterates the minimum and carries no per-item branch. These per-shape loops
     # (and the per-tick capture + per-frame compose loops) are the necessary ones; there's no vectorized PIL path.
     if rocks is not None:                                          # rocks — filled, beneath everything
-        for rx, ry, rr in rocks[rocks[:, 2] > 0]:
+        for rk in rocks[rocks[:, 2] > 0]:
+            rx, ry, rr = rk[0], rk[1], rk[2]
             x, y = px((rx, ry)); r = rr * sc
-            d.ellipse([x - r, y - r, x + r, y + r], fill=(70, 66, 60), outline=(110, 104, 92))
+            box = [x - r, y - r, x + r, y + r]
+            if len(rk) > 3 and rk[3] > 0.5:                        # shape 1 = axis-aligned square
+                d.rectangle(box, fill=(70, 66, 60), outline=(110, 104, 92))
+            else:
+                d.ellipse(box, fill=(70, 66, 60), outline=(110, 104, 92))
     for bx, by in bp[ba]:                                          # bullets — bright filled dots
         x, y = px((bx, by)); d.ellipse([x - 2, y - 2, x + 2, y + 2], fill=(250, 235, 110))
     for (mx, my), bw in zip(mp[al], boxW[al]):                     # monsters — contour rings, colored by type

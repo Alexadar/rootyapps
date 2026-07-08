@@ -26,8 +26,13 @@ _SHAPES = lambda Fs, Fm, d, H, act: [(Fs, d), (Fm, d), (Fm, d), (2 * d, H), (H, 
 def init_attn(Fs, Fm, d, H, act, device="cpu", seed=0, std0=0.5, scale=0.1):
     g = torch.Generator().manual_seed(seed)
     params = []
-    for (i, o) in _SHAPES(Fs, Fm, d, H, act):
-        W = (torch.randn(i, o, generator=g) * scale).to(device).clone().detach().requires_grad_(True)
+    for idx, (i, o) in enumerate(_SHAPES(Fs, Fm, d, H, act)):
+        # ACTION head (idx 4 = (H,act) = Wp) gets 100x-smaller init (Andrychowicz et al. ICLR'21: near-zero,
+        # observation-independent initial actions, +66% on Humanoid). With b=0 the initial policy outputs ~0:
+        # move=tanh(0)=still, aim direction driven by exploration noise instead of a random ENTRENCHED direction
+        # — directly targets the fixed-direction aim collapse. Trunk + value head keep the normal scale.
+        s = scale * (0.01 if idx == 4 else 1.0)
+        W = (torch.randn(i, o, generator=g) * s).to(device).clone().detach().requires_grad_(True)
         b = torch.zeros(o, device=device).clone().detach().requires_grad_(True)
         params.append((W, b))
     log_std = torch.full((act,), math.log(std0), device=device).clone().detach().requires_grad_(True)
