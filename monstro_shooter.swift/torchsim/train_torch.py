@@ -7,13 +7,22 @@ N = maps × --perm. Device auto-detected (cuda -> mps -> cpu). --budget caps wal
   python train_torch.py --dataset datasets/surround --perm 8 --pop 12 --ticks 200 --cap 16 --eval
   python train_torch.py --dataset datasets/surround --pop 64 --ticks 400 --budget 3600   # 3090
 """
-import argparse, glob, json, os, random, time
+import argparse, glob, json, math, os, random, time
 import torch
 from tqdm import tqdm
 import data, schedule
 import policy_torch as P
+import policy_attn as AT
 import es_torch as ES
+import grpo_torch as G
+import ppo_torch as PPO
+import ppo_attn as PPOA
+import ppo_enemy as PE
+import ppo_enemy_attn as PEA
 from env_torch import EnvTorch
+# NOTE: jax_engine, render_eval, and torch.utils.tensorboard stay lazily imported at their use sites — they
+# pull OPTIONAL deps (jax / imageio-ffmpeg / tensorboard) that not every environment has; importing them at
+# module load would make them hard requirements. Core ML modules above are always needed, so they live here.
 
 H = 32                                   # hidden width (tiny for POC)
 PLAYER_SIZES = [EnvTorch.player_obs, H, H, EnvTorch.player_act]
@@ -167,18 +176,22 @@ def _tb_eval(writer, args, it, rows, panel):
             writer.add_scalar(f"reward_contrib/{lab}", sgn * w * raw, it)
 
 
-def run_eval(gd, weapons, exo, args, player, enemy, dev, seeds, arch="mlp"):
+def run_eval(gd, weapons, exo, args, player, enemy, dev, seeds, arch="mlp", enemy_arch="mlp"):
     """Play every held-out (map x seed) game in ONE batched rollout (no map/seed loop).
     Returns (rows, maps); row = (name, survived, kills, M, dmg). enemy=None -> scripted monster steering
     (the fixed, game-realistic reference opponent), so eval measures absolute player skill, not the
     co-evolving arms race (which makes clear% bounce as the enemy strengthens).
-    arch='attn' -> player is an attention bundle: feed env.player_set_obs and apply_attn (mu only)."""
+    arch='attn' -> player is an attention bundle; enemy_arch='attn' -> attention enemy (top-K neighbor bundle)."""
     if arch == "attn":
-        import policy_attn as AT
         pf = lambda bundle: AT.apply_attn(player, bundle[0], bundle[1], bundle[2])[0]
     else:
         pf = lambda obs: P.apply_mlp(player, obs)
-    ef = (lambda obs: P.apply_enemy(enemy, obs)) if enemy is not None else None
+    if enemy is None:
+        ef = None
+    elif enemy_arch == "attn":
+        ef = lambda bundle: PEA.apply(enemy, bundle[0], bundle[1], bundle[2])[0]
+    else:
+        ef = lambda obs: P.apply_enemy(enemy, obs)
     maps = eval_paths(args)
     levels = [data.sim_level(data.load_map(m)) for m in maps]
     names = [os.path.basename(m) for m in maps]
@@ -186,6 +199,8 @@ def run_eval(gd, weapons, exo, args, player, enemy, dev, seeds, arch="mlp"):
     env = EnvTorch(sched, weapons[0], exo, device=dev, bullets=args.bullets)
     if arch == "attn":
         env.player_obs_fn = env.player_set_obs
+    if enemy_arch == "attn":
+        env.enemy_obs_fn = env.enemy_set_obs
     per_ticks = [args.eval_ticks or int(lv["duration"] * 30) for lv in levels]
     env_ticks = torch.tensor([per_ticks[assign[e]] for e in range(len(assign))], device=dev, dtype=torch.float32)
     rt = torch.tensor(real_tot, device=dev)
@@ -244,6 +259,8 @@ def main():
     #   asymmetric cadence — slow the enemy so the player can converge instead of chasing a moving target).
     ap.add_argument("--enemy-algo", default="ppo", choices=["ppo", "es"])  # ppo: gradient enemy (scales to the 31-dim
     #   obs where ES stalls -> monsters actually learn to chase in a short budget); es = legacy black-box search.
+    ap.add_argument("--enemy-arch", default="attn", choices=["mlp", "attn"])  # attn: each monster attends its K nearest
+    #   neighbors (learned coordination) via policy_attn; mlp = per-monster MLP with pooled swarm features.
     ap.add_argument("--enemy-group", type=int, default=8)   # enemy PPO env-copies (small: per-monster already yields
     #   M x more samples than the player, so a big group would OOM; 8 x N x M x T is plenty for a stable gradient).
     ap.add_argument("--enemy-pool", type=int, default=1)    # league size: player trains vs a random snapshot
@@ -251,7 +268,7 @@ def main():
     ap.add_argument("--freeze-enemy", action="store_true")  # freeze the enemy net: never ES-update it; the player
     #   trains vs a STATIC neural opponent (load a trained enemy via --resume). Stops the arms-race runaway.
     ap.add_argument("--algo", default="es", choices=["es", "grpo", "ppo"])  # policy-gradient player (+ ES enemy)
-    ap.add_argument("--player-arch", default="mlp", choices=["mlp", "attn"])  # attn = single-query cross-attention
+    ap.add_argument("--player-arch", default="attn", choices=["mlp", "attn"])  # attn = single-query cross-attention
     #   over the per-monster SET obs (surroundings-aware); requires --algo ppo, not --engine jax.
     ap.add_argument("--attn-dim", type=int, default=32)       # attention key/value/query width
     ap.add_argument("--attn-hidden", type=int, default=64)    # encoder head hidden width
@@ -376,16 +393,16 @@ def main():
     rrng = random.Random(123 + sd)                        # range-randomization RNG (separate, doesn't perturb ES stream)
     rr = [float(x) for x in args.range_rand.split(",")] if args.range_rand else None
     # enemy league (PSRO-lite): pool of past enemy snapshots the player trains against (see --enemy-pool).
-    import random as _random
-    pool_rng = _random.Random(1234 + sd)
+    pool_rng = random.Random(1234 + sd)
     snap = lambda net: [(W.detach().clone(), b.detach().clone()) for W, b in net]
-    enemy_pool = [snap(enemy)]
+    enemy_pool = [snap(enemy)]   # re-seeded AFTER the enemy net is finalized (below) so the league matches its arch
     def opponent():                                      # the enemy the player trains against this iter
         if args.enemy_pool <= 1:
             return enemy                                 # latest only (old behavior, exact)
         return enemy_pool[pool_rng.randrange(len(enemy_pool))]
     # which opponent eval/render run against (see --eval-vs): fixed snapshot or live co-evolving enemy.
     eval_enemy = lambda: (enemy_ref if args.eval_vs == "fixed" else enemy)
+    e_arch = args.enemy_arch if args.enemy_algo == "ppo" else "mlp"   # enemy apply arch for eval/render (ES/MLP enemy = mlp)
     if args.keep_best and args.eval_every <= 0:           # keep-best needs periodic fixed-eval to score on
         args.eval_every = 20
     best_keep = (_ckpt["best_keep"] if (_ckpt is not None and _ckpt.get("best_keep")) else
@@ -396,23 +413,23 @@ def main():
 
     pdt = torch.bfloat16 if args.policy_bf16 else None   # bf16 policy forward (sim stays fp32); ~1.3x rollout
     if args.player_arch == "attn":                       # attn player consumes the SET-obs bundle, not a flat vec
-        import policy_attn as _AT                         #   (used as the FROZEN opponent in the enemy-ES step)
-        pf = lambda params: (lambda b: _AT.apply_attn(params, b[0], b[1], b[2], pdt)[0])
+        pf = lambda params: (lambda b: AT.apply_attn(params, b[0], b[1], b[2], pdt)[0])
     else:
         pf = lambda params: (lambda obs: P.apply_mlp(params, obs, mm_dtype=pdt))
-    ef = lambda params: (lambda obs: P.apply_enemy(params, obs, mm_dtype=pdt))
+    if args.enemy_algo == "ppo" and args.enemy_arch == "attn":     # attn enemy: apply per-monster over the neighbor bundle
+        ef = lambda params: (lambda bundle: PEA.apply(params, bundle[0], bundle[1], bundle[2], pdt)[0])
+    else:                                                          # MLP enemy: apply on the flat per-monster obs
+        ef = lambda params: (lambda obs: P.apply_enemy(params, obs, mm_dtype=pdt))
 
     grpo = ppo = None
     if args.algo == "grpo":
-        import grpo_torch as G                            # policy-gradient player (the deployed agent)
         gparams, glog = G.init_player(PLAYER_SIZES, dev, seed=7 + sd, std0=args.grpo_std)
         gopt = torch.optim.Adam(G.opt_params(gparams, glog), lr=args.grpo_lr)
         player = G.mean_params(gparams)                   # eval/save/opponent use the deterministic mean
-        grpo = (G, gparams, glog, gopt)
+        grpo = (gparams, glog, gopt)
         print(f"  algo: GRPO player (group={args.grpo_group} lr={args.grpo_lr} std={args.grpo_std}) + ES enemy")
     elif args.algo == "ppo" and args.player_arch == "attn":
-        import ppo_attn as PPOA, policy_attn as AT          # single-query cross-attention over the SET obs
-        env.player_obs_fn = env.player_set_obs              # feed the per-monster set obs through env.step (eval)
+        env.player_obs_fn = env.player_set_obs              # single-query cross-attention player; feed the set obs
         attn_meta = {"Fs": EnvTorch.player_set_fs, "Fm": EnvTorch.player_set_fm,
                      "d": args.attn_dim, "H": args.attn_hidden, "act": EnvTorch.player_act}
         aparams, glog = AT.init_attn(attn_meta["Fs"], attn_meta["Fm"], attn_meta["d"], attn_meta["H"],
@@ -423,16 +440,15 @@ def main():
                 W.data.copy_(cW.to(dev)); b.data.copy_(cb.to(dev))
             glog.data.copy_(_ckpt["glog"].to(dev)); popt.load_state_dict(_ckpt["popt"])
         player = AT.mean_params(aparams)
-        ppo = ("attn", PPOA, AT, aparams, glog, popt)
+        ppo = ("attn", aparams, glog, popt)
         print(f"  algo: PPO ATTENTION player (d={args.attn_dim} H={args.attn_hidden} group={args.ppo_group} "
               f"lr={args.ppo_lr}) + ES enemy   rw_hit={args.rw_hit} rw_space={args.rw_space} rw_aim={args.rw_aim}")
     elif args.algo == "ppo":
-        import grpo_torch as G, ppo_torch as PPO          # PPO: clipped surrogate + critic + GAE
-        gparams, glog = G.init_player(PLAYER_SIZES, dev, seed=7 + sd, std0=args.ppo_std)
+        gparams, glog = G.init_player(PLAYER_SIZES, dev, seed=7 + sd, std0=args.ppo_std)   # MLP PPO player
         vparams = PPO.init_value(dev, seed=23 + sd, in_dim=EnvTorch.player_obs)   # critic sees the full obs
         popt = torch.optim.Adam(G.opt_params(gparams, glog) + PPO.value_params_flat(vparams), lr=args.ppo_lr)
         player = G.mean_params(gparams)
-        ppo = ("mlp", PPO, G, gparams, glog, vparams, popt)
+        ppo = ("mlp", gparams, glog, vparams, popt)
         print(f"  algo: PPO player (group={args.ppo_group} lr={args.ppo_lr} epochs={args.ppo_epochs} "
               f"clip={args.ppo_clip}) + ES enemy   rw_kill={args.rw_kill} rw_survive={args.rw_survive}")
 
@@ -440,14 +456,23 @@ def main():
     e_state = None
     if args.enemy_algo == "ppo":
         assert args.player_arch == "attn", "--enemy-algo ppo needs the attn player (the frozen opponent uses AT)"
-        import ppo_enemy as PE, math as _m
-        enemy = [(W.clone().detach().requires_grad_(True), b.clone().detach().requires_grad_(True)) for W, b in enemy]
-        e_log_std = torch.full((EnvTorch.enemy_act,), _m.log(args.ppo_std), device=dev, requires_grad=True)
-        e_vparams = PE.init_value(dev, 23 + sd, EnvTorch.enemy_obs)
-        e_opt = torch.optim.Adam([w for wb in enemy for w in wb] + [e_log_std] + PE.value_params_flat(e_vparams),
-                                 lr=args.ppo_lr)
-        e_state = (PE, e_log_std, e_vparams, e_opt)
-        print(f"  enemy: PPO gradient (multi-agent, shared reward, group={args.enemy_group}, lr={args.ppo_lr}) — replaces ES")
+        if args.enemy_arch == "attn":                              # attention enemy (top-K neighbors) — reuses policy_attn
+            env.enemy_obs_fn = env.enemy_set_obs                   # _core now feeds the (self,nbr,mask) bundle to ef
+            e_aparams, e_glog = AT.init_attn(EnvTorch.enemy_set_fs, EnvTorch.enemy_set_fn, args.attn_dim,
+                                             args.attn_hidden, EnvTorch.enemy_act, dev, seed=11 + sd, std0=args.ppo_std)
+            e_opt = torch.optim.Adam(AT.opt_params(e_aparams, e_glog), lr=args.ppo_lr)
+            enemy = AT.mean_params(e_aparams)                      # deployed/eval enemy = the mean attn net
+            e_state = ("attn", e_aparams, e_glog, e_opt)
+            print(f"  enemy: PPO ATTENTION top-K (K={EnvTorch.enemy_K}, group={args.enemy_group}, lr={args.ppo_lr}) — gradient multi-agent")
+        else:                                                      # MLP enemy (gradient) — step 1
+            enemy = [(W.clone().detach().requires_grad_(True), b.clone().detach().requires_grad_(True)) for W, b in enemy]
+            e_log_std = torch.full((EnvTorch.enemy_act,), math.log(args.ppo_std), device=dev, requires_grad=True)
+            e_vparams = PE.init_value(dev, 23 + sd, EnvTorch.enemy_obs)
+            e_opt = torch.optim.Adam([w for wb in enemy for w in wb] + [e_log_std] + PE.value_params_flat(e_vparams),
+                                     lr=args.ppo_lr)
+            e_state = ("mlp", e_log_std, e_vparams, e_opt)
+            print(f"  enemy: PPO MLP (group={args.enemy_group}, lr={args.ppo_lr}) — gradient multi-agent")
+        enemy_pool[:] = [snap(enemy)]   # re-seed the league with the FINALIZED enemy (arch may have changed above)
 
     best = 0.0
     hist = {"player": [], "enemy": []}
@@ -472,8 +497,8 @@ def main():
         if train_player:
             opp = opponent()                                    # league opponent (latest, or sampled snapshot)
             if ppo is not None and ppo[0] == "attn":            # attention PPO (shared-encoder critic) vs ES enemy
-                _, PPOA, AT, aparams, glog, popt = ppo
-                _pl, _vl, ret = PPOA.ppo_step(env, cur_ticks, aparams, glog, popt, opp, args.ppo_group,
+                _, aparams, glog, popt = ppo
+                _pl, _vl, ret = PPOA.ppo_step(env, cur_ticks, aparams, glog, popt, ef(opp), args.ppo_group,
                                               gamma=args.ppo_gamma, lam=args.ppo_gae, clip=args.ppo_clip,
                                               epochs=args.ppo_epochs, minibatch=args.ppo_minibatch,
                                               vcoef=args.ppo_vcoef, ent=args.ppo_ent, mm_dtype=pdt)
@@ -482,7 +507,7 @@ def main():
                 if writer is not None:
                     writer.add_scalar("ppo/policy_loss", float(_pl), it); writer.add_scalar("ppo/value_loss", float(_vl), it)
             elif ppo is not None:                               # MLP PPO player step vs the frozen ES enemy
-                _, PPO, G, gparams, glog, vparams, popt = ppo
+                _, gparams, glog, vparams, popt = ppo
                 _pl, _vl, ret = PPO.ppo_step(env, cur_ticks, gparams, glog, vparams, popt, opp, args.ppo_group,
                                              gamma=args.ppo_gamma, lam=args.ppo_gae, clip=args.ppo_clip,
                                              epochs=args.ppo_epochs, minibatch=args.ppo_minibatch,
@@ -492,7 +517,7 @@ def main():
                 if writer is not None:
                     writer.add_scalar("ppo/policy_loss", float(_pl), it); writer.add_scalar("ppo/value_loss", float(_vl), it)
             elif grpo is not None:                              # GRPO player step vs the frozen ES enemy
-                G, gparams, glog, gopt = grpo
+                gparams, glog, gopt = grpo
                 _loss, ret = G.grpo_player_step(env, cur_ticks, gparams, glog, gopt, opp,
                                                 args.grpo_group, gamma=args.grpo_gamma, ent_coef=args.grpo_ent)
                 player = G.mean_params(gparams)                 # refresh the deterministic mean for eval/opponent
@@ -508,8 +533,18 @@ def main():
                 player, best, mean = ES.es_step(player, fitness, args.pop, gen, dev, args.sigma, args.lr)
                 hist["player"].append(mean); last["player"] = mean
         else:
-            if e_state is not None:                            # PPO enemy (gradient, multi-agent shared reward)
-                PE, e_log_std, e_vparams, e_opt = e_state
+            if e_state is not None and e_state[0] == "attn":   # PPO ATTENTION enemy (top-K neighbors)
+                _tag, e_aparams, e_glog, e_opt = e_state
+                _epl, _evl, eret = PEA.ppo_step(env, cur_ticks, e_aparams, e_glog, e_opt, player, args.enemy_group,
+                                                gamma=args.ppo_gamma, lam=args.ppo_gae, clip=args.ppo_clip,
+                                                epochs=args.ppo_epochs, minibatch=args.ppo_minibatch,
+                                                vcoef=args.ppo_vcoef, ent=args.ppo_ent, mm_dtype=pdt)
+                enemy = AT.mean_params(e_aparams)              # refresh deployed/eval enemy (mean attn net)
+                best = eret; hist["enemy"].append(eret); last["enemy"] = eret
+                if writer is not None:
+                    writer.add_scalar("ppo_e/policy_loss", float(_epl), it); writer.add_scalar("ppo_e/value_loss", float(_evl), it)
+            elif e_state is not None:                          # PPO MLP enemy (gradient, multi-agent shared reward)
+                _tag, e_log_std, e_vparams, e_opt = e_state
                 _epl, _evl, eret = PE.ppo_step(env, cur_ticks, enemy, e_log_std, e_vparams, e_opt, player, AT,
                                                args.enemy_group, gamma=args.ppo_gamma, lam=args.ppo_gae,
                                                clip=args.ppo_clip, epochs=args.ppo_epochs, minibatch=args.ppo_minibatch,
@@ -541,7 +576,7 @@ def main():
         if args.eval_every and it > 0 and it % args.eval_every == 0:
             ev_seeds = 2 if args.keep_best else 1         # keep-best: 2 seeds for a less noisy checkpoint score
             rows, _, panel = run_eval(gd_eval, weapon_cyc, exo_eval, args, player, eval_enemy(), dev, seeds=ev_seeds,
-                                      arch=args.player_arch)
+                                      arch=args.player_arch, enemy_arch=e_arch)
             _tb_eval(writer, args, it, rows, panel)
             tqdm.write(f"  [eval @ it{it:4d} vs {args.eval_vs}]  {eval_line(rows)}")
             if args.keep_best:
@@ -567,14 +602,18 @@ def main():
               f"{best_keep['score']:.3f}) instead of the final weights.")
     os.makedirs(os.path.dirname(os.path.abspath(args.player_out)), exist_ok=True)
     if args.player_arch == "attn":                            # discriminated kind=attention JSON (not MLP sizes/w/b)
-        import policy_attn as AT
         save_log_std = best_keep["log_std"] if (args.keep_best and best_keep.get("log_std") is not None) else glog
         attn_meta = {"Fs": EnvTorch.player_set_fs, "Fm": EnvTorch.player_set_fm,
                      "d": args.attn_dim, "H": args.attn_hidden, "act": EnvTorch.player_act}
         AT.to_json(save_player, save_log_std, attn_meta, args.player_out)
     else:
         P.to_json(save_player, PLAYER_SIZES, args.player_out)
-    P.to_json(save_enemy, ENEMY_SIZES, args.enemy_out)
+    if args.enemy_algo == "ppo" and args.enemy_arch == "attn":   # attention enemy -> kind=attention JSON
+        e_meta = {"Fs": EnvTorch.enemy_set_fs, "Fm": EnvTorch.enemy_set_fn,
+                  "d": args.attn_dim, "H": args.attn_hidden, "act": EnvTorch.enemy_act}
+        AT.to_json(save_enemy, e_glog, e_meta, args.enemy_out)
+    else:
+        P.to_json(save_enemy, ENEMY_SIZES, args.enemy_out)
     print(f"saved -> {args.player_out}  +  {args.enemy_out}")
     if args.ckpt_out and args.player_arch == "attn":         # full-state checkpoint for --resume (current working state)
         torch.save({"aparams": aparams, "glog": glog, "popt": popt.state_dict(),
@@ -585,7 +624,7 @@ def main():
     if args.eval:
         print(f"  (eval opponent: --eval-vs {args.eval_vs})")
         rows, maps, panel = run_eval(gd_eval, weapon_cyc, exo_eval, args, player, eval_enemy(), dev, max(1, args.eval_seeds),
-                                     arch=args.player_arch)
+                                     arch=args.player_arch, enemy_arch=e_arch)
         _tb_eval(writer, args, it, rows, panel)
         eval_report(rows, maps, args.eval_seeds, dev)
 
@@ -593,7 +632,7 @@ def main():
         try:                                                  # non-fatal: models are already saved above
             import render_eval
             render_eval.render_grid(gd_eval, weapon_cyc, exo_eval, args, player, eval_enemy(), dev, args.render,
-                                    arch=args.player_arch)
+                                    arch=args.player_arch, enemy_arch=e_arch)
         except Exception as e:
             print(f"  [render skipped] {type(e).__name__}: {e}\n  (models saved OK; video needs imageio-ffmpeg "
                   f"— `pip install imageio-ffmpeg`, or run in the conda env that has it.)")

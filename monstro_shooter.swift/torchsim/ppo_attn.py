@@ -36,10 +36,9 @@ def _gae(rew, val, gamma, lam):
 
 
 @torch.no_grad()
-def rollout(env, ticks, params, log_std, enemy_params, P_group, mm_dtype=None):
-    """Collect the bundle + actions vs a frozen enemy. Returns SF[T,P,N,Fs] MF[T,P,N,M,Fm] AL[T,P,N,M]
-    A[T,P,N,act] LP/REW/VAL[T,P,N]."""
-    ef = lambda obs: P.apply_enemy(enemy_params, obs, mm_dtype)
+def rollout(env, ticks, params, log_std, ef, P_group, mm_dtype=None):
+    """Collect the bundle + actions vs a frozen enemy. `ef` is the enemy action fn obs->[P,N,M,2] (arch-agnostic:
+    MLP or attention, built by the caller). Returns SF[T,P,N,Fs] MF[T,P,N,M,Fm] AL[T,P,N,M] A[T,P,N,act] LP/REW/VAL."""
     s = env.reset(P_group)
     sf_l, mf_l, al_l, a_l, lp_l, r_l, v_l = ([] for _ in range(7))
     std = log_std.exp()
@@ -55,10 +54,10 @@ def rollout(env, ticks, params, log_std, enemy_params, P_group, mm_dtype=None):
             torch.stack(a_l), torch.stack(lp_l), torch.stack(r_l), torch.stack(v_l))
 
 
-def ppo_step(env, ticks, params, log_std, opt, enemy_params, P_group,
+def ppo_step(env, ticks, params, log_std, opt, ef, P_group,
              gamma=0.99, lam=0.95, clip=0.2, epochs=4, minibatch=16384, vcoef=0.5, ent=0.0, mm_dtype=None):
-    """One PPO update of the attention player vs a frozen enemy. Returns (policy_loss, value_loss, mean_return)."""
-    SF, MF, AL, A, LP, REW, VAL = rollout(env, ticks, params, log_std, enemy_params, P_group, mm_dtype)
+    """One PPO update of the attention player vs a frozen enemy (`ef` = enemy action fn). Returns (pl, vl, ret)."""
+    SF, MF, AL, A, LP, REW, VAL = rollout(env, ticks, params, log_std, ef, P_group, mm_dtype)
     with torch.no_grad():
         adv, ret = _gae(REW, VAL, gamma, lam)
         adv = (adv - adv.mean()) / (adv.std() + 1e-6)

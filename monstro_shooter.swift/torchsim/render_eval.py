@@ -102,10 +102,11 @@ def _eval_maps(dataset):
     return sorted(glob.glob(os.path.join(dataset, "eval", "*.json")))
 
 
-def render_grid(gd, weapons, exo, args, player, enemy, dev, out_path, arch="mlp"):
+def render_grid(gd, weapons, exo, args, player, enemy, dev, out_path, arch="mlp", enemy_arch="mlp"):
     """Render a synchronized grid where each ROW is a WEAPON (the SAME weapon-conditioned policy) and each
     COL is an eval map — so you can see at a glance how one policy generalizes across weapons. `weapons` may
-    be a list of weapon dicts (cycled) or a single dict. arch='attn' -> attention bundle obs."""
+    be a list of weapon dicts (cycled) or a single dict. arch='attn' -> attention player bundle obs;
+    enemy_arch='attn' -> attention enemy (per-monster top-K neighbor bundle via enemy_set_obs)."""
     if not isinstance(weapons, (list, tuple)):
         weapons = [weapons]
     if arch == "attn":
@@ -113,7 +114,13 @@ def render_grid(gd, weapons, exo, args, player, enemy, dev, out_path, arch="mlp"
         pf = lambda bundle: AT.apply_attn(player, bundle[0], bundle[1], bundle[2])[0]
     else:
         pf = lambda o: P.apply_mlp(player, o)
-    ef = (lambda o: P.apply_enemy(enemy, o)) if enemy is not None else None   # None -> scripted steering
+    if enemy is None:
+        ef = None
+    elif enemy_arch == "attn":
+        import ppo_enemy_attn as PEA
+        ef = lambda bundle: PEA.apply(enemy, bundle[0], bundle[1], bundle[2])[0]
+    else:
+        ef = lambda o: P.apply_enemy(enemy, o)
     dataset = getattr(args, "dataset", "") or os.path.join(os.path.dirname(__file__), "datasets", "surround")
     stride = getattr(args, "render_stride", 2)
     fps = getattr(args, "render_fps", 30)
@@ -127,6 +134,8 @@ def render_grid(gd, weapons, exo, args, player, enemy, dev, out_path, arch="mlp"
     env = EnvTorch(sched, weapons[0], exo, device=dev, bullets=bullets)
     if arch == "attn":
         env.player_obs_fn = env.player_set_obs
+    if enemy_arch == "attn":
+        env.enemy_obs_fn = env.enemy_set_obs                       # _core feeds the (self,nbr,mask) bundle to ef
     per_ticks = [getattr(args, "eval_ticks", 0) or int(lv["duration"] * 30) for lv in levels]
     env_ticks = torch.tensor([per_ticks[assign[e]] for e in range(len(assign))], device=dev, dtype=torch.float32)
     rt = torch.tensor(real_tot, device=dev)

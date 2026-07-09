@@ -28,6 +28,11 @@ class EnvTorch:
     enemy_obs = 31         # base19 + 8 weapon params + 2 player ammo/reload + 2 rock-flow (monsters route around rocks)
     #   + playerClosingVelXY, bulletVelXY (dynamics), + meanHeadXY, nearestNbrDirXY, nearestNbrDist (swarm)
     enemy_act = 2
+    # attention enemy (enemy_set_obs): each monster is a QUERY over its K nearest OTHER monsters (learned
+    # coordination, replacing the pooled mean-heading + single-nearest of the flat obs). Reuses policy_attn.
+    enemy_set_fs = 26     # self: dirXY,dist,velXY,speed,hp, nearestBullet dirXY/dist/vel, playerClosingVel, weapon8, ammo, reload, flowXY
+    enemy_set_fn = 5      # per-neighbor: relDirXY, relDist, relVelXY
+    enemy_K = 8           # neighbors attended per monster (top-K nearest; bounds cost to O(N*M*K))
     WFEAT = 8              # weapon features (both sides): dmg, rate, pellets, pen, range, spread, mag-capacity, reload-duration
     player_set_fs = 20     # self feats: hp, count, wallXY, velXY, aimXY + 8 weapon params + ammo/mag, reload + rock-flowXY
     player_set_fm = 13     # per-monster feats (see player_set_obs) + in-range ratio + clear_shot (line-of-fire)
@@ -105,6 +110,7 @@ class EnvTorch:
         self.rw_e_approach = 0.0008  # dense per-tick reward ∝ closing distance (summed over alive monsters)
         self.rw_e_deaths = 0.02  # penalty per monster killed
         self.player_obs_fn = self.player_obs_vec   # MLP/ES default; train sets to player_set_obs for attention
+        self.enemy_obs_fn = self.enemy_obs_vec     # flat MLP obs; train sets to enemy_set_obs for the attn enemy
         self.decompose = False     # eval-only: accumulate per-reward-term RAW sums into self._panel (analysis)
         self._panel = None
 
@@ -367,6 +373,58 @@ class EnvTorch:
                           mean_head, nn_dir, nn_dist_n[..., None],                # item 2: align + separation
                           wf, ammo_m, reload_m, flow_m], -1)        # [P,N,M,31]  + rock-avoidance flow
 
+    def enemy_set_obs(self, s):
+        """Attention-enemy obs: (self_feat [P,N,M,Fs], nbr_feat [P,N,M,K,Fn], nbr_mask [P,N,M,K]). `self` = each
+        monster's own context (player/bullet/weapon/flow); `nbr` = its K nearest OTHER monsters (relative),
+        replacing the pooled mean-heading + single-nearest with LEARNED attention over K neighbors. Each monster
+        is a query over its K neighbor tokens (folded into the batch when applied) — reuses policy_attn. No loops."""
+        c = self.cfg; K = self.enemy_K
+        mon_pos, mon_vel = s["mon_pos"], s["mon_vel"]
+        rel = s["player_pos"][:, :, None, :] - mon_pos                            # [P,N,M,2] toward player
+        dist = torch.sqrt((rel * rel).sum(-1)) + c.eps
+        dirv = rel / dist[..., None]
+        spd = self.mon_speed[None, :, :]
+        vel_n = mon_vel / (spd[..., None] + c.eps)
+        alive = ((s["mon_act"] > 0.5) & (s["mon_hp"] > 0)).float()                # [P,N,M]
+        # nearest in-flight bullet (dodge context) — same idiom as enemy_obs_vec
+        brel = s["bul_pos"][:, :, None, :, :] - mon_pos[:, :, :, None, :]         # [P,N,M,B,2]
+        bd2 = (brel * brel).sum(-1)
+        bd2 = torch.where(s["bul_alive"][:, :, None, :] > 0.5, bd2, torch.full_like(bd2, 1e18))
+        bmin, bidx = bd2.min(-1); has = (bmin < 1e17).float()
+        bidx2 = bidx[..., None, None].expand(*bidx.shape, 1, 2)
+        bnear = torch.gather(brel, 3, bidx2).squeeze(3); bdist = torch.sqrt(bmin.clamp(min=0.0)) + c.eps
+        bdir = bnear / bdist[..., None] * has[..., None]
+        bdist_n = torch.where(has > 0.5, (bdist / c.bullet_norm).clamp(max=2.0), torch.full_like(bdist, 2.0))
+        pvel_world = s["player_vel"] * (c.player_speed * self.exo_speed)
+        pvel_rel = (pvel_world[:, :, None, :] - mon_vel) / c.monster_speed_norm
+        bvel = torch.gather(s["bul_vel"][:, :, None, :, :].expand(*bd2.shape, 2), 3, bidx2).squeeze(3)
+        bvel_n = bvel / self.bullet_speed * has[..., None]
+        Pn, Nn, Mn = dist.shape
+        wf = self.wfeat.view(1, 1, 1, -1).expand(Pn, Nn, Mn, -1)
+        ammo_m = (s["ammo"] / self.mag_size)[..., None, None].expand(Pn, Nn, Mn, 1)
+        reload_m = (s["reload_t"] / self.reload_ticks)[..., None, None].expand(Pn, Nn, Mn, 1)
+        flow_m = self._sample_flow(mon_pos)
+        self_feat = torch.cat([dirv, (dist / c.dist_norm)[..., None], vel_n,
+                               (spd / c.monster_speed_norm)[..., None].expand_as(dist[..., None]),
+                               (s["mon_hp"] / (self.hp0[None] + c.eps))[..., None],
+                               bdir, bdist_n[..., None], pvel_rel, bvel_n,
+                               wf, ammo_m, reload_m, flow_m], -1)                 # [P,N,M,26]
+        # K nearest OTHER monsters (self + dead masked out) via topk over the j axis
+        ndv = mon_pos[:, :, None, :, :] - mon_pos[:, :, :, None, :]               # [P,N,i,j,2] = pos_j - pos_i (toward j)
+        nd2 = (ndv * ndv).sum(-1)                                                 # [P,N,i,j]
+        eye = torch.eye(Mn, device=mon_pos.device, dtype=torch.bool)[None, None]
+        nd2 = torch.where(eye | (alive[:, :, None, :] < 0.5), torch.full_like(nd2, 1e18), nd2)
+        kd, ki = torch.topk(nd2, min(K, Mn), largest=False, dim=-1)              # [P,N,i,K]
+        nbr_mask = (kd < 1e17).float()                                           # valid-neighbor mask
+        kidx2 = ki[..., None].expand(*ki.shape, 2)                               # [P,N,i,K,2]
+        nbr_rel = torch.gather(ndv, 3, kidx2)                                     # [P,N,i,K,2]
+        nbr_dist = torch.sqrt((nbr_rel * nbr_rel).sum(-1) + c.eps)
+        nbr_dir = nbr_rel / nbr_dist[..., None]
+        velj = mon_vel[:, :, None, :, :].expand(Pn, Nn, Mn, Mn, 2)
+        nbr_vel = torch.gather(velj, 3, kidx2) / c.monster_speed_norm            # [P,N,i,K,2]
+        nbr_feat = torch.cat([nbr_dir, (nbr_dist / c.dist_norm).clamp(max=2.0)[..., None], nbr_vel], -1)  # [P,N,M,K,5]
+        return self_feat, nbr_feat, nbr_mask
+
     def _precompute(self, ticks):
         """Precompute per-tick spread (cos/sin), ring-slot one-hots, fire/contact gates, and elapsed —
         ONCE, as device tensors indexed by t. Removes the per-tick numpy + host->device copy from step()
@@ -437,7 +495,7 @@ class EnvTorch:
 
         # neural enemy (the networked NPC) always drives monster velocity — scripted steering removed
         s2 = dict(s); s2["mon_pos"] = mon_pos                       # obs from post-spawn positions
-        a_e = enemy_fn(self.enemy_obs_vec(s2))                      # [P,N,M,2]
+        a_e = enemy_fn(self.enemy_obs_fn(s2))                       # [P,N,M,2] (obs = flat vec or attn bundle)
         v = torch.tanh(a_e)
         vn = v / (torch.sqrt((v * v).sum(-1, keepdim=True)) + c.eps)
         mon_vel = vn * spd[..., None] * move_mask[..., None]
