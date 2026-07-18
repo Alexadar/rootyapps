@@ -468,11 +468,17 @@ def render_torch(env, dparams, dls, eparams, els, K_dec, H, out_path, W=1280, Hp
     #     a short hold so the finish isn't abrupt; hard-capped at max_seconds. A drone-side wipe (all drones
     #     kamikaze'd/crashed) counts as terminal too, so stalemates still end. ---
     max_frames = int(max_seconds * FPS)
+    Dn = snaps[0]["d_act"].shape[2]                                                  # drones per env
     term = None
     for i, s in enumerate(snaps):                                                   # RENDER-LOOP-OK (offline scan)
         ae = (s["e_alive"][0][:P] > 0.5).sum(1)                                      # [P] alive enemies per env
-        ad = (s["d_alive"][0][:P] > 0.5).sum(1)                                      # [P] alive drones per env
-        if bool(((ae == 0) | (ad == 0)).all()):                                     # all envs decided?
+        ad = (s["d_alive"][0][:P] > 0.5).sum(1)                                      # [P] alive (launched, live) drones
+        launched = (s["d_act"][0][:P] > 0.5).sum(1)                                  # [P] drones DEPLOYED so far (monotonic)
+        # decided = enemies wiped, OR every drone has deployed AND none are left (a drone-side wipe). The
+        # `launched==D` guard is essential: drones launch STAGGERED, so `ad==0` early just means "not launched
+        # yet", not "all dead" — without it the clip ends at frame 0.
+        decided = (ae == 0) | ((launched == Dn) & (ad == 0))
+        if bool(decided.all()):
             term = i; break
     end = min(term + int(end_hold * FPS), max_frames, len(snaps)) if term is not None else min(len(snaps), max_frames)
     snaps = snaps[:max(end, 1)]                                                      # trim the clip
