@@ -42,6 +42,25 @@ def height(hf, xy, extent):
             + h01 * (1 - tx) * ty + h11 * tx * ty)
 
 
+def height_and_grad(hf, xy, extent):
+    """Fused bilinear height + analytic gradient in ONE pass (the 4 corner gathers + grid frac are shared,
+    so callers needing BOTH avoid sampling the terrain twice). hf [N,G,G], xy [P,N,K,2] ->
+    (h [P,N,K], grad [P,N,K,2]). Bit-identical to height()/height_grad() called separately. Loop-free."""
+    G = hf.shape[1]
+    ix, iy, tx, ty = _to_grid(xy, extent, G)
+    h00 = _sample_nodes(hf, ix, iy)
+    h10 = _sample_nodes(hf, ix + 1, iy)
+    h01 = _sample_nodes(hf, ix, iy + 1)
+    h11 = _sample_nodes(hf, ix + 1, iy + 1)
+    h = (h00 * (1 - tx) * (1 - ty) + h10 * tx * (1 - ty)
+         + h01 * (1 - tx) * ty + h11 * tx * ty)
+    dh_dgx = (h10 - h00) * (1 - ty) + (h11 - h01) * ty
+    dh_dgy = (h01 - h00) * (1 - tx) + (h11 - h10) * tx
+    dg_dw = (G - 1) / (2.0 * extent)
+    grad = torch.stack([dh_dgx * dg_dw, dh_dgy * dg_dw], dim=-1)
+    return h, grad
+
+
 def height_grad(hf, xy, extent):
     """Analytic gradient d(height)/d(world xy). hf [N,G,G], xy [P,N,K,2] -> [P,N,K,2]. Exact
     derivative of the bilinear blend; chain rule d(grid)/d(world) = (G-1)/(2 extent). Loop-free."""

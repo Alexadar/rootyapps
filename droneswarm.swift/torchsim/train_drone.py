@@ -86,6 +86,13 @@ def main():
     ap.add_argument("--ppo-epochs", type=int, default=2)
     ap.add_argument("--attn-dim", type=int, default=32); ap.add_argument("--attn-hidden", type=int, default=64)
     ap.add_argument("--gamma", type=float, default=0.98); ap.add_argument("--ent", type=float, default=0.0)
+    ap.add_argument("--train-mode", choices=["ppo", "shac"], default="ppo",
+                    help="drone update: ppo (score-function) or shac (analytic gradients through the differentiable sim)")
+    ap.add_argument("--shac-horizon", type=int, default=6, help="SHAC BPTT window length in decisions")
+    # SHAC hyperparameters (defaults from the SHAC paper; ours were mistuned — LR 20x too low, no TD-lambda/EMA):
+    ap.add_argument("--shac-lr", type=float, default=2e-3, help="SHAC actor LR (analytic grads are clean -> big steps; PPO enemy keeps --ppo-lr)")
+    ap.add_argument("--shac-lambda", type=float, default=0.95, help="TD(lambda) for the SHAC critic value targets")
+    ap.add_argument("--shac-tau", type=float, default=0.005, help="EMA rate of the SHAC value TARGET network")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--compile", action="store_true")
     ap.add_argument("--policy-bf16", action="store_true")
@@ -98,6 +105,8 @@ def main():
                     help="bootstrap kills: kamikaze radius starts START_MULT x the real radius and anneals to 1x over ANNEAL_ITERS iters")
     # WorldConfig overrides (for tiny-env debugging: shrink the world so a trivial task iterates fast)
     ap.add_argument("--arena-half", type=float, default=None)
+    ap.add_argument("--combat-half", type=float, default=None,
+                    help="central combat-zone half-extent; spawns+edge+homing key off this (big arena, central fight)")
     ap.add_argument("--ceiling", type=float, default=None)
     ap.add_argument("--engage-range", type=float, default=None)
     ap.add_argument("--terrain-amp", type=float, default=None)
@@ -112,15 +121,14 @@ def main():
     dev = pick_device(args.device)
     mm_dtype = torch.bfloat16 if args.policy_bf16 and dev == "cuda" else None
     cfg = WorldConfig()
-    for k in ("arena_half", "ceiling", "engage_range", "terrain_amp", "std0"):   # tiny-env / debug overrides
+    for k in ("arena_half", "combat_half", "ceiling", "engage_range", "terrain_amp", "std0"):   # tiny-env / debug overrides
         v = getattr(args, k, None)
         if v is not None and k != "std0":
             setattr(cfg, k, v)
     K_dec = args.ticks // cfg.act_every
     D, E, O, T = args.drones, args.enemies, args.obstacles, args.ticks
     if dev == "cuda":
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
+        torch.set_float32_matmul_precision("high")             # TF32 for the fp32 GEMMs (GRU/critic); modern API (2.9+)
 
     env = EnvDrone(S.build(cfg, args.n_envs, D, E, O, T, base_seed=0), device=dev, cfg=cfg)
     ev_env = EnvDrone(S.build_eval(cfg, args.eval_seeds, D, E, O, T), device=dev, cfg=cfg)
@@ -148,8 +156,16 @@ def main():
     else:
         eparams, els = AT.init_attn(EnvDrone.ENEMY_SELF_F, EnvDrone.ENEMY_TOK_F, args.attn_dim, H,
                                     EnvDrone.ENEMY_ACT, device=dev, seed=args.seed + 1, std0=std0)
-    dopt = torch.optim.Adam(RE.opt_params(dparams, dls), lr=args.ppo_lr)
-    eopt = torch.optim.Adam(AT.opt_params(eparams, els), lr=args.ppo_lr)
+    fused_ok = (dev == "cuda")                                 # single-kernel Adam: faster step + lower peak VRAM
+    # SHAC drives the drone with analytic gradients (clean, low-variance) -> a MUCH higher LR than PPO's
+    # score-function estimate. The enemy always trains via PPO, so it keeps --ppo-lr regardless.
+    drone_lr = args.shac_lr if args.train_mode == "shac" else args.ppo_lr
+    dopt = torch.optim.Adam(RE.opt_params(dparams, dls), lr=drone_lr, fused=fused_ok)   # drone (recurrent) optimizer
+    eopt = torch.optim.Adam(AT.opt_params(eparams, els), lr=args.ppo_lr, fused=fused_ok)   # enemy (attention) optimizer
+    # EMA value TARGET network for SHAC: a slowly-tracking detached copy of the drone params, used ONLY to
+    # estimate the terminal value bootstrap + the TD(lambda) critic targets. Persists across shac_step calls so
+    # the target moves smoothly (SHAC tau~0.005). Unused in PPO mode.
+    dtarget = {kk: v.detach().clone() for kk, v in dparams.items()}
 
     pool = [snap_e(eparams, els)]                              # league of past (feedforward) enemies
     pool_rng = random.Random(1234 + args.seed)
@@ -181,10 +197,16 @@ def main():
             side = "enemy"
         else:                                                  # drone trains vs a sampled league enemy
             opp = pool[pool_rng.randrange(len(pool))] if len(pool) > 1 else (eparams, els)
-            pl, vl, ret, valid = PPO.ppo_step(env, "drone", dparams, dls, opp[0], opp[1], dopt,
-                                              args.ppo_group, K_dec, gamma=args.gamma,
-                                              minibatch=args.ppo_minibatch, epochs=args.ppo_epochs,
-                                              ent=args.ent, mm_dtype=mm_dtype)
+            if args.train_mode == "shac":                      # analytic gradients through the sim (diff-physics)
+                pl, vl, ret, valid = PPO.shac_step(env, dparams, dls, opp[0], opp[1], dopt,
+                                                   args.ppo_group, args.shac_horizon, K_dec=K_dec, dtarget=dtarget,
+                                                   gamma=args.gamma, lam=args.shac_lambda, tau=args.shac_tau,
+                                                   alpha_ent=args.ent, mm_dtype=mm_dtype)   # EMA target + TD(lambda)
+            else:
+                pl, vl, ret, valid = PPO.ppo_step(env, "drone", dparams, dls, opp[0], opp[1], dopt,
+                                                  args.ppo_group, K_dec, gamma=args.gamma,
+                                                  minibatch=args.ppo_minibatch, epochs=args.ppo_epochs,
+                                                  ent=args.ent, mm_dtype=mm_dtype)
             side = "drone"
         el = time.time() - t0
         ev = ("", "", "")

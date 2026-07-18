@@ -10,6 +10,7 @@ _fant="$_cbase/envs/fantastic/bin/python"
 PY="${PY:-$([ -x "$_fant" ] && echo "$_fant" || command -v python3 || command -v python)}"
 export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
 export PYTHONUNBUFFERED=1   # live stdout when redirected to a log (froggo idiom)
+export TORCHINDUCTOR_CACHE_DIR="${TORCHINDUCTOR_CACHE_DIR:-$HOME/.cache/torchinductor_droneswarm}"  # persist compile across relaunches
 
 DEV=$("$PY" - <<'PYEOF'
 import torch

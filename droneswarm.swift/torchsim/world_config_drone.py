@@ -81,6 +81,9 @@ class WorldConfig:
     terrain_grid: int = 64          # G: heightfield resolution GxG (bilinear-sampled, analytic gradient)
     terrain_amp: float = 15.0       # m peak-to-trough terrain relief (design)
     arena_half: float = 60.0        # m arena half-extent in x and y (drones + enemies clamp to +/- this)
+    combat_half: float = 0.0        # m central "combat zone" half-extent: spawns + edge-penalty + homing key
+    #                                 off THIS, not arena_half, so a BIG arena can hold a 1x-scale fight in its
+    #                                 middle square. 0 => fall back to arena_half (no separate combat zone).
     ceiling: float = 45.0           # m z ceiling for drones above terrain base
 
     # ================= enemies: toy soldiers (social force) + toy tanks (unicycle) =================

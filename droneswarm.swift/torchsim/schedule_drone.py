@@ -71,6 +71,7 @@ def _fill_env(cfg, D, E, O, T, seed):
     """Build one env's scene (all arrays for row e). Returns a dict of per-env arrays."""
     rng = np.random.default_rng(seed)
     G, ext, ah = cfg.terrain_grid, cfg.arena_half, cfg.arena_half
+    ch = cfg.combat_half if cfg.combat_half > 0 else ah          # central combat zone (spawns confined here)
     hf = _fbm_heightfield(rng, G, cfg.terrain_amp)
 
     # obstacles: trees (cylinders) + rocks (boxes) scattered, seated on terrain, away from arena centre
@@ -90,14 +91,14 @@ def _fill_env(cfg, D, E, O, T, seed):
     # enemies: E units, first n_tank tanks then soldiers (fixed split), scattered, on terrain
     n_tank = E // 3                                              # ~1/3 tanks, 2/3 soldiers
     e_type = np.zeros(E, np.float32); e_type[:n_tank] = 1.0
-    epx = rng.uniform(-0.7 * ah, 0.7 * ah, E)
-    epy = rng.uniform(-0.7 * ah, 0.7 * ah, E)
+    epx = rng.uniform(-0.7 * ch, 0.7 * ch, E)                    # enemies spawn in the central combat zone
+    epy = rng.uniform(-0.7 * ch, 0.7 * ch, E)
     e_pos0 = np.stack([epx, epy], -1).astype(np.float32)
     e_head0 = rng.uniform(-np.pi, np.pi, E).astype(np.float32)
 
     # drone base: a launch point near an arena rim, above terrain; drones staggered over the first ~1.2 s
     bang = rng.uniform(-np.pi, np.pi)
-    bx, by = 0.72 * ah * np.cos(bang), 0.72 * ah * np.sin(bang)   # pulled inward so the launch LINE fits inside
+    bx, by = 0.72 * ch * np.cos(bang), 0.72 * ch * np.sin(bang)   # launch from the COMBAT-ZONE rim (central square)
     bz = _bilerp(hf, np.array([bx]), np.array([by]), ext)[0] + 0.5 * cfg.ceiling
     base_pos = np.array([bx, by, bz], np.float32)
     spawn_tick = np.floor(rng.uniform(0, 1.2 / cfg.dt, D)).astype(np.float32)   # launch ticks
@@ -110,7 +111,7 @@ def _fill_env(cfg, D, E, O, T, seed):
     # fans out and the assignment reward finally has asymmetric rows to disperse.
     inward = -np.array([bx, by], np.float32); inward /= (np.linalg.norm(inward) + 1e-6)  # base -> centre
     perp = np.array([-inward[1], inward[0]], np.float32)                                  # lateral line dir
-    lat = np.linspace(-0.5 * ah, 0.5 * ah, D).astype(np.float32)                          # even lateral slots
+    lat = np.linspace(-0.5 * ch, 0.5 * ch, D).astype(np.float32)                          # even lateral slots (combat zone)
     jit = rng.uniform(-0.6, 0.6, (D, 3)).astype(np.float32); jit[:, 2] *= 0.3             # small tie-break jitter
     spawn_off = np.zeros((D, 3), np.float32)
     spawn_off[:, 0] = perp[0] * lat + jit[:, 0]                                           # lateral formation + jitter
