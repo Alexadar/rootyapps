@@ -24,8 +24,17 @@ from PIL import Image, ImageDraw
 
 # reuse the proven pieces from the PIL renderer: colors, the terrain-height bilinear sampler, the capture
 # (mean-action rollout -> per-frame CPU snapshots), and the numpy heightfield sampler for entity ground z.
-from render_drone import (SKY_TOP, SKY_BOT, DRONE_C, CRASH_C, TANK_C, SOLDIER_C, ENEMY_DEAD, FPS,
+from render_drone import (SKY_TOP, SKY_BOT, DRONE_C, CRASH_C, TANK_C, SOLDIER_C, ENEMY_DEAD, TREE_C, FPS,
                           _bilerp_np, capture)
+
+# --- obstacle rendering palette + box topology (buildings drawn as solid 6-face blocks) ---
+BUILD_C = (150, 142, 128)          # concrete grey building
+TRUNK_C = (95, 70, 45)             # tree trunk brown
+# 8 AABB corners (sign of each axis), bottom face 0-3 then top face 4-7:
+_BOX_SIGNS = ((-1, -1, -1), (1, -1, -1), (1, 1, -1), (-1, 1, -1),
+              (-1, -1, 1), (1, -1, 1), (1, 1, 1), (-1, 1, 1))
+_BOX_FACES = ((4, 5, 6, 7), (0, 1, 2, 3), (1, 2, 6, 5), (0, 3, 7, 4), (2, 3, 7, 6), (0, 1, 5, 4))  # top,bot,+x,-x,+y,-y
+_BOX_BRIGHT = (1.0, 0.35, 0.74, 0.58, 0.68, 0.64)   # top brightest -> bottom darkest (cheap directional shade)
 
 
 # ----------------------------------------------------------------------------------------------------
@@ -353,6 +362,40 @@ def _bilerp_t(hf, x, y, ext):
     return h00 * (1 - tx) * (1 - ty) + h10 * tx * (1 - ty) + h01 * (1 - tx) * ty + h11 * tx * ty
 
 
+def _obstacle_tris(oc, oh, ocyl, omask, eye, right, up, fwd, f, W, H, device):
+    """Obstacle geometry for one frame: buildings as solid 6-FACE boxes, trees as a trunk billboard + crown
+    sprite. oc [P,O,3] centres, oh [P,O,3] half-extents, ocyl/omask [P,O]. Real geometry with NO depth bias,
+    so a drone/enemy behind a building is correctly occluded by the z-buffer. Loop is 6 fixed faces only."""
+    P, O, _ = oc.shape
+    is_box = ((ocyl < 0.5) & (omask > 0.5))                       # [P,O] draw box faces
+    is_tree = ((ocyl > 0.5) & (omask > 0.5))                      # [P,O] draw trunk + crown
+    signs = torch.tensor(_BOX_SIGNS, dtype=torch.float32, device=device)                # [8,3] AABB corners
+    corners = oc[:, :, None, :] + signs[None, None] * oh[:, :, None, :]                  # [P,O,8,3]
+    cs, cd = _project(eye, right, up, fwd, f, W, H, corners.reshape(P, O * 8, 3))
+    cs = cs.reshape(P, O, 8, 2); cd = cd.reshape(P, O, 8)
+    base = torch.tensor(BUILD_C, dtype=torch.float32, device=device)                    # [3]
+    fq, fd, fc, fv = [], [], [], []
+    for face, bright in zip(_BOX_FACES, _BOX_BRIGHT):            # 6 faces (RENDER-LOOP-OK, fixed & tiny)
+        fi = list(face)
+        fq.append(cs[:, :, fi, :])                              # [P,O,4,2] face quad
+        fd.append(cd[:, :, fi].mean(-1))                        # [P,O] face depth (flat)
+        fc.append((base * bright)[None, None].expand(P, O, 3))  # directionally-shaded face color
+        fv.append(is_box)
+    boxes = _quads_to_tris(torch.cat(fq, 1), torch.cat(fd, 1), torch.cat(fc, 1), torch.cat(fv, 1))
+
+    base_c = torch.stack([oc[..., 0], oc[..., 1], oc[..., 2] - oh[..., 2]], -1)         # tree bottom centre
+    top_c = torch.stack([oc[..., 0], oc[..., 1], oc[..., 2] + oh[..., 2]], -1)          # tree top centre
+    bs, _bd = _project(eye, right, up, fwd, f, W, H, base_c)
+    ts, td = _project(eye, right, up, fwd, f, W, H, top_c)
+    trq, trd, trv = _line_quads(bs, ts, td, torch.full_like(td, 3.0), is_tree)          # trunk billboard
+    trunk = _quads_to_tris(trq, trd, _c(TRUNK_C, device).expand(P, O, 3), trv)
+    crq, crd, crv = _sprite_quads(ts, td, torch.full_like(td, 9.0), is_tree)            # crown sprite
+    crown = _quads_to_tris(crq, crd, _c(TREE_C, device).expand(P, O, 3), crv)
+
+    return (torch.cat([boxes[0], trunk[0], crown[0]], 1), torch.cat([boxes[1], trunk[1], crown[1]], 1),
+            torch.cat([boxes[2], trunk[2], crown[2]], 1), torch.cat([boxes[3], trunk[3], crown[3]], 1))
+
+
 # ----------------------------------------------------------------------------------------------------
 # Explosions: a brief expanding bright burst at each IMPACT — an enemy dying (kamikaze kill, orange/yellow)
 # or a drone hitting the terrain (earth-hit, grey puff). Events are detected by scanning consecutive
@@ -458,6 +501,8 @@ def render_torch(env, dparams, dls, eparams, els, K_dec, H, out_path, W=1280, Hp
     shade = (0.45 + 0.55 * (z_q / (cfg.terrain_amp + 1e-6)))                        # height shading [P,Gr-1,Gr-1]
     shade_col = torch.stack([60 * shade + 30, 110 * shade + 40, 70 * shade + 30], -1)     # [P,Gr-1,Gr-1,3]
     hfs_t = torch.tensor(hfs, dtype=torch.float32, device=dev)
+    oc_t = env.obst_xyz[:P].to(dev); oh_t = env.obst_half[:P].to(dev)        # static obstacle geometry (per panel)
+    ocyl_t = env.obst_cyl[:P].to(dev); omask_t = env.obst_mask[:P].to(dev)
 
     # --- sky gradient (constant) ---
     t = torch.linspace(0, 1, Hp, device=dev)[:, None]
@@ -470,7 +515,8 @@ def render_torch(env, dparams, dls, eparams, els, K_dec, H, out_path, W=1280, Hp
         eye, right, up, fwd, f = _cam_tensors(cams[fi], dev)
         tt, td, tc, tv = _terrain_quads(gx, gy, gzt, shade_col, eye, right, up, fwd, f, W, Hp)   # terrain tris
         et, ed, ec, ev = _entity_tris(snap, hfs_t, ext, eye, right, up, fwd, f, W, Hp, dev)      # entity tris
-        layers = [(tt, td, tc, tv), (et, ed, ec, ev)]
+        ob = _obstacle_tris(oc_t, oh_t, ocyl_t, omask_t, eye, right, up, fwd, f, W, Hp, dev)      # buildings + trees
+        layers = [(tt, td, tc, tv), ob, (et, ed, ec, ev)]
         ex = _explosion_tris(events, fi, explo_life, eye, right, up, fwd, f, W, Hp, P, dev)      # impact bursts (if any)
         if ex is not None:
             layers.append(ex)

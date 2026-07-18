@@ -91,3 +91,28 @@ def segment_clearance(p0, d, xy, half, is_cyl, mask, radius, eps=1e-9):
     closest = t[..., None] * d[..., None, :] - f                     # shape center -> closest segment point
     marg = shape_sdf3(closest, half, is_cyl) - radius                # [...,K]
     return (marg + (1.0 - mask) * 1e9).amin(-1)                      # padded shapes -> +inf
+
+
+def raycast_aabb(o, d, centers, halfs, mask, max_range, eps=1e-6):
+    """Nearest-surface distance along each ray, treating every obstacle as its AXIS-ALIGNED BOUNDING BOX
+    (a box IS its AABB; a cylinder's `half`=(r,r,hz) already IS its AABB). Analytic slab method — exact,
+    NO march loop. This is the drone's egocentric depth sensor (a mini-LiDAR): it sees raw geometry, not
+    obstacle types (prefer-learnable-features). Loop-free, broadcast over the K rays and O obstacles.
+
+    o [...,3] ray origins, d [...,K,3] unit ray dirs, centers/halfs [...,O,3], mask [...,O] (1=valid).
+    Returns [...,K] the nearest hit distance along each ray, clamped to max_range (no hit -> max_range)."""
+    o2 = o[..., None, None, :]                                       # [...,1,1,3]  origin (broadcast K,O)
+    d2 = d[..., :, None, :]                                          # [...,K,1,3]  ray dir  (broadcast O)
+    d2 = torch.where(d2.abs() < eps, torch.full_like(d2, eps), d2)   # avoid 0*inf on axis-parallel components
+    inv = 1.0 / d2                                                   # [...,K,1,3]
+    lo = (centers - halfs)[..., None, :, :]                          # [...,1,O,3]  box min corner
+    hi = (centers + halfs)[..., None, :, :]                          # [...,1,O,3]  box max corner
+    t1 = (lo - o2) * inv                                             # [...,K,O,3]  slab entry/exit per axis
+    t2 = (hi - o2) * inv
+    t_near = torch.minimum(t1, t2).amax(-1)                          # [...,K,O]  ray enters the box here
+    t_far = torch.maximum(t1, t2).amin(-1)                           # [...,K,O]  ray exits the box here
+    valid = mask[..., None, :] > 0.5                                 # [...,1,O] -> [...,K,O]
+    hit = (t_far >= torch.clamp(t_near, min=0.0)) & (t_far >= 0.0) & valid    # slab overlap AND box ahead
+    far = torch.full_like(t_near, max_range)
+    dist = torch.where(hit, torch.clamp(t_near, min=0.0), far)       # inside a box (t_near<0) -> 0 distance
+    return dist.amin(-1).clamp(max=max_range)                        # [...,K] nearest obstacle per ray

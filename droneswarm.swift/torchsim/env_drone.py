@@ -71,11 +71,12 @@ def game_loop(env, drone_fn, enemy_fn, P, K_dec, on_step=None, record=None, reco
 
 class EnvDrone:
     # ---- obs / action dims (the policy is parameterized by these) ----
-    DRONE_SELF_F = 20     # + assigned-target dir(3) + focus(1) from the Sinkhorn dispersion oracle
+    DRONE_RAYS = 16       # egocentric depth-ray fan (mini-LiDAR): K distances-to-bbox, raw geometry not types
+    DRONE_SELF_F = 33     # 13 base [bz3 vel3 rate3 agl1 batt1 slope2] + DRONE_RAYS + tgt_dir3 + focus1 = 13+16+4
     DRONE_TOK_F = 10      # rel_dir(3) dist(1) rvel(3) closing(1) is_enemy(1) enemy_tank(1)
     DRONE_K = 12          # attended tokens per drone (nearest drones + enemies)
     DRONE_ACT = 4         # CTBR: (thrust, wx, wy, wz) pre-squash
-    ENEMY_SELF_F = 11
+    ENEMY_SELF_F = 12     # +1: obstacle CLEARANCE scalar added so tanks sense how close, not just direction
     ENEMY_TOK_F = 9
     ENEMY_K = 6           # attended drones per enemy
     ENEMY_ACT = 3         # (u0, u1, fire) pre-squash
@@ -105,6 +106,15 @@ class EnvDrone:
         # obstacle footprint (2D cross-section) for GROUND units: reuse the 3D SDF with a huge half_z
         # so the vertical term never binds -> the horizontal cross-section (obstacle-shape-primitives rule).
         self.obst_half2 = self.obst_half.clone(); self.obst_half2[..., 2] = 1e4
+        # egocentric depth-ray fan directions (constant): K azimuth rays, slight downward pitch, unit-length.
+        # A world-frame ring centred on each drone -> a mini-LiDAR the drone reads via raycast_aabb each
+        # decision (it sees raw bbox geometry, not obstacle types). [[prefer-learnable-features]].
+        _az = torch.arange(self.DRONE_RAYS, device=device, dtype=torch.float32) * (2 * np.pi / self.DRONE_RAYS)
+        _pitch = np.radians(-12.0)                                # tilt down a touch: sense ahead + slightly below
+        self.ray_dirs = torch.stack([float(np.cos(_pitch)) * torch.cos(_az),
+                                     float(np.cos(_pitch)) * torch.sin(_az),
+                                     torch.full_like(_az, float(np.sin(_pitch)))], -1)   # [K,3] unit
+        self.ray_range = 0.5 * c.engage_range                     # depth sense range [m] (obstacles are local)
         self._spawn_pos = (self.base_pos[:, None, :] + self.spawn_off).contiguous()   # [N,D,3] static launch point
         self._eye_d = torch.eye(self.D, device=device)[None, None]        # [1,1,D,D] self-pair masks (static)
         self._eye_e = torch.eye(self.E, device=device)[None, None]        # [1,1,E,E]
@@ -222,6 +232,22 @@ class EnvDrone:
         sdf = COL.shape_sdf3(dvec, half_e, cyl_e)                             # [P,N,K,O]
         return (sdf + (1.0 - self.obst_mask[None, :, None, :]) * 1e9).amin(-1)
 
+    def _obstacle_rays(self, dp):
+        """Egocentric depth-ray fan for drones dp [P,N,D,3] -> normalized depths [P,N,D,K] in [0,1]. Casts
+        DRONE_RAYS world-frame rays against every obstacle's BOUNDING BOX (raycast_aabb: box exact, cylinder
+        as its bbox) and normalizes by ray_range. The drone's raw-geometry obstacle sensor. Loop-free."""
+        P, N, D, _ = dp.shape; O = self.O
+        d = self.ray_dirs.to(dp.dtype)[None, None, None].expand(P, N, D, self.DRONE_RAYS, 3)   # [P,N,D,K,3]
+        c = self.obst_xyz[None, :, None].expand(P, N, D, O, 3)                                  # [P,N,D,O,3]
+        h = self.obst_half[None, :, None].expand(P, N, D, O, 3)
+        m = self.obst_mask[None, :, None].expand(P, N, D, O)                                    # [P,N,D,O]
+        depth = COL.raycast_aabb(dp, d, c, h, m, self.ray_range)                                # [P,N,D,K]
+        # DETACH: this is a depth SENSOR (an input), not a differentiable dynamics quantity. Detaching keeps
+        # the SHAC H-window graph from holding the big [P,N,D,K,O] raycast intermediates (OOM guard), and is
+        # correct — obstacle AVOIDANCE is learned via the crash-penalty -> critic -> dynamics gradient path,
+        # while the policy still learns to REACT to the rays through its own weights (their grad is unaffected).
+        return (depth / self.ray_range).clamp(0.0, 1.0).detach()
+
     # ---- observations (pure functions of the PERCEIVED picture; bounded + scale-normalized + clamped) ----
     def _select_topk(self, feat_qs, dist_qs, valid_qs, K):
         """Top-K nearest sources per query from precomputed relative features. feat_qs [P,N,Q,S,F],
@@ -234,8 +260,9 @@ class EnvDrone:
         return torch.gather(feat_qs, -2, idx), mask
 
     def drone_obs(self, state):
-        """-> (self_feat [P,N,D,20], tok [P,N,D,K,10], mask [P,N,D,K]). Reads the SensorChannel picture;
-        self_feat ends with the Sinkhorn assigned-target direction(3)+focus(1) for swarm dispersion."""
+        """-> (self_feat [P,N,D,33], tok [P,N,D,K,10], mask [P,N,D,K]). Reads the SensorChannel picture;
+        obstacle sensing is a DRONE_RAYS depth-ray fan (raw bbox geometry, not types); self_feat ends with
+        the Sinkhorn assigned-target direction(3)+focus(1) for swarm dispersion."""
         c = self.cfg; pic = sensors.perceive(state)
         dp, dv, dq, dw = pic["d_pos"], pic["d_vel"], pic["d_quat"], pic["d_omega"]
         de, da = pic["d_energy"], pic["d_alive"]
@@ -246,7 +273,7 @@ class EnvDrone:
         bz = ROT.body_z_axis(dq)                                              # [P,N,D,3] tilt
         th, tgrad = TERR.height_and_grad(self.hf, dp[..., :2], self.extent)   # fused: one corner-gather pass
         agl = dp[..., 2] - th                                                 # [P,N,D]
-        oclr, ograd = self._nearest_obstacle(dp, self.obst_half)             # [P,N,D],[P,N,D,3]
+        rays = self._obstacle_rays(dp)                                       # [P,N,D,K] mini-LiDAR depths in [0,1]
         self_feat = torch.cat([
             bz,
             (dv / vmax).clamp(-c.obs_clamp, c.obs_clamp),
@@ -254,9 +281,8 @@ class EnvDrone:
             (agl / c.engage_range).clamp(0.0, c.obs_clamp)[..., None],
             (de / c.batt_capacity_j)[..., None],
             (tgrad).clamp(-c.obs_clamp, c.obs_clamp),
-            (oclr / c.engage_range).clamp(-c.obs_clamp, c.obs_clamp)[..., None],
-            ograd[..., :2],
-        ], -1)                                                               # 3+3+3+1+1+2+1+2 = 16
+            rays,                                                            # DRONE_RAYS depth-to-bbox channels
+        ], -1)                                                               # 3+3+3+1+1+2 + K = 13 + DRONE_RAYS
         # --- tokens: other drones + enemies (merged, type-tagged) ---
         ep3 = self._enemy_pos3(ep)                                           # [P,N,E,3]
         ev3 = torch.cat([ev, torch.zeros_like(ev[..., :1])], -1)             # enemy vel (ground plane)
@@ -289,11 +315,11 @@ class EnvDrone:
         d2e = (dist[..., D:] / sc[..., None]).clamp(max=c.obs_clamp)      # [P,N,D,E] normalized dist
         T = ASSIGN.balanced_assignment(d2e, da, e_alive)                 # [P,N,D,E] soft assignment
         tgt_dir, focus = ASSIGN.target_direction(T, rel_dir[..., D:, :]) # [P,N,D,3], [P,N,D]
-        self_feat = torch.cat([self_feat, tgt_dir, focus[..., None]], -1)   # 16 -> 20 = DRONE_SELF_F
+        self_feat = torch.cat([self_feat, tgt_dir, focus[..., None]], -1)   # (13+K) -> +4 = DRONE_SELF_F (33)
         return self_feat, tok, mask
 
     def enemy_obs(self, state):
-        """-> (self_feat [P,N,E,11], tok [P,N,E,K,9], mask [P,N,E,K])."""
+        """-> (self_feat [P,N,E,12], tok [P,N,E,K,9], mask [P,N,E,K])."""
         c = self.cfg; pic = sensors.perceive(state)
         ep, ev, eh, e_cd, e_alive = pic["e_pos"], pic["e_vel"], pic["e_head"], pic["e_cd"], pic["e_alive"]
         dp, dv, da = pic["d_pos"], pic["d_vel"], pic["d_alive"]
@@ -310,8 +336,9 @@ class EnvDrone:
             slope.clamp(-c.obs_clamp, c.obs_clamp),
             (e_cd / self.cd_ticks)[..., None],
             ograd[..., :2],
+            (oclr / c.engage_range).clamp(-c.obs_clamp, c.obs_clamp)[..., None],   # obstacle CLEARANCE (how close)
             arena_pos.clamp(-c.obs_clamp, c.obs_clamp),
-        ], -1)                                                               # 1+2+1+2+1+2+2 = 11 = ENEMY_SELF_F
+        ], -1)                                                               # 1+2+1+2+1+2+1+2 = 12 = ENEMY_SELF_F
         # tokens: nearest alive drones
         rel = dp[:, :, None, :, :] - ep3[:, :, :, None, :]                   # [P,N,E,D,3] query=enemy
         dist = torch.sqrt((rel * rel).sum(-1) + c.eps)
@@ -410,6 +437,19 @@ class EnvDrone:
         e_pos = torch.where(e_alive[..., None] > 0.5, e_pos, ep)
         e_head = torch.where(e_alive > 0.5, e_head, eh)
         e_vel = torch.where(e_alive[..., None] > 0.5, e_vel, torch.zeros_like(e_vel))
+        e_pos = e_pos.clamp(-c.arena_half, c.arena_half)
+        # HARD obstacle push-out (BOTH types): project the enemy out of any obstacle FOOTPRINT so it can't
+        # phase through a building. Tanks have no soft avoidance, so without this they drive straight through;
+        # the shove makes buildings solid to ground units -> the policy must route AROUND (using its obstacle
+        # obs). penetration = max(0, r - clearance) pushed along the outward SDF gradient. Loop-free.
+        e_foot = torch.cat([e_pos, torch.zeros_like(e_pos[..., :1])], -1)     # z-independent footprint query
+        pclr, pgrad = self._nearest_obstacle(e_foot, self.obst_half2)        # [P,N,E], [P,N,E,3]
+        e_rad = torch.where(is_tank.expand(P, N, E),                          # tank body vs soldier body radius
+                            torch.full_like(pclr, c.tank_radius),
+                            torch.full_like(pclr, c.soldier_radius))
+        push = torch.clamp(e_rad - pclr, min=0.0)                            # penetration depth (0 outside)
+        e_pos = e_pos + push[..., None] * pgrad[..., :2]                     # shove outward in xy
+        e_pos = torch.where(e_alive[..., None] > 0.5, e_pos, ep)            # dead enemies stay put
         e_pos = e_pos.clamp(-c.arena_half, c.arena_half)
         ep3 = self._enemy_pos3(e_pos)
 

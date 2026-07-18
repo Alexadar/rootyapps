@@ -22,6 +22,8 @@ Per env this produces (returned as a dict of numpy arrays; env_drone converts to
 Offline setup: python loops over envs / octaves are fine here (NOT the sim hot path), exactly as
 monstro/froggo schedule.py loops. Marked SETUP-LOOP-OK.
 """
+from dataclasses import dataclass
+
 import numpy as np
 
 from world_config_drone import WorldConfig
@@ -67,26 +69,85 @@ def _bilerp(hf, x, y, extent):
     return h00 * (1 - tx) * (1 - ty) + h10 * tx * (1 - ty) + h01 * (1 - tx) * ty + h11 * tx * ty
 
 
-def _fill_env(cfg, D, E, O, T, seed):
+# ======================================================================================================
+# GENERALIZED OBSTACLE FIELD — one data-driven sampler; "buildings" and "trees" are just spec rows, and
+# any future kind (walls, pillars, craters, ...) is a new ObstacleClass with ZERO new code. Everything the
+# sim needs is the shared 3D box/cylinder primitive (oracles/collide3), so a class only has to say which
+# primitive, how many, how big (per axis), and where — the [[obstacle-shape-primitives]] rule made concrete.
+# ======================================================================================================
+@dataclass
+class ObstacleClass:
+    """One kind of obstacle. All sizes are HALF-EXTENTS in metres (radius for cyl). Per env a random
+    count in [count_lo,count_hi] is drawn; each obstacle is sized independently per axis from the (lo,hi)
+    ranges and rejection-placed in the region. shape: 'box' (rock/building) | 'cyl' (tree/pillar)."""
+    name: str
+    shape: str                                   # 'box' | 'cyl'
+    count: tuple                                 # (lo, hi) inclusive random count per env
+    hx: tuple                                    # (lo, hi) half-extent x   (radius for cyl)
+    hy: tuple                                    # (lo, hi) half-extent y   (box only; cyl reuses hx)
+    hz: tuple                                    # (lo, hi) half-height
+    region: str = "combat"                       # 'combat' -> combat_half zone, else arena_half
+    region_frac: float = 0.85                    # placed within +/- region_frac * zone_half
+    min_sep: float = 2.0                         # min centre-to-centre spacing (rejection sampling)
+    xr: tuple = None                             # optional explicit x-band (lo,hi) overriding the region (showcase)
+    yr: tuple = None                             # optional explicit y-band (lo,hi) overriding the region
+
+
+# The default training field: chunky buildings you route AROUND (6-10 m tall, near the ~10 m ceiling) + trees.
+DEFAULT_OBSTACLE_FIELD = [
+    ObstacleClass("building", "box", (0, 4), (1.5, 3.0), (1.5, 3.0), (3.0, 5.0), "combat", 0.85, min_sep=3.5),
+    ObstacleClass("tree",     "cyl", (0, 8), (0.4, 1.2), (0.4, 1.2), (3.0, 8.0), "combat", 0.85, min_sep=1.5),
+]
+
+
+def sample_obstacle_field(classes, O, rng, hf, ext, combat_half, arena_half, keepout=None):
+    """Fill an [O,7] obstacle array (x, y, z_center, hx, hy, hz, is_cyl) from a list of ObstacleClass specs.
+
+    VARIABLE COUNT: rows beyond the drawn total stay ZERO -> env's obst_mask masks them (env_drone.py:96),
+    the SDF already honours it. Positions are rejection-sampled clear of `keepout` (list of (x,y,radius),
+    e.g. drone spawns + enemies) and of previously-placed obstacles (per-class min_sep). GENERAL: not one
+    per-kind literal lives here — every number comes from the spec. SETUP-LOOP-OK (offline, <=~12 obstacles)."""
+    obst = np.zeros((O, 7), np.float32)
+    keep = list(keepout) if keepout is not None else []
+    placed = []                                              # (centre_xy, footprint_radius) already placed
+    row = 0
+    for cls in classes:                                      # SETUP-LOOP-OK (a handful of classes)
+        n = int(rng.integers(cls.count[0], cls.count[1] + 1))
+        zone_half = (combat_half if (cls.region == "combat" and combat_half > 0) else arena_half) * cls.region_frac
+        xr = cls.xr if cls.xr is not None else (-zone_half, zone_half)   # explicit band overrides region (showcase)
+        yr = cls.yr if cls.yr is not None else (-zone_half, zone_half)
+        for _ in range(n):                                   # SETUP-LOOP-OK (<= count.hi obstacles)
+            if row >= O:
+                break                                        # out of capacity -> silently drop (raise --obstacles)
+            hx = float(rng.uniform(*cls.hx))
+            hy = float(rng.uniform(*cls.hy)) if cls.shape == "box" else hx   # cyl: hy = radius = hx
+            foot_r = max(hx, hy)                             # circumscribing footprint radius (for spacing)
+            cand = None
+            for _try in range(24):                           # SETUP-LOOP-OK (bounded placement retries)
+                c = np.array([rng.uniform(*xr), rng.uniform(*yr)], np.float32)
+                if any(np.hypot(*(c - k[0])) < (foot_r + k[1]) for k in ((np.array(kx[:2]), kx[2]) for kx in keep)):
+                    continue                                 # too close to a keepout point (spawn/enemy)
+                if any(np.hypot(*(c - p[0])) < (foot_r + p[1] + cls.min_sep) for p in placed):
+                    continue                                 # too close to an already-placed obstacle
+                cand = c; break
+            if cand is None:
+                continue                                     # couldn't place -> leave row zero (fewer obstacles)
+            hz = float(rng.uniform(*cls.hz))
+            gz = float(_bilerp(hf, np.array([cand[0]]), np.array([cand[1]]), ext)[0])
+            obst[row] = [cand[0], cand[1], gz + hz, hx, hy, hz, 1.0 if cls.shape == "cyl" else 0.0]
+            placed.append((cand, foot_r))
+            row += 1
+    return obst
+
+
+def _fill_env(cfg, D, E, O, T, seed, obstacle_field=None):
     """Build one env's scene (all arrays for row e). Returns a dict of per-env arrays."""
     rng = np.random.default_rng(seed)
     G, ext, ah = cfg.terrain_grid, cfg.arena_half, cfg.arena_half
     ch = cfg.combat_half if cfg.combat_half > 0 else ah          # central combat zone (spawns confined here)
     hf = _fbm_heightfield(rng, G, cfg.terrain_amp)
-
-    # obstacles: trees (cylinders) + rocks (boxes) scattered, seated on terrain, away from arena centre
-    obst = np.zeros((O, 7), np.float32)
-    ox = rng.uniform(-0.85 * ah, 0.85 * ah, O)
-    oy = rng.uniform(-0.85 * ah, 0.85 * ah, O)
-    is_cyl = (rng.random(O) < 0.6).astype(np.float32)            # 60% trees, 40% rocks
-    tree_r = rng.uniform(0.4, 1.2, O); tree_h = rng.uniform(3.0, 8.0, O)
-    rock_h = rng.uniform(1.0, 3.0, O); rock_wx = rng.uniform(1.0, 3.0, O); rock_wy = rng.uniform(1.0, 3.0, O)
-    hx = np.where(is_cyl > 0.5, tree_r, rock_wx)
-    hy = np.where(is_cyl > 0.5, tree_r, rock_wy)
-    hz = np.where(is_cyl > 0.5, tree_h, rock_h)
-    gz = _bilerp(hf, ox, oy, ext)
-    obst[:, 0] = ox; obst[:, 1] = oy; obst[:, 2] = gz + hz       # z_center sits the base on terrain
-    obst[:, 3] = hx; obst[:, 4] = hy; obst[:, 5] = hz; obst[:, 6] = is_cyl
+    # (obstacles are generated LAST — after enemies/spawns exist — so they can be kept clear of the launch
+    #  line and off the enemies; see the sample_obstacle_field call below.)
 
     # enemies: E units, first n_tank tanks then soldiers (fixed split), scattered, on terrain
     n_tank = E // 3                                              # ~1/3 tanks, 2/3 soldiers
@@ -118,6 +179,16 @@ def _fill_env(cfg, D, E, O, T, seed):
     spawn_off[:, 1] = perp[1] * lat + jit[:, 1]
     spawn_off[:, 2] = jit[:, 2]
 
+    # obstacles: the GENERALIZED field, placed LAST so we can keep it clear of the launch line and off the
+    # enemies (buildings may stand AMONG enemies as cover, just not exactly on one). Rows past the drawn
+    # count stay zero -> masked by env.obst_mask. See sample_obstacle_field / DEFAULT_OBSTACLE_FIELD.
+    field = obstacle_field if obstacle_field is not None else DEFAULT_OBSTACLE_FIELD
+    spawn_xy = base_pos[:2][None, :] + spawn_off[:, :2]                                   # [D,2] drone spawn slots
+    keepout = ([(float(base_pos[0]), float(base_pos[1]), 3.0)]                            # launch origin
+               + [(float(s[0]), float(s[1]), 2.0) for s in spawn_xy]                      # each drone spawn slot
+               + [(float(e[0]), float(e[1]), 1.2) for e in e_pos0])                       # enemies (avoid overlap)
+    obst = sample_obstacle_field(field, O, rng, hf, ext, ch, ah, keepout=keepout)
+
     # wind: per-env mean + Dryden gust series
     wspeed = rng.uniform(cfg.wind_mean_lo, cfg.wind_mean_hi)
     wdir = rng.uniform(-np.pi, np.pi)
@@ -147,15 +218,15 @@ def _pack(rows, cfg, D, E, O, T):
     return out
 
 
-def build(cfg, n_envs, D, E, O, T, base_seed=0):
+def build(cfg, n_envs, D, E, O, T, base_seed=0, obstacle_field=None):
     """Training schedule: N independent scenes, env e seeded base_seed+e (byte-identical to a single
-    build of that seed). SETUP-LOOP-OK (offline env loop)."""
-    rows = [_fill_env(cfg, D, E, O, T, base_seed + e) for e in range(n_envs)]   # SETUP-LOOP-OK
+    build of that seed). `obstacle_field` overrides DEFAULT_OBSTACLE_FIELD. SETUP-LOOP-OK (offline env loop)."""
+    rows = [_fill_env(cfg, D, E, O, T, base_seed + e, obstacle_field) for e in range(n_envs)]   # SETUP-LOOP-OK
     return _pack(rows, cfg, D, E, O, T)
 
 
-def build_eval(cfg, seeds, D, E, O, T, base_seed=10_000, seed_stride=7919):
+def build_eval(cfg, seeds, D, E, O, T, base_seed=10_000, seed_stride=7919, obstacle_field=None):
     """Held-out eval schedule: `seeds` scenes, env s seeded base_seed + s*seed_stride — disjoint from
     any sane training seed range and byte-identical to independent single-env builds."""
-    rows = [_fill_env(cfg, D, E, O, T, base_seed + s * seed_stride) for s in range(seeds)]   # SETUP-LOOP-OK
+    rows = [_fill_env(cfg, D, E, O, T, base_seed + s * seed_stride, obstacle_field) for s in range(seeds)]  # SETUP-LOOP-OK
     return _pack(rows, cfg, D, E, O, T)
