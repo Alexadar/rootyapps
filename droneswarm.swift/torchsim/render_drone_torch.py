@@ -271,13 +271,14 @@ def _rasterize(tris, dep, col, valid, W, H, sky, chunk=None):
 # Scene assembly: turn a captured snapshot (+ static terrain) into the [P,T,...] triangle soup, per frame.
 # ----------------------------------------------------------------------------------------------------
 def _terrain_quads(gx, gy, gzt, shade_col, eye, right, up, fwd, f, W, H):
-    """Project the static terrain grid and emit shaded quads. gx/gy/gzt [P,Gr,Gr], shade_col [P,Gr-1,Gr-1,3]."""
-    P, Gr, _ = gx.shape
-    verts = torch.stack([gx, gy, gzt], -1).reshape(P, Gr * Gr, 3)   # [P,Gr*Gr,3] world verts
-    scr, dep = _project(eye, right, up, fwd, f, W, H, verts)        # [P,Gr*Gr,2], [P,Gr*Gr]
-    scr = scr.reshape(P, Gr, Gr, 2); dep = dep.reshape(P, Gr, Gr)   # back to grid
-    a = scr[:, :-1, :-1]; b = scr[:, :-1, 1:]; c = scr[:, 1:, 1:]; d = scr[:, 1:, :-1]     # 4 corners [P,Gr-1,Gr-1,2]
-    quad = torch.stack([a, b, c, d], dim=3).reshape(P, (Gr - 1) ** 2, 4, 2)                # [P,Q,4,2]
+    """Project the static terrain grid and emit shaded quads. gx/gy/gzt [P,Gry,Grx] (RECTANGULAR ok -> a long
+    narrow RIBBON strip when Grx>>Gry), shade_col [P,Gry-1,Grx-1,3]."""
+    P, Gry, Grx = gx.shape
+    verts = torch.stack([gx, gy, gzt], -1).reshape(P, Gry * Grx, 3)     # [P,Gry*Grx,3] world verts
+    scr, dep = _project(eye, right, up, fwd, f, W, H, verts)            # [P,Gry*Grx,2], [P,Gry*Grx]
+    scr = scr.reshape(P, Gry, Grx, 2); dep = dep.reshape(P, Gry, Grx)   # back to grid
+    a = scr[:, :-1, :-1]; b = scr[:, :-1, 1:]; c = scr[:, 1:, 1:]; d = scr[:, 1:, :-1]     # 4 corners [P,Gry-1,Grx-1,2]
+    quad = torch.stack([a, b, c, d], dim=3).reshape(P, (Gry - 1) * (Grx - 1), 4, 2)        # [P,Q,4,2]
     qdep = (0.25 * (dep[:, :-1, :-1] + dep[:, :-1, 1:] + dep[:, 1:, 1:] + dep[:, 1:, :-1])).reshape(P, -1)  # mean depth
     qcol = shade_col.reshape(P, -1, 3)                                                     # [P,Q,3] precomputed shade
     qval = torch.ones(P, quad.shape[1], dtype=torch.bool, device=quad.device)
@@ -456,7 +457,7 @@ def _explosion_tris(events, i, life, eye, right, up, fwd, f, W, H, P, device):
 # ----------------------------------------------------------------------------------------------------
 def render_torch(env, dparams, dls, eparams, els, K_dec, H, out_path, W=1280, Hp=280, n_panel=9, cols=1,
                  device="cuda", chunk=48, mm_dtype=None, Gr=22, cam_kw=None, cam_mode="autofit",
-                 max_seconds=60.0, end_hold=0.8, explo_life=6):
+                 max_seconds=60.0, end_hold=0.8, explo_life=6, ribbon_y=None):
     import imageio.v2 as imageio
     cfg = env.cfg
     dev = device if torch.cuda.is_available() else "cpu"
@@ -497,11 +498,17 @@ def render_torch(env, dparams, dls, eparams, els, K_dec, H, out_path, W=1280, Hp
     ext = cfg.arena_half
 
     # --- static per-panel terrain grid (world coords + precomputed height shading) built ONCE ---
-    ax = np.linspace(-ext, ext, Gr)
-    gxn, gyn = np.meshgrid(ax, ax)                                                  # [Gr,Gr] (same grid all panels)
-    gx = torch.tensor(np.broadcast_to(gxn, (P, Gr, Gr)).copy(), dtype=torch.float32, device=dev)
-    gy = torch.tensor(np.broadcast_to(gyn, (P, Gr, Gr)).copy(), dtype=torch.float32, device=dev)
-    gzt_np = np.stack([_bilerp_np(hfs[i], gxn, gyn, ext) for i in range(P)])        # [P,Gr,Gr] terrain height (per panel)
+    # RIBBON MAP: when ribbon_y is set, the terrain is a LONG NARROW STRIP (x spans the full arena, y only
+    # +/- ribbon_y) with roughly square cells -> the rendered ground itself is a ribbon, not a square field.
+    if ribbon_y is not None:
+        Grx = Gr; Gry = max(3, 1 + round((Gr - 1) * ribbon_y / ext))               # narrow in y, long in x
+        axx = np.linspace(-ext, ext, Grx); ayy = np.linspace(-ribbon_y, ribbon_y, Gry)
+    else:
+        Grx = Gry = Gr; axx = ayy = np.linspace(-ext, ext, Gr)                      # square (default)
+    gxn, gyn = np.meshgrid(axx, ayy)                                               # [Gry,Grx] (same grid all panels)
+    gx = torch.tensor(np.broadcast_to(gxn, (P, Gry, Grx)).copy(), dtype=torch.float32, device=dev)
+    gy = torch.tensor(np.broadcast_to(gyn, (P, Gry, Grx)).copy(), dtype=torch.float32, device=dev)
+    gzt_np = np.stack([_bilerp_np(hfs[i], gxn, gyn, ext) for i in range(P)])        # [P,Gry,Grx] terrain height (per panel)
     gzt = torch.tensor(gzt_np, dtype=torch.float32, device=dev)
     z_q = 0.25 * (gzt[:, :-1, :-1] + gzt[:, :-1, 1:] + gzt[:, 1:, 1:] + gzt[:, 1:, :-1])  # per-quad mean height
     shade = (0.45 + 0.55 * (z_q / (cfg.terrain_amp + 1e-6)))                        # height shading [P,Gr-1,Gr-1]

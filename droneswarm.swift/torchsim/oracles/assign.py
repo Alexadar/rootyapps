@@ -43,7 +43,11 @@ def balanced_assignment(dist, drone_alive, enemy_alive, temp=0.6, eps=1e-6):
 def target_direction(T, rel_dir, eps=1e-6):
     """Per-drone assigned target = assignment-weighted mean of directions to enemies. T [P,N,D,E],
     rel_dir [P,N,D,E,3] (unit drone->enemy) -> (dir [P,N,D,3] unit, focus [P,N,D]). focus = peak
-    assignment weight (1 = committed to a single target, ~1/E = spread thin / no target)."""
+    assignment weight (1 = committed to a single target, ~1/E = spread thin / no target).
+
+    NOTE: as of the learnable-targeting change this hand-coded oracle is NOT used by the drone policy
+    (target selection is now the policy's own learned token-attention, `env_drone.drone_obs`). Kept as a
+    reusable utility / for ablations."""
     w = T / (T.sum(-1, keepdim=True) + eps)                  # per-drone distribution over enemies
     d = (w[..., None] * rel_dir).sum(-2)                     # [P,N,D,3] weighted-mean direction
     dlen = torch.sqrt((d * d).sum(-1, keepdim=True) + eps)

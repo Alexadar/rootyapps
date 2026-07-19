@@ -35,7 +35,8 @@ def init_recur(Fs, Ft, d, H, act, device="cpu", seed=0, std0=0.5, scale=0.1, hov
         return (torch.randn(i, o, generator=g) * s).to(device).clone().detach().requires_grad_(True)
     def b(o):
         return torch.zeros(o, device=device).clone().detach().requires_grad_(True)
-    p = {"Wq": W(Fs, d), "bq": b(d), "Wk": W(Ft, d), "bk": b(d), "Wv": W(Ft, d), "bv": b(d),
+    p = {"Ws": W(Fs, H), "bs": b(H),                            # self/perception encoder (compresses the 192-ray depth grid + base)
+         "Wq": W(H, d), "bq": b(d), "Wk": W(Ft, d), "bk": b(d), "Wv": W(Ft, d), "bv": b(d),
          "We": W(2 * d, H), "be": b(H)}
     for gt in _GRU_GATES:                                        # GRU: input(e) and recurrent(h) maps per gate
         p["W" + gt] = W(H, H); p["U" + gt] = W(H, H); p["b" + gt] = b(H)
@@ -66,7 +67,8 @@ def apply_recur(params, self_feat, tokens, mask, h_prev, mm_dtype=None):
     d = p["Wq"].shape[1]
     cast = (lambda x: x.to(mm_dtype)) if mm_dtype is not None else (lambda x: x)
     sf, mf = cast(self_feat), cast(tokens)
-    q = torch.matmul(sf, cast(p["Wq"])) + cast(p["bq"])          # [...,d]
+    se = torch.relu(torch.matmul(sf, cast(p["Ws"])) + cast(p["bs"]))          # self/perception encoder [...,H] (encodes depth grid)
+    q = torch.matmul(se, cast(p["Wq"])) + cast(p["bq"])          # [...,d]  query from the encoded self-embedding
     k = torch.matmul(mf, cast(p["Wk"])) + cast(p["bk"])          # [...,K,d]
     v = torch.matmul(mf, cast(p["Wv"])) + cast(p["bv"])
     score = (k * q.unsqueeze(-2)).sum(-1).float() / math.sqrt(d)              # fp32 softmax

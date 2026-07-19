@@ -71,9 +71,11 @@ def game_loop(env, drone_fn, enemy_fn, P, K_dec, on_step=None, record=None, reco
 
 class EnvDrone:
     # ---- obs / action dims (the policy is parameterized by these) ----
-    DRONE_RAYS = 16       # egocentric depth-ray fan (mini-LiDAR): K distances-to-bbox, raw geometry not types
-    DRONE_SELF_F = 33     # 13 base [bz3 vel3 rate3 agl1 batt1 slope2] + DRONE_RAYS + tgt_dir3 + focus1 = 13+16+4
-    DRONE_TOK_F = 10      # rel_dir(3) dist(1) rvel(3) closing(1) is_enemy(1) enemy_tank(1)
+    DRONE_RAYS = 192      # egocentric DEPTH-GRID sensor: 16 az x 12 el low-res depth image (raw bbox geometry,
+    #                       not types). ~matches the 16x12 depth image of "Back to Newton's Laws" diff-physics.
+    DRONE_SELF_F = 205    # 13 base [bz3 vel3 rate3 agl1 batt1 slope2] + DRONE_RAYS(192). Target selection is now
+    #                       the policy's own LEARNED token-attention (no hand-coded Sinkhorn tgt_dir/focus).
+    DRONE_TOK_F = 11      # rel_dir(3) dist(1) rvel(3) closing(1) is_enemy(1) enemy_tank(1) + teammate_demand(1)
     DRONE_K = 12          # attended tokens per drone (nearest drones + enemies)
     DRONE_ACT = 4         # CTBR: (thrust, wx, wy, wz) pre-squash
     ENEMY_SELF_F = 12     # +1: obstacle CLEARANCE scalar added so tanks sense how close, not just direction
@@ -106,15 +108,20 @@ class EnvDrone:
         # obstacle footprint (2D cross-section) for GROUND units: reuse the 3D SDF with a huge half_z
         # so the vertical term never binds -> the horizontal cross-section (obstacle-shape-primitives rule).
         self.obst_half2 = self.obst_half.clone(); self.obst_half2[..., 2] = 1e4
-        # egocentric depth-ray fan directions (constant): K azimuth rays, slight downward pitch, unit-length.
-        # A world-frame ring centred on each drone -> a mini-LiDAR the drone reads via raycast_aabb each
-        # decision (it sees raw bbox geometry, not obstacle types). [[prefer-learnable-features]].
-        _az = torch.arange(self.DRONE_RAYS, device=device, dtype=torch.float32) * (2 * np.pi / self.DRONE_RAYS)
-        _pitch = np.radians(-12.0)                                # tilt down a touch: sense ahead + slightly below
-        self.ray_dirs = torch.stack([float(np.cos(_pitch)) * torch.cos(_az),
-                                     float(np.cos(_pitch)) * torch.sin(_az),
-                                     torch.full_like(_az, float(np.sin(_pitch)))], -1)   # [K,3] unit
-        self.ray_range = 0.5 * c.engage_range                     # depth sense range [m] (obstacles are local)
+        # egocentric DEPTH-GRID directions (constant): AZ azimuth x EL elevation = DRONE_RAYS rays, a low-res
+        # spherical depth "image" the drone reads via raycast_aabb each decision (raw bbox geometry, not types;
+        # [[prefer-learnable-features]]). World-frame panorama centred on the drone; elevation spans down..
+        # slightly-up so it senses obstacles around AND below (for the dive). 16x12 ~ "Back to Newton's Laws".
+        AZ, EL = 16, 12                                          # AZ*EL must == DRONE_RAYS (192)
+        _az = torch.arange(AZ, device=device, dtype=torch.float32) * (2 * np.pi / AZ)            # [AZ]
+        _el = torch.linspace(float(np.radians(-55.0)), float(np.radians(15.0)), EL, device=device)  # [EL] down->up
+        _elg, _azg = torch.meshgrid(_el, _az, indexing="ij")     # [EL,AZ]
+        _ce = torch.cos(_elg)
+        self.ray_dirs = torch.stack([_ce * torch.cos(_azg), _ce * torch.sin(_azg),
+                                     torch.sin(_elg)], -1).reshape(-1, 3)                          # [AZ*EL,3] unit
+        self.ray_range = 20.0                                     # depth sense range [m] — absolute, ~0.9 s of
+        #                                                           reaction at top speed (NOT tied to the small
+        #                                                           engage_range normalizer, which would give ~4 m)
         self._spawn_pos = (self.base_pos[:, None, :] + self.spawn_off).contiguous()   # [N,D,3] static launch point
         self._eye_d = torch.eye(self.D, device=device)[None, None]        # [1,1,D,D] self-pair masks (static)
         self._eye_e = torch.eye(self.E, device=device)[None, None]        # [1,1,E,E]
@@ -241,7 +248,7 @@ class EnvDrone:
         c = self.obst_xyz[None, :, None].expand(P, N, D, O, 3)                                  # [P,N,D,O,3]
         h = self.obst_half[None, :, None].expand(P, N, D, O, 3)
         m = self.obst_mask[None, :, None].expand(P, N, D, O)                                    # [P,N,D,O]
-        depth = COL.raycast_aabb(dp, d, c, h, m, self.ray_range)                                # [P,N,D,K]
+        depth = COL.raycast_aabb(dp, d, c, h, m, self.ray_range, ray_chunk=48)                  # [P,N,D,K] (VRAM-bounded)
         # DETACH: this is a depth SENSOR (an input), not a differentiable dynamics quantity. Detaching keeps
         # the SHAC H-window graph from holding the big [P,N,D,K,O] raycast intermediates (OOM guard), and is
         # correct — obstacle AVOIDANCE is learned via the crash-penalty -> critic -> dynamics gradient path,
@@ -302,20 +309,24 @@ class EnvDrone:
         closing = -(rvel * rel_dir).sum(-1)                                 # >0 = approaching me
         ise = is_enemy[:, :, None, :].expand(P, N, D, S)
         etank = enemy_tank[:, :, None, :].expand(P, N, D, S)              # (isd dropped: it's just 1-ise)
+        # COORDINATION SIGNAL for LEARNABLE distributed targeting: for each enemy, how much the OTHER drones
+        # already "cover" it (soft teammate demand). Fed as a token feature so the policy's OWN attention learns
+        # to pick UNDER-served enemies and distribute (one-per-target now, N-per-target as tough enemies persist).
+        # Robust to the enemies' triangulation trick — a drone commits to its under-served target, not the
+        # distance centroid. Loop-free (broadcast over drones x enemies).
+        d2e = dist[..., D:]                                              # [P,N,D,E] each drone -> each enemy
+        cover = torch.exp(-d2e / sc[..., None]) * da[..., None] * e_alive[:, :, None, :]   # [P,N,D,E] drone d covers e
+        demand = cover.sum(2, keepdim=True)                             # [P,N,1,E] total teammate coverage per enemy
+        dem_excl = ((demand - cover) / max(1, D)).clamp(0.0, c.obs_clamp)   # exclude own cover -> demand this drone sees
+        cand_demand = torch.cat([torch.zeros(P, N, D, D, device=dp.device), dem_excl], dim=-1)   # [P,N,D,S] (0 on drone cols)
         feat = torch.cat([rel_dir, (dist / sc[..., None]).clamp(max=c.obs_clamp)[..., None],
                           rvel.clamp(-c.obs_clamp, c.obs_clamp), closing[..., None],
-                          ise[..., None], etank[..., None]], -1)          # 3+1+3+1+1+1 = 10 = DRONE_TOK_F
+                          ise[..., None], etank[..., None], cand_demand[..., None]], -1)   # 10 + demand(1) = 11 = DRONE_TOK_F
         valid = cand_alive[:, :, None, :].expand(P, N, D, S)               # exclude self via the static mask
         valid = valid * (1.0 - self._drone_self_mask[None, None])
         tok, mask = self._select_topk(feat, dist, valid, self.DRONE_K)
-        # SWARM DISPERSION: balanced Sinkhorn assignment over enemies (reuses the drone->enemy sub-block
-        # of the already-computed dist/rel_dir — no extra distance math). Gives each drone its assigned
-        # target DIRECTION + focus, appended to self_feat. Recomputed here every decision = on-the-fly
-        # re-assignment. (dist/rel_dir columns D: are the enemy candidates.)
-        d2e = (dist[..., D:] / sc[..., None]).clamp(max=c.obs_clamp)      # [P,N,D,E] normalized dist
-        T = ASSIGN.balanced_assignment(d2e, da, e_alive)                 # [P,N,D,E] soft assignment
-        tgt_dir, focus = ASSIGN.target_direction(T, rel_dir[..., D:, :]) # [P,N,D,3], [P,N,D]
-        self_feat = torch.cat([self_feat, tgt_dir, focus[..., None]], -1)   # (13+K) -> +4 = DRONE_SELF_F (33)
+        # target selection is LEARNED: the policy's masked token-attention (which now sees per-enemy teammate
+        # demand) picks + distributes targets. No hand-coded Sinkhorn assignment / centroid-averaged heading.
         return self_feat, tok, mask
 
     def enemy_obs(self, state):

@@ -94,9 +94,11 @@ class ObstacleClass:
 
 
 # The default training field: chunky buildings you route AROUND (6-10 m tall, near the ~10 m ceiling) + trees.
+# Placed across the ARENA (not just the combat zone) so a swarm CROSSING the map meets cover along the way
+# (with spawn-distance randomization this teaches long ribbon crossings, not just the compact central fight).
 DEFAULT_OBSTACLE_FIELD = [
-    ObstacleClass("building", "box", (0, 4), (1.5, 3.0), (1.5, 3.0), (3.0, 5.0), "combat", 0.85, min_sep=3.5),
-    ObstacleClass("tree",     "cyl", (0, 8), (0.4, 1.2), (0.4, 1.2), (3.0, 8.0), "combat", 0.85, min_sep=1.5),
+    ObstacleClass("building", "box", (0, 4), (1.5, 3.0), (1.5, 3.0), (3.0, 5.0), "arena", 0.80, min_sep=3.5),
+    ObstacleClass("tree",     "cyl", (0, 10), (0.4, 1.2), (0.4, 1.2), (3.0, 8.0), "arena", 0.80, min_sep=1.5),
 ]
 
 
@@ -159,7 +161,11 @@ def _fill_env(cfg, D, E, O, T, seed, obstacle_field=None):
 
     # drone base: a launch point near an arena rim, above terrain; drones staggered over the first ~1.2 s
     bang = rng.uniform(-np.pi, np.pi)
-    bx, by = 0.72 * ch * np.cos(bang), 0.72 * ch * np.sin(bang)   # launch from the COMBAT-ZONE rim (central square)
+    # SPAWN-DISTANCE domain randomization: the launch radius varies from just outside the combat zone out to
+    # near the arena edge, so the swarm learns SHORT and LONG crossings (generalizes to the field->trees->
+    # buildings ribbon, not just the compact central fight it used to always spawn into).
+    br = rng.uniform(0.5 * ch, 0.9 * ah)
+    bx, by = br * np.cos(bang), br * np.sin(bang)                 # launch point at a RANDOM distance from centre
     bz = _bilerp(hf, np.array([bx]), np.array([by]), ext)[0] + 0.5 * cfg.ceiling
     base_pos = np.array([bx, by, bz], np.float32)
     spawn_tick = np.floor(rng.uniform(0, 1.2 / cfg.dt, D)).astype(np.float32)   # launch ticks

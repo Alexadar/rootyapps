@@ -93,26 +93,38 @@ def segment_clearance(p0, d, xy, half, is_cyl, mask, radius, eps=1e-9):
     return (marg + (1.0 - mask) * 1e9).amin(-1)                      # padded shapes -> +inf
 
 
-def raycast_aabb(o, d, centers, halfs, mask, max_range, eps=1e-6):
+def _raycast_core(o2, d_chunk, lo, hi, mask, max_range, eps):
+    """Ray-AABB slab test for one chunk of rays. o2 [...,1,1,3], d_chunk [...,Kc,3], lo/hi [...,1,O,3],
+    mask [...,O] -> [...,Kc] nearest hit distance (clamped to max_range)."""
+    d2 = d_chunk[..., :, None, :]                                   # [...,Kc,1,3]
+    d2 = torch.where(d2.abs() < eps, torch.full_like(d2, eps), d2)  # avoid 0*inf on axis-parallel components
+    inv = 1.0 / d2
+    t1 = (lo - o2) * inv                                            # [...,Kc,O,3]  slab entry/exit per axis
+    t2 = (hi - o2) * inv
+    t_near = torch.minimum(t1, t2).amax(-1)                         # [...,Kc,O]  ray enters the box here
+    t_far = torch.maximum(t1, t2).amin(-1)                          # [...,Kc,O]  ray exits the box here
+    valid = mask[..., None, :] > 0.5
+    hit = (t_far >= torch.clamp(t_near, min=0.0)) & (t_far >= 0.0) & valid
+    dist = torch.where(hit, torch.clamp(t_near, min=0.0), torch.full_like(t_near, max_range))
+    return dist.amin(-1).clamp(max=max_range)                       # [...,Kc]
+
+
+def raycast_aabb(o, d, centers, halfs, mask, max_range, eps=1e-6, ray_chunk=None):
     """Nearest-surface distance along each ray, treating every obstacle as its AXIS-ALIGNED BOUNDING BOX
     (a box IS its AABB; a cylinder's `half`=(r,r,hz) already IS its AABB). Analytic slab method — exact,
-    NO march loop. This is the drone's egocentric depth sensor (a mini-LiDAR): it sees raw geometry, not
-    obstacle types (prefer-learnable-features). Loop-free, broadcast over the K rays and O obstacles.
+    NO march loop. The drone's egocentric depth sensor (mini-LiDAR / low-res depth image): it sees raw
+    geometry, not obstacle types ([[prefer-learnable-features]]). Vectorized over K rays & O obstacles.
 
     o [...,3] ray origins, d [...,K,3] unit ray dirs, centers/halfs [...,O,3], mask [...,O] (1=valid).
-    Returns [...,K] the nearest hit distance along each ray, clamped to max_range (no hit -> max_range)."""
+    Returns [...,K] nearest hit distance per ray, clamped to max_range (no hit -> max_range). `ray_chunk`
+    processes the K rays in groups to bound VRAM (the [...,K,O,3] slab tensor scales with K*O); it's a
+    perception-side memory knob, NOT the compiled physics _core, so the small chunk loop is fine."""
     o2 = o[..., None, None, :]                                       # [...,1,1,3]  origin (broadcast K,O)
-    d2 = d[..., :, None, :]                                          # [...,K,1,3]  ray dir  (broadcast O)
-    d2 = torch.where(d2.abs() < eps, torch.full_like(d2, eps), d2)   # avoid 0*inf on axis-parallel components
-    inv = 1.0 / d2                                                   # [...,K,1,3]
     lo = (centers - halfs)[..., None, :, :]                          # [...,1,O,3]  box min corner
     hi = (centers + halfs)[..., None, :, :]                          # [...,1,O,3]  box max corner
-    t1 = (lo - o2) * inv                                             # [...,K,O,3]  slab entry/exit per axis
-    t2 = (hi - o2) * inv
-    t_near = torch.minimum(t1, t2).amax(-1)                          # [...,K,O]  ray enters the box here
-    t_far = torch.maximum(t1, t2).amin(-1)                           # [...,K,O]  ray exits the box here
-    valid = mask[..., None, :] > 0.5                                 # [...,1,O] -> [...,K,O]
-    hit = (t_far >= torch.clamp(t_near, min=0.0)) & (t_far >= 0.0) & valid    # slab overlap AND box ahead
-    far = torch.full_like(t_near, max_range)
-    dist = torch.where(hit, torch.clamp(t_near, min=0.0), far)       # inside a box (t_near<0) -> 0 distance
-    return dist.amin(-1).clamp(max=max_range)                        # [...,K] nearest obstacle per ray
+    K = d.shape[-2]
+    if ray_chunk is None or ray_chunk >= K:
+        return _raycast_core(o2, d, lo, hi, mask, max_range, eps)
+    outs = [_raycast_core(o2, d[..., k0:k0 + ray_chunk, :], lo, hi, mask, max_range, eps)
+            for k0 in range(0, K, ray_chunk)]                       # OBS-CHUNK-OK (VRAM bound; perception, not _core)
+    return torch.cat(outs, -1)                                       # [...,K]
