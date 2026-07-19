@@ -100,8 +100,10 @@ class ObstacleClass:
 # Buildings STAY STATIC (a 1.5 m/s drifting building would spawn-kill drones with no push-out grace); the TREES
 # DRIFT slowly -> DYNAMIC obstacles the drone must avoid in real time (it can't memorize a static map).
 DEFAULT_OBSTACLE_FIELD = [
-    ObstacleClass("building", "box", (0, 4), (1.5, 3.0), (1.5, 3.0), (3.0, 5.0), "arena", 0.80, min_sep=3.5),
-    ObstacleClass("tree",     "cyl", (0, 10), (0.4, 1.2), (0.4, 1.2), (3.0, 8.0), "arena", 0.80, min_sep=1.5,
+    # DENSER domain-randomization (fills the O=16 capacity: up to 6 buildings + 10 trees) so the dense showcase
+    # fields (city/forest/mixed) are IN-distribution — the nav-field routes around whatever density it trained on.
+    ObstacleClass("building", "box", (0, 6), (1.5, 3.0), (1.5, 3.0), (3.0, 5.0), "arena", 0.80, min_sep=3.5),
+    ObstacleClass("tree",     "cyl", (2, 10), (0.4, 1.2), (0.4, 1.2), (3.0, 8.0), "arena", 0.80, min_sep=1.5,
                   motion="drift", speed=(0.3, 0.8)),
 ]
 

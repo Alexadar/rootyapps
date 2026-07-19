@@ -85,6 +85,14 @@ class WorldConfig:
     #                                 off THIS, not arena_half, so a BIG arena can hold a 1x-scale fight in its
     #                                 middle square. 0 => fall back to arena_half (no separate combat zone).
     ceiling: float = 45.0           # m z ceiling for drones above terrain base
+    # -------- dynamic navigation field (GPU flow/eikonal pathfinding; replaces the raycast fan) --------
+    nav_grid: int = 32              # field resolution G: one geodesic field per env over a G x G arena grid,
+    #                                 sampled by all N*D drones (cost scales with map size, NOT agent count)
+    nav_sweeps: int = 40            # FIXED (unrolled) parallel min-relaxation passes; bounds propagation radius
+    nav_clear: float = 1.0          # m obstacle inflation for cell-blocking (keeps routed paths off the walls)
+    nav_refresh_every: int = 1      # rebuild the field every K decisions (else reuse the SHARED one in state) -> the
+    #                                 slow-planner/fast-controller split: K>1 trades a stale (lagged) field for K x less
+    #                                 field compute, and trains the policy to tolerate the lag the deployment will have
 
     # ================= enemies: toy soldiers (social force) + toy tanks (unicycle) =================
     soldier_speed: float = 1.5      # m/s desired walking speed (Helbing v0=1.34; 1.5 design round number)

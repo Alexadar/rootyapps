@@ -142,6 +142,9 @@ def main():
         env.aa_enabled = False; ev_env.aa_enabled = False
     if args.compile:
         env._core = torch.compile(env._core)                    # AFTER reward weights (they are attrs, set in __init__)
+        # Fuse the nav-field build too: eager materializes a 2.4GB [N,G,G,O,3] occupancy tensor and round-trips it
+        # through VRAM (~186ms, bandwidth-bound); inductor fuses dvec->sdf->amin into registers -> ~11ms (17x).
+        env._build_navfield = torch.compile(env._build_navfield)
 
     torch.manual_seed(args.seed)
     H = args.attn_hidden                                        # GRU latent width (= attn encoder width)

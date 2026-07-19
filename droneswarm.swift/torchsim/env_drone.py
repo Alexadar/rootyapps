@@ -14,6 +14,7 @@ terrain/obstacle crashes and to enemy anti-air fire (CEP hitscan). One shared br
 """
 import numpy as np
 import torch
+import torch.nn.functional as F
 
 import sensors
 from oracles import rotation as ROT
@@ -73,7 +74,7 @@ class EnvDrone:
     # ---- obs / action dims (the policy is parameterized by these) ----
     DRONE_RAYS = 192      # egocentric DEPTH-GRID sensor: 16 az x 12 el low-res depth image (raw bbox geometry,
     #                       not types). ~matches the 16x12 depth image of "Back to Newton's Laws" diff-physics.
-    DRONE_SELF_F = 205    # 13 base [bz3 vel3 rate3 agl1 batt1 slope2] + DRONE_RAYS(192). Target selection is now
+    DRONE_SELF_F = 26     # 13 base [bz3 vel3 rate3 agl1 batt1 slope2] + 13 nav [flow2 geo1 overht1 patch9]. Target sel is now
     #                       the policy's own LEARNED token-attention (no hand-coded Sinkhorn tgt_dir/focus).
     DRONE_TOK_F = 12      # rel_dir(3) dist(1) rvel(3) closing(1) is_enemy(1) enemy_tank(1) teammate_demand(1) clear_shot(1)
     DRONE_K = 12          # attended tokens per drone (nearest drones + enemies)
@@ -126,6 +127,17 @@ class EnvDrone:
         self.ray_range = 20.0                                     # depth sense range [m] — absolute, ~0.9 s of
         #                                                           reaction at top speed (NOT tied to the small
         #                                                           engage_range normalizer, which would give ~4 m)
+        # --- DYNAMIC NAVIGATION FIELD grid (GPU flow/eikonal pathfinding; REPLACES the ray fan) ---
+        # One geodesic distance-to-enemy field per env over a G x G arena grid, REBUILT each decision from the LIVE
+        # obstacle+enemy state and sampled by every drone (cost ~ map size, not agent count). Static grid geometry:
+        self.nav_G = int(getattr(c, "nav_grid", 32)); G = self.nav_G
+        self.nav_sweeps = int(getattr(c, "nav_sweeps", 40))       # FIXED unrolled parallel min-relaxation passes
+        _lin = torch.linspace(-self.extent, self.extent, G, device=device)      # [G] cell-centre coords (x==y span)
+        _gy, _gx = torch.meshgrid(_lin, _lin, indexing="ij")                    # [G,G] row=y, col=x
+        self.nav_xy = torch.stack([_gx, _gy], -1)                               # [G,G,2] world xy of each cell
+        self.nav_cell = float(2.0 * self.extent / max(1, G - 1))                # [m] cell pitch (straight move cost)
+        self.nav_diag = self.nav_cell * 1.41421356                              # diagonal move cost
+        self.nav_block = float(getattr(c, "nav_clear", 1.0)) + c.drone_radius   # obstacle inflation for cell-blocking
         self._spawn_pos = (self.base_pos[:, None, :] + self.spawn_off).contiguous()   # [N,D,3] static launch point
         self._eye_d = torch.eye(self.D, device=device)[None, None]        # [1,1,D,D] self-pair masks (static)
         self._eye_e = torch.eye(self.E, device=device)[None, None]        # [1,1,E,E]
@@ -161,6 +173,12 @@ class EnvDrone:
         # the seek gradient goes flat over the combat zone (the swarm barely learns). 0 => == arena_half.
         self.combat_half = c.combat_half if c.combat_half > 0 else c.arena_half
         self.detection_range = 3.0 * self.combat_half
+        # TARGETING decisiveness: sharpen the balanced-assignment w_r toward the NEAREST alive enemy so a LONE
+        # drone commits to one target instead of the centroid (sharper than the Sinkhorn temp=0.6 dispersion).
+        self.assign_sharp_tau = 0.4
+        # nav-field FLOW-ALIGNMENT reward: differentiable "move along the computed route" term (the field lookup
+        # itself is detached/non-diff, so this keeps SAPO's analytic actor gradient alive for obstacle routing).
+        self.rw_flow = 0.1                                 # (bounded per-tick shaping; kept small so it can't bury kills)
         self.rw_e_alive = 0.01; self.rw_e_death = 1.0; self.rw_e_aa = 0.5; self.rw_e_clump = 0.02
         # edge/corner-camp penalty: the naive evader flees the diving swarm straight to the arena wall
         # and pins against the clamp (measured: 78% of kills happen at the boundary), which shoves the
@@ -191,7 +209,7 @@ class EnvDrone:
         c = self.cfg; N, D, E, dev = self.N, self.D, self.E, self.device
         z = lambda *s: torch.zeros(*s, device=dev)
         quat = torch.zeros(P, N, D, 4, device=dev); quat[..., 0] = 1.0    # identity attitude
-        return dict(
+        st = dict(
             d_pos=self.base_pos[None, :, None, :].expand(P, N, D, 3).clone(),
             d_vel=z(P, N, D, 3), d_quat=quat, d_omega=z(P, N, D, 3),
             d_act=z(P, N, D), d_alive=z(P, N, D),
@@ -205,6 +223,9 @@ class EnvDrone:
             obst_xyz=self.obst_xyz.clone(),                      # DYNAMIC obstacles: LIVE centre, [N,O,3] (P-invariant:
             obst_vel=self.obst_vel0.clone(),                    #   deterministic per-scene motion is identical across P)
         )
+        nd, nfl, no, nh = self._build_navfield(st["obst_xyz"], st["e_pos"], st["e_alive"])   # seed the SHARED geodesic map
+        st["nav_dist"] = nd; st["nav_flow"] = nfl; st["nav_occ"] = no; st["nav_ht"] = nh
+        return st
 
     # ---- geometry helpers ----
     def _terrain_z(self, xy):
@@ -268,6 +289,99 @@ class EnvDrone:
         # while the policy still learns to REACT to the rays through its own weights (their grad is unaffected).
         return (depth / self.ray_range).clamp(0.0, 1.0).detach()
 
+    # ---- DYNAMIC NAVIGATION FIELD (GPU flow/eikonal pathfinding — the ray fan's replacement) ----
+    def _build_navfield(self, obst_xyz, e_pos, e_alive):
+        """Per-env geodesic distance-to-enemy field, routing AROUND live obstacles — the swarm's shared
+        pathfinding map, rebuilt each decision, sampled by all drones (cost ~ map size, not agent count).
+        `obst_xyz` [N,O,3] LIVE centres; `e_pos` [P,N,E,2]; `e_alive` [P,N,E]. Returns
+        `dist [P,N,G,G]`, `flow [P,N,G,G,2]` (unit, = -∇dist -> points toward the nearest reachable enemy),
+        `occ_sdf [N,G,G]` (nearest-obstacle signed distance), `ht [N,G,G]` (tallest obstacle over the cell).
+        DETACHED sensor. Fully vectorized; the `nav_sweeps` min-relaxation passes are a FIXED unroll (same
+        idiom as `oracles/assign.py`'s Sinkhorn) — no data-dependent python loop, no per-cell `if`."""
+        G = self.nav_G; N = self.N; dev = obst_xyz.device; c = self.cfg
+        cell = self.nav_xy                                                   # [G,G,2] world xy of each cell
+        # --- occupancy + tallest-obstacle height from LIVE obstacles (2D footprint via obst_half2) ---
+        dxy = cell[None, :, :, None, :] - obst_xyz[:, None, None, :, :2]      # [N,G,G,O,2] cell -> obstacle centre
+        dvec = torch.cat([dxy, torch.zeros_like(dxy[..., :1])], -1)           # [N,G,G,O,3] z=0 (footprint ignores z)
+        sdf = COL.shape_sdf3(dvec, self.obst_half2[:, None, None], self.obst_cyl[:, None, None])   # [N,G,G,O]
+        sdf = sdf + (1.0 - self.obst_mask[:, None, None]) * 1e9               # padded obstacles -> +inf (never bind)
+        occ_sdf = sdf.amin(-1)                                                # [N,G,G] nearest-obstacle signed dist
+        top = (obst_xyz[..., 2] + self.obst_half[..., 2]) * self.obst_mask    # [N,O] obstacle top height (0 if padded)
+        ht = ((sdf < 0.0).float() * top[:, None, None]).amax(-1)              # [N,G,G] tallest obstacle covering cell
+        blocked = occ_sdf < self.nav_block                                   # [N,G,G] inflated obstacle -> impassable
+        # --- multi-source geodesic distance from every ALIVE enemy (sources = enemy cells, dist 0) ---
+        P = e_pos.shape[0]
+        ij = ((e_pos + self.extent) / (2.0 * self.extent) * (G - 1)).round().long().clamp(0, G - 1)   # [P,N,E,2] ix,iy
+        flat = (ij[..., 1] * G + ij[..., 0])                                 # [P,N,E] flat cell index iy*G+ix
+        src = torch.zeros(P, N, G * G, device=dev).scatter_add(-1, flat, e_alive).view(P, N, G, G) > 0.5   # [P,N,G,G]
+        blk = blocked[None].expand(P, N, G, G)                               # obstacles are P-invariant
+        fixed = blk | src                                                    # sources + walls never relax
+        BIG = 1e6
+        dist = torch.where(src, torch.zeros(P, N, G, G, device=dev), torch.full((P, N, G, G), BIG, device=dev))
+        dist = torch.where(blk, torch.full_like(dist, BIG), dist)            # walls impassable
+        step, diag = self.nav_cell, self.nav_diag
+        for _ in range(self.nav_sweeps):                                     # NAV-FIELD-UNROLL-OK: fixed vectorized passes
+            dp = F.pad(dist, (1, 1, 1, 1), value=BIG)                        # BIG border -> no wrap-around
+            nb = torch.minimum(
+                torch.minimum(torch.minimum(dp[..., :G, 1:G + 1], dp[..., 2:, 1:G + 1]),          # N, S
+                              torch.minimum(dp[..., 1:G + 1, :G], dp[..., 1:G + 1, 2:])) + step,   # W, E  (+straight cost)
+                torch.minimum(torch.minimum(dp[..., :G, :G], dp[..., :G, 2:]),                     # NW, NE
+                              torch.minimum(dp[..., 2:, :G], dp[..., 2:, 2:])) + diag)             # SW, SE (+diagonal cost)
+            dist = torch.where(fixed, dist, torch.minimum(dist, nb))         # Jacobi relax; sources/walls frozen
+        # --- flow = -∇dist (unit), toward decreasing distance = toward the nearest reachable enemy ---
+        dpad = F.pad(dist, (1, 1, 1, 1), value=BIG)
+        gx = (dpad[..., 1:G + 1, 2:] - dpad[..., 1:G + 1, :G]) * 0.5         # ∂dist/∂x  [P,N,G,G]
+        gy = (dpad[..., 2:, 1:G + 1] - dpad[..., :G, 1:G + 1]) * 0.5         # ∂dist/∂y
+        flow = torch.stack([-gx, -gy], -1)                                   # [P,N,G,G,2]
+        flow = flow / (flow.norm(dim=-1, keepdim=True) + 1e-6)              # unit route direction
+        flow = torch.where(blk[..., None], torch.zeros_like(flow), flow)     # no guidance inside a wall
+        dist = dist.clamp(max=2.0 * self.detection_range)                    # finite cap -> flat (0) grad far / in walls
+        return dist.detach(), flow.detach(), occ_sdf.detach(), ht.detach()
+
+    def _sample_nav_dist(self, d_pos, nav_dist):
+        """Geodesic distance-to-enemy at each drone, bilinear from the field. `d_pos` [P,N,D,3] is
+        DIFFERENTIABLE, `nav_dist` [P,N,G,G] is the DETACHED field -> `geo` [P,N,D]. grid_sample is
+        differentiable w.r.t. the sample COORDS, so the seek potential built on this keeps SAPO's analytic
+        actor gradient (∂geo/∂d_pos ≈ the flow direction) while staying a pure telescoping potential."""
+        P, N, D, _ = d_pos.shape; G = self.nav_G
+        grid = (d_pos[..., :2] / self.extent).clamp(-1.0, 1.0).reshape(P * N, D, 1, 2)
+        g = F.grid_sample(nav_dist.reshape(P * N, 1, G, G), grid, mode="bilinear", align_corners=True)
+        return g.reshape(P, N, D)                                            # [P,N,D]
+
+    def _sample_nav_flow(self, d_pos, nav_flow):
+        """Route direction at each drone (bilinear, DETACHED sensor — the reward's differentiability comes from
+        d_vel, not this). `d_pos` [P,N,D,3], `nav_flow` [P,N,G,G,2] -> `flow_dir` [P,N,D,2]."""
+        P, N, D, _ = d_pos.shape; G = self.nav_G
+        grid = (d_pos[..., :2].detach() / self.extent).clamp(-1.0, 1.0).reshape(P * N, D, 1, 2)
+        fl = nav_flow.permute(0, 1, 4, 2, 3).reshape(P * N, 2, G, G)         # [PN,2,G,G]
+        s = F.grid_sample(fl, grid, mode="bilinear", align_corners=True)     # [PN,2,D,1]
+        return s.reshape(P, N, 2, D).permute(0, 1, 3, 2)                     # [P,N,D,2]
+
+    def _sample_navfield(self, dp, dist, flow, occ_sdf, ht):
+        """Bilinear-sample the nav field at drone positions -> per-drone route features (DETACHED, bounded).
+        `dp` [P,N,D,3]; `dist/flow` [P,N,G,G(,2)]; `occ_sdf/ht` [N,G,G]. Returns `nav_feat [P,N,D,13]` =
+        flow_dir(2) + geodesic_closeness(1) + altitude-over-obstacle-top(1) + 3x3 local-clearance patch(9).
+        Vectorized (two `grid_sample`s), no loops."""
+        P, N, D, _ = dp.shape; G = self.nav_G; dev = dp.device; c = self.cfg
+        sc = self.scale.view(1, N, 1)                                        # [1,N,1] per-env length scale
+        occ_b = occ_sdf[None].expand(P, N, G, G); ht_b = ht[None].expand(P, N, G, G)   # P-broadcast static fields
+        # centre sample: dist + flow(x,y) + ht, one grid_sample over the P*N field batch
+        fld = torch.stack([dist, flow[..., 0], flow[..., 1], ht_b], 2).reshape(P * N, 4, G, G)    # [PN,4,G,G]
+        grid = (dp[..., :2] / self.extent).clamp(-1.0, 1.0).reshape(P * N, D, 1, 2)               # [PN,D,1,2] in [-1,1]
+        s = F.grid_sample(fld, grid, mode="bilinear", align_corners=True).reshape(P, N, 4, D).permute(0, 1, 3, 2)
+        s_dist, s_fx, s_fy, s_ht = s.unbind(-1)                              # each [P,N,D]
+        fdir = torch.stack([s_fx, s_fy], -1)
+        fdir = fdir / (fdir.norm(dim=-1, keepdim=True) + 1e-6)              # [P,N,D,2] unit route direction
+        geo_close = (1.0 - s_dist / self.detection_range).clamp(0.0, c.obs_clamp)[..., None]      # [P,N,D,1]
+        over_ht = ((dp[..., 2] - s_ht) / c.ceiling).clamp(-c.obs_clamp, c.obs_clamp)[..., None]   # +ve = above top
+        # 3x3 local occupancy patch (mini obstacle sensor replacing the ray fan's local channels)
+        off = self.nav_cell * torch.tensor([[-1, -1], [0, -1], [1, -1], [-1, 0], [0, 0], [1, 0],
+                                            [-1, 1], [0, 1], [1, 1]], device=dev, dtype=torch.float32)   # [9,2]
+        pxy = ((dp[..., None, :2] + off) / self.extent).clamp(-1.0, 1.0).reshape(P * N, D * 9, 1, 2)
+        patch = F.grid_sample(occ_b.reshape(P * N, 1, G, G), pxy, mode="bilinear", align_corners=True)
+        patch = (patch.reshape(P, N, D, 9) / sc[..., None]).clamp(-c.obs_clamp, c.obs_clamp)      # [P,N,D,9]
+        return torch.cat([fdir, geo_close, over_ht, patch], -1).detach()     # [P,N,D,13]
+
     # ---- observations (pure functions of the PERCEIVED picture; bounded + scale-normalized + clamped) ----
     def _select_topk(self, feat_qs, dist_qs, valid_qs, K):
         """Top-K nearest sources per query from precomputed relative features. feat_qs [P,N,Q,S,F],
@@ -280,11 +394,11 @@ class EnvDrone:
         return torch.gather(feat_qs, -2, idx), mask
 
     def drone_obs(self, state):
-        """-> (self_feat [P,N,D,33], tok [P,N,D,K,DRONE_TOK_F=12], mask [P,N,D,K]). Reads the SensorChannel
-        picture; obstacle sensing is a DRONE_RAYS depth-ray fan (raw bbox geometry, not types). Each candidate
-        token carries a LEARNABLE-targeting pair: teammate_demand (how under-served an enemy is) + clear_shot
-        (line-of-sight through obstacles) — the policy's own attention picks + distributes targets, no
-        hand-coded Sinkhorn assignment."""
+        """-> (self_feat [P,N,D,DRONE_SELF_F=26], tok [P,N,D,K,DRONE_TOK_F=12], mask [P,N,D,K]). Obstacle sensing
+        is the DYNAMIC NAV-FIELD (a per-env geodesic pathfinding map toward enemies, routing around live obstacles,
+        sampled per drone as flow-dir + geodesic-closeness + height + a 3x3 clearance patch) — replaces the raycast
+        fan. Each candidate token carries a LEARNABLE-targeting pair: teammate_demand + clear_shot — the policy's
+        own attention picks + distributes targets."""
         c = self.cfg; pic = sensors.perceive(state)
         dp, dv, dq, dw = pic["d_pos"], pic["d_vel"], pic["d_quat"], pic["d_omega"]
         de, da = pic["d_energy"], pic["d_alive"]
@@ -295,7 +409,10 @@ class EnvDrone:
         bz = ROT.body_z_axis(dq)                                              # [P,N,D,3] tilt
         th, tgrad = TERR.height_and_grad(self.hf, dp[..., :2], self.extent)   # fused: one corner-gather pass
         agl = dp[..., 2] - th                                                 # [P,N,D]
-        rays = self._obstacle_rays(dp, centers=state["obst_xyz"])            # [P,N,D,K] mini-LiDAR (LIVE obstacle pos)
+        # DYNAMIC NAV-FIELD sensor (REPLACES the ray fan): READ the SHARED geodesic map from the state (built once
+        # every nav_refresh_every decisions by step_dec) and sample per-drone route features. The decision layer
+        # treats the field as fixed at this instant — no rebuild here (the slow-planner/fast-controller split).
+        nav_feat = self._sample_navfield(dp, state["nav_dist"], state["nav_flow"], state["nav_occ"], state["nav_ht"])
         self_feat = torch.cat([
             bz,
             (dv / vmax).clamp(-c.obs_clamp, c.obs_clamp),
@@ -303,8 +420,8 @@ class EnvDrone:
             (agl / c.engage_range).clamp(0.0, c.obs_clamp)[..., None],
             (de / c.batt_capacity_j)[..., None],
             (tgrad).clamp(-c.obs_clamp, c.obs_clamp),
-            rays,                                                            # DRONE_RAYS depth-to-bbox channels
-        ], -1)                                                               # 3+3+3+1+1+2 + K = 13 + DRONE_RAYS
+            nav_feat,                                                        # nav-field route features (2+1+1+9)
+        ], -1)                                                               # 3+3+3+1+1+2 + 13 = 26 = DRONE_SELF_F
         # --- tokens: other drones + enemies (merged, type-tagged) ---
         ep3 = self._enemy_pos3(ep)                                           # [P,N,E,3]
         ev3 = torch.cat([ev, torch.zeros_like(ev[..., :1])], -1)             # enemy vel (ground plane)
@@ -620,16 +737,28 @@ class EnvDrone:
         d2e_r = (dde / sc[..., None]).clamp(max=c.obs_clamp)               # [P,N,D,E] normalised dist (O(1) for Sinkhorn)
         T_r = ASSIGN.balanced_assignment(d2e_r, af, e_alive)              # [P,N,D,E] balanced transport plan
         w_r = T_r / (T_r.sum(-1, keepdim=True) + c.eps)                   # [P,N,D,E] per-drone distribution over enemies
-        # ---- PN lead PER ENEMY: predict where each enemy will be after this drone's time-to-go to IT ----
-        t_go_e = (dde / c.drone_speed_max)[..., None]                     # [P,N,D,E,1] seconds to close each gap
-        lead_e = e_pos[:, :, None, :, :] + e_vel[:, :, None, :, :] * t_go_e  # [P,N,D,E,2] predicted (lead) enemy positions
-        R_e = lead_e - d_xy[:, :, :, None, :]                             # [P,N,D,E,2] drone -> each lead point
-        r_lead_e = torch.sqrt((R_e * R_e).sum(-1) + c.eps)               # [P,N,D,E] range to each lead point
-        # ---- SEEK potential: 1 on a lead point, fading to 0 at detection_range; ASSIGNMENT-WEIGHTED across
-        #      enemies so a drone is rewarded for intercepting ITS assigned target(s). HORIZONTAL only (never
-        #      pulls into the ground). ----
-        seek_e = torch.clamp(1.0 - r_lead_e / self.detection_range, min=0.0)  # [P,N,D,E] per-enemy homing potential
-        seek = (w_r * seek_e).sum(-1)                                     # [P,N,D] balanced-assignment-weighted seek
+        # ---- TARGETING decisiveness fix: sharpen w_r toward the NEAREST alive enemy (softmin over range; dead
+        #      enemies dde=1e18 -> softmax weight ~0). A LONE drone's balanced w_r is ~uniform (centroid pull);
+        #      multiplying by the near-one-hot nearest weight collapses it onto one target -> it COMMITS. Many
+        #      drones keep the Sinkhorn dispersion (each only sharpens toward its assigned-nearest). Pure-vector,
+        #      differentiable, self-masking -> preserves the potential-based / SAPO guarantees. ----
+        # NB: dde is 1e18 for DEAD enemies; feeding that into exp() overflows the COMPILED (inductor) softmax
+        # backward -> NaN gradient (eager's stable softmax hides it). Cap the logit to a sane range; dead enemies
+        # are already zero-mass in w_r (Sinkhorn mask), so the cap is semantically a no-op, just numerically safe.
+        nn_logit = -dde.clamp(max=4.0 * self.detection_range) / self.assign_sharp_tau   # [P,N,D,E] bounded
+        w_r = w_r * torch.softmax(nn_logit, dim=-1)                       # sharpen toward the nearest alive enemy
+        w_r = w_r / (w_r.sum(-1, keepdim=True) + c.eps)                   # renormalize per-drone over enemies
+        # ---- GEODESIC SEEK: homing potential on the nav-field's shortest distance-AROUND-obstacles to the nearest
+        #      reachable enemy, sampled DIFFERENTIABLY at d_pos (field detached, coords not) -> routes the swarm
+        #      around cover AND keeps the analytic actor gradient. Replaces the straight-line PN-lead seek that
+        #      pulled drones INTO walls. Telescoping potential (bounded, un-farmable) like before. ----
+        # DETACHED potential (critic-learned): the field has obstacle-boundary discontinuities, so a grid_sample
+        # GRADIENT chained across the BPTT window explodes (NaN). The routing ACTOR gradient instead comes from the
+        # bounded, smooth flow-alignment term below (velocity . route-direction) — grid_sample only in the forward.
+        geo_dist = self._sample_nav_dist(d_pos.detach(), s["nav_dist"])   # [P,N,D] geodesic range (DETACHED sensor)
+        seek = torch.clamp(1.0 - geo_dist / self.detection_range, min=0.0)  # [P,N,D] geodesic homing potential
+        flow_dir = self._sample_nav_flow(d_pos, s["nav_flow"])           # [P,N,D,2] route direction (DETACHED)
+        flow_align = (d_vel[..., :2] * flow_dir).sum(-1) / c.drone_speed_max   # [P,N,D] DIFFERENTIABLE via d_vel
         # ---- STRIKE: reward DESCENDING onto the target, ASSIGNMENT-WEIGHTED (same w_r) so a drone is only
         #      rewarded for diving on ITS assigned enemy — NOT for piling onto whatever's nearest. This term is
         #      rw_commit=2.5x the seek, so when it was nearest-based it drowned the dispersion signal and kept
@@ -660,6 +789,10 @@ class EnvDrone:
         ground_prox = torch.clamp(1.0 - agl2 / self.clearance_range, min=0.0)         # [P,N,D] 1 at deck -> 0 above
         descent_rate = torch.clamp(-d_vel[..., 2] / c.drone_speed_max, min=0.0)       # [P,N,D] normalized downward speed
         brake = (ground_prox * descent_rate * (1.0 - over) * af).sum(-1) / n_alive    # [P,N] mean over alive drones
+        # NAV-FIELD flow-alignment: reward moving ALONG the computed route (differentiable via d_vel; flow_dir is
+        # a detached sensor). Gated by (1-over) so it never fights the terminal dive. The bounded actor gradient
+        # that replaces the (NaN-prone) differentiable geodesic seek -> the swarm learns to follow the pathfinding.
+        r_flow = (flow_align * (1.0 - over) * af).sum(-1) / n_alive                    # [P,N] mean over alive, not-committed
         # alt/evade substrate is DISABLED (rw_alt=rw_evade=0); Inductor can't fold 0*x -> gate behind the
         # python-const idiom so they only run when consumed (a live weight, or the eval decompose panel).
         if self.rw_alt or self.decompose:                                  # (evade_pen removed -> the APF repel in the
@@ -674,6 +807,7 @@ class EnvDrone:
                    + self.rw_close * hunt_r                                #       +PN homing progress (potential delta)
                    - self.rw_alt * alt_pen                                 #       alt substrate (rw=0 -> no effect; APF
                    - self.rw_brake * brake                                 #       -fast descent near the deck (avoid earth)
+                   + self.rw_flow * r_flow                                 #       +follow the nav-field route (differentiable)
                    - self.rw_smooth * smooth)                              #       tiny smoothness cost
         # enemy team reward
         alive_frac = e_alive.mean(-1)
@@ -697,7 +831,9 @@ class EnvDrone:
                   d_crash=torch.maximum(s["d_crash"], crash.float()),  # sticky terrain/obstacle-crash flag (render)
                   e_pos=e_pos, e_head=e_head, e_vel=e_vel, e_alive=e_alive, e_cd=e_cd,
                   kills=kills, losses=losses,
-                  obst_xyz=obst_xyz, obst_vel=obst_vel)               # DYNAMIC obstacles: carry the moved centre + vel
+                  obst_xyz=obst_xyz, obst_vel=obst_vel,               # DYNAMIC obstacles: carry the moved centre + vel
+                  nav_dist=s["nav_dist"], nav_flow=s["nav_flow"],     # SHARED geodesic nav-field (carried across ticks;
+                  nav_occ=s["nav_occ"], nav_ht=s["nav_ht"])           #   refreshed by step_dec every nav_refresh_every)
         done_d = drone_died.float()
         done_e = (enemy_hit & was_e_alive).float()
         panel = None
@@ -707,6 +843,7 @@ class EnvDrone:
                      "r_alt": (-self.rw_alt * alt_pen).sum(),
                      "r_apf": (-self.rw_apf * (repel * af).sum(-1) / n_alive).sum(),   # APF repel magnitude (monitor)
                      "r_brake": (-self.rw_brake * brake).sum(),
+                     "r_flow": (self.rw_flow * r_flow).sum(),          # nav-field flow-follow reward (monitor)
                      "r_smooth": (-self.rw_smooth * smooth).sum(), "kills": kills_now.sum(),
                      "ticks": torch.ones((), device=dev)}
         return ns, r_drone, r_enemy, done_d, done_e, panel
@@ -723,6 +860,12 @@ class EnvDrone:
         dd = torch.zeros(P, self.N, self.D, device=self.device)
         de = torch.zeros(P, self.N, self.E, device=self.device)
         t0 = k * c.act_every
+        # DYNAMIC NAV-FIELD for the reward: build ONCE per decision (eager, from the pre-decision obstacle+enemy
+        # state) and inject so every tick's _core samples the SAME geodesic map (the routing/seek potential).
+        if k % max(1, self.cfg.nav_refresh_every) == 0:                     # best-effort refresh of the SHARED field (a
+            nd, nfl, no, nh = self._build_navfield(s["obst_xyz"], s["e_pos"], s["e_alive"])   #  data-independent config
+            s = {**s, "nav_dist": nd, "nav_flow": nfl, "nav_occ": no, "nav_ht": nh}           #  gate on the decision idx)
+        # else: reuse the (lagged) shared field already carried in s — the fast controller reads it as fixed
         for j in range(c.act_every):                                        # TIME-LOOP-OK
             t = min(t0 + j, self.T - 1)
             gust_t = self.gust[:, t, :]                                      # [N,3]
