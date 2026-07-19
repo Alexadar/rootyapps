@@ -185,7 +185,9 @@ def main():
     pool_rng = random.Random(1234 + args.seed)
 
     os.makedirs(args.out_dir, exist_ok=True)
-    log = open(os.path.join(args.out_dir, "log.csv"), "w")
+    for sub in ("models", "videos", "logs", "config"):          # organised outputs (SETUP loop, not the sim hot path)
+        os.makedirs(os.path.join(args.out_dir, sub), exist_ok=True)
+    log = open(os.path.join(args.out_dir, "logs", "log.csv"), "w")
     log.write("iter,sec,side,pl,vl,ret,valid,eval_clear,full,exch\n")
     best_clear, best_snap = -1.0, None
 
@@ -249,14 +251,15 @@ def main():
         print(f"[keep-best] exporting peak-clear checkpoint ({best_clear*100:.1f}%)")
     dmeta = {"Fs": EnvDrone.DRONE_SELF_F, "Ft": EnvDrone.DRONE_TOK_F, "d": args.attn_dim, "H": H, "act": EnvDrone.DRONE_ACT}
     emeta = {"Fs": EnvDrone.ENEMY_SELF_F, "Fm": EnvDrone.ENEMY_TOK_F, "d": args.attn_dim, "H": H, "act": EnvDrone.ENEMY_ACT}
-    RE.save_safetensors(dparams, dls, dmeta, os.path.join(args.out_dir, "drone.safetensors"))
-    AT.save_safetensors(eparams, els, emeta, os.path.join(args.out_dir, "enemy.safetensors"))
-    cfg.to_json(os.path.join(args.out_dir, "world.json"))       # config stays JSON (not tensors)
+    mdl = os.path.join(args.out_dir, "models")
+    RE.save_safetensors(dparams, dls, dmeta, os.path.join(mdl, "drone.safetensors"))
+    AT.save_safetensors(eparams, els, emeta, os.path.join(mdl, "enemy.safetensors"))
+    cfg.to_json(os.path.join(args.out_dir, "config", "world.json"))   # config/ (JSON, not tensors)
     clear, full, exch, mk = evaluate(ev_env, dparams, eparams, K_dec, H, mm_dtype)
     json.dump({"clear": clear, "full_clear": full, "exchange": exch, "mean_kills": mk},
-              open(os.path.join(args.out_dir, "summary.json"), "w"), indent=2)
+              open(os.path.join(args.out_dir, "logs", "summary.json"), "w"), indent=2)
     print(f"[final] clear {clear*100:.1f}% full {full*100:.1f}% exchange {exch:.2f} mean_kills {mk:.1f}")
-    print(f"wrote {args.out_dir}/drone.safetensors enemy.safetensors world.json summary.json log.csv")
+    print(f"wrote {args.out_dir}/: models/*.safetensors  config/world.json  logs/{{log.csv,summary.json}}  videos/*.mp4")
 
     if args.render:
         try:

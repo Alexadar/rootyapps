@@ -55,7 +55,7 @@ PPO_LR="${PPO_LR:-1e-4}"; EPOCHS="${EPOCHS:-2}"; ATTN_DIM="${ATTN_DIM:-32}"; ATT
 # NO_AA=1 (default now) ejects enemy anti-air fire — enemies only maneuver. Re-inject: NO_AA=0 ./train.sh
 [ "${NO_AA:-1}" = "1" ] && NOAA="--no-aa" || NOAA=""
 [ "${KEEP_BEST:-1}" = "1" ] && KEEPBEST="--keep-best" || KEEPBEST=""
-OUT="${OUT:-runs}"; RENDER="${RENDER:-$OUT/swarm.mp4}"
+OUT="${OUT:-runs}"; RENDER="${RENDER:-$OUT/videos/swarm.mp4}"   # train_drone makes OUT/{models,videos,logs,config}/
 INIT_DRONE="${INIT_DRONE:+--init-drone $INIT_DRONE}"; INIT_ENEMY="${INIT_ENEMY:+--init-enemy $INIT_ENEMY}"
 
 echo "device=$DEV n_envs=$N_ENVS D=$DRONES E=$ENEMIES O=$OBST ticks=$TICKS budget=${BUDGET}s ${FREEZE:-coevo}"
@@ -72,4 +72,4 @@ echo "device=$DEV n_envs=$N_ENVS D=$DRONES E=$ENEMIES O=$OBST ticks=$TICKS budge
   --enemy-every "$ENEMY_EVERY" --enemy-pool "$ENEMY_POOL" --aa-warmup "$AA_WARMUP" $FREEZE $NOAA $KILLCURR \
   --eval-every "$EVAL_EVERY" --eval-seeds "$EVAL_SEEDS" $KEEPBEST \
   --out-dir "$OUT" --render "$RENDER" $INIT_DRONE $INIT_ENEMY
-echo "##### DONE — models $OUT/{drone,enemy}.json ; video $RENDER #####"
+echo "##### DONE — weights $OUT/models/{drone,enemy}.safetensors ; video $RENDER #####"
