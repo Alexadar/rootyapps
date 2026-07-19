@@ -178,7 +178,6 @@ class EnvDrone:
         self.assign_sharp_tau = 0.4
         # nav-field FLOW-ALIGNMENT reward: differentiable "move along the computed route" term (the field lookup
         # itself is detached/non-diff, so this keeps SAPO's analytic actor gradient alive for obstacle routing).
-        self.rw_flow = 0.1                                 # (bounded per-tick shaping; kept small so it can't bury kills)
         self.rw_e_alive = 0.01; self.rw_e_death = 1.0; self.rw_e_aa = 0.5; self.rw_e_clump = 0.02
         # edge/corner-camp penalty: the naive evader flees the diving swarm straight to the arena wall
         # and pins against the clamp (measured: 78% of kills happen at the boundary), which shoves the
@@ -752,13 +751,15 @@ class EnvDrone:
         #      reachable enemy, sampled DIFFERENTIABLY at d_pos (field detached, coords not) -> routes the swarm
         #      around cover AND keeps the analytic actor gradient. Replaces the straight-line PN-lead seek that
         #      pulled drones INTO walls. Telescoping potential (bounded, un-farmable) like before. ----
-        # DETACHED potential (critic-learned): the field has obstacle-boundary discontinuities, so a grid_sample
-        # GRADIENT chained across the BPTT window explodes (NaN). The routing ACTOR gradient instead comes from the
-        # bounded, smooth flow-alignment term below (velocity . route-direction) — grid_sample only in the forward.
-        geo_dist = self._sample_nav_dist(d_pos.detach(), s["nav_dist"])   # [P,N,D] geodesic range (DETACHED sensor)
-        seek = torch.clamp(1.0 - geo_dist / self.detection_range, min=0.0)  # [P,N,D] geodesic homing potential
-        flow_dir = self._sample_nav_flow(d_pos, s["nav_flow"])           # [P,N,D,2] route direction (DETACHED)
-        flow_align = (d_vel[..., :2] * flow_dir).sum(-1) / c.drone_speed_max   # [P,N,D] DIFFERENTIABLE via d_vel
+        # GEODESIC SEEK as a DIFFERENTIABLE potential: the DETACHED field value + a first-order gradient correction
+        # (d(geo_dist)/d(pos) = -flow_dir, since moving ALONG the route lowers the geodesic distance). It telescopes
+        # like the old seek (bounded, un-farmable) AND carries the SAPO actor's HOMING gradient toward the enemy
+        # ALONG the obstacle-avoiding route -- with NO grid_sample-of-d_pos in the backward (which NaN'd). Detaching
+        # the seek (before) left ZERO homing gradient, so the swarm learned only avoidance and drifted off enemies.
+        geo_dist = self._sample_nav_dist(d_pos.detach(), s["nav_dist"])   # [P,N,D] detached geodesic distance value
+        flow_dir = self._sample_nav_flow(d_pos, s["nav_flow"])           # [P,N,D,2] detached route dir (toward enemy)
+        geo_surr = geo_dist - (flow_dir * (d_xy - d_xy.detach())).sum(-1)  # value = geo_dist; d/d(d_xy) = -flow_dir
+        seek = torch.clamp(1.0 - geo_surr / self.detection_range, min=0.0)  # [P,N,D] DIFFERENTIABLE homing potential
         # ---- STRIKE: reward DESCENDING onto the target, ASSIGNMENT-WEIGHTED (same w_r) so a drone is only
         #      rewarded for diving on ITS assigned enemy — NOT for piling onto whatever's nearest. This term is
         #      rw_commit=2.5x the seek, so when it was nearest-based it drowned the dispersion signal and kept
@@ -789,10 +790,8 @@ class EnvDrone:
         ground_prox = torch.clamp(1.0 - agl2 / self.clearance_range, min=0.0)         # [P,N,D] 1 at deck -> 0 above
         descent_rate = torch.clamp(-d_vel[..., 2] / c.drone_speed_max, min=0.0)       # [P,N,D] normalized downward speed
         brake = (ground_prox * descent_rate * (1.0 - over) * af).sum(-1) / n_alive    # [P,N] mean over alive drones
-        # NAV-FIELD flow-alignment: reward moving ALONG the computed route (differentiable via d_vel; flow_dir is
-        # a detached sensor). Gated by (1-over) so it never fights the terminal dive. The bounded actor gradient
-        # that replaces the (NaN-prone) differentiable geodesic seek -> the swarm learns to follow the pathfinding.
-        r_flow = (flow_align * (1.0 - over) * af).sum(-1) / n_alive                    # [P,N] mean over alive, not-committed
+        # (the nav-field flow-alignment term is GONE: the geodesic SEEK is now a differentiable potential above, so
+        #  it carries the homing gradient itself -- no separate per-tick flow-follow reward needed.)
         # alt/evade substrate is DISABLED (rw_alt=rw_evade=0); Inductor can't fold 0*x -> gate behind the
         # python-const idiom so they only run when consumed (a live weight, or the eval decompose panel).
         if self.rw_alt or self.decompose:                                  # (evade_pen removed -> the APF repel in the
@@ -807,7 +806,6 @@ class EnvDrone:
                    + self.rw_close * hunt_r                                #       +PN homing progress (potential delta)
                    - self.rw_alt * alt_pen                                 #       alt substrate (rw=0 -> no effect; APF
                    - self.rw_brake * brake                                 #       -fast descent near the deck (avoid earth)
-                   + self.rw_flow * r_flow                                 #       +follow the nav-field route (differentiable)
                    - self.rw_smooth * smooth)                              #       tiny smoothness cost
         # enemy team reward
         alive_frac = e_alive.mean(-1)
@@ -843,7 +841,6 @@ class EnvDrone:
                      "r_alt": (-self.rw_alt * alt_pen).sum(),
                      "r_apf": (-self.rw_apf * (repel * af).sum(-1) / n_alive).sum(),   # APF repel magnitude (monitor)
                      "r_brake": (-self.rw_brake * brake).sum(),
-                     "r_flow": (self.rw_flow * r_flow).sum(),          # nav-field flow-follow reward (monitor)
                      "r_smooth": (-self.rw_smooth * smooth).sum(), "kills": kills_now.sum(),
                      "ticks": torch.ones((), device=dev)}
         return ns, r_drone, r_enemy, done_d, done_e, panel
