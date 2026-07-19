@@ -133,24 +133,27 @@ def numpy_forward(params_np, log_std, meta, self_feat, mon_feat, alive):
     return (h @ Wp + bp).astype(np.float32)              # [act]
 
 
-def to_json(params, log_std, meta, path):
-    """meta = {Fs,Fm,d,H,act}. Discriminated JSON (kind=attention) — distinct from the MLP {sizes,w,b}."""
+def save_safetensors(params, log_std, meta, path):
+    """Save the attention policy as SAFETENSORS. params is a LIST of (W,b) tuples -> flatten to w0/b0/w1/b1...
+    (safetensors needs a flat tensor dict); meta = {Fs,Fm,d,H,act} + count go in the JSON header."""
     import json
-    out = {"kind": "attention", **meta,
-           "w": [W.detach().cpu().numpy().reshape(-1).tolist() for W, _ in params],
-           "b": [b.detach().cpu().numpy().tolist() for _, b in params],
-           "log_std": log_std.detach().cpu().numpy().tolist()}
-    json.dump(out, open(path, "w"))
+    from safetensors.torch import save_file
+    t = {}
+    for i, (W, b) in enumerate(params):                            # OFFLINE loop (serialization, not the sim)
+        t[f"w{i}"] = W.detach().cpu().contiguous(); t[f"b{i}"] = b.detach().cpu().contiguous()
+    t["log_std"] = log_std.detach().cpu().contiguous()
+    save_file(t, path, metadata={"kind": "attention", "meta": json.dumps(meta), "n": str(len(params))})
 
 
-def from_json(path, device="cpu"):
+def load_safetensors(path, device="cpu"):
     import json
-    import numpy as np
-    d = json.load(open(path))
-    assert d.get("kind") == "attention", "not an attention policy json"
-    shapes = _SHAPES(d["Fs"], d["Fm"], d["d"], d["H"], d["act"])
-    params = [(torch.tensor(np.asarray(d["w"][i], np.float32).reshape(shapes[i]), device=device),
-               torch.tensor(np.asarray(d["b"][i], np.float32), device=device)) for i in range(len(shapes))]
-    log_std = torch.tensor(np.asarray(d["log_std"], np.float32), device=device)
-    meta = {k: d[k] for k in ("Fs", "Fm", "d", "H", "act")}
-    return params, log_std, meta
+    from safetensors import safe_open
+    t = {}
+    with safe_open(path, framework="pt", device=device) as f:
+        hdr = f.metadata()
+        for k in f.keys():
+            t[k] = f.get_tensor(k)
+    assert hdr.get("kind") == "attention", "not an attention policy safetensors"
+    n = int(hdr["n"])
+    params = [(t[f"w{i}"], t[f"b{i}"]) for i in range(n)]          # rebuild the (W,b) list in order
+    return params, t["log_std"], json.loads(hdr["meta"])

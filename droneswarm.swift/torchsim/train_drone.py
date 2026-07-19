@@ -142,8 +142,10 @@ def main():
         env.aa_enabled = False; ev_env.aa_enabled = False
     if args.compile:
         env._core = torch.compile(env._core)                    # AFTER reward weights (they are attrs, set in __init__)
-    # NB: the nav-field build stays EAGER — with nav_refresh_every=0 (static) it runs ONCE per episode (~186ms,
-    # negligible), so compiling it (fusing the 2.4GB occupancy transient) is only worth it in the DYNAMIC phase (K>0).
+        # Compile the field build too -- NOT for speed (static = 1 build/episode) but for MEMORY: eager materializes
+        # the [N,G,G,O,3] occupancy transient (~6GB at N=32k) and OOMs; inductor fuses dvec->sdf->amin into registers
+        # so it's never allocated -> lets N go high enough to fill VRAM.
+        env._build_navfield = torch.compile(env._build_navfield)
 
     torch.manual_seed(args.seed)
     H = args.attn_hidden                                        # GRU latent width (= attn encoder width)
@@ -151,14 +153,14 @@ def main():
     hover_frac = 1.0 / cfg.drone_t2w                            # thrust fraction that hovers (mg / t_max)
     hover_bias = float(np.log(hover_frac / (1.0 - hover_frac))) # logit -> default action hovers, not climbs
     if args.init_drone:                                        # drone = RECURRENT (policy_recur)
-        dparams, dls, _ = RE.from_json(args.init_drone, device=dev)
+        dparams, dls, _ = RE.load_safetensors(args.init_drone, device=dev)
         dparams = {k: v.clone().requires_grad_(True) for k, v in dparams.items()}
         dls = dls.clone().requires_grad_(True)
     else:
         dparams, dls = RE.init_recur(EnvDrone.DRONE_SELF_F, EnvDrone.DRONE_TOK_F, args.attn_dim, H,
                                      EnvDrone.DRONE_ACT, device=dev, seed=args.seed, std0=std0, hover_bias=hover_bias)
     if args.init_enemy:                                        # enemy = feedforward attention
-        p, els, _ = AT.from_json(args.init_enemy, device=dev)
+        p, els, _ = AT.load_safetensors(args.init_enemy, device=dev)
         eparams = [(W.clone().requires_grad_(True), b.clone().requires_grad_(True)) for W, b in p]
         els = els.clone().requires_grad_(True)
     else:
@@ -247,14 +249,14 @@ def main():
         print(f"[keep-best] exporting peak-clear checkpoint ({best_clear*100:.1f}%)")
     dmeta = {"Fs": EnvDrone.DRONE_SELF_F, "Ft": EnvDrone.DRONE_TOK_F, "d": args.attn_dim, "H": H, "act": EnvDrone.DRONE_ACT}
     emeta = {"Fs": EnvDrone.ENEMY_SELF_F, "Fm": EnvDrone.ENEMY_TOK_F, "d": args.attn_dim, "H": H, "act": EnvDrone.ENEMY_ACT}
-    RE.to_json(dparams, dls, dmeta, os.path.join(args.out_dir, "drone.json"))
-    AT.to_json(eparams, els, emeta, os.path.join(args.out_dir, "enemy.json"))
-    cfg.to_json(os.path.join(args.out_dir, "world.json"))
+    RE.save_safetensors(dparams, dls, dmeta, os.path.join(args.out_dir, "drone.safetensors"))
+    AT.save_safetensors(eparams, els, emeta, os.path.join(args.out_dir, "enemy.safetensors"))
+    cfg.to_json(os.path.join(args.out_dir, "world.json"))       # config stays JSON (not tensors)
     clear, full, exch, mk = evaluate(ev_env, dparams, eparams, K_dec, H, mm_dtype)
     json.dump({"clear": clear, "full_clear": full, "exchange": exch, "mean_kills": mk},
               open(os.path.join(args.out_dir, "summary.json"), "w"), indent=2)
     print(f"[final] clear {clear*100:.1f}% full {full*100:.1f}% exchange {exch:.2f} mean_kills {mk:.1f}")
-    print(f"wrote {args.out_dir}/drone.json enemy.json world.json summary.json log.csv")
+    print(f"wrote {args.out_dir}/drone.safetensors enemy.safetensors world.json summary.json log.csv")
 
     if args.render:
         try:

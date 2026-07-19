@@ -24,7 +24,7 @@ field = [
 sched = S.build_eval(cfg, NENV, D=8, E=8, O=16, T=900, base_seed=303, obstacle_field=field)
 
 env = EnvDrone(sched, device='cpu', cfg=cfg); env.aa_enabled = False
-dp, dls, dm = RE.from_json('runs/latest/drone.json'); ep, els, em = AT.from_json('runs/latest/enemy.json')
+dp, dls, dm = RE.load_safetensors('runs/latest/drone.safetensors'); ep, els, em = AT.load_safetensors('runs/latest/enemy.safetensors')
 # chase cam pulled back + up so the whole square board (cover + converging swarm + enemies) reads at once
 cam_kw = dict(back_base=22.0, back_k=0.5, back_hi=60.0, height_base=17.0, height_k=0.42, height_hi=50.0)
 t0 = time.time()

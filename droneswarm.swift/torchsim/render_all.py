@@ -22,8 +22,8 @@ SCEN = {
 }
 NENV = 4
 cam_kw = dict(back_base=22.0, back_k=0.5, back_hi=60.0, height_base=17.0, height_k=0.42, height_hi=50.0)
-dp, dls, dm = RE.from_json('runs/latest/drone.json')
-ep, els, em = AT.from_json('runs/latest/enemy.json')
+dp, dls, dm = RE.load_safetensors('runs/latest/drone.safetensors')
+ep, els, em = AT.load_safetensors('runs/latest/enemy.safetensors')
 
 only = sys.argv[1:] if len(sys.argv) > 1 else list(SCEN)                              # optional subset via argv
 for name in only:

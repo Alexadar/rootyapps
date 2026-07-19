@@ -90,23 +90,24 @@ def apply_recur(params, self_feat, tokens, mask, h_prev, mm_dtype=None):
     return mu.float(), val.float(), h_new
 
 
-def to_json(params, log_std, meta, path):
-    """Discriminated JSON (kind=recurrent) — distinct from the MLP/attention formats."""
+def save_safetensors(params, log_std, meta, path):
+    """Save the recurrent policy as SAFETENSORS: the param tensors (by name) + log_std, with the scalar
+    meta (kind + Fs/Ft/d/H/act) as JSON in the header. Zero-copy, mmap-able, safe (no pickle/eval)."""
     import json
-    out = {"kind": "recurrent", **meta,
-           "params": {k: v.detach().cpu().numpy().reshape(-1).tolist() for k, v in params.items()},
-           "shapes": {k: list(v.shape) for k, v in params.items()},
-           "log_std": log_std.detach().cpu().numpy().tolist()}
-    json.dump(out, open(path, "w"))
+    from safetensors.torch import save_file
+    t = {k: v.detach().cpu().contiguous() for k, v in params.items()}
+    t["log_std"] = log_std.detach().cpu().contiguous()
+    save_file(t, path, metadata={"kind": "recurrent", "meta": json.dumps(meta)})
 
 
-def from_json(path, device="cpu"):
+def load_safetensors(path, device="cpu"):
     import json
-    import numpy as np
-    d = json.load(open(path))
-    assert d.get("kind") == "recurrent", "not a recurrent policy json"
-    params = {k: torch.tensor(np.asarray(d["params"][k], np.float32).reshape(d["shapes"][k]), device=device)
-              for k in d["params"]}
-    log_std = torch.tensor(np.asarray(d["log_std"], np.float32), device=device)
-    meta = {k: d[k] for k in ("Fs", "Ft", "d", "H", "act")}
-    return params, log_std, meta
+    from safetensors import safe_open
+    t = {}
+    with safe_open(path, framework="pt", device=device) as f:      # one pass: header + tensors, on-device
+        hdr = f.metadata()
+        for k in f.keys():                                         # OFFLINE loop (not the sim hot path)
+            t[k] = f.get_tensor(k)
+    assert hdr.get("kind") == "recurrent", "not a recurrent policy safetensors"
+    log_std = t.pop("log_std")
+    return t, log_std, json.loads(hdr["meta"])
