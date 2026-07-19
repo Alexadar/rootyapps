@@ -91,25 +91,30 @@ class ObstacleClass:
     min_sep: float = 2.0                         # min centre-to-centre spacing (rejection sampling)
     xr: tuple = None                             # optional explicit x-band (lo,hi) overriding the region (showcase)
     yr: tuple = None                             # optional explicit y-band (lo,hi) overriding the region
+    motion: str = "static"                       # 'static' | 'drift' — DYNAMIC obstacles: a per-scene xy velocity
+    speed: tuple = (0.0, 0.0)                    # (lo, hi) drift speed [m/s] when motion != 'static' (z stays inert)
 
 
 # The default training field: chunky buildings you route AROUND (6-10 m tall, near the ~10 m ceiling) + trees.
-# Placed across the ARENA (not just the combat zone) so a swarm CROSSING the map meets cover along the way
-# (with spawn-distance randomization this teaches long ribbon crossings, not just the compact central fight).
+# Placed across the ARENA (not just the combat zone) so a swarm CROSSING the map meets cover along the way.
+# Buildings STAY STATIC (a 1.5 m/s drifting building would spawn-kill drones with no push-out grace); the TREES
+# DRIFT slowly -> DYNAMIC obstacles the drone must avoid in real time (it can't memorize a static map).
 DEFAULT_OBSTACLE_FIELD = [
     ObstacleClass("building", "box", (0, 4), (1.5, 3.0), (1.5, 3.0), (3.0, 5.0), "arena", 0.80, min_sep=3.5),
-    ObstacleClass("tree",     "cyl", (0, 10), (0.4, 1.2), (0.4, 1.2), (3.0, 8.0), "arena", 0.80, min_sep=1.5),
+    ObstacleClass("tree",     "cyl", (0, 10), (0.4, 1.2), (0.4, 1.2), (3.0, 8.0), "arena", 0.80, min_sep=1.5,
+                  motion="drift", speed=(0.3, 0.8)),
 ]
 
 
 def sample_obstacle_field(classes, O, rng, hf, ext, combat_half, arena_half, keepout=None):
-    """Fill an [O,7] obstacle array (x, y, z_center, hx, hy, hz, is_cyl) from a list of ObstacleClass specs.
+    """Fill an [O,10] obstacle array (x, y, z_center, hx, hy, hz, is_cyl, vx, vy, vz) from ObstacleClass specs.
+    (vx,vy) is a per-scene DRIFT velocity for DYNAMIC obstacles (0 for 'static' classes); vz is always 0 (z inert).
 
     VARIABLE COUNT: rows beyond the drawn total stay ZERO -> env's obst_mask masks them (env_drone.py:96),
     the SDF already honours it. Positions are rejection-sampled clear of `keepout` (list of (x,y,radius),
     e.g. drone spawns + enemies) and of previously-placed obstacles (per-class min_sep). GENERAL: not one
     per-kind literal lives here — every number comes from the spec. SETUP-LOOP-OK (offline, <=~12 obstacles)."""
-    obst = np.zeros((O, 7), np.float32)
+    obst = np.zeros((O, 10), np.float32)                     # cols 7,8,9 = drift velocity (vx,vy,vz); vz stays 0
     keep = list(keepout) if keepout is not None else []
     placed = []                                              # (centre_xy, footprint_radius) already placed
     row = 0
@@ -136,7 +141,12 @@ def sample_obstacle_field(classes, O, rng, hf, ext, combat_half, arena_half, kee
                 continue                                     # couldn't place -> leave row zero (fewer obstacles)
             hz = float(rng.uniform(*cls.hz))
             gz = float(_bilerp(hf, np.array([cand[0]]), np.array([cand[1]]), ext)[0])
-            obst[row] = [cand[0], cand[1], gz + hz, hx, hy, hz, 1.0 if cls.shape == "cyl" else 0.0]
+            obst[row, :7] = [cand[0], cand[1], gz + hz, hx, hy, hz, 1.0 if cls.shape == "cyl" else 0.0]
+            if cls.motion != "static":                       # DYNAMIC obstacle -> a per-scene xy drift velocity.
+                sp = float(rng.uniform(*cls.speed)); ang = float(rng.uniform(-np.pi, np.pi))  # GUARDED: a static
+                obst[row, 7] = sp * np.cos(ang); obst[row, 8] = sp * np.sin(ang)              # class draws NOTHING
+                #                                                                              -> static RNG stream
+                #                                                                              stays byte-identical.
             placed.append((cand, foot_r))
             row += 1
     return obst

@@ -21,7 +21,8 @@ def _build(n, seed=0):
 def test_shapes_and_ranges():
     b = _build(3)
     assert b["hf"].shape == (3, CFG.terrain_grid, CFG.terrain_grid)
-    assert b["obst"].shape == (3, O, 7)
+    assert b["obst"].shape == (3, O, 10)                  # x,y,zc,hx,hy,hz,is_cyl + drift vel (vx,vy,vz)
+    assert np.all(b["obst"][..., 9] == 0.0)               # vz is always 0 (dynamic obstacles are z-inert)
     assert b["e_type"].shape == (3, E) and b["gust"].shape == (3, T, 3)
     assert b["aa_roll"].shape == (3, T, E)
     # heightfield within [0, amp]

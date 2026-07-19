@@ -75,7 +75,7 @@ class EnvDrone:
     #                       not types). ~matches the 16x12 depth image of "Back to Newton's Laws" diff-physics.
     DRONE_SELF_F = 205    # 13 base [bz3 vel3 rate3 agl1 batt1 slope2] + DRONE_RAYS(192). Target selection is now
     #                       the policy's own LEARNED token-attention (no hand-coded Sinkhorn tgt_dir/focus).
-    DRONE_TOK_F = 11      # rel_dir(3) dist(1) rvel(3) closing(1) is_enemy(1) enemy_tank(1) + teammate_demand(1)
+    DRONE_TOK_F = 12      # rel_dir(3) dist(1) rvel(3) closing(1) is_enemy(1) enemy_tank(1) teammate_demand(1) clear_shot(1)
     DRONE_K = 12          # attended tokens per drone (nearest drones + enemies)
     DRONE_ACT = 4         # CTBR: (thrust, wx, wy, wz) pre-squash
     ENEMY_SELF_F = 12     # +1: obstacle CLEARANCE scalar added so tanks sense how close, not just direction
@@ -92,11 +92,15 @@ class EnvDrone:
         self.D = int(sched["D"]); self.E = int(sched["E"]); self.O = int(sched["O"]); self.T = int(sched["T"])
         t = lambda a: torch.tensor(np.asarray(a, np.float32), device=device)
         self.hf = t(sched["hf"])                                  # [N,G,G]
-        ob = t(sched["obst"])                                     # [N,O,7] x,y,zc,hx,hy,hz,is_cyl
-        self.obst_xyz = ob[..., 0:3].contiguous()
-        self.obst_half = ob[..., 3:6].contiguous()
+        ob = t(sched["obst"])                                     # [N,O,10] x,y,zc,hx,hy,hz,is_cyl, vx,vy,vz
+        self.obst_xyz = ob[..., 0:3].contiguous()                 # INITIAL centre; obstacles are DYNAMIC -> the LIVE
+        #                                                           centre lives in the state dict, moved each tick in _core
+        self.obst_half = ob[..., 3:6].contiguous()                # half-extent (STATIC — obstacles don't resize)
         self.obst_cyl = ob[..., 6].contiguous()
+        self.obst_vel0 = ob[..., 7:10].contiguous()               # per-scene DRIFT velocity (0 for 'static' classes)
         self.obst_mask = (self.obst_half.abs().sum(-1) > 1e-6).float()   # [N,O] valid obstacle
+        # a drifting obstacle bounces its CENTRE inside the arena (before the footprint touches the wall):
+        self.obst_bound = (c.arena_half - self.obst_half[..., :2].amax(-1)).clamp(min=0.0)   # [N,O]
         self.e_type = t(sched["e_type"])                         # [N,E] 1=tank 0=soldier
         self.e_pos0 = t(sched["e_pos0"]); self.e_head0 = t(sched["e_head0"])
         self.base_pos = t(sched["base_pos"]); self.spawn_off = t(sched["spawn_off"])
@@ -144,7 +148,9 @@ class EnvDrone:
         # diving onto a target. Unlike the hard crash event (0-grad), this is a clamp of agl+vz -> it gives
         # the analytic (SHAC) gradient a real "pull up / brake before impact" signal to avoid the earth.
         self.rw_brake = 1.0; self.clearance_range = 4.0
-        self.rw_evade = 0.0; self.evade_range = 8.0
+        self.rw_evade = 0.0; self.evade_range = 8.0        # (kept for JSON/Swift parity; superseded by the APF repel)
+        self.rw_apf = 1.0; self.apf_range = 6.0            # APF obstacle-repel: weight + clearance range (telescoping)
+        self.los_scale = 5.0                               # clear-shot token: metres of path clearance -> tanh saturates
         # SEEK range: in v1 detection is PERFECT (all enemies visible), so seek must cover the whole arena
         # INCLUDING the far corners (arena diagonal = 2*sqrt(2)*arena_half ~= 2.83*arena_half) — else a drone
         # in a corner gets NO homing gradient and drifts/flies away. 3x covers the diagonal with margin.
@@ -196,6 +202,8 @@ class EnvDrone:
             e_head=self.e_head0[None].expand(P, N, E).clone(),
             e_vel=z(P, N, E, 2), e_alive=torch.ones(P, N, E, device=dev),
             e_cd=z(P, N, E), kills=z(P, N), losses=z(P, N),
+            obst_xyz=self.obst_xyz.clone(),                      # DYNAMIC obstacles: LIVE centre, [N,O,3] (P-invariant:
+            obst_vel=self.obst_vel0.clone(),                    #   deterministic per-scene motion is identical across P)
         )
 
     # ---- geometry helpers ----
@@ -208,11 +216,13 @@ class EnvDrone:
         z = self._terrain_z(e_pos)
         return torch.cat([e_pos, z[..., None]], -1)
 
-    def _nearest_obstacle(self, pos3, half):
-        """Nearest-obstacle signed clearance + outward gradient for query points pos3 [P,N,K,3] against
-        obstacle bundle with the given `half` [N,O,3]. Returns (clr [P,N,K], grad [P,N,K,3]). Loop-free."""
+    def _nearest_obstacle(self, pos3, half, centers=None):
+        """Nearest-obstacle signed clearance + outward gradient for query points pos3 [P,N,K,3] against the
+        obstacle bundle. `centers` (default self.obst_xyz) is the LIVE centre [N,O,3] for DYNAMIC obstacles.
+        Returns (clr [P,N,K], grad [P,N,K,3]). Loop-free."""
         P, N, K, _ = pos3.shape
-        dvec = pos3[:, :, :, None, :] - self.obst_xyz[None, :, None, :, :]     # [P,N,K,O,3]
+        oc = self.obst_xyz if centers is None else centers                    # live centre (dynamic) or static default
+        dvec = pos3[:, :, :, None, :] - oc[None, :, None, :, :]               # [P,N,K,O,3]
         half_e = half[None, :, None, :, :].expand(P, N, K, self.O, 3)
         cyl_e = self.obst_cyl[None, :, None, :].expand(P, N, K, self.O)
         # TWO-PHASE: SDF over all O to pick the nearest, then the analytic grad on ONLY that one shape.
@@ -229,23 +239,26 @@ class EnvDrone:
         _, g1 = COL.shape_sdf3_grad(dv1, hf1, cy1)                            # grad on the ONE nearest shape
         return clr, g1.squeeze(-2)
 
-    def _nearest_obstacle_clr(self, pos3, half):
-        """Nearest-obstacle clearance ONLY (no gradient) — cheaper than _nearest_obstacle for the crash
-        test, which never uses the gradient. Uses shape_sdf3 (SDF, not SDF+grad). Loop-free."""
+    def _nearest_obstacle_clr(self, pos3, half, centers=None):
+        """Nearest-obstacle clearance ONLY (no gradient path change) — cheaper than _nearest_obstacle for the
+        crash test. `centers` (default self.obst_xyz) = LIVE centre [N,O,3] for DYNAMIC obstacles. Loop-free."""
         P, N, K, _ = pos3.shape
-        dvec = pos3[:, :, :, None, :] - self.obst_xyz[None, :, None, :, :]     # [P,N,K,O,3]
+        oc = self.obst_xyz if centers is None else centers
+        dvec = pos3[:, :, :, None, :] - oc[None, :, None, :, :]               # [P,N,K,O,3]
         half_e = half[None, :, None, :, :].expand(P, N, K, self.O, 3)
         cyl_e = self.obst_cyl[None, :, None, :].expand(P, N, K, self.O)
         sdf = COL.shape_sdf3(dvec, half_e, cyl_e)                             # [P,N,K,O]
         return (sdf + (1.0 - self.obst_mask[None, :, None, :]) * 1e9).amin(-1)
 
-    def _obstacle_rays(self, dp):
+    def _obstacle_rays(self, dp, centers=None):
         """Egocentric depth-ray fan for drones dp [P,N,D,3] -> normalized depths [P,N,D,K] in [0,1]. Casts
         DRONE_RAYS world-frame rays against every obstacle's BOUNDING BOX (raycast_aabb: box exact, cylinder
-        as its bbox) and normalizes by ray_range. The drone's raw-geometry obstacle sensor. Loop-free."""
+        as its bbox) and normalizes by ray_range. `centers` (default self.obst_xyz) = LIVE centre for DYNAMIC
+        obstacles. The drone's raw-geometry obstacle sensor. Loop-free."""
         P, N, D, _ = dp.shape; O = self.O
+        oc = self.obst_xyz if centers is None else centers
         d = self.ray_dirs.to(dp.dtype)[None, None, None].expand(P, N, D, self.DRONE_RAYS, 3)   # [P,N,D,K,3]
-        c = self.obst_xyz[None, :, None].expand(P, N, D, O, 3)                                  # [P,N,D,O,3]
+        c = oc[None, :, None].expand(P, N, D, O, 3)                                             # [P,N,D,O,3]
         h = self.obst_half[None, :, None].expand(P, N, D, O, 3)
         m = self.obst_mask[None, :, None].expand(P, N, D, O)                                    # [P,N,D,O]
         depth = COL.raycast_aabb(dp, d, c, h, m, self.ray_range, ray_chunk=48)                  # [P,N,D,K] (VRAM-bounded)
@@ -267,9 +280,11 @@ class EnvDrone:
         return torch.gather(feat_qs, -2, idx), mask
 
     def drone_obs(self, state):
-        """-> (self_feat [P,N,D,33], tok [P,N,D,K,10], mask [P,N,D,K]). Reads the SensorChannel picture;
-        obstacle sensing is a DRONE_RAYS depth-ray fan (raw bbox geometry, not types); self_feat ends with
-        the Sinkhorn assigned-target direction(3)+focus(1) for swarm dispersion."""
+        """-> (self_feat [P,N,D,33], tok [P,N,D,K,DRONE_TOK_F=12], mask [P,N,D,K]). Reads the SensorChannel
+        picture; obstacle sensing is a DRONE_RAYS depth-ray fan (raw bbox geometry, not types). Each candidate
+        token carries a LEARNABLE-targeting pair: teammate_demand (how under-served an enemy is) + clear_shot
+        (line-of-sight through obstacles) — the policy's own attention picks + distributes targets, no
+        hand-coded Sinkhorn assignment."""
         c = self.cfg; pic = sensors.perceive(state)
         dp, dv, dq, dw = pic["d_pos"], pic["d_vel"], pic["d_quat"], pic["d_omega"]
         de, da = pic["d_energy"], pic["d_alive"]
@@ -280,7 +295,7 @@ class EnvDrone:
         bz = ROT.body_z_axis(dq)                                              # [P,N,D,3] tilt
         th, tgrad = TERR.height_and_grad(self.hf, dp[..., :2], self.extent)   # fused: one corner-gather pass
         agl = dp[..., 2] - th                                                 # [P,N,D]
-        rays = self._obstacle_rays(dp)                                       # [P,N,D,K] mini-LiDAR depths in [0,1]
+        rays = self._obstacle_rays(dp, centers=state["obst_xyz"])            # [P,N,D,K] mini-LiDAR (LIVE obstacle pos)
         self_feat = torch.cat([
             bz,
             (dv / vmax).clamp(-c.obs_clamp, c.obs_clamp),
@@ -319,9 +334,22 @@ class EnvDrone:
         demand = cover.sum(2, keepdim=True)                             # [P,N,1,E] total teammate coverage per enemy
         dem_excl = ((demand - cover) / max(1, D)).clamp(0.0, c.obs_clamp)   # exclude own cover -> demand this drone sees
         cand_demand = torch.cat([torch.zeros(P, N, D, D, device=dp.device), dem_excl], dim=-1)   # [P,N,D,S] (0 on drone cols)
+        # CLEAR-SHOT (line-of-sight) per enemy: is the straight 3D path drone->enemy BLOCKED by an obstacle?
+        # A blocked target is slower to destroy (must detour) -> the attention learns to deprioritize it and
+        # pick a clear-shot enemy, coupling target choice to FASTEST combined destruction. Detached SENSOR
+        # (inputs .detach()'d -> zero analytic gradient, cannot corrupt the SHAC/SAPO reward backprop).
+        p0 = dp.detach()[:, :, :, None, :].expand(P, N, D, E, 3)              # [P,N,D,E,3] drone origin (broadcast /enemy)
+        seg_d = rel[:, :, :, D:, :].detach()                                 # [P,N,D,E,3] drone->enemy segment vector
+        oc = state["obst_xyz"][None, :, None, None].expand(P, N, D, E, self.O, 3)   # [P,N,D,E,O,3] LIVE obstacle centres
+        oh = self.obst_half[None, :, None, None].expand(P, N, D, E, self.O, 3)
+        ocy = self.obst_cyl[None, :, None, None].expand(P, N, D, E, self.O)
+        oms = self.obst_mask[None, :, None, None].expand(P, N, D, E, self.O)
+        seg = COL.segment_clearance(p0, seg_d, oc, oh, ocy, oms, c.drone_radius)     # [P,N,D,E] min path clearance
+        los = torch.tanh(seg / self.los_scale)                               # [P,N,D,E] ~1 clear shot -> <=0 blocked
+        cand_los = torch.cat([torch.zeros(P, N, D, D, device=dp.device), los], dim=-1)   # [P,N,D,S] (0 on drone cols)
         feat = torch.cat([rel_dir, (dist / sc[..., None]).clamp(max=c.obs_clamp)[..., None],
                           rvel.clamp(-c.obs_clamp, c.obs_clamp), closing[..., None],
-                          ise[..., None], etank[..., None], cand_demand[..., None]], -1)   # 10 + demand(1) = 11 = DRONE_TOK_F
+                          ise[..., None], etank[..., None], cand_demand[..., None], cand_los[..., None]], -1)   # 11 + los(1) = 12 = DRONE_TOK_F
         valid = cand_alive[:, :, None, :].expand(P, N, D, S)               # exclude self via the static mask
         valid = valid * (1.0 - self._drone_self_mask[None, None])
         tok, mask = self._select_topk(feat, dist, valid, self.DRONE_K)
@@ -338,7 +366,7 @@ class EnvDrone:
         ez, slope = TERR.height_and_grad(self.hf, ep, self.extent)           # fused: one corner-gather pass
         ep3 = torch.cat([ep, ez[..., None]], -1)                             # [P,N,E,3]
         speed = torch.sqrt((ev * ev).sum(-1) + c.eps)                        # [P,N,E]
-        oclr, ograd = self._nearest_obstacle(ep3, self.obst_half2)          # 2D footprint clearance
+        oclr, ograd = self._nearest_obstacle(ep3, self.obst_half2, centers=state["obst_xyz"])   # 2D footprint (LIVE pos)
         arena_pos = ep / c.arena_half
         self_feat = torch.cat([
             self.e_type[None, :, :, None].expand(P, N, E, 1),
@@ -382,6 +410,15 @@ class EnvDrone:
         d_alive = torch.maximum(s["d_alive"], just.float())
         active_d = (d_act > 0.5) & (d_alive > 0.5)                           # [P,N,D]
         af = active_d.float()                                                # cached (reused ~4x below)
+        # ===== 1b. DYNAMIC obstacles: kinematic drift + edge-bounce, z inert. Pure broadcast (no loop/if). =====
+        # Positions live in the state ([N,O,3], P-invariant); size/shape stay static attrs. Integrated FIRST so
+        # every reader below (enemy avoid/push-out, drone crash, next obs) sees one consistent current-tick centre.
+        bnd = self.obst_bound[..., None]                                     # [N,O,1] centre bounce bound
+        oxy = s["obst_xyz"][..., :2] + s["obst_vel"][..., :2] * c.dt         # [N,O,2] proposed next xy
+        over = oxy.abs() > bnd                                               # [N,O,2] crossed the wall this tick
+        obst_vel = torch.cat([torch.where(over, -s["obst_vel"][..., :2], s["obst_vel"][..., :2]),
+                              torch.zeros_like(s["obst_vel"][..., 2:3])], -1) * self.obst_mask[..., None]  # bounce, vz=0
+        obst_xyz = torch.cat([oxy.clamp(-bnd, bnd), s["obst_xyz"][..., 2:3]], -1) * self.obst_mask[..., None]  # z carried
 
         # ===== 2. wind at drones =====
         agl = d_pos[..., 2] - self._terrain_z(d_pos[..., :2])                # [P,N,D]
@@ -426,7 +463,7 @@ class EnvDrone:
         # obstacle footprint is z-independent (obst_half2 has a huge half-height), so skip the terrain
         # gather and use z=0 — the horizontal cross-section is all the ground unit needs.
         ep3_foot = torch.cat([ep, torch.zeros_like(ep[..., :1])], -1)
-        oclr, ograd = self._nearest_obstacle(ep3_foot, self.obst_half2)     # footprint clearance
+        oclr, ograd = self._nearest_obstacle(ep3_foot, self.obst_half2, centers=obst_xyz)   # footprint (LIVE pos)
         accel = GND.social_force(ep, ev, desired, e_alive, c.sfm_A / c.sfm_mass, c.sfm_B,
                                  c.soldier_tau, c.soldier_radius,
                                  obst_sdf=oclr, obst_grad=ograd[..., :2],
@@ -454,7 +491,7 @@ class EnvDrone:
         # the shove makes buildings solid to ground units -> the policy must route AROUND (using its obstacle
         # obs). penetration = max(0, r - clearance) pushed along the outward SDF gradient. Loop-free.
         e_foot = torch.cat([e_pos, torch.zeros_like(e_pos[..., :1])], -1)     # z-independent footprint query
-        pclr, pgrad = self._nearest_obstacle(e_foot, self.obst_half2)        # [P,N,E], [P,N,E,3]
+        pclr, pgrad = self._nearest_obstacle(e_foot, self.obst_half2, centers=obst_xyz)   # [P,N,E] (LIVE pos)
         e_rad = torch.where(is_tank.expand(P, N, E),                          # tank body vs soldier body radius
                             torch.full_like(pclr, c.tank_radius),
                             torch.full_like(pclr, c.soldier_radius))
@@ -516,16 +553,20 @@ class EnvDrone:
         # drone <-> terrain / obstacle crash. agl2 reuses tz_new (d_pos.xy == d_xy after the clamp);
         # o_clr uses the SDF-only path (the crash test never needs the obstacle gradient).
         agl2 = d_pos[..., 2] - tz_new
-        o_clr = self._nearest_obstacle_clr(d_pos, self.obst_half)
-        # a drone clipping terrain while horizontally OVER an alive enemy is a committed DIVE, not a
-        # botched flight -> grace (non-fatal), so the swarm can PRACTICE diving without dying every attempt.
+        o_clr = self._nearest_obstacle_clr(d_pos, self.obst_half, centers=obst_xyz)   # LIVE obstacle pos (dynamic)
+        # A drone clipping TERRAIN while horizontally OVER an alive enemy is a committed DIVE, not a botched
+        # flight -> terrain grace (non-fatal) so the swarm can PRACTICE diving without dying every attempt.
+        # But there is NO IMMUNITY ON SEEK for OBSTACLES: buildings/trees stay SOLID even mid-dive, so a
+        # committed drone still crashes if it clips one -> it must LEARN to weave (the APF-repel reward gives
+        # the gradient). Kamikaze contact with an enemy overrides everything (a detonation, not a crash).
         committed = d_near_xy < self.commit_radius
-        crash = (((agl2 < c.drone_radius) | (o_clr < c.drone_radius)) & active_d) & (~drone_kama) & (~committed)
-        # BUT the grace must not let a graced drone SINK THROUGH the terrain and get stuck underground
-        # (diagnosed: median AGL -15 m — drones dropped out of the fight into the ground). Clamp a
-        # committed drone that dipped below the surface back UP to the ground (skim it) and kill its
-        # downward velocity — a physical dive-to-surface, not a bug hole.
-        below = (agl2 < c.drone_radius) & active_d & committed & (~drone_kama)
+        terr_hit = agl2 < c.drone_radius                                  # clipped the ground
+        obst_hit = o_clr < c.drone_radius                                 # clipped a building/tree (solid mid-seek)
+        crash = ((terr_hit & (~committed)) | obst_hit) & active_d & (~drone_kama)
+        # The terrain grace must not let a graced drone SINK THROUGH the ground and get stuck underground
+        # (diagnosed: median AGL -15 m). Clamp a committed drone that dipped below the surface back UP to the
+        # ground (skim it) and kill its downward velocity — a physical dive-to-surface, not a bug hole.
+        below = terr_hit & active_d & committed & (~drone_kama)
         surf_z = tz_new + c.drone_radius
         d_pos = torch.cat([d_pos[..., :2],
                            torch.where(below, torch.maximum(d_pos[..., 2], surf_z), d_pos[..., 2])[..., None]], -1)
@@ -598,15 +639,22 @@ class EnvDrone:
         agl_de = agl_ed.transpose(2, 3)                                    # [P,N,D,E] drone altitude above each enemy
         descent_e = torch.clamp(1.0 - agl_de.clamp(min=0.0) / c.ceiling, min=0.0)  # [P,N,D,E] 1 = down at its altitude
         strike = (w_r * over_e * descent_e).sum(-1)                        # [P,N,D] assignment-weighted strike
-        # ---- combined potential Phi = homing + weighted strike; reward its net INCREASE (progress) ----
-        prox_new = seek + self.rw_commit * strike                          # [P,N,D] Phi_t (this tick's potential)
+        over = (w_r * over_e).sum(-1)                                       # [P,N,D] assignment-weighted "over a target"
+        # ---- APF OBSTACLE-REPEL, folded into the potential (LOCKED #3: a telescoping reward POTENTIAL, NOT a
+        #      per-tick level penalty — the latter caused the 95.8% alt-hold domination). o_clr (crash section,
+        #      LIVE dynamic pos) is the analytic, DIFFERENTIABLE nearest-obstacle clearance, so SHAC/SAPO's
+        #      gradient learns to weave AROUND buildings. Active EVEN mid-seek (no immunity) EXCEPT when committed
+        #      OVER the assigned target (1-over gate), else it fights `strike` on the dive -> cover-huggers unkillable.
+        repel = torch.clamp(1.0 - o_clr / self.apf_range, min=0.0) ** 2 * (1.0 - over)   # [P,N,D] C1 near-surface repel
+        # ---- combined potential Phi = homing + weighted strike - APF repel; reward its net INCREASE (progress) ----
+        prox_new = seek + self.rw_commit * strike - self.rw_apf * repel      # [P,N,D] Phi_t (this tick's potential)
         delta = torch.where(just, torch.zeros_like(prox_new), prox_new - s["d_prox"])  # Phi_t - Phi_{t-1} (0 on spawn)
         hunt_r = (delta * af).sum(-1)                                       # [P,N] reward net progress, alive drones only
         d_prox = torch.where(active_d, prox_new, torch.zeros_like(prox_new))  # [P,N,D] carry Phi to next tick (0 if dead)
         # ---- flight substrate (alt-hold / evade / smoothness): DISABLED (rw=0) — kept for future re-enable as
         #      bounded potentials. MEAN over alive drones (a per-drone RATE), never a raw per-tick sum. ----
         n_alive = af.sum(-1) + c.eps                                        # [P,N] alive-drone count (safe denominator)
-        over = (w_r * over_e).sum(-1)                                       # [P,N,D] assignment-weighted "over a target"
+        # (`over` is hoisted above, before prox_new, so the APF-repel gate can reuse it)
         # SMOOTH ground-clearance brake (SHAC-differentiable earth-avoidance): penalise fast descent near the
         # deck EXCEPT when diving onto a target. clamps of agl+vz -> analytic gradient (the hard crash is 0-grad).
         ground_prox = torch.clamp(1.0 - agl2 / self.clearance_range, min=0.0)         # [P,N,D] 1 at deck -> 0 above
@@ -614,18 +662,17 @@ class EnvDrone:
         brake = (ground_prox * descent_rate * (1.0 - over) * af).sum(-1) / n_alive    # [P,N] mean over alive drones
         # alt/evade substrate is DISABLED (rw_alt=rw_evade=0); Inductor can't fold 0*x -> gate behind the
         # python-const idiom so they only run when consumed (a live weight, or the eval decompose panel).
-        if self.rw_alt or self.rw_evade or self.decompose:
+        if self.rw_alt or self.decompose:                                  # (evade_pen removed -> the APF repel in the
             alt_pen = (torch.clamp(1.0 - agl2 / self.cruise_alt, min=0.0) * (1.0 - over) * af).sum(-1) / n_alive
-            evade_pen = (torch.clamp(1.0 - o_clr / self.evade_range, min=0.0) * af).sum(-1) / n_alive
-        else:
-            alt_pen = evade_pen = torch.zeros_like(n_alive)
+        else:                                                              #  potential is now the sole obstacle term)
+            alt_pen = torch.zeros_like(n_alive)
         smooth = (torch.abs(omega_cmd).sum(-1) * af).sum(-1) / (n_alive * c.drone_omega_max)                   # rate thrashing
         # ---- total: +kill(dominant) +clear(bonus) -wasted(crash) +homing(bounded potential) -substrate(off) ----
         r_drone = (self.rw_kill * kills_now                                 # [P,N] +N per enemy killed this tick (dominant)
                    + self.rw_clear * cleared_now                           #       +big one-off when the last enemy dies
                    - self.rw_waste * died_wo_kill                          #       -per drone that died WITHOUT a kill
                    + self.rw_close * hunt_r                                #       +PN homing progress (potential delta)
-                   - self.rw_alt * alt_pen - self.rw_evade * evade_pen     #       flight substrate (rw=0 -> no effect)
+                   - self.rw_alt * alt_pen                                 #       alt substrate (rw=0 -> no effect; APF
                    - self.rw_brake * brake                                 #       -fast descent near the deck (avoid earth)
                    - self.rw_smooth * smooth)                              #       tiny smoothness cost
         # enemy team reward
@@ -649,14 +696,16 @@ class EnvDrone:
                   d_act=d_act, d_alive=d_alive, d_energy=d_energy, d_prox=d_prox,
                   d_crash=torch.maximum(s["d_crash"], crash.float()),  # sticky terrain/obstacle-crash flag (render)
                   e_pos=e_pos, e_head=e_head, e_vel=e_vel, e_alive=e_alive, e_cd=e_cd,
-                  kills=kills, losses=losses)
+                  kills=kills, losses=losses,
+                  obst_xyz=obst_xyz, obst_vel=obst_vel)               # DYNAMIC obstacles: carry the moved centre + vel
         done_d = drone_died.float()
         done_e = (enemy_hit & was_e_alive).float()
         panel = None
         if self.decompose:                                        # WEIGHTED contribution of each drone-reward term
             panel = {"r_kill": (self.rw_kill * kills_now).sum(), "r_clear": (self.rw_clear * cleared_now).sum(),
                      "r_waste": (-self.rw_waste * died_wo_kill).sum(), "r_hunt": (self.rw_close * hunt_r).sum(),
-                     "r_alt": (-self.rw_alt * alt_pen).sum(), "r_evade": (-self.rw_evade * evade_pen).sum(),
+                     "r_alt": (-self.rw_alt * alt_pen).sum(),
+                     "r_apf": (-self.rw_apf * (repel * af).sum(-1) / n_alive).sum(),   # APF repel magnitude (monitor)
                      "r_brake": (-self.rw_brake * brake).sum(),
                      "r_smooth": (-self.rw_smooth * smooth).sum(), "kills": kills_now.sum(),
                      "ticks": torch.ones((), device=dev)}
@@ -691,4 +740,5 @@ class EnvDrone:
         return dict(d_pos=g(s["d_pos"]), d_quat=g(s["d_quat"]), d_alive=g(s["d_alive"]), d_act=g(s["d_act"]),
                     d_crash=g(s["d_crash"]),
                     e_pos=g(s["e_pos"]), e_alive=g(s["e_alive"]), e_type=g(self.e_type),
+                    obst_xyz=g(s["obst_xyz"]),                                # DYNAMIC obstacle centres (per frame)
                     kills=g(s["kills"]), losses=g(s["losses"]))

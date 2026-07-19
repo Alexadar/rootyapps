@@ -514,8 +514,8 @@ def render_torch(env, dparams, dls, eparams, els, K_dec, H, out_path, W=1280, Hp
     shade = (0.45 + 0.55 * (z_q / (cfg.terrain_amp + 1e-6)))                        # height shading [P,Gr-1,Gr-1]
     shade_col = torch.stack([60 * shade + 30, 110 * shade + 40, 70 * shade + 30], -1)     # [P,Gr-1,Gr-1,3]
     hfs_t = torch.tensor(hfs, dtype=torch.float32, device=dev)
-    oc_t = env.obst_xyz[:P].to(dev); oh_t = env.obst_half[:P].to(dev)        # static obstacle geometry (per panel)
-    ocyl_t = env.obst_cyl[:P].to(dev); omask_t = env.obst_mask[:P].to(dev)
+    oh_t = env.obst_half[:P].to(dev); ocyl_t = env.obst_cyl[:P].to(dev)      # STATIC obstacle geometry (size/shape)
+    omask_t = env.obst_mask[:P].to(dev)                                       # (positions are DYNAMIC -> per-frame below)
 
     # --- sky gradient (constant) ---
     t = torch.linspace(0, 1, Hp, device=dev)[:, None]
@@ -528,7 +528,8 @@ def render_torch(env, dparams, dls, eparams, els, K_dec, H, out_path, W=1280, Hp
         eye, right, up, fwd, f = _cam_tensors(cams[fi], dev)
         tt, td, tc, tv = _terrain_quads(gx, gy, gzt, shade_col, eye, right, up, fwd, f, W, Hp)   # terrain tris
         et, ed, ec, ev = _entity_tris(snap, hfs_t, ext, eye, right, up, fwd, f, W, Hp, dev)      # entity tris
-        ob = _obstacle_tris(oc_t, oh_t, ocyl_t, omask_t, eye, right, up, fwd, f, W, Hp, dev)      # buildings + trees
+        oc_f = torch.tensor(snap["obst_xyz"][:P], dtype=torch.float32, device=dev)               # LIVE obstacle centres
+        ob = _obstacle_tris(oc_f, oh_t, ocyl_t, omask_t, eye, right, up, fwd, f, W, Hp, dev)      # buildings + trees
         layers = [(tt, td, tc, tv), ob, (et, ed, ec, ev)]
         ex = _explosion_tris(events, fi, explo_life, eye, right, up, fwd, f, W, Hp, P, dev)      # impact bursts (if any)
         if ex is not None:
