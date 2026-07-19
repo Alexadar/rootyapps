@@ -103,8 +103,9 @@ DEFAULT_OBSTACLE_FIELD = [
     # DENSER domain-randomization (fills the O=16 capacity: up to 6 buildings + 10 trees) so the dense showcase
     # fields (city/forest/mixed) are IN-distribution — the nav-field routes around whatever density it trained on.
     ObstacleClass("building", "box", (0, 6), (1.5, 3.0), (1.5, 3.0), (3.0, 5.0), "arena", 0.80, min_sep=3.5),
-    ObstacleClass("tree",     "cyl", (2, 10), (0.4, 1.2), (0.4, 1.2), (3.0, 8.0), "arena", 0.80, min_sep=1.5,
-                  motion="drift", speed=(0.3, 0.8)),
+    ObstacleClass("tree",     "cyl", (2, 10), (0.4, 1.2), (0.4, 1.2), (3.0, 8.0), "arena", 0.80, min_sep=1.5),
+    #             ^ STATIC for now (no drift): with nav_refresh_every=0 the field is built ONCE, so obstacles must be
+    #               static for it to stay valid. Re-enable motion="drift"/speed with a K>0 refresh in the dynamic phase.
 ]
 
 

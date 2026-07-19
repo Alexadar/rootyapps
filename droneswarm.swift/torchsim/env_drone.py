@@ -862,10 +862,10 @@ class EnvDrone:
         t0 = k * c.act_every
         # DYNAMIC NAV-FIELD for the reward: build ONCE per decision (eager, from the pre-decision obstacle+enemy
         # state) and inject so every tick's _core samples the SAME geodesic map (the routing/seek potential).
-        if k % max(1, self.cfg.nav_refresh_every) == 0:                     # best-effort refresh of the SHARED field (a
-            nd, nfl, no, nh = self._build_navfield(s["obst_xyz"], s["e_pos"], s["e_alive"])   #  data-independent config
-            s = {**s, "nav_dist": nd, "nav_flow": nfl, "nav_occ": no, "nav_ht": nh}           #  gate on the decision idx)
-        # else: reuse the (lagged) shared field already carried in s — the fast controller reads it as fixed
+        if self.cfg.nav_refresh_every and k % self.cfg.nav_refresh_every == 0:   # data-independent gate (config + decision
+            nd, nfl, no, nh = self._build_navfield(s["obst_xyz"], s["e_pos"], s["e_alive"])   # idx): 0 -> STATIC (never
+            s = {**s, "nav_dist": nd, "nav_flow": nfl, "nav_occ": no, "nav_ht": nh}           # rebuild, use reset field)
+        # else: reuse the SHARED field already carried in s (the fast controller reads it as fixed at this instant)
         for j in range(c.act_every):                                        # TIME-LOOP-OK
             t = min(t0 + j, self.T - 1)
             gust_t = self.gust[:, t, :]                                      # [N,3]

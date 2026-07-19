@@ -90,9 +90,10 @@ class WorldConfig:
     #                                 sampled by all N*D drones (cost scales with map size, NOT agent count)
     nav_sweeps: int = 40            # FIXED (unrolled) parallel min-relaxation passes; bounds propagation radius
     nav_clear: float = 1.0          # m obstacle inflation for cell-blocking (keeps routed paths off the walls)
-    nav_refresh_every: int = 1      # rebuild the field every K decisions (else reuse the SHARED one in state) -> the
-    #                                 slow-planner/fast-controller split: K>1 trades a stale (lagged) field for K x less
-    #                                 field compute, and trains the policy to tolerate the lag the deployment will have
+    nav_refresh_every: int = 0      # field refresh interval: 0 = STATIC (build ONCE at reset, cache for the episode --
+    #                                 correct while obstacles don't move, and near-free: one build/episode); K>0 =
+    #                                 rebuild every K decisions (the slow-planner/fast-controller split, for DYNAMIC
+    #                                 obstacles later -- trades a K-decision-stale field for K x less field compute)
 
     # ================= enemies: toy soldiers (social force) + toy tanks (unicycle) =================
     soldier_speed: float = 1.5      # m/s desired walking speed (Helbing v0=1.34; 1.5 design round number)
