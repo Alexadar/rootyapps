@@ -23,7 +23,7 @@ if [ "$DEV" = "cuda" ]; then     # 3090: wide batch, bf16 policy, compiled _core
   #                                via inductor buffer reuse -> eager OOMs at N=9216 where compiled fits).
   # enemy_group=2 (not 8): the enemy's PPO rollout buffer is [enemy_group,N,K_dec,..] and BINDS peak memory;
   # with N=9216 scenes the enemy already gets a huge batch, so 2 copies suffice and leave the drone SAPO room.
-  N_ENVS="${N_ENVS:-9216}"; ENEMY_GROUP="${ENEMY_GROUP:-2}"
+  N_ENVS="${N_ENVS:-12288}"; ENEMY_GROUP="${ENEMY_GROUP:-2}"   # compiled drone-SAPO peak ~21GB (torch-measured);
   PPO_MB="${PPO_MB:-262144}"; ACCEL="--compile --policy-bf16"
 else                             # mac/cpu: small/fast dev loop, fp32
   N_ENVS="${N_ENVS:-32}"; ENEMY_GROUP="${ENEMY_GROUP:-2}"
