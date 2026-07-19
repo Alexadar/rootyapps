@@ -17,6 +17,7 @@ signal, not the co-evolution arms race. Reward weights are set BEFORE torch.comp
 """
 import argparse
 import json
+import math
 import os
 import random
 import time
@@ -86,9 +87,14 @@ def main():
     ap.add_argument("--ppo-epochs", type=int, default=2)
     ap.add_argument("--attn-dim", type=int, default=32); ap.add_argument("--attn-hidden", type=int, default=64)
     ap.add_argument("--gamma", type=float, default=0.98); ap.add_argument("--ent", type=float, default=0.0)
-    ap.add_argument("--train-mode", choices=["ppo", "shac"], default="ppo",
-                    help="drone update: ppo (score-function) or shac (analytic gradients through the differentiable sim)")
-    ap.add_argument("--shac-horizon", type=int, default=6, help="SHAC BPTT window length in decisions")
+    ap.add_argument("--train-mode", choices=["ppo", "shac", "sapo"], default="ppo",
+                    help="drone update: ppo (score-function), shac (analytic grads through the diff sim), or "
+                         "sapo (2026-SOTA max-entropy SHAC: auto-alpha + soft critic, trains from scratch in one phase)")
+    ap.add_argument("--sapo-target-entropy", type=float, default=-2.0,
+                    help="SAPO auto-alpha target policy entropy (SAC dual): alpha rises when H drops below this")
+    ap.add_argument("--sapo-alpha-lr", type=float, default=3e-3, help="SAPO temperature (log_alpha) learning rate")
+    ap.add_argument("--sapo-alpha0", type=float, default=0.1, help="SAPO initial entropy temperature alpha")
+    ap.add_argument("--shac-horizon", type=int, default=6, help="SHAC/SAPO BPTT window length in decisions")
     # SHAC hyperparameters (defaults from the SHAC paper; ours were mistuned — LR 20x too low, no TD-lambda/EMA):
     ap.add_argument("--shac-lr", type=float, default=2e-3, help="SHAC actor LR (analytic grads are clean -> big steps; PPO enemy keeps --ppo-lr)")
     ap.add_argument("--shac-lambda", type=float, default=0.95, help="TD(lambda) for the SHAC critic value targets")
@@ -159,9 +165,13 @@ def main():
     fused_ok = (dev == "cuda")                                 # single-kernel Adam: faster step + lower peak VRAM
     # SHAC drives the drone with analytic gradients (clean, low-variance) -> a MUCH higher LR than PPO's
     # score-function estimate. The enemy always trains via PPO, so it keeps --ppo-lr regardless.
-    drone_lr = args.shac_lr if args.train_mode == "shac" else args.ppo_lr
+    drone_lr = args.shac_lr if args.train_mode in ("shac", "sapo") else args.ppo_lr
     dopt = torch.optim.Adam(RE.opt_params(dparams, dls), lr=drone_lr, fused=fused_ok)   # drone (recurrent) optimizer
     eopt = torch.optim.Adam(AT.opt_params(eparams, els), lr=args.ppo_lr, fused=fused_ok)   # enemy (attention) optimizer
+    # SAPO temperature: a single trainable log_alpha (auto-tuned toward --sapo-target-entropy each step). Its own
+    # tiny optimizer so the dual ascent is decoupled from the actor/critic step. Unused in ppo/shac modes.
+    log_alpha = torch.tensor(math.log(args.sapo_alpha0), device=dev, requires_grad=True)
+    aopt = torch.optim.Adam([log_alpha], lr=args.sapo_alpha_lr)
     # EMA value TARGET network for SHAC: a slowly-tracking detached copy of the drone params, used ONLY to
     # estimate the terminal value bootstrap + the TD(lambda) critic targets. Persists across shac_step calls so
     # the target moves smoothly (SHAC tau~0.005). Unused in PPO mode.
@@ -197,7 +207,12 @@ def main():
             side = "enemy"
         else:                                                  # drone trains vs a sampled league enemy
             opp = pool[pool_rng.randrange(len(pool))] if len(pool) > 1 else (eparams, els)
-            if args.train_mode == "shac":                      # analytic gradients through the sim (diff-physics)
+            if args.train_mode == "sapo":                      # 2026-SOTA max-entropy SHAC (auto-alpha + soft critic)
+                pl, vl, ret, valid = PPO.sapo_step(env, dparams, dls, opp[0], opp[1], dopt, log_alpha, aopt,
+                                                   args.ppo_group, args.shac_horizon, K_dec=K_dec, dtarget=dtarget,
+                                                   gamma=args.gamma, lam=args.shac_lambda, tau=args.shac_tau,
+                                                   target_entropy=args.sapo_target_entropy, mm_dtype=mm_dtype)
+            elif args.train_mode == "shac":                    # analytic gradients through the sim (diff-physics)
                 pl, vl, ret, valid = PPO.shac_step(env, dparams, dls, opp[0], opp[1], dopt,
                                                    args.ppo_group, args.shac_horizon, K_dec=K_dec, dtarget=dtarget,
                                                    gamma=args.gamma, lam=args.shac_lambda, tau=args.shac_tau,
