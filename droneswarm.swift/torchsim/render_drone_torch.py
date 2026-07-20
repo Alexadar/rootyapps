@@ -30,6 +30,12 @@ from render_drone import (SKY_TOP, SKY_BOT, DRONE_C, CRASH_C, TANK_C, SOLDIER_C,
 # --- obstacle rendering palette + box topology (buildings drawn as solid 6-face blocks) ---
 BUILD_C = (150, 142, 128)          # concrete grey building
 TRUNK_C = (95, 70, 45)             # tree trunk brown
+HOMING_C = (240, 70, 60)           # bright red drone->target "lock" line (pulses; a targeting readout)
+# SUPERVISOR nav-field overlay: the quantized ALLOWED-state field, drawn as dots.
+NAV_OK = (46, 170, 78)             # dim GREEN  = allowed airspace (a state the drone may occupy)
+NAV_NO = (200, 52, 44)             # RED        = forbidden (into the earth / inside an obstacle)
+NAV_PATH = (90, 255, 130)          # bright SOLID GREEN = the flow PATH the swarm is committed to right now
+TRAIL_C = (255, 168, 40)           # ORANGE = each drone's ACTUAL flown trajectory (history trail; intent-vs-reality)
 # 8 AABB corners (sign of each axis), bottom face 0-3 then top face 4-7:
 _BOX_SIGNS = ((-1, -1, -1), (1, -1, -1), (1, 1, -1), (-1, 1, -1),
               (-1, -1, 1), (1, -1, 1), (1, 1, 1), (-1, 1, 1))
@@ -208,7 +214,7 @@ def _line_quads(a_scr, b_scr, depth, width, valid):
 # (accepts both windings). Triangles are processed in CHUNKS to bound VRAM (the only remaining loop, and
 # it's a memory knob, not per-primitive iteration).
 # ----------------------------------------------------------------------------------------------------
-def _rasterize(tris, dep, col, valid, W, H, sky, chunk=None):
+def _rasterize(tris, dep, col, valid, W, H, sky, chunk=None, alpha=None):
     """Bounding-box fragment rasterizer (batched z-buffer). tris [P,T,3,2] screen verts, dep [P,T],
     col [P,T,3] (0..255), valid [P,T] bool, sky [H,W,3]. Returns [P,H,W,3] uint8, nearest depth wins.
 
@@ -259,11 +265,24 @@ def _rasterize(tris, dep, col, valid, W, H, sky, chunk=None):
     gpix = pan[tri] * N + (by0[tri] + dy) * W + (bx0[tri] + dx)                   # [tot] global pixel (panel-offset)
     fd = torch.where(inside, d[tri], torch.full_like(d[tri], float("inf")))       # [tot] fragment depth (inf if outside)
 
-    # --- z-test: nearest depth per pixel via scatter-min, then paint the winning fragment's color ---
+    # --- per-fragment alpha (1 = opaque). Two passes: paint OPAQUE nearest, then BLEND transparent over the scene. ---
+    a_frag = (alpha.reshape(F)[tri] if alpha is not None else torch.ones(tot, device=dev))   # [tot] fragment alpha
+    opaque = a_frag >= 0.999
+    # PASS 1 -- opaque z-test: nearest OPAQUE depth per pixel, paint the winner.
+    fd_op = torch.where(inside & opaque, d[tri], torch.full_like(d[tri], float("inf")))
     zbuf = torch.full((P * N,), float("inf"), device=dev)
-    zbuf.scatter_reduce_(0, gpix, fd, reduce="amin", include_self=True)           # per-pixel min depth
-    win = inside & (fd <= zbuf[gpix] + 1e-4)                                      # fragments that own their pixel
-    sky_flat[gpix[win]] = c[tri[win]]                                             # paint winners (ties: arbitrary)
+    zbuf.scatter_reduce_(0, gpix, fd_op, reduce="amin", include_self=True)        # per-pixel nearest opaque depth
+    win = inside & opaque & (fd_op <= zbuf[gpix] + 1e-4)                          # opaque fragments that own their pixel
+    sky_flat[gpix[win]] = c[tri[win]]                                             # paint the scene
+    # PASS 2 -- transparent: keep fragments IN FRONT of the opaque scene, blend the nearest one per pixel over it.
+    if alpha is not None and bool((~opaque).any()):
+        trans = inside & (~opaque) & (fd <= zbuf[gpix] + 1e-4)                    # in front of (or at) the scene depth
+        fd_tr = torch.where(trans, fd, torch.full_like(fd, float("inf")))
+        ztr = torch.full((P * N,), float("inf"), device=dev)
+        ztr.scatter_reduce_(0, gpix, fd_tr, reduce="amin", include_self=True)     # nearest transparent depth per pixel
+        wtr = trans & (fd_tr <= ztr[gpix] + 1e-4) & torch.isfinite(fd_tr)         # winning transparent fragment per pixel
+        pix = gpix[wtr]; aw = a_frag[wtr][:, None]                                # blend: out = (1-a)*scene + a*colour
+        sky_flat[pix] = (1.0 - aw) * sky_flat[pix] + aw * c[tri[wtr]]
     return sky_flat.reshape(P, H, W, 3).clamp(0, 255).to(torch.uint8)
 
 
@@ -285,8 +304,9 @@ def _terrain_quads(gx, gy, gzt, shade_col, eye, right, up, fwd, f, W, H):
     return _quads_to_tris(quad, qdep, qcol, qval)
 
 
-def _entity_tris(snap, hfs_t, ext, eye, right, up, fwd, f, W, H, device):
-    """Build entity triangles for one frame: enemy boxes, drone dots, altitude lines, crash spots."""
+def _entity_tris(snap, hfs_t, ext, eye, right, up, fwd, f, W, H, device, pulse=None, show_nav=True, trail=None):
+    """Build entity triangles for one frame: enemy boxes, drone dots, altitude lines, crash spots, and
+    (when `pulse` is not None) the pulsing RED homing line from each live drone to its assigned target."""
     P = hfs_t.shape[0]
     dp = torch.tensor(snap["d_pos"][0], dtype=torch.float32, device=device)     # [P,D,3] drone world pos
     da = torch.tensor(snap["d_alive"][0], dtype=torch.float32, device=device) > 0.5
@@ -308,11 +328,12 @@ def _entity_tris(snap, hfs_t, ext, eye, right, up, fwd, f, W, H, device):
     e3 = torch.stack([ep2[..., 0], ep2[..., 1], ez], -1)
     escr, edep = _project(eye, right, up, fwd, f, W, H, e3)                     # [P,E,2],[P,E]
 
-    tris_list, dep_list, col_list, val_list = [], [], [], []
+    tris_list, dep_list, col_list, val_list, alpha_list = [], [], [], [], []
 
-    def add_quads(quad, qdep, qcol, qval):
+    def add_quads(quad, qdep, qcol, qval, a=1.0):
         t, d, c, v = _quads_to_tris(quad, qdep, qcol, qval)
         tris_list.append(t); dep_list.append(d); col_list.append(c); val_list.append(v)
+        alpha_list.append(torch.full_like(d, float(a)))                            # per-triangle alpha (1=opaque)
 
     # DEPTH BIAS: entities sit ON (enemies, crash decals) or above (drones) the terrain, so their flat
     # sprite depth ties with the terrain quad they cover -> the z-test can let the ground WIN and hide them
@@ -328,6 +349,29 @@ def _entity_tris(snap, hfs_t, ext, eye, right, up, fwd, f, W, H, device):
     q, qd, qv = _sprite_quads(escr, edep - BIAS, esz, torch.ones_like(ea))
     add_quads(q, qd, ecol, qv)
 
+    # --- RED HOMING LINE: from each LIVE drone to its nearest LIVE enemy = the exact target the live
+    #     PN-lead seek homes on (post-decouple the homing is a STRAIGHT line to the assigned enemy; the
+    #     geodesic nav-field now only routes AROUND obstacles, so tracing -grad(dist) would misrepresent it).
+    #     This is the targeting readout the user asked for: you can see which enemy each drone commits to, and
+    #     a lone-drone centroid-dither shows as a line that won't settle on one enemy. Pulses (brightness +
+    #     width via sin(frame)) so it reads as an active lock. Drawn before the drone/enemy sprites so those
+    #     win depth ties at the endpoints. Skipped entirely when pulse is None (homing_lines=False). ----
+    if pulse is not None:
+        d_xy = dp[..., :2]                                                     # [P,D,2] drone ground pos
+        de = torch.linalg.norm(ep2[:, None, :, :] - d_xy[:, :, None, :], dim=-1)   # [P,D,E] drone->enemy range
+        de = torch.where(ea[:, None, :], de, torch.full_like(de, 1e18))       # mask DEAD enemies out of the argmin
+        nearest = de.argmin(-1)                                               # [P,D] nearest LIVE enemy index
+        has_tgt = ea.any(-1)                                                  # [P] is there any live enemy at all
+        bp = torch.arange(P, device=device)[:, None]                         # [P,1] panel index for gather
+        tscr = escr[bp, nearest]                                             # [P,D,2] target enemy screen pos
+        tdep = edep[bp, nearest]                                             # [P,D] target enemy depth
+        hval = live & has_tgt[:, None]                                       # only live drones with a live target
+        hcol = _c(HOMING_C, device) * (0.55 + 0.45 * float(pulse))           # [1,1,3] pulsing brightness
+        hw = torch.full_like(ddep, 1.0 + 1.2 * float(pulse))                 # pulsing half-width
+        hdep = 0.5 * (ddep + tdep) - BIAS                                    # midpoint depth, biased toward camera
+        q, qd, qv = _line_quads(dscr, tscr, hdep, hw, hval)
+        add_quads(q, qd, hcol.expand(P, dp.shape[1], 3), qv)
+
     # crash spots (black ground marks under crashed drones) — bigger + strong decal bias so they're visible
     q, qd, qv = _sprite_quads(fscr, fdep - BIAS_CRASH, torch.full_like(fdep, 8.0), dcr)
     add_quads(q, qd, _c(CRASH_C, device).expand(P, dp.shape[1], 3), qv)
@@ -340,9 +384,57 @@ def _entity_tris(snap, hfs_t, ext, eye, right, up, fwd, f, W, H, device):
     q, qd, qv = _sprite_quads(dscr, ddep - BIAS, torch.full_like(ddep, 4.0), live)
     add_quads(q, qd, _c(DRONE_C, device).expand(P, dp.shape[1], 3), qv)
 
+    # --- SUPERVISOR OVERLAY: the quantized ALLOWED-state field as dots -- exactly what the supervisor publishes.
+    #     RED = forbidden (into the earth / inside an obstacle), GREEN = allowed airspace, and a bright SOLID-GREEN
+    #     trail = the flow PATH the swarm is committed to at this instant (walk -grad(dist) from each live drone). ----
+    if show_nav and "nav_allowed" in snap:
+        alwg = torch.tensor(snap["nav_allowed"][0], dtype=torch.float32, device=device)   # [P,Gz,G,G] 1=allowed
+        Gz, Gg = alwg.shape[1], alwg.shape[2]
+        cells = torch.tensor(snap["nav_xyz"], dtype=torch.float32, device=device).reshape(1, -1, 3).expand(P, -1, 3)   # [P,M,3]
+        alw = alwg.reshape(P, -1)                                              # [P,M]
+        cscr, cdep = _project(eye, right, up, fwd, f, W, H, cells)             # [P,M,2],[P,M]
+        ncol = torch.where(alw[..., None] > 0.5, _c(NAV_OK, device), _c(NAV_NO, device))   # [P,M,3] green allowed / red forbidden
+        q, qd, qv = _sprite_quads(cscr, cdep - BIAS, torch.full_like(cdep, 1.5), cdep > 0.05)   # small dots, in front of the eye only
+        add_quads(q, qd, ncol, qv)
+        # PATH: walk the flow K steps from each LIVE drone -> the geodesic route it is committed to right now
+        flow = torch.tensor(snap["nav_flow"][0], dtype=torch.float32, device=device)       # [P,Gz,G,G,3]
+        zlo = float(cells[..., 2].min()); zhi = float(cells[..., 2].max()); cellp = float(snap["nav_cell"])
+        prange = torch.arange(P, device=device)[:, None]                      # [P,1] panel gather index
+        K = 8; pos = dp.clone(); pth = [pos]
+        for _ in range(K):                                                    # RENDER-LOOP-OK (offline flow trace)
+            ix = (((pos[..., 0] + ext) / (2.0 * ext) * (Gg - 1)).round().long()).clamp(0, Gg - 1)   # [P,D]
+            iy = (((pos[..., 1] + ext) / (2.0 * ext) * (Gg - 1)).round().long()).clamp(0, Gg - 1)
+            iz = (((pos[..., 2] - zlo) / max(zhi - zlo, 1e-6) * (Gz - 1)).round().long()).clamp(0, Gz - 1)
+            pos = pos + flow[prange, iz, iy, ix] * cellp                      # step along the smooth EIKONAL flow (no more zigzag)
+            pth.append(pos)
+        Dn = dp.shape[1]
+        pp = torch.stack(pth, 2)                                              # [P,D,K+1,3] route polyline per drone
+        psc, pde = _project(eye, right, up, fwd, f, W, H, pp.reshape(P, Dn * (K + 1), 3))
+        psc = psc.reshape(P, Dn, K + 1, 2); pde = pde.reshape(P, Dn, K + 1)
+        a = psc[:, :, :-1].reshape(P, Dn * K, 2); b = psc[:, :, 1:].reshape(P, Dn * K, 2)   # consecutive waypoints
+        sdep = (0.5 * (pde[:, :, :-1] + pde[:, :, 1:])).reshape(P, Dn * K) - BIAS - 0.6
+        sval = (live[:, :, None].expand(P, Dn, K).reshape(P, Dn * K)) & (pde[:, :, :-1].reshape(P, Dn * K) > 0.05)
+        q, qd, qv = _line_quads(a, b, sdep, torch.full_like(sdep, 1.4), sval)  # the smooth EIKONAL flow ROUTE line
+        add_quads(q, qd, _c(NAV_PATH, device).expand(P, a.shape[1], 3), qv)
+
+    # --- ACTUAL TRAJECTORY: the ORANGE trail of where each drone HAS FLOWN (recent position history) -> compare the
+    #     drone's real path against the SOLID-GREEN flow it was told to follow (intent vs reality). ----
+    if trail is not None and trail.shape[0] >= 2:
+        tr = torch.tensor(trail, dtype=torch.float32, device=device)          # [T,P,D,3] recent world positions
+        T, _, Dn, _ = tr.shape
+        flat = tr.permute(1, 0, 2, 3).reshape(P, T * Dn, 3)                    # [P,T*D,3]
+        tsc, tde = _project(eye, right, up, fwd, f, W, H, flat)               # [P,T*D,2],[P,T*D]
+        tsc = tsc.reshape(P, T, Dn, 2); tde = tde.reshape(P, T, Dn)
+        a = tsc[:, :-1].reshape(P, (T - 1) * Dn, 2)                           # segment starts (older)
+        b = tsc[:, 1:].reshape(P, (T - 1) * Dn, 2)                            # segment ends (newer)
+        sdep = (0.5 * (tde[:, :-1] + tde[:, 1:])).reshape(P, (T - 1) * Dn) - BIAS
+        sval = ((tde[:, :-1] > 0.05) & (tde[:, 1:] > 0.05)).reshape(P, (T - 1) * Dn)   # both ends in front of the eye
+        q, qd, qv = _line_quads(a, b, sdep, torch.full_like(sdep, 0.9), sval)  # thin orange trajectory segments
+        add_quads(q, qd, _c(TRAIL_C, device).expand(P, a.shape[1], 3), qv)
+
     tris = torch.cat(tris_list, dim=1); dep = torch.cat(dep_list, dim=1)
-    col = torch.cat(col_list, dim=1); val = torch.cat(val_list, dim=1)
-    return tris, dep, col, val
+    col = torch.cat(col_list, dim=1); val = torch.cat(val_list, dim=1); alpha = torch.cat(alpha_list, dim=1)
+    return tris, dep, col, val, alpha
 
 
 def _c(rgb, device):
@@ -457,7 +549,7 @@ def _explosion_tris(events, i, life, eye, right, up, fwd, f, W, H, P, device):
 # ----------------------------------------------------------------------------------------------------
 def render_torch(env, dparams, dls, eparams, els, K_dec, H, out_path, W=1280, Hp=280, n_panel=9, cols=1,
                  device="cuda", chunk=48, mm_dtype=None, Gr=22, cam_kw=None, cam_mode="autofit",
-                 max_seconds=60.0, end_hold=0.8, explo_life=6, ribbon_y=None):
+                 max_seconds=60.0, end_hold=0.8, explo_life=6, ribbon_y=None, homing_lines=True, show_nav=True):
     import imageio.v2 as imageio
     cfg = env.cfg
     dev = device if torch.cuda.is_available() else "cpu"
@@ -526,17 +618,23 @@ def render_torch(env, dparams, dls, eparams, els, K_dec, H, out_path, W=1280, Hp
     w = imageio.get_writer(out_path, fps=FPS, macro_block_size=None)
     for fi, snap in enumerate(snaps):                       # RENDER-LOOP-OK (offline frame loop; per-frame GPU raster)
         eye, right, up, fwd, f = _cam_tensors(cams[fi], dev)
+        # homing-line pulse: a 0..1 sinusoid in the frame index (period ~9 frames ~0.3s) -> the red lock lines
+        # brighten/thicken and fade rhythmically. None when disabled so _entity_tris skips them entirely.
+        pulse = float(0.5 + 0.5 * np.sin(fi * 0.7)) if homing_lines else None
         tt, td, tc, tv = _terrain_quads(gx, gy, gzt, shade_col, eye, right, up, fwd, f, W, Hp)   # terrain tris
-        et, ed, ec, ev = _entity_tris(snap, hfs_t, ext, eye, right, up, fwd, f, W, Hp, dev)      # entity tris
+        trail = np.stack([snaps[j]["d_pos"][0, :P] for j in range(max(0, fi - 24), fi + 1)]) if show_nav else None  # [T,P,D,3] recent path
+        et, ed, ec, ev, ea = _entity_tris(snap, hfs_t, ext, eye, right, up, fwd, f, W, Hp, dev, pulse, show_nav, trail)  # +per-tri alpha
         oc_f = torch.tensor(snap["obst_xyz"][:P], dtype=torch.float32, device=dev)               # LIVE obstacle centres
         ob = _obstacle_tris(oc_f, oh_t, ocyl_t, omask_t, eye, right, up, fwd, f, W, Hp, dev)      # buildings + trees
         layers = [(tt, td, tc, tv), ob, (et, ed, ec, ev)]
+        alphas = [torch.ones_like(tt[..., 0, 0]), torch.ones_like(ob[1]), ea]                    # opaque layers -> alpha 1; entity carries its own
         ex = _explosion_tris(events, fi, explo_life, eye, right, up, fwd, f, W, Hp, P, dev)      # impact bursts (if any)
         if ex is not None:
-            layers.append(ex)
+            layers.append(ex); alphas.append(torch.ones_like(ex[1]))
         tris = torch.cat([L[0] for L in layers], 1); dep = torch.cat([L[1] for L in layers], 1)
         col = torch.cat([L[2] for L in layers], 1); val = torch.cat([L[3] for L in layers], 1)
-        frame = _rasterize(tris, dep, col, val, W, Hp, sky, chunk=chunk)            # [P,Hp,W,3] uint8 on GPU
+        alpha = torch.cat(alphas, 1)                                                # [P,T] per-triangle alpha
+        frame = _rasterize(tris, dep, col, val, W, Hp, sky, chunk=chunk, alpha=alpha)   # [P,Hp,W,3] uint8 on GPU
         grid_np = _compose(frame.cpu().numpy(), snap, P, rows, cols, W, Hp)         # tile panels + HUD text (cpu)
         w.append_data(grid_np)
     w.close()

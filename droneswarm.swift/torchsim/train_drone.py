@@ -57,9 +57,9 @@ def pick_device(arg):
 def evaluate(env, dparams, eparams, K_dec, H, mm_dtype=None):
     """Deterministic (mean-action) rollout of the RECURRENT drone vs the given feedforward enemy.
     Returns (clear_pct, full_clear, exchange_ratio, mean_kills). clear% = kills / E."""
-    def dfn(sf, tk, mk, h_in):                                   # recurrent drone (mean action)
-        mu, _, h_new = RE.apply_recur(dparams, sf, tk, mk, h_in, mm_dtype)
-        return mu, h_new
+    def dfn(sf, tk, mk, ef, em, dm, dpxy, h_in):                 # recurrent GROUP drone (mean action + target assignment)
+        mu, _, h_new, a_hard = RE.apply_recur(dparams, sf, tk, mk, ef, em, dm, dpxy, h_in, mm_dtype)
+        return mu, h_new, a_hard
     efn = lambda sf, tk, mk: AT.apply_attn(eparams, sf, tk, mk, mm_dtype)[0]
     s = game_loop(env, dfn, efn, 1, K_dec, drone_recur=True, latent_h=H)
     E = env.E
@@ -87,9 +87,6 @@ def main():
     ap.add_argument("--ppo-epochs", type=int, default=2)
     ap.add_argument("--attn-dim", type=int, default=32); ap.add_argument("--attn-hidden", type=int, default=64)
     ap.add_argument("--gamma", type=float, default=0.98); ap.add_argument("--ent", type=float, default=0.0)
-    ap.add_argument("--train-mode", choices=["ppo", "shac", "sapo"], default="ppo",
-                    help="drone update: ppo (score-function), shac (analytic grads through the diff sim), or "
-                         "sapo (2026-SOTA max-entropy SHAC: auto-alpha + soft critic, trains from scratch in one phase)")
     ap.add_argument("--sapo-target-entropy", type=float, default=-2.0,
                     help="SAPO auto-alpha target policy entropy (SAC dual): alpha rises when H drops below this")
     ap.add_argument("--sapo-alpha-lr", type=float, default=3e-3, help="SAPO temperature (log_alpha) learning rate")
@@ -150,15 +147,16 @@ def main():
     torch.manual_seed(args.seed)
     H = args.attn_hidden                                        # GRU latent width (= attn encoder width)
     std0 = args.std0 if args.std0 is not None else 0.5
-    hover_frac = 1.0 / cfg.drone_t2w                            # thrust fraction that hovers (mg / t_max)
-    hover_bias = float(np.log(hover_frac / (1.0 - hover_frac))) # logit -> default action hovers, not climbs
+    hover_bias = 0.0   # action is now a VELOCITY-command residual (not thrust) -> default action = ZERO = pure route-follow
     if args.init_drone:                                        # drone = RECURRENT (policy_recur)
         dparams, dls, _ = RE.load_safetensors(args.init_drone, device=dev)
         dparams = {k: v.clone().requires_grad_(True) for k, v in dparams.items()}
         dls = dls.clone().requires_grad_(True)
     else:
         dparams, dls = RE.init_recur(EnvDrone.DRONE_SELF_F, EnvDrone.DRONE_TOK_F, args.attn_dim, H,
-                                     EnvDrone.DRONE_ACT, device=dev, seed=args.seed, std0=std0, hover_bias=hover_bias)
+                                     EnvDrone.DRONE_ACT, device=dev, seed=args.seed, std0=std0, hover_bias=hover_bias,
+                                     self_mag=env.self_mag_mask, self_scale=env.self_lot_scale,
+                                     tok_mag=env.tok_mag_mask, tok_scale=env.tok_lot_scale, Fe=6)   # LOT + group-assignment enemy_feat dim
     if args.init_enemy:                                        # enemy = feedforward attention
         p, els, _ = AT.load_safetensors(args.init_enemy, device=dev)
         eparams = [(W.clone().requires_grad_(True), b.clone().requires_grad_(True)) for W, b in p]
@@ -166,10 +164,11 @@ def main():
     else:
         eparams, els = AT.init_attn(EnvDrone.ENEMY_SELF_F, EnvDrone.ENEMY_TOK_F, args.attn_dim, H,
                                     EnvDrone.ENEMY_ACT, device=dev, seed=args.seed + 1, std0=std0)
+    env.ctrl_gains = RE.ctrl_gains(dparams); ev_env.ctrl_gains = RE.ctrl_gains(dparams)   # base-controller gains = learnable leaves (train + save via the policy)
     fused_ok = (dev == "cuda")                                 # single-kernel Adam: faster step + lower peak VRAM
     # SHAC drives the drone with analytic gradients (clean, low-variance) -> a MUCH higher LR than PPO's
     # score-function estimate. The enemy always trains via PPO, so it keeps --ppo-lr regardless.
-    drone_lr = args.shac_lr if args.train_mode in ("shac", "sapo") else args.ppo_lr
+    drone_lr = args.shac_lr                                # SAPO uses the clean analytic-gradient LR (the enemy keeps --ppo-lr)
     dopt = torch.optim.Adam(RE.opt_params(dparams, dls), lr=drone_lr, fused=fused_ok)   # drone (recurrent) optimizer
     eopt = torch.optim.Adam(AT.opt_params(eparams, els), lr=args.ppo_lr, fused=fused_ok)   # enemy (attention) optimizer
     # SAPO temperature: a single trainable log_alpha (auto-tuned toward --sapo-target-entropy each step). Its own
@@ -177,7 +176,7 @@ def main():
     log_alpha = torch.tensor(math.log(args.sapo_alpha0), device=dev, requires_grad=True)
     aopt = torch.optim.Adam([log_alpha], lr=args.sapo_alpha_lr)
     # EMA value TARGET network for SHAC: a slowly-tracking detached copy of the drone params, used ONLY to
-    # estimate the terminal value bootstrap + the TD(lambda) critic targets. Persists across shac_step calls so
+    # estimate the terminal value bootstrap + the TD(lambda) critic targets. Persists across sapo_step calls so
     # the target moves smoothly (SHAC tau~0.005). Unused in PPO mode.
     dtarget = {kk: v.detach().clone() for kk, v in dparams.items()}
 
@@ -213,21 +212,11 @@ def main():
             side = "enemy"
         else:                                                  # drone trains vs a sampled league enemy
             opp = pool[pool_rng.randrange(len(pool))] if len(pool) > 1 else (eparams, els)
-            if args.train_mode == "sapo":                      # 2026-SOTA max-entropy SHAC (auto-alpha + soft critic)
-                pl, vl, ret, valid = PPO.sapo_step(env, dparams, dls, opp[0], opp[1], dopt, log_alpha, aopt,
-                                                   args.ppo_group, args.shac_horizon, K_dec=K_dec, dtarget=dtarget,
-                                                   gamma=args.gamma, lam=args.shac_lambda, tau=args.shac_tau,
-                                                   target_entropy=args.sapo_target_entropy, mm_dtype=mm_dtype)
-            elif args.train_mode == "shac":                    # analytic gradients through the sim (diff-physics)
-                pl, vl, ret, valid = PPO.shac_step(env, dparams, dls, opp[0], opp[1], dopt,
-                                                   args.ppo_group, args.shac_horizon, K_dec=K_dec, dtarget=dtarget,
-                                                   gamma=args.gamma, lam=args.shac_lambda, tau=args.shac_tau,
-                                                   alpha_ent=args.ent, mm_dtype=mm_dtype)   # EMA target + TD(lambda)
-            else:
-                pl, vl, ret, valid = PPO.ppo_step(env, "drone", dparams, dls, opp[0], opp[1], dopt,
-                                                  args.ppo_group, K_dec, gamma=args.gamma,
-                                                  minibatch=args.ppo_minibatch, epochs=args.ppo_epochs,
-                                                  ent=args.ent, mm_dtype=mm_dtype)
+            # DRONE update = SAPO (2026-SOTA max-entropy SHAC: auto-alpha + soft critic; trains from scratch, one phase).
+            pl, vl, ret, valid = PPO.sapo_step(env, dparams, dls, opp[0], opp[1], dopt, log_alpha, aopt,
+                                               args.ppo_group, args.shac_horizon, K_dec=K_dec, dtarget=dtarget,
+                                               gamma=args.gamma, lam=args.shac_lambda, tau=args.shac_tau,
+                                               target_entropy=args.sapo_target_entropy, mm_dtype=mm_dtype)
             side = "drone"
         el = time.time() - t0
         ev = ("", "", "")
@@ -265,6 +254,7 @@ def main():
         try:
             import render_drone
             rc = EnvDrone(S.build_eval(cfg, 4, D, E, O, T, base_seed=999), device=dev, cfg=cfg)
+            rc.ctrl_gains = RE.ctrl_gains(dparams)             # base-controller gains for the render env
             render_drone.render(rc, dparams, dls, eparams, els, K_dec, H, args.render, mm_dtype)
             print(f"[render] wrote {args.render}")
         except Exception as e:

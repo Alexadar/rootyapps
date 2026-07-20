@@ -43,7 +43,8 @@ def test_no_loops_in_hot_path():
         assert _count_loops(fn) == 0, f"{fn.__qualname__} has a loop"
     # every HOT-PATH oracle function must be loop-free (dryden_series_np is offline -> excluded)
     for fn in (rotation.quat_mul, rotation.quat_rotate, rotation.quat_integrate, rotation.quat_from_rotvec,
-               rotation.body_z_axis, aero.drag_accel, aero.ground_effect_factor, quadrotor.quad_step,
+               rotation.body_z_axis, rotation.shortest_arc, rotation.quat_log, rotation.quat_conjugate,
+               aero.drag_accel, aero.ground_effect_factor, quadrotor.quad_step,
                quadrotor.rate_track, terrain.height, terrain.height_grad, ground.unicycle_step,
                ground.social_force, ground.tobler_factor, collide3.shape_sdf3, collide3.shape_sdf3_grad,
                collide3.segment_clearance, contact.hunt_crossley_force, aa_fire.p_hit, aa_fire.lead_solution,
@@ -56,9 +57,16 @@ def test_no_loops_in_hot_path():
 
 
 # ---- 2. batch == N singles, bit-identical ----
+def _ua(env, s):
+    """Uniform-over-alive-enemies assignment [P,N,D,E] for direct _core calls (the group policy supplies a one-hot)."""
+    ea = s["e_alive"]
+    a = ea[:, :, None, :].expand(-1, -1, env.D, -1)
+    return a / a.sum(-1, keepdim=True).clamp_min(1e-8)
+
+
 def _det_policy(env):
     """Deterministic scripted policy (function of obs only) — exercises the obs pipeline reproducibly."""
-    def dfn(sf, tok, mk):
+    def dfn(sf, tok, mk, *rest):                                  # *rest = group-assignment obs (enemy_feat, masks, xy) — ignored
         base = sf[..., :4].mean(-1, keepdim=True)
         return torch.cat([base, tok[..., :3].mean(-2)], -1)
     def efn(sf, tok, mk):
@@ -74,8 +82,12 @@ def test_batch_equals_singles_bit_identical():
         one = _env(n=1, seed=e)                                    # env0 of seed e == big row e (schedule test)
         d1, e1 = _det_policy(one)
         so = game_loop(one, d1, e1, P=1, K_dec=25)
-        for k in ("d_pos", "e_pos", "d_alive", "e_alive", "kills", "losses"):
-            assert torch.equal(sb[k][:, e], so[k][:, 0]), f"{k} env {e} not bit-identical batch-vs-single"
+        # discrete keys stay bit-identical; float positions may differ by ~1e-6 because the Eikonal Godunov
+        # update (sqrt/division) is not bit-reproducible across batch shapes (the old octile min+add was).
+        for k in ("d_alive", "e_alive", "kills", "losses"):
+            assert torch.equal(sb[k][:, e], so[k][:, 0]), f"{k} env {e} not identical batch-vs-single"
+        for k in ("d_pos", "e_pos"):
+            assert torch.allclose(sb[k][:, e], so[k][:, 0], atol=1e-3, rtol=0), f"{k} env {e} not close batch-vs-single"
 
 
 def test_action_determinism():
@@ -92,44 +104,38 @@ def _blank_state(env, P=1):
     return s
 
 
-def test_dropped_drone_crashes_into_terrain():
-    """A launched drone with zero thrust free-falls and dies when it reaches the terrain floor."""
+def test_base_controller_hovers():
+    """With a ZERO velocity command and no route (flow=0), the differentiable velocity-tracking base controller
+    holds altitude (thrust = m g on a level drone) -- the fix for the old below-hover sink-to-ground failure.
+    A zero action is now 'follow the route'; with no route it is a stable hover, NOT a free-fall."""
     env = _env(n=1, D=1, E=1, O=1, T=50)
-    env.hf = torch.zeros_like(env.hf)                             # flat terrain at z=0 (known)
-    s = env.reset(1)
-    s["d_act"][:] = 1.0; s["d_alive"][:] = 1.0
-    s["d_pos"][..., 2] = 10.0; s["d_pos"][..., :2] = 0.0
-    s["e_pos"][:] = 50.0                                          # enemy FAR (not a committed dive -> crash is fatal)
-    a_d = torch.zeros(1, 1, 1, 4); a_d[..., 0] = -50.0            # sigmoid(-50)~0 -> ~zero thrust
-    a_e = torch.zeros(1, 1, 1, 3)
-    zeros_gust = torch.zeros(1, 3); zeros_roll = torch.zeros(1, 1); due = torch.zeros(1, 1, 1)
-    alive_at = []
-    for t in range(80):
-        s, rd, re, dd, de, _ = env._core(s, zeros_gust, zeros_roll, due, a_d, a_e)
-        alive_at.append(float(s["d_alive"].sum()))
-    assert alive_at[0] == 1.0                                     # alive at first tick (still high)
-    assert alive_at[-1] == 0.0                                    # dead by the end (hit the ground)
-    # crash time ~ sqrt(2 h / g) = sqrt(20/9.81) = 1.428 s ~ 71 ticks; died within a sane window
-    first_dead = next(i for i, a in enumerate(alive_at) if a == 0.0)
-    assert 60 < first_dead < 80
+    env.hf = torch.zeros_like(env.hf)                            # flat terrain at z=0
+    s = env.reset(1); s["d_act"][:] = 1.0; s["d_alive"][:] = 1.0
+    s["d_pos"][..., 2] = 10.0; s["d_pos"][..., :2] = 0.0; s["d_vel"][:] = 0.0
+    s["nav_flow"][:] = 0.0                                        # no route -> v_ref = 0 -> pure hover
+    a_d = torch.zeros(1, 1, 1, 4); a_e = torch.zeros(1, 1, 1, 3)
+    zg = torch.zeros(1, 3); zr = torch.zeros(1, 1); due = torch.zeros(1, 1, 1)
+    for _ in range(100):
+        s, *_ = env._core(s, zg, zr, due, a_d, a_e, _ua(env, s))
+    assert float(s["d_alive"].sum()) == 1.0                       # STILL FLYING (did not sink/crash)
+    assert abs(float(s["d_pos"][..., 2]) - 10.0) < 0.5           # altitude held within 0.5 m over 2 s
 
 
-def test_hover_holds_altitude():
-    """thrust = m g on a level drone holds altitude (no wind), over many ticks."""
+def test_base_controller_tracks_velocity_command():
+    """The AI velocity OVERRIDE steers the drone: a +x command yields +x velocity (the base controller flies it,
+    the AI never touches thrust/rates)."""
     env = _env(n=1, D=1, E=1, O=1, T=50)
     env.hf = torch.zeros_like(env.hf)
     s = env.reset(1); s["d_act"][:] = 1.0; s["d_alive"][:] = 1.0
-    s["d_pos"][..., 2] = 20.0; s["d_pos"][..., :2] = 0.0
-    mg = CFG.drone_mass * CFG.gravity
-    # invert thrust = t_max*sigmoid(a0) => a0 = logit(mg/t_max)
-    ratio = mg / CFG.drone_t_max
-    a0 = float(np.log(ratio / (1 - ratio)))
-    a_d = torch.zeros(1, 1, 1, 4); a_d[..., 0] = a0
+    s["d_pos"][..., 2] = 10.0; s["d_pos"][..., :2] = 0.0; s["d_vel"][:] = 0.0
+    s["nav_flow"][:] = 0.0                                        # isolate the override (no route velocity)
+    a_d = torch.zeros(1, 1, 1, 4); a_d[..., 0] = 2.0            # +x velocity override (tanh(2)~0.96 -> ~ +v_override)
     a_e = torch.zeros(1, 1, 1, 3)
     zg = torch.zeros(1, 3); zr = torch.zeros(1, 1); due = torch.zeros(1, 1, 1)
-    for _ in range(100):
-        s, *_ = env._core(s, zg, zr, due, a_d, a_e)
-    assert abs(float(s["d_pos"][..., 2]) - 20.0) < 0.2           # altitude held within 20 cm over 2 s
+    for _ in range(40):
+        s, *_ = env._core(s, zg, zr, due, a_d, a_e, _ua(env, s))
+    assert float(s["d_vel"][..., 0]) > 1.0                       # gained +x velocity toward the commanded direction
+    assert float(s["d_alive"].sum()) == 1.0
 
 
 def test_kamikaze_kills_both_and_scores():
@@ -141,7 +147,7 @@ def test_kamikaze_kills_both_and_scores():
     s["d_pos"][..., :2] = 0.0; s["d_pos"][..., 2] = 0.3          # drone right on top (within kill radius)
     a_d = torch.zeros(1, 1, 1, 4); a_d[..., 0] = -50.0          # ~no thrust
     a_e = torch.zeros(1, 1, 1, 3)
-    s, rd, re, dd, de, _ = env._core(s, torch.zeros(1, 3), torch.zeros(1, 1), torch.zeros(1, 1, 1), a_d, a_e)
+    s, rd, re, dd, de, _ = env._core(s, torch.zeros(1, 3), torch.zeros(1, 1), torch.zeros(1, 1, 1), a_d, a_e, _ua(env, s))
     assert float(s["e_alive"].sum()) == 0.0                      # enemy dead
     assert float(s["d_alive"].sum()) == 0.0                      # drone dead too (kamikaze)
     assert float(s["kills"]) == 1.0
@@ -161,7 +167,7 @@ def test_aa_hit_lands_iff_roll_below_phit():
         a_d = torch.zeros(1, 1, 1, 4); a_d[..., 0] = -50.0
         a_e = torch.zeros(1, 1, 1, 3); a_e[..., 2] = 1.0        # fire
         roll = torch.full((1, 1), roll_val)
-        s, *_ = env._core(s, torch.zeros(1, 3), roll, torch.zeros(1, 1, 1), a_d, a_e)
+        s, *_ = env._core(s, torch.zeros(1, 3), roll, torch.zeros(1, 1, 1), a_d, a_e, _ua(env, s))
         return float(s["d_alive"].sum())
     # at 5 m, sigma = 5*aa_sigma_ang; P = 1-exp(-r^2/2sigma^2). roll 0 -> below P -> hit -> dead.
     assert one_shot(0.0) == 0.0                                  # certain hit (roll=0 < P)
@@ -195,11 +201,16 @@ def test_obstacle_footprint_is_z_independent():
 
 # ---- 4. observations bounded ----
 def test_obs_finite_and_bounded():
+    # New contract: the env emits MAGNITUDE features RAW (SI units); the policy's learnable LOT normalizer
+    # (asinh) bounds them, not a hardcoded clamp. So at the env level obs must be FINITE and within a generous
+    # PHYSICAL sanity ceiling (raw m / m/s stay well under it) — this catches NaN-adjacent explosions without
+    # re-asserting the removed obs_clamp bound.
     env = _env(n=4, seed=7)
     dfn, efn = _det_policy(env)
     s = env.reset(1)
+    SANE = 1e3
     for _ in range(10):
         for o in (*env.drone_obs(s), *env.enemy_obs(s)):
             assert torch.isfinite(o).all()
-            assert float(o.abs().max()) <= CFG.obs_clamp + 1e-4
+            assert float(o.abs().max()) <= SANE
         s, *_ = env.step_dec(s, 0, dfn(*env.drone_obs(s)), efn(*env.enemy_obs(s)))

@@ -162,9 +162,9 @@ def draw_frame(cfg, bg, hf, snap, e, cam):
 
 
 def capture(env, dparams, dls, eparams, els, K_dec, H, stride=2, mm_dtype=None):
-    def dfn(sf, tk, mk, h_in):                                   # recurrent drone (mean action)
-        mu, _, h_new = RE.apply_recur(dparams, sf, tk, mk, h_in, mm_dtype)
-        return mu, h_new
+    def dfn(sf, tk, mk, ef, em, dm, dpxy, h_in):                 # recurrent GROUP drone (mean action + target assignment)
+        mu, _, h_new, a_hard = RE.apply_recur(dparams, sf, tk, mk, ef, em, dm, dpxy, h_in, mm_dtype)
+        return mu, h_new, a_hard
     efn = lambda sf, tk, mk: AT.apply_attn(eparams, sf, tk, mk, mm_dtype)[0]
     snaps = []
     game_loop(env, dfn, efn, 1, K_dec, record=snaps, record_stride=stride, drone_recur=True, latent_h=H)

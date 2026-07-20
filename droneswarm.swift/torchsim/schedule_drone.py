@@ -79,18 +79,17 @@ def _bilerp(hf, x, y, extent):
 class ObstacleClass:
     """One kind of obstacle. All sizes are HALF-EXTENTS in metres (radius for cyl). Per env a random
     count in [count_lo,count_hi] is drawn; each obstacle is sized independently per axis from the (lo,hi)
-    ranges and rejection-placed in the region. shape: 'box' (rock/building) | 'cyl' (tree/pillar)."""
+    ranges and rejection-placed across the arena. shape: 'box' (rock/building) | 'cyl' (tree/pillar)."""
     name: str
     shape: str                                   # 'box' | 'cyl'
     count: tuple                                 # (lo, hi) inclusive random count per env
     hx: tuple                                    # (lo, hi) half-extent x   (radius for cyl)
     hy: tuple                                    # (lo, hi) half-extent y   (box only; cyl reuses hx)
     hz: tuple                                    # (lo, hi) half-height
-    region: str = "combat"                       # 'combat' -> combat_half zone, else arena_half
-    region_frac: float = 0.85                    # placed within +/- region_frac * zone_half
+    spread: float = 0.85                         # obstacles placed within +/- spread * arena_half
     min_sep: float = 2.0                         # min centre-to-centre spacing (rejection sampling)
-    xr: tuple = None                             # optional explicit x-band (lo,hi) overriding the region (showcase)
-    yr: tuple = None                             # optional explicit y-band (lo,hi) overriding the region
+    xr: tuple = None                             # optional explicit x-band (lo,hi) overriding the spread (showcase)
+    yr: tuple = None                             # optional explicit y-band (lo,hi) overriding the spread
     motion: str = "static"                       # 'static' | 'drift' — DYNAMIC obstacles: a per-scene xy velocity
     speed: tuple = (0.0, 0.0)                    # (lo, hi) drift speed [m/s] when motion != 'static' (z stays inert)
 
@@ -102,14 +101,14 @@ class ObstacleClass:
 DEFAULT_OBSTACLE_FIELD = [
     # DENSER domain-randomization (fills the O=16 capacity: up to 6 buildings + 10 trees) so the dense showcase
     # fields (city/forest/mixed) are IN-distribution — the nav-field routes around whatever density it trained on.
-    ObstacleClass("building", "box", (0, 6), (1.5, 3.0), (1.5, 3.0), (3.0, 5.0), "arena", 0.80, min_sep=3.5),
-    ObstacleClass("tree",     "cyl", (2, 10), (0.4, 1.2), (0.4, 1.2), (3.0, 8.0), "arena", 0.80, min_sep=1.5),
+    ObstacleClass("building", "box", (0, 6), (1.5, 3.0), (1.5, 3.0), (3.0, 5.0), 0.80, min_sep=3.5),
+    ObstacleClass("tree",     "cyl", (2, 10), (0.4, 1.2), (0.4, 1.2), (3.0, 8.0), 0.80, min_sep=1.5),
     #             ^ STATIC for now (no drift): with nav_refresh_every=0 the field is built ONCE, so obstacles must be
     #               static for it to stay valid. Re-enable motion="drift"/speed with a K>0 refresh in the dynamic phase.
 ]
 
 
-def sample_obstacle_field(classes, O, rng, hf, ext, combat_half, arena_half, keepout=None):
+def sample_obstacle_field(classes, O, rng, hf, ext, combat_half, arena_half, keepout=None, size_scale=1.0):
     """Fill an [O,10] obstacle array (x, y, z_center, hx, hy, hz, is_cyl, vx, vy, vz) from ObstacleClass specs.
     (vx,vy) is a per-scene DRIFT velocity for DYNAMIC obstacles (0 for 'static' classes); vz is always 0 (z inert).
 
@@ -123,14 +122,14 @@ def sample_obstacle_field(classes, O, rng, hf, ext, combat_half, arena_half, kee
     row = 0
     for cls in classes:                                      # SETUP-LOOP-OK (a handful of classes)
         n = int(rng.integers(cls.count[0], cls.count[1] + 1))
-        zone_half = (combat_half if (cls.region == "combat" and combat_half > 0) else arena_half) * cls.region_frac
-        xr = cls.xr if cls.xr is not None else (-zone_half, zone_half)   # explicit band overrides region (showcase)
+        zone_half = arena_half * cls.spread                             # obstacles spread across the arena
+        xr = cls.xr if cls.xr is not None else (-zone_half, zone_half)   # explicit band overrides the spread (showcase)
         yr = cls.yr if cls.yr is not None else (-zone_half, zone_half)
         for _ in range(n):                                   # SETUP-LOOP-OK (<= count.hi obstacles)
             if row >= O:
                 break                                        # out of capacity -> silently drop (raise --obstacles)
-            hx = float(rng.uniform(*cls.hx))
-            hy = float(rng.uniform(*cls.hy)) if cls.shape == "box" else hx   # cyl: hy = radius = hx
+            hx = float(rng.uniform(*cls.hx)) * size_scale
+            hy = (float(rng.uniform(*cls.hy)) * size_scale) if cls.shape == "box" else hx   # cyl: hy = radius = hx
             foot_r = max(hx, hy)                             # circumscribing footprint radius (for spacing)
             cand = None
             for _try in range(24):                           # SETUP-LOOP-OK (bounded placement retries)
@@ -142,7 +141,7 @@ def sample_obstacle_field(classes, O, rng, hf, ext, combat_half, arena_half, kee
                 cand = c; break
             if cand is None:
                 continue                                     # couldn't place -> leave row zero (fewer obstacles)
-            hz = float(rng.uniform(*cls.hz))
+            hz = float(rng.uniform(*cls.hz)) * size_scale
             gz = float(_bilerp(hf, np.array([cand[0]]), np.array([cand[1]]), ext)[0])
             obst[row, :7] = [cand[0], cand[1], gz + hz, hx, hy, hz, 1.0 if cls.shape == "cyl" else 0.0]
             if cls.motion != "static":                       # DYNAMIC obstacle -> a per-scene xy drift velocity.
@@ -206,7 +205,7 @@ def _fill_env(cfg, D, E, O, T, seed, obstacle_field=None):
     keepout = ([(float(base_pos[0]), float(base_pos[1]), 3.0)]                            # launch origin
                + [(float(s[0]), float(s[1]), 2.0) for s in spawn_xy]                      # each drone spawn slot
                + [(float(e[0]), float(e[1]), 1.2) for e in e_pos0])                       # enemies (avoid overlap)
-    obst = sample_obstacle_field(field, O, rng, hf, ext, ch, ah, keepout=keepout)
+    obst = sample_obstacle_field(field, O, rng, hf, ext, ch, ah, keepout=keepout, size_scale=float(getattr(cfg, "obst_size_scale", 1.0)))
 
     # wind: per-env mean + Dryden gust series
     wspeed = rng.uniform(cfg.wind_mean_lo, cfg.wind_mean_hi)

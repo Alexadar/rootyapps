@@ -35,15 +35,14 @@ BUDGET="${BUDGET:-300}"; ITERS="${ITERS:-40000}"
 # GEOMETRY: showcase obstacle-course scale (WorldConfig 'design' defaults are much bigger: 60/45/15).
 ARENA_HALF="${ARENA_HALF:-30}"; COMBAT_HALF="${COMBAT_HALF:-10}"; CEILING="${CEILING:-10}"
 ENGAGE_RANGE="${ENGAGE_RANGE:-8}"; TERRAIN_AMP="${TERRAIN_AMP:-3}"
-# DRONE update rule (CANONICAL = sapo): sapo (max-ent analytic diff-sim, single-phase FROM SCRATCH) is the
-# default; shac (analytic, needs a warm start) and ppo (score-fn) stay selectable via TRAIN_MODE=. The ENEMY
-# always co-evolves via PPO regardless (one-sided diff-physics: two-sided pathwise grads through the shared
-# physics oscillate; the enemy plays a frozen league mean with no-grad inside the drone's SAPO window).
-TRAIN_MODE="${TRAIN_MODE:-sapo}"; GAMMA="${GAMMA:-0.99}"
-# P (rollout copies): sapo/shac use LOW-VARIANCE analytic gradients -> P=1 pours the whole wide batch into
-# DISTINCT scenes (N) instead of re-rolling the same scenes; only PPO's score-function estimator wants P>1.
-# Memory scales as P*N, so P=1 buys ~4.5x the scene diversity at the SAME VRAM (the real "more room").
-case "$TRAIN_MODE" in ppo) PPO_GROUP="${PPO_GROUP:-4}" ;; *) PPO_GROUP="${PPO_GROUP:-1}" ;; esac
+# DRONE update rule = SAPO (max-ent analytic diff-sim, single-phase, trains FROM SCRATCH). The ENEMY always
+# co-evolves via PPO (one-sided diff-physics: two-sided pathwise grads through the shared physics oscillate;
+# the enemy plays a frozen league mean with no-grad inside the drone's SAPO window).
+GAMMA="${GAMMA:-0.99}"
+# P (rollout copies): SAPO's LOW-VARIANCE analytic gradients -> P=1 pours the whole wide batch into DISTINCT
+# scenes (N) instead of re-rolling the same scenes. Memory scales as P*N, so P=1 buys ~4.5x the scene
+# diversity at the SAME VRAM (the real "more room").
+PPO_GROUP="${PPO_GROUP:-1}"
 SHAC_HORIZON="${SHAC_HORIZON:-6}"; SHAC_LR="${SHAC_LR:-2e-3}"; SHAC_LAMBDA="${SHAC_LAMBDA:-0.95}"; SHAC_TAU="${SHAC_TAU:-0.005}"
 SAPO_TE="${SAPO_TE:--2.0}"; SAPO_ALPHA_LR="${SAPO_ALPHA_LR:-3e-3}"; SAPO_ALPHA0="${SAPO_ALPHA0:-0.1}"
 EVAL_EVERY="${EVAL_EVERY:-20}"; EVAL_SEEDS="${EVAL_SEEDS:-16}"
@@ -64,7 +63,7 @@ echo "device=$DEV n_envs=$N_ENVS D=$DRONES E=$ENEMIES O=$OBST ticks=$TICKS budge
   --ticks "$TICKS" --ppo-group "$PPO_GROUP" --enemy-group "$ENEMY_GROUP" --ppo-minibatch "$PPO_MB" \
   --ppo-lr "$PPO_LR" --ppo-epochs "$EPOCHS" --attn-dim "$ATTN_DIM" --attn-hidden "$ATTN_HIDDEN" \
   --budget "$BUDGET" --iters "$ITERS" $ACCEL \
-  --train-mode "$TRAIN_MODE" --gamma "$GAMMA" \
+  --gamma "$GAMMA" \
   --arena-half "$ARENA_HALF" --combat-half "$COMBAT_HALF" --ceiling "$CEILING" \
   --engage-range "$ENGAGE_RANGE" --terrain-amp "$TERRAIN_AMP" \
   --shac-horizon "$SHAC_HORIZON" --shac-lr "$SHAC_LR" --shac-lambda "$SHAC_LAMBDA" --shac-tau "$SHAC_TAU" \

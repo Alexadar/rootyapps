@@ -68,3 +68,45 @@ def body_z_axis(q):
     [...,3]. = quat_rotate(q, e_z); closed form of R(q) third column."""
     w, x, y, z = q[..., 0], q[..., 1], q[..., 2], q[..., 3]
     return torch.stack([2 * (x * z + w * y), 2 * (y * z - w * x), 1 - 2 * (x * x + y * y)], dim=-1)
+
+
+def quat_conjugate(q):
+    """Quaternion conjugate [w, -x, -y, -z]. For a UNIT quaternion this IS the inverse (world<->body)."""
+    return torch.cat([q[..., 0:1], -q[..., 1:4]], dim=-1)
+
+
+def quat_inverse(q, eps=1e-9):
+    """Inverse rotation = conjugate / ||q||^2 (== conjugate for a unit quaternion). q [...,4] -> [...,4]."""
+    n2 = (q * q).sum(-1, keepdim=True) + eps * eps
+    return quat_conjugate(q) / n2
+
+
+def quat_log(q, eps=1e-9):
+    """Log map: unit quaternion q [...,4] -> rotation vector [...,3] (radians) — the inverse of
+    quat_from_rotvec. angle = 2*atan2(||v||, w); rotvec = v * angle/||v||, v = q_xyz. Safe sinc at
+    ||v||->0 (rotvec -> 2*v), selected with torch.where BEFORE the divide (mandated idiom). Loop-free."""
+    v = q[..., 1:4]
+    vn = torch.sqrt((v * v).sum(-1, keepdim=True) + eps * eps)          # [...,1] ||v|| (safe)
+    angle = 2.0 * torch.atan2(vn, q[..., 0:1])                          # [...,1] rotation angle
+    factor = torch.where(vn < 1e-6, torch.full_like(vn, 2.0), angle / vn)   # angle/||v|| -> 2 as v->0
+    return v * factor
+
+
+def shortest_arc(a, b, eps=1e-9):
+    """Rotation vector (axis*angle, radians) of the SHORTEST rotation taking UNIT vector a [...,3] onto
+    UNIT vector b [...,3]. axis = a x b, angle = atan2(||a x b||, a.b). The geometric attitude error for
+    a thrust-vectoring controller (current body_z -> desired body_z). Two degeneracies handled branchlessly
+    (mandated where-idiom): a==b -> 0 (axis/||axis|| -> 0 as angle -> 0); a==-b -> pi about ANY axis
+    perpendicular to a (a x b vanishes, so pick a fixed perpendicular). Loop-free, no python `if`."""
+    axis = torch.cross(a, b, dim=-1)                                    # [...,3]
+    s = torch.sqrt((axis * axis).sum(-1, keepdim=True) + eps * eps)     # [...,1] ||a x b|| (safe)
+    c = (a * b).sum(-1, keepdim=True)                                   # [...,1] a.b
+    angle = torch.atan2(s, c)                                          # [...,1] in [0, pi]
+    # antiparallel fallback: a perpendicular unit axis. cross(a, x_hat) unless a || x_hat, then cross(a, y_hat).
+    xh = a.new_tensor([1.0, 0.0, 0.0]).expand_as(a)
+    yh = a.new_tensor([0.0, 1.0, 0.0]).expand_as(a)
+    ref = torch.where(a[..., 0:1].abs() > 0.9, yh, xh)                  # a is not parallel to ref
+    perp = torch.cross(a, ref, dim=-1)
+    perp = perp / torch.sqrt((perp * perp).sum(-1, keepdim=True) + eps * eps)   # unit, perpendicular to a
+    axis_u = torch.where(c < -1.0 + 1e-6, perp, axis / s)              # near-antiparallel -> perp
+    return axis_u * angle

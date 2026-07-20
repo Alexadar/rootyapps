@@ -86,11 +86,16 @@ class WorldConfig:
     #                                 middle square. 0 => fall back to arena_half (no separate combat zone).
     ceiling: float = 45.0           # m z ceiling for drones above terrain base
     # -------- dynamic navigation field (GPU flow/eikonal pathfinding; replaces the raycast fan) --------
-    nav_grid: int = 32              # field resolution G: one geodesic field per env over a G x G arena grid,
-    #                                 sampled by all N*D drones (cost scales with map size, NOT agent count)
-    nav_sweeps: int = 40            # FIXED (unrolled) parallel min-relaxation passes; bounds propagation radius
+    nav_grid: int = 32              # (dead 2D key)
+    nav_grid3d: int = 12            # horizontal field cells G. FINDING: this is the QUALITY knob -- 24 (24x24x12) reaches
+    nav_gz: int = 6                 #   ~92% clear vs ~73% at 12 (crashes are field QUANTIZATION), but 8x more field VRAM
+    #                                 so trim N_ENVS to ~4096. 12x12x6 is the batch-friendly default (fits N=20480).
+    obst_size_scale: float = 1.0    # obstacle size multiplier (1.0 = as-authored; experiment knob)
+    nav_sweeps: int = 24            # FIXED unrolled Eikonal passes; 24 covers a 12x12x6 grid (raise to ~44 for 24x24x12)
     nav_clear: float = 1.0          # m obstacle inflation for cell-blocking (keeps routed paths off the walls)
-    nav_refresh_every: int = 0      # field refresh interval: 0 = STATIC (build ONCE at reset, cache for the episode --
+    nav_refresh_every: int = 2      # field refresh interval: 2 = rebuild every 2 decisions (0.2s) -- the dyna-r floor still
+    #                                 breathes with speed + the flow tracks the enemy, at HALF the field cost (-> ~2x iters).
+    #                                 0 = STATIC (build ONCE at reset, cache for the episode --
     #                                 correct while obstacles don't move, and near-free: one build/episode); K>0 =
     #                                 rebuild every K decisions (the slow-planner/fast-controller split, for DYNAMIC
     #                                 obstacles later -- trades a K-decision-stale field for K x less field compute)
