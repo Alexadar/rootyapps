@@ -17,15 +17,17 @@ import torch
 import torch.nn.functional as F
 
 import sensors
-from oracles import rotation as ROT
-from oracles import aero as AERO
-from oracles import quadrotor as QUAD
-from oracles import wind as WIND
-from oracles import terrain as TERR
-from oracles import ground as GND
-from oracles import collide3 as COL
-from oracles import contact as CON
-from oracles import aa_fire as AA
+from common.oracles import rotation as ROT
+from common.oracles import aero as AERO
+from common.oracles import quadrotor as QUAD
+from common.oracles import wind as WIND
+from common.oracles import terrain as TERR
+from common.oracles import ground as GND
+from common.oracles import collide3 as COL
+from common.oracles import contact as CON
+from common.oracles import aa_fire as AA
+from common import navfield as NAV                                        # shared Eikonal route field (solver+flow+sample)
+from common import controller as CTRL                                     # shared velocity-tracking flight controller
 
 
 def game_loop(env, drone_fn, enemy_fn, P, K_dec, on_step=None, record=None, record_stride=2,
@@ -374,39 +376,12 @@ class EnvDrone:
         dist = torch.where(src, torch.zeros(P, N, Gz, G, G, device=dev),     # source -> 0 (overrides a below-ground enemy)
                            torch.full((P, N, Gz, G, G), BIG, device=dev))    # every other cell (solid or free) starts BIG
         step, zst = self.nav_cell, self.nav_zcell
-        wxy = 1.0 / (step * step); wz = 1.0 / (zst * zst)                    # per-axis weights 1/h^2 (f=1 -> distance in metres)
-        for _ in range(self.nav_sweeps):                                     # NAV-FIELD-UNROLL-OK: fixed 3D Eikonal relaxation
-            dp = F.pad(dist, (1, 1, 1, 1, 1, 1), value=BIG)                  # pad x,y,z -> [P,N,Gz+2,G+2,G+2]
-            zc, yc, xc = slice(1, Gz + 1), slice(1, G + 1), slice(1, G + 1)
-            # --- GODUNOV upwind EIKONAL update: solve sum_i w_i*((d-U_i)_+)^2 = 1 from the smaller neighbour on each
-            #     axis -> the TRUE Euclidean geodesic (kills the octile-metric ZIGZAG of a plain min-relaxation).
-            #     Fast Iterative/Sweeping scheme (Jeong & Whitaker, arXiv:2106.15869; Zhao fast-sweeping). Branchless
-            #     causal 3->2->1 cascade; the sort-of-3 is a min/max/where network (no python `if`, compile-safe). ---
-            Ux = torch.minimum(dp[..., zc, yc, :G], dp[..., zc, yc, 2:])     # [P,N,Gz,G,G] upwind x neighbour
-            Uy = torch.minimum(dp[..., zc, :G, xc], dp[..., zc, 2:, xc])     # upwind y neighbour
-            Uz = torch.minimum(dp[..., :Gz, yc, xc], dp[..., 2:, yc, xc])    # upwind z neighbour
-            u0, w0 = Ux, torch.full_like(Ux, wxy); u1, w1 = Uy, torch.full_like(Uy, wxy)   # sort the 3 (U,w) axes ascending by U
-            m = u0 <= u1; u0, w0, u1, w1 = torch.where(m, u0, u1), torch.where(m, w0, w1), torch.where(m, u1, u0), torch.where(m, w1, w0)
-            u2, w2 = Uz, torch.full_like(Uz, wz)
-            m = u1 <= u2; u1, w1, u2, w2 = torch.where(m, u1, u2), torch.where(m, w1, w2), torch.where(m, u2, u1), torch.where(m, w2, w1)
-            m = u0 <= u1; u0, w0, u1, w1 = torch.where(m, u0, u1), torch.where(m, w0, w1), torch.where(m, u1, u0), torch.where(m, w1, w0)
-            d1 = u0 + 1.0 / torch.sqrt(w0)                                   # 1-axis solution (nearest upwind face)
-            A2 = w0 + w1; B2 = -2.0 * (w0 * u0 + w1 * u1); C2 = w0 * u0 * u0 + w1 * u1 * u1 - 1.0
-            d2 = (-B2 + torch.sqrt(torch.clamp(B2 * B2 - 4.0 * A2 * C2, min=0.0))) / (2.0 * A2)   # 2-axis (mandated safe-sqrt)
-            A3 = A2 + w2; B3 = B2 - 2.0 * w2 * u2; C3 = C2 + w2 * u2 * u2     # fold in the 3rd axis
-            d3 = (-B3 + torch.sqrt(torch.clamp(B3 * B3 - 4.0 * A3 * C3, min=0.0))) / (2.0 * A3)   # 3-axis (safe-sqrt)
-            nb = torch.where(d1 <= u1, d1, torch.where(d2 <= u2, d2, d3))    # causal cascade: fewest upwind axes that stays consistent
-            dist = torch.where(fixed, dist, torch.minimum(dist, nb))         # Jacobi Eikonal relax; sources/solids frozen
-        # --- 3D flow = -grad dist (unit) toward the nearest reachable enemy (carries the vertical descent) ---
-        # REPLICATE-pad for the gradient (one-sided difference at the ARENA edge) -- a BIG pad here would poison the
-        # boundary gradient (esp. the ground plane where the enemy sits) and flip the flow to point straight up.
-        # Interior walls keep their BIG in `dist` itself, so the flow still repels off real obstacles.
-        dpad = F.pad(dist, (1, 1, 1, 1, 1, 1), mode="replicate")
-        gx = (dpad[..., 1:Gz + 1, 1:G + 1, 2:] - dpad[..., 1:Gz + 1, 1:G + 1, :G]) / (2.0 * step)   # d/dx per METRE
-        gy = (dpad[..., 1:Gz + 1, 2:, 1:G + 1] - dpad[..., 1:Gz + 1, :G, 1:G + 1]) / (2.0 * step)   # d/dy per METRE
-        gz = (dpad[..., 2:, 1:G + 1, 1:G + 1] - dpad[..., :Gz, 1:G + 1, 1:G + 1]) / (2.0 * zst)     # d/dz per METRE (anisotropy fix)
-        flow = torch.stack([-gx, -gy, -gz], -1)                              # [P,N,Gz,G,G,3]
-        flow = flow / (flow.norm(dim=-1, keepdim=True) + 1e-6)              # unit 3D route direction
+        wxy = 1.0 / (step * step); wz = 1.0 / (zst * zst)                    # per-axis Eikonal weights 1/h^2 (f=1 -> metres)
+        # GODUNOV upwind Eikonal relaxation + flow = -grad(dist): the SHARED, unit-tested solver (common/navfield.py;
+        # Jeong & Whitaker fast-iterative, arXiv:2106.15869). The multi-source enemy field OVERRIDES the block via `fixed`;
+        # flow_from_dist replicate-pads the boundary (a BIG pad flips the near-ground flow to point straight UP).
+        dist = NAV.geodesic(dist, fixed, wxy, wz, self.nav_sweeps, big=BIG)  # [P,N,Gz,G,G] geodesic dist over ALLOWED space
+        flow = NAV.flow_from_dist(dist, step, zst)                           # [P,N,Gz,G,G,3] unit route dir toward nearest src
         flow = torch.where(blocked[..., None], torch.zeros_like(flow), flow) # no guidance inside a forbidden state
         dist = dist.clamp(max=2.0 * self.detection_range)                    # finite cap
         return dist.detach(), flow.detach(), occ2.detach(), allowed.float().detach(), tube_clear.detach()
@@ -415,16 +390,9 @@ class EnvDrone:
         """Trilinear-sample the 3D nav-field at drone positions. `dp` [P,N,D,3]; `dist3` [P,N,Gz,G,G];
         `flow3` [P,N,Gz,G,G,3]. Returns `geo [P,N,D]` (geodesic dist) + `flow [P,N,D,3]` (unit 3D route dir)."""
         P, N, D, _ = dp.shape; G = self.nav_G; Gz = self.nav_Gz
-        xn = (dp[..., 0] / self.extent).clamp(-1.0, 1.0)                      # [P,N,D] x -> [-1,1]
-        yn = (dp[..., 1] / self.extent).clamp(-1.0, 1.0)                      # y -> [-1,1]
-        zn = ((dp[..., 2] - self.nav_zlo) / (self.nav_zhi - self.nav_zlo) * 2.0 - 1.0).clamp(-1.0, 1.0)   # z -> [-1,1]
-        grid = torch.stack([xn, yn, zn], -1).reshape(P * N, D, 1, 1, 3)       # [PN,D,1,1,3] (x,y,z)
-        fld = torch.cat([dist3[..., None], flow3], -1).permute(0, 1, 5, 2, 3, 4).reshape(P * N, 4, Gz, G, G)   # [PN,4,Gz,G,G]
-        s = F.grid_sample(fld, grid, mode="bilinear", align_corners=True).reshape(P, N, 4, D).permute(0, 1, 3, 2)   # [P,N,D,4]
-        geo = s[..., 0]                                                       # [P,N,D] geodesic distance
-        flow = s[..., 1:4]                                                    # [P,N,D,3] 3D route direction
-        flow = flow / (flow.norm(dim=-1, keepdim=True) + 1e-6)              # re-unit after interpolation
-        return geo, flow
+        geo, flow = NAV.sample3(dist3.reshape(P * N, Gz, G, G), flow3.reshape(P * N, Gz, G, G, 3),
+                                dp.reshape(P * N, D, 3), self.extent, self.nav_zlo, self.nav_zhi)   # shared trilinear sampler
+        return geo.reshape(P, N, D), flow.reshape(P, N, D, 3)
 
     def _sample_navfield(self, dp, dist, flow, occ_sdf, ht):
         """3D route features per drone (DETACHED). Returns `nav_feat [P,N,D,13]` = flow3(3) + geodesic_closeness(1)
@@ -600,17 +568,11 @@ class EnvDrone:
         _, flow3 = self._sample_nav3(d_pos + d_vel * t_look, s["nav_dist"], s["nav_flow"])   # route dir at a LOOKAHEAD (0 outside tube -> hover)
         urg = 1.0 + urg_g * torch.tanh(a_drone[..., 3])                     # [P,N,D] AI urgency knob (route speed scale)
         v_ref = flow3 * (v_cruise * urg)[..., None] + v_ovr * torch.tanh(a_drone[..., 0:3])   # route velocity + AI VELOCITY OVERRIDE (steer)
-        d_vref = d_vref + (v_ref - d_vref) * (c.dt / tau)                   # LOW-PASS reference filter (state-carried anti-shake guardrail)
-        a_des = k_v * (d_vref - d_vel)                                      # [P,N,D,3] commanded acceleration
-        f_des = c.drone_mass * a_des                                        # desired thrust vector (world)
-        f_des = torch.cat([f_des[..., :2], f_des[..., 2:3] + c.drone_mass * c.gravity], -1)   # + gravity compensation on z
-        bodyz = ROT.body_z_axis(d_quat)                                     # [P,N,D,3] current thrust axis (world)
-        thrust = (f_des * bodyz).sum(-1).clamp(0.0, c.drone_t_max)          # collective thrust = f_des projected on body-z
+        # SHARED base controller (common/controller.py): v_ref -> (thrust, body-rates), gravity-compensated so it can fly.
+        # The AI residual is already folded into v_ref above; the battery gate is applied to thrust just below (arena-only).
+        thrust, omega_cmd, d_vref = CTRL.velocity_track(d_vel, d_quat, v_ref, d_vref, k_v, k_R, tau, c.dt,
+                                                        c.drone_mass, c.gravity, c.drone_t_max, c.drone_omega_max)
         thrust = thrust * (d_energy > 0).float()                            # dead battery -> no thrust (falls)
-        bodyz_des = f_des / (f_des.norm(dim=-1, keepdim=True) + 1e-6)       # desired thrust direction (unit)
-        err_w = ROT.shortest_arc(bodyz, bodyz_des)                          # WORLD-frame attitude-error rotation vector
-        err_b = ROT.quat_rotate(ROT.quat_conjugate(d_quat), err_w)         # -> BODY frame (quad_step integrates BODY rates)
-        omega_cmd = (k_R * err_b).clamp(-c.drone_omega_max, c.drone_omega_max)   # body-rate command
         ge = AERO.ground_effect_factor(agl, c.rotor_radius, c.ge_coef)      # [P,N,D]
         np_, nv, nq, nw = QUAD.quad_step(d_pos, d_vel, d_quat, d_omega, thrust, omega_cmd, wind, ge,
                                          c.drone_mass, c.tau_omega, c.drag_quad, c.drag_lin, c.gravity, c.dt)

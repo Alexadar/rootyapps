@@ -1,6 +1,10 @@
 # Demo: visualize the SUPERVISOR field on CPU (no GPU needed, arbitrary model). Renders the quantized
 # allowed-state DOTS (red=forbidden, green=allowed), the SOLID-GREEN flow path, and the ORANGE actual
 # drone trajectory -- so you can see the calculated flow field + a drone moving through it.
+# --- path bootstrap: run from any cwd; expose sibling arena modules + the shared `common` package ---
+import os as _bo, sys as _bs                                                        # stdlib only (safe pre-import)
+_bs.path.insert(0, _bo.path.dirname(_bo.path.abspath(__file__)))                    # arena/  (env_drone, schedule_drone, ...)
+_bs.path.insert(0, _bo.path.dirname(_bo.path.dirname(_bo.path.abspath(__file__))))  # torchsim/  (the `common` package)
 import sys, time, numpy as np, torch
 import schedule_drone as S
 from schedule_drone import ObstacleClass as OC

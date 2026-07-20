@@ -3,6 +3,10 @@
 # twice: (A) real ENEMY policy (it evades) vs (B) FROZEN enemy (zero action) -> if the drone kills the frozen
 # one but orbits the active one, the problem is that a single kamikaze can't corner an EVADER (the swarm wins by
 # numbers), not a targeting bug. Pure diagnostic (offline).
+# --- path bootstrap: run from any cwd; expose sibling arena modules + the shared `common` package ---
+import os as _bo, sys as _bs                                                        # stdlib only (safe pre-import)
+_bs.path.insert(0, _bo.path.dirname(_bo.path.abspath(__file__)))                    # arena/  (env_drone, schedule_drone, ...)
+_bs.path.insert(0, _bo.path.dirname(_bo.path.dirname(_bo.path.abspath(__file__))))  # torchsim/  (the `common` package)
 import sys, numpy as np, torch
 from world_config_drone import WorldConfig
 import schedule_drone as S

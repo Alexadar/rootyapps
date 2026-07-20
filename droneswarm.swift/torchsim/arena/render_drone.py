@@ -177,7 +177,7 @@ def render(env, dparams, dls, eparams, els, K_dec, H, out_path, mm_dtype=None, n
     #   cam_fn(i, nfr, cfg, e, snap) returns a camera dict for panel e at frame i (of nfr) and may read `snap`
     #   (live entity positions) to auto-fit / track a moving subject -> so the ground must reproject every
     #   frame, per panel (each panel can now look through its OWN camera, not a shared one).
-    import imageio.v2 as imageio
+    from common.render_core import VideoWriter                # robust PyAV/libx264 writer (imageio.get_writer is broken here)
     cfg = env.cfg
     snaps = capture(env, dparams, dls, eparams, els, K_dec, H, mm_dtype=mm_dtype)  # sim device-agnostic; snaps are CPU
     hfs = env.hf.detach().cpu().numpy()                       # heightfields [N,G,G] on host
@@ -189,7 +189,7 @@ def render(env, dparams, dls, eparams, els, K_dec, H, out_path, mm_dtype=None, n
     if static:
         cam0 = make_camera(cfg)                               # single fixed viewpoint shared by all panels+frames
         bgs = [render_background(cfg, hfs[e], obs[e], cam0) for e in range(n_panel)]  # ground/obstacles: once per env
-    w = imageio.get_writer(out_path, fps=FPS, macro_block_size=None)
+    w = VideoWriter(out_path, FPS)
     for i, snap in enumerate(snaps):                          # RENDER-LOOP-OK (frame loop, offline)
         grid = Image.new("RGB", (cols * PANEL_W, rows * PANEL_H), (0, 0, 0))
         for e in range(n_panel):                              # RENDER-LOOP-OK (per-panel composite)

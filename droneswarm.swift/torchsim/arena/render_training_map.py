@@ -2,6 +2,10 @@
 # so we can SEE what the swarm trained on. build() draws TRAINING seeds (base_seed+e) with obstacle_field=None ->
 # DEFAULT_OBSTACLE_FIELD (up to 6 buildings + 10 trees, spread across the arena). Obstacle PLACEMENT is now the
 # same for train and eval (arena spread), so the training map differs from render_all's scenarios only by seeds.
+# --- path bootstrap: run from any cwd; expose sibling arena modules + the shared `common` package ---
+import os as _bo, sys as _bs                                                        # stdlib only (safe pre-import)
+_bs.path.insert(0, _bo.path.dirname(_bo.path.abspath(__file__)))                    # arena/  (env_drone, schedule_drone, ...)
+_bs.path.insert(0, _bo.path.dirname(_bo.path.dirname(_bo.path.abspath(__file__))))  # torchsim/  (the `common` package)
 import os, sys, torch, imageio.v3 as iio, time
 os.makedirs('runs/latest/videos', exist_ok=True)
 from world_config_drone import WorldConfig

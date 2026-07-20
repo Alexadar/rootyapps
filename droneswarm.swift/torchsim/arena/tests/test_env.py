@@ -21,7 +21,7 @@ import env_drone
 import schedule_drone as S
 from env_drone import EnvDrone, game_loop
 from world_config_drone import WorldConfig
-from oracles import rotation, aero, quadrotor, terrain, ground, collide3, contact, aa_fire, wind, assign
+from common.oracles import rotation, aero, quadrotor, terrain, ground, collide3, contact, aa_fire, wind, assign
 
 CFG = WorldConfig()
 LOOP_NODES = (ast.For, ast.While, ast.comprehension)

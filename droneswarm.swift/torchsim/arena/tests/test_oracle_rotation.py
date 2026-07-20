@@ -8,7 +8,7 @@ import math
 import numpy as np
 import torch
 
-from oracles import rotation
+from common.oracles import rotation
 
 
 def test_identity_rotates_to_self():

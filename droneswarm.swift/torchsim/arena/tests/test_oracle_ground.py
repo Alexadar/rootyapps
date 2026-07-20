@@ -9,7 +9,7 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from oracles import ground
+from common.oracles import ground
 from world_config_drone import WorldConfig
 
 CFG = WorldConfig()

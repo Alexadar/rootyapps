@@ -15,6 +15,10 @@ simplified per froggo train_froggo:
 The eval metric is CLEAR% = enemies killed / total, vs the fixed reference — an absolute progress
 signal, not the co-evolution arms race. Reward weights are set BEFORE torch.compile(env._core).
 """
+# --- path bootstrap: run from any cwd; expose sibling arena modules + the shared `common` package ---
+import os as _bo, sys as _bs                                                        # stdlib only (safe pre-import)
+_bs.path.insert(0, _bo.path.dirname(_bo.path.abspath(__file__)))                    # arena/  (env_drone, schedule_drone, ...)
+_bs.path.insert(0, _bo.path.dirname(_bo.path.dirname(_bo.path.abspath(__file__))))  # torchsim/  (the `common` package)
 import argparse
 import json
 import math

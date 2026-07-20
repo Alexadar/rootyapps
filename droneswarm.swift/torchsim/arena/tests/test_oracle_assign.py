@@ -7,7 +7,7 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from oracles import assign
+from common.oracles import assign
 
 
 def _ones(P, N, D, E):

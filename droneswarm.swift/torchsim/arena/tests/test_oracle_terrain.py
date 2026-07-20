@@ -9,7 +9,7 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from oracles import terrain
+from common.oracles import terrain
 
 
 def _pt(x, y, dtype=torch.float32):

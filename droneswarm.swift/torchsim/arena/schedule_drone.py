@@ -27,7 +27,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from world_config_drone import WorldConfig
-from oracles.wind import dryden_series_np, dryden_length_scales
+from common.oracles.wind import dryden_series_np, dryden_length_scales
 
 
 def _fbm_heightfield(rng, G, amp, octaves=4):

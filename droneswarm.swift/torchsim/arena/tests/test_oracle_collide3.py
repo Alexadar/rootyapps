@@ -11,7 +11,7 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from oracles import collide3 as C
+from common.oracles import collide3 as C
 
 BOX = torch.tensor(0.0)   # is_cyl flag: 0 = box
 CYL = torch.tensor(1.0)   # is_cyl flag: 1 = cylinder

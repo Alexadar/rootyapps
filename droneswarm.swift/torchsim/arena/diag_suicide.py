@@ -7,6 +7,10 @@
 #   * dde > commit_radius         -> crashed FAR from any enemy: wandering / not actually homing there.
 # Also reports the descent profile (agl + vz over the last few ticks before impact) to see if the dive is a
 # steep terminal plunge vs a shallow drift into terrain. Pure diagnostic (offline) -> loops are fine here.
+# --- path bootstrap: run from any cwd; expose sibling arena modules + the shared `common` package ---
+import os as _bo, sys as _bs                                                        # stdlib only (safe pre-import)
+_bs.path.insert(0, _bo.path.dirname(_bo.path.abspath(__file__)))                    # arena/  (env_drone, schedule_drone, ...)
+_bs.path.insert(0, _bo.path.dirname(_bo.path.dirname(_bo.path.abspath(__file__))))  # torchsim/  (the `common` package)
 import sys, numpy as np, torch
 from world_config_drone import WorldConfig
 import schedule_drone as S

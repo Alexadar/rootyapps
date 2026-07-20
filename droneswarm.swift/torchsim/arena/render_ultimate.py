@@ -2,6 +2,10 @@
 # packed with mixed cover (trees + buildings) to hunt enemies dug in among them. A square forces genuine 2D
 # navigation -- a long ribbon is a corridor the swarm can funnel down / flank around to CHEAT the geometry,
 # so we render on the same square the policy was trained on (fully in-distribution -> honest performance).
+# --- path bootstrap: run from any cwd; expose sibling arena modules + the shared `common` package ---
+import os as _bo, sys as _bs                                                        # stdlib only (safe pre-import)
+_bs.path.insert(0, _bo.path.dirname(_bo.path.abspath(__file__)))                    # arena/  (env_drone, schedule_drone, ...)
+_bs.path.insert(0, _bo.path.dirname(_bo.path.dirname(_bo.path.abspath(__file__))))  # torchsim/  (the `common` package)
 import os, sys, numpy as np, torch, imageio.v3 as iio, time
 os.makedirs('runs/latest/videos', exist_ok=True)
 FR = sys.argv[1]

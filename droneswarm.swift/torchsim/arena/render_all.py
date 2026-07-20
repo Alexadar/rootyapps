@@ -1,6 +1,10 @@
 # Rerender ALL showcase scenarios on the current runs/latest model -- every scene a SQUARE arena (a ribbon is
 # a corridor the swarm can funnel/flank to CHEAT; squares force honest 2D navigation). One script, rendered
 # SEQUENTIALLY (render_torch rasterizes on the GPU -> parallel renders would contend/OOM the single device).
+# --- path bootstrap: run from any cwd; expose sibling arena modules + the shared `common` package ---
+import os as _bo, sys as _bs                                                        # stdlib only (safe pre-import)
+_bs.path.insert(0, _bo.path.dirname(_bo.path.abspath(__file__)))                    # arena/  (env_drone, schedule_drone, ...)
+_bs.path.insert(0, _bo.path.dirname(_bo.path.dirname(_bo.path.abspath(__file__))))  # torchsim/  (the `common` package)
 import os, sys, numpy as np, torch, imageio.v3 as iio, time
 os.makedirs('runs/latest/videos', exist_ok=True)
 from world_config_drone import WorldConfig

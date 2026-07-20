@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
 import torch
 
-from oracles.wind import dryden_series_np, dryden_length_scales, shear_factor, wind_at
+from common.oracles.wind import dryden_series_np, dryden_length_scales, shear_factor, wind_at
 from world_config_drone import WorldConfig
 
 DT, V, SIG3, L3 = 1.0 / 50.0, 8.0, [1.0, 1.0, 1.0], [60.0, 60.0, 30.0]  # WorldConfig-like params

@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
 import torch
 
-from oracles.contact import hunt_crossley_force, restitution_from_params
+from common.oracles.contact import hunt_crossley_force, restitution_from_params
 from world_config_drone import WorldConfig
 
 K, LAM = 800.0, 40.0  # WorldConfig hc_stiffness / hc_damping (design values, world_config_drone.py)
