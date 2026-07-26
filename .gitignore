@@ -23,9 +23,57 @@ bigpinkcat.unity
 **/.vscode
 # xcodegen-generated project (source of truth is project.yml)
 ephemeris.swift/ephemeris.swift.xcodeproj
+notescan.swift/notescan.swift.xcodeproj
+truecourse.swift/truecourse.swift.xcodeproj
+kerfcalc.swift/kerfcalc.swift.xcodeproj
+
+# Friend's pdf-to-midi sidecar — cloned as local reference, not part of rootyapps
+pdf-to-midi
+
+# oemer — cloned as local reference / Core ML source (MIT), not part of rootyapps
+oemer
+
+# Converted Core ML models are build artifacts — regenerate via tools/convert_oemer_coreml.py
+notescan.swift/notescan/Models/*.mlpackage
+
+# Python bytecode caches
+**/__pycache__/
+*.py[cod]
+
+# Marketing reels: raw captures AND rendered reels are heavy & regenerable / uploaded to
+# App Store Connect — keep the folder skeleton + text config, not the video binaries.
+# (raw screenshots are already ignored via **/screenshots/raw)
+**/marketing/**/video/*
+!**/marketing/**/video/.gitkeep
+
+# Marketing screenshots: raw device captures + generated ASO images are heavy & regenerable /
+# uploaded to App Store Connect — keep params.yaml / metadata.md, not the image binaries.
+**/marketing/raw/**/*.png
+**/marketing/raw/**/*.jpg
+**/marketing/raw/**/*.jpeg
+**/marketing/aso/**/*.png
+**/marketing/aso/**/*.jpg
+**/marketing/screens/**/*.png
+**/marketing/screens/**/*.jpg
+**/marketing/screens/**/*.jpeg
+!**/marketing/**/.gitkeep
 
 # .DS_Store
 .DS_Store
 Thumbs.db
 **/*/.DS_Store
 
+
+# Compiled SCK window recorder (build artifact; regenerate with swiftc -O from RecordWindow.swift)
+**/marketing/reels/recordwindow
+**/tools/recordwindow
+
+# Marketing audio: generated music beds are heavy & regenerable from the prompt+seed kept
+# in the sibling .txt (see reel-audio-provenance) — commit the .txt, not the .wav/.mp3/.m4a.
+**/marketing/audio/*.wav
+**/marketing/audio/*.mp3
+**/marketing/audio/*.m4a
+**/marketing/audio/*.aac
+
+# Cloned external repos (working copies, not part of rootyapps)
+repos/
