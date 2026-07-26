@@ -1,0 +1,156 @@
+name: overtonelab.swift
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "2"
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+packages:
+  PartchKit:
+    path: Kits/Tuning/PartchKit
+  CommaKit:
+    path: Kits/Tuning/CommaKit
+  MersenneKit:
+    path: Kits/Tuning/MersenneKit
+  SabineKit:
+    path: Kits/Acoustics/SabineKit
+  WebsterKit:
+    path: Kits/Acoustics/WebsterKit
+  BernoulliKit:
+    path: Kits/Acoustics/BernoulliKit
+  ButterworthKit:
+    path: Kits/Signal/ButterworthKit
+  FletcherKit:
+    path: Kits/Signal/FletcherKit
+  BenchmarkKit:
+    path: Kits/Signal/BenchmarkKit
+  ThieleKit:
+    path: Kits/Design/ThieleKit
+  TimingKit:
+    path: Kits/Timing/TimingKit
+  PitchKit:
+    path: Kits/Timing/PitchKit
+  AudioUtilKit:
+    path: Kits/Utility/AudioUtilKit
+  FormantKit:
+    path: Kits/Acoustics/FormantKit
+  SPLKit:
+    path: Kits/Acoustics/SPLKit
+  PassiveKit:
+    path: Kits/Signal/PassiveKit
+  BiquadKit:
+    path: Kits/Signal/BiquadKit
+  DynamicsKit:
+    path: Kits/Signal/DynamicsKit
+  RoomModesKit:
+    path: Kits/Acoustics/RoomModesKit
+  AirAbsorptionKit:
+    path: Kits/Acoustics/AirAbsorptionKit
+  InterferenceKit:
+    path: Kits/Acoustics/InterferenceKit
+  StereoKit:
+    path: Kits/Stereo/StereoKit
+targets:
+  overtonelab.swift:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: SabineKit
+        product: SabineKit
+      - package: BernoulliKit
+        product: BernoulliKit
+      - package: ButterworthKit
+        product: ButterworthKit
+      - package: WebsterKit
+        product: WebsterKit
+      - package: PartchKit
+        product: PartchKit
+      - package: CommaKit
+        product: CommaKit
+      - package: MersenneKit
+        product: MersenneKit
+      - package: FletcherKit
+        product: FletcherKit
+      - package: BenchmarkKit
+        product: BenchmarkKit
+      - package: ThieleKit
+        product: ThieleKit
+      - package: TimingKit
+        product: TimingKit
+      - package: PitchKit
+        product: PitchKit
+      - package: AudioUtilKit
+        product: AudioUtilKit
+      - package: FormantKit
+        product: FormantKit
+      - package: SPLKit
+        product: SPLKit
+      - package: PassiveKit
+        product: PassiveKit
+      - package: BiquadKit
+        product: BiquadKit
+      - package: DynamicsKit
+        product: DynamicsKit
+      - package: RoomModesKit
+        product: RoomModesKit
+      - package: AirAbsorptionKit
+        product: AirAbsorptionKit
+      - package: InterferenceKit
+        product: InterferenceKit
+      - package: StereoKit
+        product: StereoKit
+    sources:
+      - path: OverToneLab
+      - path: overtonelab.icon
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.overtonelab
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": overtonelab-macOS.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: overtonelab
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_CFBundleDisplayName: Overtone Lab
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.music
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+  overtonelabUITests:
+    type: bundle.ui-testing
+    supportedDestinations: [iOS]
+    sources:
+      - path: overtonelabUITests
+    dependencies:
+      - target: overtonelab.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.overtonelabUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: overtonelab.swift
+schemes:
+  overtonelab.swift:
+    build:
+      targets:
+        overtonelab.swift: all
+    run:
+      config: Debug
+  overtonelabReel:
+    build:
+      targets:
+        overtonelab.swift: all
+        overtonelabUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - overtonelabUITests

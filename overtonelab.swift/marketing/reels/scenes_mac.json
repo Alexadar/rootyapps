@@ -1,0 +1,27 @@
+{
+  "canvas": [1920, 1080],
+  "scene_dur": 5.0,
+  "xfade": 0.5,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0C0A18",
+    "bg_color_bottom": "#08080B",
+    "title_color": "#ffffff",
+    "subtitle_color": "#B79FEA",
+    "text_col_percent": 40,
+    "side_padding": 70,
+    "border_width": 6,
+    "border_color": "#1E1B30",
+    "border_radius": 24
+  },
+  "app": {
+    "name": "Overtone Lab",
+    "tagline": "Sound & acoustics tools",
+    "icon": "overtonelab.icon/Assets/1024.png"
+  },
+  "scenes": [
+    { "key": "tempo",     "clip": "macclip_tempo.mov",     "title": "Timing, locked",      "subtitle": "Note length, delay & samples" },
+    { "key": "sabine",    "clip": "macclip_sabine.mov",    "title": "Real room acoustics", "subtitle": "RT60, room modes & Schroeder" },
+    { "key": "benchmark", "clip": "macclip_benchmark.mov", "title": "26 tools, one app",  "subtitle": "Partch · Sabine · Fletcher · Butterworth · Thiele +21" }
+  ]
+}

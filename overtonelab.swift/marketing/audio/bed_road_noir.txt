@@ -1,0 +1,2 @@
+bed30.wav — Stable Audio 3 (sm-music/same-s, 30s, steps 8), seed not captured (2026-07-09)
+prompt: noir late-night radio jazz instrumental, night-drive theme: mellow electric piano, muted trumpet, upright bass, brushed drums, slow groove, warm analog tape, moody highway atmosphere, no vocals
