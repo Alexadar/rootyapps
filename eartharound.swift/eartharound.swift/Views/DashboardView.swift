@@ -16,7 +16,7 @@ struct DashboardView: View {
     var body: some View {
         // Panel IDs are the `SWPanel` registry cases, so anything holding a ScrollViewReader
         // (today: the marketing self-drive) can scroll straight to a named panel.
-        LazyVStack(spacing: 14) {
+        PanelStack {
             scalesPanel.id(SWPanel.scales)
             kpPanel.id(SWPanel.kp)
             solarWindPanel.id(SWPanel.wind)

@@ -1,0 +1,32 @@
+platform: ipad
+size: [2048, 2732]        # 12.9"/13" iPad — APP_IPAD_PRO_129
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/raw/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/aso/ipad
+
+style:
+  bg_gradient: true
+  bg_color_top: '#0C111B'
+  bg_color_bottom: '#080B14'
+  title_color: '#E8EEF6'
+  subtitle_color: '#4DF0A0'
+  screenshot_zoom: 0.9
+  text_row_percent: 16
+  screenshot_row_percent: 84
+  border_width: 8
+  border_color: '#17202F'
+  border_radius: 34
+  text_padding: 60
+  screenshot_padding: 60
+
+# Same story as the iPhone set, in the same order — Simple first, then the detail.
+texts:
+  - title: Storm right now?
+    subtitle: Plain answers, live from NOAA
+  - title: Or every number
+    subtitle: Solar wind, flares, aurora, Kp
+  - title: Hp30 detail
+    subtitle: 30-minute storm resolution
+  - title: Night mode
+    subtitle: Red-shift for the field

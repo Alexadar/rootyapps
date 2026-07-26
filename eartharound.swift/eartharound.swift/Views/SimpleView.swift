@@ -13,7 +13,7 @@ struct SimpleView: View {
 
     var body: some View {
         // Same `SWPanel` registry ids as Extended, so a ScrollViewReader can still scroll here.
-        LazyVStack(spacing: 14) {
+        PanelStack {
             stormPanel.id(SWPanel.scales)
             auroraPanel.id(SWPanel.aurora)
             sunPanel.id(SWPanel.flare)

@@ -20,7 +20,7 @@ SCHEME="${SCHEME:-eartharound.swift}"
 APP_BUNDLE="${APP_BUNDLE:-oleksandr.aisixteen.eartharound}"
 SIM_NAME="${SIM_NAME:-Calc-iPhone17ProMax}"
 DERIVED="$APP_DIR/.build/shots-dd"
-RAW_DIR="$APP_DIR/marketing/raw/ios"
+RAW_DIR="${RAW_DIR:-$APP_DIR/marketing/raw/ios}"
 SETTLE="${SETTLE:-11}"        # first paint + live NOAA/GFZ fetch
 
 mkdir -p "$RAW_DIR" "$DERIVED"

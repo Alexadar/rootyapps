@@ -62,6 +62,7 @@ xcrun simctl spawn "$UDID" log stream --style compact \
 LOG_PID=$!
 
 RAW_MOV="$RAW_DIR/video/capture.mov"; rm -f "$RAW_MOV"
+RSTART=$(date +%s.%N)
 xcrun simctl io "$UDID" recordVideo --codec h264 --force "$RAW_MOV" &
 REC_PID=$!
 sleep 1
@@ -77,8 +78,28 @@ kill -INT "$REC_PID" 2>/dev/null || true; wait "$REC_PID" 2>/dev/null || true
 kill "$LOG_PID" 2>/dev/null || true
 [ -s "$RAW_MOV" ] || { echo "❌ no capture produced"; exit 1; }
 
-HEAD_TRIM="${HEAD_TRIM:-2.0}"
-ffmpeg -y -loglevel error -i "$RAW_MOV" -ss "$HEAD_TRIM" \
+# Trim to the tour's own REEL_T0 marker, not a guessed offset: the beats are equal by
+# construction, so frame_watch.sh can fit captions to even thirds — but only if the footage
+# starts exactly at T0. A guessed head trim slides every caption off its page.
+T0=$(grep -oE 'REEL_T0 [0-9.]+' "$SYSLOG" | tail -1 | awk '{print $2}')
+TEND=$(grep -oE 'REEL_END [0-9.]+' "$SYSLOG" | tail -1 | awk '{print $2}')
+if [ -n "${T0:-}" ] && [ -n "${TEND:-}" ]; then
+  HEAD_TRIM=$(echo "$T0 - $RSTART - ${REC_LATENCY:-0.5}" | bc -l)
+  CONTENT_LEN=$(echo "$TEND - $T0" | bc -l)
+  echo "▶ marker-aligned: head ${HEAD_TRIM}s, content ${CONTENT_LEN}s"
+else
+  HEAD_TRIM="${HEAD_TRIM:-2.0}"; CONTENT_LEN=""
+  echo "⚠ no REEL markers — falling back to head ${HEAD_TRIM}s"
+fi
+
+# The sim encoder drops frames, so the footage holds less time than the wall clock. Clamp
+# to what actually exists, and let the framer fit the beats to that.
+RAW_LEN=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$RAW_MOV")
+AVAIL=$(echo "$RAW_LEN - $HEAD_TRIM - 0.1" | bc -l)
+if [ -n "$CONTENT_LEN" ] && [ "$(echo "$AVAIL < $CONTENT_LEN" | bc -l)" -eq 1 ]; then
+  CONTENT_LEN=$AVAIL
+fi
+ffmpeg -y -loglevel error -i "$RAW_MOV" -ss "$HEAD_TRIM" ${CONTENT_LEN:+-t "$CONTENT_LEN"} \
   -vf "fps=30,format=yuv420p" -c:v libx264 -profile:v high -crf 20 -preset medium \
   -movflags +faststart -an "$VIDEO_DIR/full.mp4"
 

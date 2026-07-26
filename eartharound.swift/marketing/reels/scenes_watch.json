@@ -1,0 +1,46 @@
+{
+  "canvas": [540, 960],
+  "content_len": 11,
+  "preview_maxlen": 30,
+  "outro_dur": 2.4,
+  "_note": "Canvas is deliberately small: the watch captures at its native 416x496 and a bigger canvas would upscale ~2x and go soft. At 540 wide with 60px padding the watch renders near 1:1. Scene times are rewritten to even thirds of the real capture by capture_watch.sh, because the sim encoder drops frames and the wall-clock tour is longer than the footage.",
+  "style": {
+    "bg_color_top": "#0C111B",
+    "bg_color_bottom": "#080B14",
+    "title_color": "#E8EEF6",
+    "subtitle_color": "#4DF0A0",
+    "caption_band_percent": 20,
+    "side_padding": 60,
+    "border_width": 6,
+    "border_color": "#17202F",
+    "border_radius": 44
+  },
+  "app": {
+    "name": "Earth Around",
+    "tagline": "Watch the Sun.",
+    "icon": "eartharound.swift/Assets.xcassets/AppIcon.appiconset/icon_1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Now",
+      "start": 0,
+      "end": 3.7,
+      "title": "Kp on your wrist",
+      "subtitle": "Storm level now"
+    },
+    {
+      "key": "Hpo",
+      "start": 3.7,
+      "end": 7.4,
+      "title": "Hp30 detail",
+      "subtitle": "30-minute resolution"
+    },
+    {
+      "key": "Wind",
+      "start": 7.4,
+      "end": 11,
+      "title": "Wind and aurora",
+      "subtitle": "Speed, Bz, chance"
+    }
+  ]
+}

@@ -15,6 +15,13 @@ struct SpaceWeatherRootView: View {
     @State private var tab = Tab.dashboard
     @State private var showSettings = false
 
+    #if os(macOS)
+    private let wideLayout = true
+    #else
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var wideLayout: Bool { sizeClass == .regular }
+    #endif
+
     // Power-user prefs live behind the gear; the main UI reads their values only.
     @AppStorage(Prefs.refreshMinutes) private var refreshMinutes = 5
     @AppStorage(Prefs.showForecast) private var showForecast = true
@@ -36,7 +43,7 @@ struct SpaceWeatherRootView: View {
                         .padding(.horizontal, SWM.screenMargin)
                         .padding(.top, 8)
                         .padding(.bottom, 24)
-                        .frame(maxWidth: 640)
+                        .panelWidth(wide: wideLayout)
                         .frame(maxWidth: .infinity)
                 }
                 .refreshable { await store.refresh() }
