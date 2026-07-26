@@ -1,0 +1,26 @@
+platform: mac
+size: [2880, 1800]          # Mac (APP_DESKTOP)
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/truecourse.swift/marketing/raw/mac
+  output_folder: /Users/oleksandr/Projects/rootyapps/truecourse.swift/marketing/aso/mac
+style:
+  bg_gradient: true
+  bg_color_top: '#0E141B'
+  bg_color_bottom: '#05070A'
+  title_color: '#EAEFF4'
+  subtitle_color: '#35C4DE'
+  screenshot_zoom: 0.92
+  text_col_percent: 40
+  screenshot_col_percent: 60
+  border_width: 6
+  border_radius: 22
+  text_padding: 80
+texts:
+  - title: "The E6B for your Mac"
+    subtitle: "Wind, airspeed, altitude & W&B"
+  - title: "True airspeed & Mach"
+    subtitle: "Validated ISA math"
+  - title: "Weight & balance"
+    subtitle: "CG envelope with fuel-burn travel"
+  - title: "Convert aviation units"
+    subtitle: "kt · nm · ft · °C · gal"

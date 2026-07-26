@@ -1,0 +1,3 @@
+bed30.wav — Stable Audio 3 (sm-music/same-s, 30s, steps 8), seed 493899983
+prompt: noir late-night radio instrumental, open-road driving theme: twangy baritone guitar, slow steady groove, moody retro Americana, night highway atmosphere, warm analog tape, sparse drums, cinematic, no vocals
+(bed30_prev.wav = pre-2026-07-09 original; aviation-jazz take seed 196068474, prompt in session log)

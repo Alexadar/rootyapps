@@ -1,0 +1,27 @@
+platform: ipad
+size: [2048, 2732]          # iPad 13" (APP_IPAD_PRO_129)
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/truecourse.swift/marketing/raw/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/truecourse.swift/marketing/aso/ipad
+style:
+  bg_gradient: true
+  bg_color_top: '#0E141B'
+  bg_color_bottom: '#05070A'
+  title_color: '#EAEFF4'
+  subtitle_color: '#35C4DE'
+  screenshot_zoom: 0.9
+  text_row_percent: 16
+  screenshot_row_percent: 84
+  border_width: 8
+  border_radius: 26
+  text_padding: 44
+  screenshot_padding: 44
+texts:
+  - title: "Your whole E6B, on iPad"
+    subtitle: "Inputs and readout, side by side"
+  - title: "Wind triangle, solved"
+    subtitle: "Heading, groundspeed & crosswind"
+  - title: "Weight & balance"
+    subtitle: "CG envelope, within limits"
+  - title: "Convert anything"
+    subtitle: "Aviation units, instantly"
