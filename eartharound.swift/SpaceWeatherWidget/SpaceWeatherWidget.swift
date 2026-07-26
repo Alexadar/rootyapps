@@ -44,12 +44,25 @@ struct SpaceWeatherProvider: TimelineProvider {
         }
     }
 
-    /// Start from the cache, overwrite what the network delivers, write back so the
-    /// app/watch open onto whatever the widget already fetched.
+    /// Start from the cache, apply what the network delivers, and merge back.
+    ///
+    /// This deliberately fetches only what the widget renders — five of the app's seven sources.
+    /// It must therefore MERGE rather than save: writing the whole snapshot rewrote Hp30 and Solar
+    /// at their stale cached values under a fresh timestamp, so the app opened on "updated just
+    /// now" with two panels hours behind.
     static func fetchEntry() async -> SpaceWeatherEntry {
         let shared = SharedStore()
         let cached = shared.load()
         var snapshot = cached?.snapshot ?? SpaceWeatherSnapshot()
+
+        let cellularAllowed = shared.cellularAllowed
+        if let reason = NetworkMonitor.shared.blockedReason(cellularAllowed: cellularAllowed) {
+            var status = shared.status
+            let now = Date()
+            for source in [FeedSource.kp, .scales, .wind, .aurora, .flares] { status.record(source, reason, at: now) }
+            shared.status = status
+            return SpaceWeatherEntry(date: now, snapshot: snapshot, refreshedAt: cached?.at)
+        }
 
         async let kp = try? NOAAService.kp()
         async let scales = try? NOAAService.scales()
@@ -63,19 +76,27 @@ struct SpaceWeatherProvider: TimelineProvider {
         let auroraP = await aurora
         let flareP = await flares
 
-        if let kpP { snapshot.kp = kpP }
-        if let scalesP { snapshot.scales = scalesP }
-        if let windP { snapshot.wind = windP }
-        if let flareP { snapshot.flare = flareP }
-        if let auroraP {
-            snapshot.aurora = AuroraPanel(maxProbability: auroraP.max,
-                                          kp: snapshot.kp?.now ?? 0, observedAt: auroraP.at)
+        let now = Date()
+        var fresh = SpaceWeatherSnapshot()
+        var status = FeedStatus()
+        func accept<T>(_ source: FeedSource, _ value: T?, apply: (T) -> Void) {
+            guard let value else { status.record(source, .failed, at: now); return }
+            status.record(source, .ok, at: now)
+            apply(value)
+        }
+        accept(.kp, kpP) { fresh.kp = $0; snapshot.kp = $0 }
+        accept(.scales, scalesP) { fresh.scales = $0; snapshot.scales = $0 }
+        accept(.wind, windP) { fresh.wind = $0; snapshot.wind = $0 }
+        accept(.flares, flareP) { fresh.flare = $0; snapshot.flare = $0 }
+        accept(.aurora, auroraP) { a in
+            let panel = AuroraPanel(maxProbability: a.max, kp: snapshot.kp?.now ?? 0, observedAt: a.at)
+            fresh.aurora = panel; snapshot.aurora = panel
         }
 
-        let anySucceeded = kpP != nil || scalesP != nil || windP != nil || auroraP != nil || flareP != nil
-        let refreshedAt = anySucceeded ? Date() : cached?.at
-        if anySucceeded { shared.save(snapshot, at: refreshedAt ?? Date()) }
-        return SpaceWeatherEntry(date: Date(), snapshot: snapshot, refreshedAt: refreshedAt)
+        let anySucceeded = !status.sources.values.allSatisfy { $0.outcome.isFailure }
+        let refreshedAt = anySucceeded ? now : cached?.at
+        if anySucceeded { shared.merge(fresh, status: status, at: now) }
+        return SpaceWeatherEntry(date: now, snapshot: snapshot, refreshedAt: refreshedAt)
     }
 }
 

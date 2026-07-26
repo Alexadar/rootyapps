@@ -25,10 +25,11 @@ final class WatchSync: NSObject, WCSessionDelegate {
 
     /// Phone side: push the current choices. Cheap and idempotent, so it can be called on
     /// every change without bookkeeping.
-    func push(theme: String, mode: String) {
+    func push(theme: String, mode: String, cellular: Bool) {
         guard let session, session.activationState == .activated else { return }
         try? session.updateApplicationContext([SharedStore.Key.theme: theme,
-                                               SharedStore.Key.mode: mode])
+                                               SharedStore.Key.mode: mode,
+                                               SharedStore.Key.cellular: cellular])
     }
 
     /// Watch side: land the values in this device's own app-group container, which is what
@@ -37,6 +38,7 @@ final class WatchSync: NSObject, WCSessionDelegate {
         let shared = SharedStore()
         if let theme = context[SharedStore.Key.theme] as? String { shared.themeRaw = theme }
         if let mode = context[SharedStore.Key.mode] as? String { shared.modeRaw = mode }
+        if let cellular = context[SharedStore.Key.cellular] as? Bool { shared.cellularAllowed = cellular }
         WidgetCenter.shared.reloadAllTimelines()
     }
 

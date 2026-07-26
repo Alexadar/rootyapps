@@ -9,13 +9,16 @@ import HpoKit
 struct GeomagView: View {
     let snapshot: SpaceWeatherSnapshot
     var showForecast = true
+    var status: FeedStatus? = nil
     @Environment(\.sw) private var sw
     @EnvironmentObject private var demo: DemoDriver
     @State private var range: HpoRange
 
-    init(snapshot: SpaceWeatherSnapshot, showForecast: Bool = true, defaultRangeHours: Double = 168) {
+    init(snapshot: SpaceWeatherSnapshot, showForecast: Bool = true, defaultRangeHours: Double = 168,
+         status: FeedStatus? = nil) {
         self.snapshot = snapshot
         self.showForecast = showForecast
+        self.status = status
         _range = State(initialValue: HpoRange(rawValue: defaultRangeHours) ?? .week)
     }
 
@@ -39,7 +42,7 @@ struct GeomagView: View {
         if let h = snapshot.hpo {
             let windowed = windowedReadings(h)
             Panel(title: "Hp30 · High-Cadence Geomagnetic Index",
-                  source: "GFZ Potsdam · Hpo", observedAt: h.observedAt, highlighted: true) {
+                  source: "GFZ Potsdam · Hpo", observedAt: h.observedAt, feed: .hpo, status: status, highlighted: true) {
                 HStack(spacing: 12) {
                     MetricTile(value: Fmt.num(h.latest, 2), caption: "Hp30 now", color: sw.brand)
                     MetricTile(value: (h.latestGScale ?? 0) > 0 ? "G\(h.latestGScale!)" : "—",
@@ -78,7 +81,8 @@ struct GeomagView: View {
     @ViewBuilder private var kpPanel: some View {
         if let k = snapshot.kp {
             let ap = dailyAp(k)
-            Panel(title: "Planetary Kp · 3-Day", source: "NOAA SWPC", observedAt: k.observedAt) {
+            Panel(title: "Planetary Kp · 3-Day", source: "NOAA SWPC", observedAt: k.observedAt,
+                  feed: .kp, status: status) {
                 KpBarChart(series: k.series, showForecast: showForecast)
                 HStack(spacing: 12) {
                     MetricTile(value: Fmt.num(k.now, 1), caption: k.activity,

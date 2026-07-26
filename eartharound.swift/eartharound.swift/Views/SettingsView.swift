@@ -25,6 +25,7 @@ struct SettingsView: View {
 
     // Alert prefs live in the app group — the background task and widgets read them
     // through SharedStore. Defaults mirror AlertPrefs (master off; categories on).
+    @AppStorage(SharedStore.Key.cellular, store: AppGroup.defaults) private var cellularAllowed = true
     @AppStorage(SharedStore.Key.alertsEnabled, store: AppGroup.defaults) private var alertsEnabled = false
     @AppStorage(SharedStore.Key.alertStorms, store: AppGroup.defaults) private var alertStorms = true
     @AppStorage(SharedStore.Key.alertStormThreshold, store: AppGroup.defaults) private var alertStormThreshold = 1
@@ -61,6 +62,11 @@ struct SettingsView: View {
                     Picker("Auto-refresh", selection: $refreshMinutes) {
                         ForEach(Prefs.refreshOptions, id: \.0) { Text($0.1).tag($0.0) }
                     }
+                    Toggle("Use cellular data", isOn: $cellularAllowed)
+                    Text(cellularAllowed
+                         ? "Refreshes over Wi-Fi and cellular. A refresh is a few hundred kilobytes."
+                         : "Refreshes only on Wi-Fi. On cellular the app pauses and keeps showing the last reading rather than failing silently.")
+                        .font(.footnote).foregroundStyle(.secondary)
                 }
                 Section("Display") {
                     Picker("Detail", selection: detailMode) {

@@ -19,18 +19,26 @@ public struct KpSample: Identifiable, Equatable, Codable {
     public let time: Date
     public let kp: Double
     public let predicted: Bool
+    /// NOAA's `estimated` nowcast — derived from real magnetometer data, not a forecast, but not
+    /// yet the definitive Bartels value. Counts as current; flagged so the UI can say so.
+    public var provisional: Bool = false
     public var id: Date { time }
     public var gScale: Int { Geomag.gScale(forKp: kp) }
     public var symbol: String { Geomag.step(forKp: kp).symbol }
-    public init(time: Date, kp: Double, predicted: Bool) {
-        self.time = time; self.kp = kp; self.predicted = predicted
+    public init(time: Date, kp: Double, predicted: Bool, provisional: Bool = false) {
+        self.time = time; self.kp = kp; self.predicted = predicted; self.provisional = provisional
     }
 }
 
 public struct KpPanel: Equatable, Codable {
     public let series: [KpSample]
     public let observedAt: Date?
+    /// Newest non-forecast value. Definitive rows run 3–5h behind, so this deliberately includes
+    /// the estimated nowcast — otherwise the headline number sits frozen next to minute-cadence
+    /// panels and looks broken.
     public var now: Double { series.last(where: { !$0.predicted })?.kp ?? series.first?.kp ?? 0 }
+    /// True when the current value is NOAA's estimate rather than the definitive index.
+    public var nowIsProvisional: Bool { series.last(where: { !$0.predicted })?.provisional ?? false }
     public var gScale: Int { Geomag.gScale(forKp: now) }
     public var activity: String { Geomag.activity(forKp: now) }
     public var ap: Int { Geomag.ap(forKp: now) }

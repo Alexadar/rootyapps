@@ -14,9 +14,15 @@ public enum NOAAService {
     }
     public static func kp() async throws -> KpPanel {
         let rows = try await Net.json(API.kpForecast, as: [KpRow].self)
+        // NOAA marks each row observed / estimated / predicted. "estimated" is a nowcast from real
+        // magnetometer data — it is current, unlike "observed" which lags 3–5h — so treat it as a
+        // live value flagged provisional, and keep only "predicted" as forecast.
         let samples: [KpSample] = rows.compactMap { r in
             guard let t = DateFmt.parseUTC(r.time_tag) else { return nil }
-            return KpSample(time: t, kp: r.kp, predicted: (r.observed ?? "") != "observed")
+            let kind = (r.observed ?? "").lowercased()
+            return KpSample(time: t, kp: r.kp,
+                            predicted: kind != "observed" && kind != "estimated",
+                            provisional: kind == "estimated")
         }
         let lastObserved = samples.last(where: { !$0.predicted })?.time
         return KpPanel(series: samples, observedAt: lastObserved)

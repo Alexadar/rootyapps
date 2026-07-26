@@ -31,6 +31,10 @@ enum API {
     }
 }
 
+public enum NetError: Error, Equatable {
+    case http(Int)
+}
+
 enum Net {
     static let session: URLSession = {
         let c = URLSessionConfiguration.default
@@ -41,7 +45,18 @@ enum Net {
     }()
 
     static func data(_ url: URL) async throws -> Data {
-        try await session.data(from: url).0
+        // Per-REQUEST, not per-session: `session` is a `static let` and URLSessionConfiguration is
+        // copied when the session is built, so the preference cannot be applied by mutating it.
+        var request = URLRequest(url: url)
+        request.allowsCellularAccess = SharedStore().cellularAllowed
+
+        let (data, response) = try await session.data(for: request)
+        // Without this an error page is not an error: a 5xx of HTML only failed later, at decode,
+        // and read as "the feed returned nothing" rather than "the server is down".
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            throw NetError.http(http.statusCode)
+        }
+        return data
     }
 
     static func json<T: Decodable>(_ url: URL, as type: T.Type) async throws -> T {

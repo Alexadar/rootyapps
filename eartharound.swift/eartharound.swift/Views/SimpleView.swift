@@ -9,6 +9,7 @@ import FlareKit
 /// and stale badges stay, because trust is not an expert feature.
 struct SimpleView: View {
     let snapshot: SpaceWeatherSnapshot
+    var status: FeedStatus? = nil
     @Environment(\.sw) private var sw
 
     var body: some View {
@@ -33,7 +34,8 @@ struct SimpleView: View {
             // NOAA's published G level when we have it; otherwise the Kit derives it from Kp.
             let g = snapshot.scales?.g ?? kp.map { Geomag.gScale(forKp: $0.now) } ?? 0
             Panel(title: "Storm Right Now", source: "NOAA SWPC",
-                  observedAt: kp?.observedAt ?? snapshot.scales?.observedAt) {
+                  observedAt: kp?.observedAt ?? snapshot.scales?.observedAt,
+                  feed: .kp, status: status) {
                 HStack(spacing: 12) {
                     MetricTile(value: g > 0 ? "G\(g)" : "None", caption: "storm level",
                                color: sw.severity(g))
@@ -65,7 +67,8 @@ struct SimpleView: View {
 
     @ViewBuilder private var auroraPanel: some View {
         if let a = snapshot.aurora {
-            Panel(title: "Aurora Tonight", source: "NOAA SWPC · OVATION", observedAt: a.observedAt) {
+            Panel(title: "Aurora Tonight", source: "NOAA SWPC · OVATION", observedAt: a.observedAt,
+                  feed: .aurora, status: status) {
                 MetricTile(value: "\(a.maxProbability)", unit: "%", caption: "best chance now",
                            color: sw.side(.terra))
                 // The view line is computed from Kp; with no Kp it silently reads as Kp 0 and
@@ -84,7 +87,8 @@ struct SimpleView: View {
         if let f = snapshot.flare {
             let r = snapshot.scales?.r ?? 0
             let s = snapshot.scales?.s ?? 0
-            Panel(title: "The Sun Today", source: "NOAA SWPC · GOES", observedAt: f.observedAt) {
+            Panel(title: "The Sun Today", source: "NOAA SWPC · GOES", observedAt: f.observedAt,
+                  feed: .flares, status: status) {
                 MetricTile(value: f.latestFlare?.maxClass ?? f.currentClass, caption: "latest flare",
                            color: sw.severity(flareClass: f.latestFlare?.maxClass ?? f.currentClass))
                 MeaningLine(f.latestFlare?.meaning ?? Flare.meaning(forClass: f.currentClass))

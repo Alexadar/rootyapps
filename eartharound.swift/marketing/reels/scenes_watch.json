@@ -1,19 +1,22 @@
 {
-  "canvas": [540, 960],
+  "canvas": [
+    1080,
+    1920
+  ],
   "content_len": 11,
   "preview_maxlen": 30,
   "outro_dur": 2.4,
-  "_note": "Canvas is deliberately small: the watch captures at its native 416x496 and a bigger canvas would upscale ~2x and go soft. At 540 wide with 60px padding the watch renders near 1:1. Scene times are rewritten to even thirds of the real capture by capture_watch.sh, because the sim encoder drops frames and the wall-clock tour is longer than the footage.",
+  "_note": "Canvas is 1080x1920 \u2014 the standard for Reels/TikTok/Shorts, which upscale anything smaller. side_padding drives BOTH the video width and the caption wrap width, so it can't be pushed high to protect the watch's native 416x496 scale without breaking titles across lines. It plays at ~390px wide on a phone anyway, so the ~1.7x upscale here is invisible in practice. App Store Connect has NO watchOS preview slot (verified against Apple's app-preview specifications page: iPhone/iPad/Mac/Apple TV/Vision Pro only) \u2014 this clip is for the site and social; the uploadable watch asset is the 416x496 screenshot set.",
   "style": {
     "bg_color_top": "#0C111B",
     "bg_color_bottom": "#080B14",
     "title_color": "#E8EEF6",
     "subtitle_color": "#4DF0A0",
     "caption_band_percent": 20,
-    "side_padding": 60,
-    "border_width": 6,
+    "side_padding": 190,
+    "border_width": 12,
     "border_color": "#17202F",
-    "border_radius": 44
+    "border_radius": 92
   },
   "app": {
     "name": "Earth Around",

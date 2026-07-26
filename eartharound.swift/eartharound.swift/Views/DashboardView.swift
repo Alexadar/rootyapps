@@ -11,6 +11,7 @@ import SolarWindKit
 struct DashboardView: View {
     let snapshot: SpaceWeatherSnapshot
     var showForecast = true
+    var status: FeedStatus? = nil
     @Environment(\.sw) private var sw
 
     var body: some View {
@@ -32,7 +33,8 @@ struct DashboardView: View {
 
     @ViewBuilder private var scalesPanel: some View {
         if let s = snapshot.scales {
-            Panel(title: "NOAA Space Weather Scales", source: "NOAA SWPC", observedAt: s.observedAt) {
+            Panel(title: "NOAA Space Weather Scales", source: "NOAA SWPC", observedAt: s.observedAt,
+                  feed: .scales, status: status) {
                 HStack(spacing: 8) {
                     ScaleChip(label: "G", level: s.g, name: scaleName(s.g))
                     ScaleChip(label: "R", level: s.r, name: scaleName(s.r))
@@ -46,7 +48,8 @@ struct DashboardView: View {
 
     @ViewBuilder private var kpPanel: some View {
         if let k = snapshot.kp {
-            Panel(title: "Planetary Kp", source: "NOAA SWPC", observedAt: k.observedAt) {
+            Panel(title: "Planetary Kp", source: "NOAA SWPC", observedAt: k.observedAt,
+                  feed: .kp, status: status) {
                 HStack(spacing: 12) {
                     MetricTile(value: Fmt.num(k.now, 1), caption: "Kp now",
                                color: sw.severity(k.gScale))
@@ -62,7 +65,8 @@ struct DashboardView: View {
 
     @ViewBuilder private var solarWindPanel: some View {
         if let w = snapshot.wind {
-            Panel(title: "Solar Wind", source: "NOAA SWPC · DSCOVR/ACE", observedAt: w.observedAt) {
+            Panel(title: "Solar Wind", source: "NOAA SWPC · DSCOVR/ACE", observedAt: w.observedAt,
+                  feed: .wind, status: status) {
                 HStack(spacing: 12) {
                     MetricTile(value: Fmt.num(w.speed, 0), unit: "km/s",
                                caption: w.speedDescription ?? "speed", color: sw.side(.link))
@@ -96,7 +100,8 @@ struct DashboardView: View {
 
     @ViewBuilder private var flarePanel: some View {
         if let f = snapshot.flare {
-            Panel(title: "Solar Flares & X-ray Flux", source: "NOAA SWPC · GOES", observedAt: f.observedAt) {
+            Panel(title: "Solar Flares & X-ray Flux", source: "NOAA SWPC · GOES", observedAt: f.observedAt,
+                  feed: .flares, status: status) {
                 HStack(spacing: 12) {
                     MetricTile(value: f.currentClass, caption: "current flux",
                                color: sw.severity(flareClass: f.currentClass))
@@ -115,7 +120,8 @@ struct DashboardView: View {
 
     @ViewBuilder private var auroraPanel: some View {
         if let a = snapshot.aurora {
-            Panel(title: "Aurora", source: "NOAA SWPC · OVATION", observedAt: a.observedAt) {
+            Panel(title: "Aurora", source: "NOAA SWPC · OVATION", observedAt: a.observedAt,
+                  feed: .aurora, status: status) {
                 HStack(spacing: 12) {
                     MetricTile(value: "\(a.maxProbability)", unit: "%", caption: "peak probability",
                                color: sw.side(.terra))
@@ -130,7 +136,8 @@ struct DashboardView: View {
 
     @ViewBuilder private var solarPanel: some View {
         if let s = snapshot.solar {
-            Panel(title: "Solar Activity", source: "NOAA SWPC · Wolf R", observedAt: s.observedAt) {
+            Panel(title: "Solar Activity", source: "NOAA SWPC · Wolf R", observedAt: s.observedAt,
+                  feed: .solar, status: status) {
                 HStack(spacing: 12) {
                     MetricTile(value: Fmt.int(s.sunspotNumber), caption: s.activity ?? "sunspot no.",
                                color: sw.side(.solar))

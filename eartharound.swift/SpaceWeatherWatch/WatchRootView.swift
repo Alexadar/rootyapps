@@ -37,6 +37,8 @@ struct WatchRootView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await store.refresh() } }
         }
+        // Swiping to another page pulls everything, throttled like the phone.
+        .onChange(of: page) { _, _ in Task { await store.refreshIfStale() } }
     }
 }
 

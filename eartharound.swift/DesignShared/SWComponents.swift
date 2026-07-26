@@ -1,4 +1,5 @@
 import SwiftUI
+import SpaceWeatherFeed
 
 // Replaces Views/Components.swift. Same call sites; restyled, theme-aware internals.
 
@@ -8,6 +9,10 @@ struct Panel<Content: View>: View {
     let title: String
     let source: String
     var observedAt: Date? = nil
+    /// Which feed this panel came from, so the badge can separate "the source publishes slowly"
+    /// from "our fetch of THIS source failed" — they looked identical before.
+    var feed: FeedSource? = nil
+    var status: FeedStatus? = nil
     var highlighted: Bool = false
     @ViewBuilder var content: Content
 
@@ -15,8 +20,8 @@ struct Panel<Content: View>: View {
         VStack(alignment: .leading, spacing: 12) {
             PanelHeader(title: title, source: source)
             content
-            if let observedAt {
-                StaleBadge(observedAt: observedAt)
+            if observedAt != nil || feed != nil {
+                StaleBadge(observedAt: observedAt, feed: feed, status: status)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -24,20 +29,54 @@ struct Panel<Content: View>: View {
     }
 }
 
-/// Data-age line; turns caution-amber when the observation is stale.
+/// Data-age line. Shows how old the OBSERVATION is, judged against that source's own publishing
+/// cadence — a flat threshold marked F10.7 stale permanently and Hp30 never. When our last fetch
+/// of the source failed or was skipped it says so instead, because a panel frozen by a dead feed
+/// used to be indistinguishable from one whose publisher is simply slow.
 struct StaleBadge: View {
     @Environment(\.sw) private var sw
     let observedAt: Date?
+    var feed: FeedSource? = nil
+    var status: FeedStatus? = nil
+
     var body: some View {
-        let stale = Fmt.isStale(observedAt)
         HStack(spacing: 5) {
-            Image(systemName: stale ? "exclamationmark.triangle.fill" : "clock")
-                .font(.caption2)
-            Text("UPDATED \(Fmt.age(observedAt).uppercased())")
+            Image(systemName: icon).font(.caption2)
+            Text(label)
                 .font(.system(.caption2, design: .monospaced))
                 .tracking(0.6)
         }
-        .foregroundStyle(stale ? sw.caution : sw.textTertiary)
+        .foregroundStyle(warn ? sw.caution : sw.textTertiary)
+    }
+
+    private var fetchOutcome: FetchOutcome? {
+        guard let feed, let status, status.didFail(feed) else { return nil }
+        return status[feed].outcome
+    }
+
+    private var stale: Bool {
+        guard let feed, let status else { return Fmt.isStale(observedAt) }
+        return status.isStale(feed)
+    }
+
+    private var warn: Bool { fetchOutcome != nil || stale }
+
+    private var icon: String {
+        switch fetchOutcome {
+        case .skippedOffline:  return "wifi.slash"
+        case .skippedCellular: return "antenna.radiowaves.left.and.right.slash"
+        case .failed, .empty:  return "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90"
+        case .ok, .none:       return stale ? "exclamationmark.triangle.fill" : "clock"
+        }
+    }
+
+    private var label: String {
+        switch fetchOutcome {
+        case .skippedOffline:  return "OFFLINE · SHOWING LAST KNOWN"
+        case .skippedCellular: return "PAUSED ON CELLULAR · \(Fmt.age(observedAt).uppercased())"
+        case .failed, .empty:  return "COULDN'T REFRESH · \(Fmt.age(observedAt).uppercased())"
+        case .ok, .none:       return "UPDATED \(Fmt.age(observedAt).uppercased())"
+        }
     }
 }
 

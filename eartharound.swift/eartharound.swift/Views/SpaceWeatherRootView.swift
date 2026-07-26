@@ -12,6 +12,7 @@ struct SpaceWeatherRootView: View {
     @EnvironmentObject private var mode: ModeStore
     @EnvironmentObject private var demo: DemoDriver
     @Environment(\.sw) private var sw
+    @Environment(\.scenePhase) private var scenePhase
     @State private var tab = Tab.dashboard
     @State private var showSettings = false
 
@@ -73,6 +74,13 @@ struct SpaceWeatherRootView: View {
             applyRefreshInterval()
         }
         .onChange(of: refreshMinutes) { _, _ in applyRefreshInterval() }
+        // Any screen change pulls everything, throttled so flicking tabs doesn't hammer NOAA.
+        .onChange(of: tab) { _, _ in Task { await store.refreshIfStale() } }
+        .onChange(of: scenePhase) { _, phase in
+            // The watch already refreshed on activation; the phone never did, so returning from
+            // background sat on a stale screen until the 5-minute timer ticked.
+            if phase == .active { Task { await store.refreshIfStale() } }
+        }
         // The widget renders from these two prefs, so it has to be told they changed —
         // its own timeline wouldn't come back around for another half hour. The watch has
         // its own container entirely, so it needs them pushed over WatchConnectivity.
@@ -105,7 +113,8 @@ struct SpaceWeatherRootView: View {
     private func prefsChanged() {
         WidgetCenter.shared.reloadAllTimelines()
         #if os(iOS)
-        WatchSync.shared.push(theme: theme.selected.rawValue, mode: mode.selected.rawValue)
+        WatchSync.shared.push(theme: theme.selected.rawValue, mode: mode.selected.rawValue,
+                              cellular: SharedStore().cellularAllowed)
         #endif
     }
 
@@ -124,14 +133,14 @@ struct SpaceWeatherRootView: View {
         } else if isSnapshotEmpty && store.isLoading {
             loading
         } else if mode.selected == .simple {
-            SimpleView(snapshot: store.snapshot)
+            SimpleView(snapshot: store.snapshot, status: store.status)
         } else {
             switch tab {
             case .dashboard:
-                DashboardView(snapshot: store.snapshot, showForecast: showForecast)
+                DashboardView(snapshot: store.snapshot, showForecast: showForecast, status: store.status)
             case .geomagnetic:
                 GeomagView(snapshot: store.snapshot, showForecast: showForecast,
-                           defaultRangeHours: hpoRangeHours)
+                           defaultRangeHours: hpoRangeHours, status: store.status)
             }
         }
     }
@@ -184,12 +193,14 @@ struct SpaceWeatherRootView: View {
                     Text("EARTH AROUND")
                         .font(.system(size: 22, weight: .heavy)).tracking(-0.4)
                         .foregroundStyle(sw.textPrimary)
-                    if !store.isOffline {
-                        Text("LIVE")
+                    // LIVE only when every source actually came back. It used to show whenever a
+                    // single fetch of seven succeeded, so six dead feeds still read as live.
+                    if let pill = livePill {
+                        Text(pill.text)
                             .font(.system(size: 9, design: .monospaced).weight(.bold)).tracking(1.2)
                             .padding(.horizontal, 6).padding(.vertical, 3)
                             .foregroundStyle(sw.onAccent)
-                            .background(sw.brand, in: ChamferBox(cut: 5, radius: 3))
+                            .background(pill.color, in: ChamferBox(cut: 5, radius: 3))
                     }
                 }
                 statusLine
@@ -223,10 +234,29 @@ struct SpaceWeatherRootView: View {
         .padding(.top, 8)
     }
 
+    private var livePill: (text: String, color: Color)? {
+        if store.isOffline || store.isPausedOnCellular { return nil }
+        if store.status.anyFailed { return ("PARTIAL", sw.caution) }
+        return ("LIVE", sw.brand)
+    }
+
+    private var failedCount: Int {
+        FeedSource.allCases.filter { store.status.didFail($0) }.count
+    }
+
     private var statusLine: some View {
         Group {
             if store.isOffline {
                 Label("OFFLINE · SHOWING LAST KNOWN", systemImage: "wifi.slash")
+                    .foregroundStyle(sw.caution)
+            } else if store.isPausedOnCellular {
+                Label("PAUSED ON CELLULAR · WILL REFRESH ON WI-FI",
+                      systemImage: "antenna.radiowaves.left.and.right.slash")
+                    .foregroundStyle(sw.caution)
+            } else if failedCount > 0 {
+                // Name the number rather than implying everything refreshed.
+                Label("\(failedCount) OF \(FeedSource.allCases.count) SOURCES DIDN'T REFRESH",
+                      systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(sw.caution)
             } else {
                 Text("UPDATED \(Fmt.age(store.lastRefresh).uppercased()) · NOAA + GFZ, VALIDATED")

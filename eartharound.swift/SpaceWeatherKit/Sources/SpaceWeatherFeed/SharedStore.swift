@@ -16,6 +16,8 @@ public struct SharedStore {
         public static let lastRefresh = "shared.lastRefresh"
         public static let theme = "sw.theme"
         public static let mode = "sw.mode"
+        public static let status = "shared.status"
+        public static let cellular = "net.cellular"
         public static let alertState = "alerts.state"
         public static let alertsEnabled = "alerts.enabled"
         public static let alertStorms = "alerts.storms"
@@ -41,6 +43,57 @@ public struct SharedStore {
               let snapshot = try? JSONDecoder().decode(SpaceWeatherSnapshot.self, from: data),
               let at = defaults.object(forKey: Key.lastRefresh) as? Date else { return nil }
         return (snapshot, at)
+    }
+
+    /// Write back only the sources this process actually fetched, and never regress a panel that
+    /// another process refreshed more recently.
+    ///
+    /// The widget fetches five of the seven sources but used to save the WHOLE snapshot, so Hp30
+    /// and Solar were rewritten at their old values under a brand-new timestamp — the app then
+    /// opened on "updated just now" with two panels hours behind. Worse, the widget reads the blob
+    /// seconds before it writes, so it could overwrite panels the app had just fetched.
+    public func merge(_ fresh: SpaceWeatherSnapshot, status freshStatus: FeedStatus, at date: Date) {
+        var snapshot = load()?.snapshot ?? SpaceWeatherSnapshot()
+        var status = self.status
+        let stored = status
+
+        func take<T>(_ source: FeedSource, _ new: T?, _ apply: (T) -> Void) {
+            guard let new, freshStatus[source].outcome == .ok else { return }
+            // Only accept if nobody else has a newer success for this source.
+            let theirs = stored[source].lastSuccess ?? .distantPast
+            guard (freshStatus[source].lastSuccess ?? date) >= theirs else { return }
+            apply(new)
+        }
+        take(.kp, fresh.kp) { snapshot.kp = $0 }
+        take(.flares, fresh.flare) { snapshot.flare = $0 }
+        take(.wind, fresh.wind) { snapshot.wind = $0 }
+        take(.scales, fresh.scales) { snapshot.scales = $0 }
+        take(.aurora, fresh.aurora) { snapshot.aurora = $0 }
+        take(.solar, fresh.solar) { snapshot.solar = $0 }
+        take(.hpo, fresh.hpo) { snapshot.hpo = $0 }
+
+        status.merge(freshStatus)
+        self.status = status
+        save(snapshot, at: date)
+    }
+
+    // MARK: Per-source fetch record
+
+    public var status: FeedStatus {
+        get {
+            guard let data = defaults.data(forKey: Key.status),
+                  let s = try? JSONDecoder().decode(FeedStatus.self, from: data) else { return FeedStatus() }
+            return s
+        }
+        nonmutating set { defaults.set(try? JSONEncoder().encode(newValue), forKey: Key.status) }
+    }
+
+    // MARK: Cellular
+
+    /// On unless explicitly turned off — same default-ON idiom as the alert category toggles.
+    public var cellularAllowed: Bool {
+        get { defaults.object(forKey: Key.cellular) as? Bool ?? true }
+        nonmutating set { defaults.set(newValue, forKey: Key.cellular) }
     }
 
     // MARK: Theme (raw value of the app's SWThemeChoice)
