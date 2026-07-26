@@ -20,12 +20,16 @@ style:
   text_padding: 40
   screenshot_padding: 40
 
+# Order follows make_sim_shots.sh. Lead with Simple — it is the first-run default and the
+# answer most people came for; the expert HUD is the second beat, not the pitch.
 texts:
-  - title: Space weather, validated
-    subtitle: Solar + geomagnetic, live from NOAA & GFZ
-  - title: Hp30 storm resolution
-    subtitle: 30-minute geomagnetic detail Kp misses
+  - title: Storm right now?
+    subtitle: Plain answers, live from NOAA
+  - title: Or every number
+    subtitle: Solar wind, flares, aurora, Kp
+  - title: Hp30 detail
+    subtitle: 30-minute storm resolution
   - title: Night mode
-    subtitle: Red-shift built for aurora chasers
+    subtitle: Red-shift for the field
   - title: No ads. No false alarms.
-    subtitle: Every number checked against the published standard
+    subtitle: Every value checked against the published standard
