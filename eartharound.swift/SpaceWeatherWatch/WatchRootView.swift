@@ -25,6 +25,7 @@ struct WatchRootView: View {
             WatchWindPage(snapshot: store.snapshot, lastRefresh: store.lastRefresh).tag(2)
         }
         .tabViewStyle(.verticalPage)
+        .overlay(alignment: .topLeading) { captureKeepalive }
         .environment(\.sw, palette)
         .task {
             WatchSync.shared.start()          // receives the phone's theme/mode choices
@@ -36,6 +37,31 @@ struct WatchRootView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await store.refresh() } }
         }
+    }
+}
+
+// MARK: - Capture keepalive
+
+/// `simctl io recordVideo` emits a frame only when the display *changes*, so a page that
+/// sits still records as a couple of frames and the tour's 14s collapses to ~9s of video —
+/// every caption then lands on the wrong page. Redrawing an invisible pixel each frame
+/// keeps the capture at real time. Demo mode only; it has no business on a watch battery.
+private struct CaptureKeepalive: View {
+    @Environment(\.sw) private var sw
+    var body: some View {
+        TimelineView(.animation) { ctx in
+            let phase = ctx.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1)
+            Rectangle()
+                .fill(sw.brand.opacity(0.002 + 0.002 * phase))
+                .frame(width: 2, height: 2)
+                .allowsHitTesting(false)
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder var captureKeepalive: some View {
+        if WatchDemo.enabled { CaptureKeepalive() }
     }
 }
 
