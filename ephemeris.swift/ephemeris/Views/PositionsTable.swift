@@ -10,18 +10,19 @@ struct PositionsTable: View {
             CardHeader(title: "Positions")
             ForEach(positions) { p in
                 HStack(spacing: 10) {
-                    Text(p.body.glyph).font(.title3).frame(width: 26)
+                    Text(p.body.glyph + "\u{FE0E}").font(.title3)
+                        .foregroundStyle(NebulaPalette.glyph).nebulaGlow().frame(width: 26)
                     Text(p.body.name).frame(width: 78, alignment: .leading)
-                    Text(p.sign.glyph).foregroundStyle(.tint)
+                    SignChip(glyph: p.sign.glyph)
                     Text(p.degMinString).monospacedDigit()
                         .frame(width: 70, alignment: .leading)
                     Spacer()
                     Text(motion(p))
                         .font(.callout).monospacedDigit()
-                        .foregroundStyle(p.retrograde ? Color(rgbHex: 0xe67e22) : .secondary)
+                        .foregroundStyle(p.retrograde ? NebulaPalette.retrograde : NebulaPalette.textSecondary)
                 }
                 .font(.callout)
-                if p.id != positions.last?.id { Divider().opacity(0.4) }
+                if p.id != positions.last?.id { NebulaPalette.divider.frame(height: 0.75) }
             }
         }
         .glassCard()

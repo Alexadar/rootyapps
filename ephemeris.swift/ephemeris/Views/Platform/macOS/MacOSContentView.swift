@@ -39,11 +39,24 @@ struct MacOSContentView: View {
                     Button {
                         withAnimation(.smooth(duration: 0.35)) { selection = tab.id }
                     } label: {
+                        // A filled magenta pill marks the active section — toolbar `.tint`
+                        // alone is nearly invisible (and several of these symbols have no
+                        // distinct `.fill` variant), so highlight the selection explicitly.
                         Label(tab.title, systemImage: tab.icon)
+                            .labelStyle(.iconOnly)
                             .symbolVariant(selected ? .fill : .none)
+                            .font(.system(size: 14, weight: selected ? .semibold : .regular))
+                            .foregroundStyle(selected ? NebulaPalette.accent : NebulaPalette.textSecondary)
+                            .frame(width: 32, height: 26)
+                            .background(selected ? NebulaPalette.accent.opacity(0.18) : .clear, in: .capsule)
+                            .overlay {
+                                if selected {
+                                    Capsule().stroke(NebulaPalette.accent.opacity(0.55), lineWidth: 1)
+                                }
+                            }
                     }
+                    .buttonStyle(.plain)
                     .help(tab.title)
-                    .tint(selected ? .accentColor : .secondary)
                 }
             }
         }
@@ -56,6 +69,8 @@ struct MacOSContentView: View {
         case 0:
             MomentControls(vm: vm)
             ChartWheel(positions: vm.positions, aspects: vm.aspects)
+                .onAppear { vm.startChartDemo() }
+                .onDisappear { vm.stopChartDemo() }
         case 1:
             MomentControls(vm: vm)
             PositionsTable(positions: vm.positions)

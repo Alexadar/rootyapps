@@ -7,9 +7,9 @@ import EphemerisKit
 @MainActor
 struct ViewModelTests {
 
-    private func vmAt(_ date: Date, offset: Double = 0) -> ChartViewModel {
+    private func vmAt(_ date: Date, tz: TimeZone? = nil) -> ChartViewModel {
         let vm = ChartViewModel()
-        vm.utcOffsetHours = offset
+        if let tz { vm.timeZone = tz }
         vm.date = date
         vm.recompute()
         return vm
@@ -43,11 +43,22 @@ struct ViewModelTests {
         #expect(vm.cyclePhase?.body == .venus)
     }
 
-    @Test func utcOffsetShiftsInstant() {
-        let vm = vmAt(utc(2026, 6, 21, 12, 0), offset: 0)
+    @Test func timeZoneShiftsInstant() {
+        let vm = vmAt(utc(2026, 6, 21, 12, 0))
+        vm.timeZone = TimeZone(secondsFromGMT: 0)!
         let i0 = vm.instant
-        vm.utcOffsetHours = 1
+        vm.timeZone = TimeZone(secondsFromGMT: 3600)!   // +1h ahead of UTC
         let i1 = vm.instant
-        #expect(abs(i1.timeIntervalSince(i0) - (-3600)) < 1) // +1h offset ⇒ instant 1h earlier
+        #expect(abs(i1.timeIntervalSince(i0) - (-3600)) < 1) // zone +1h ⇒ same wall clock is 1h earlier
+    }
+
+    @Test func timeZonePersistsAcrossViewModels() {
+        let key = "timeZoneIdentifier"
+        UserDefaults.standard.removeObject(forKey: key)
+        let vm1 = ChartViewModel()
+        vm1.timeZone = TimeZone(identifier: "Asia/Tokyo")!   // didSet persists the identifier
+        let vm2 = ChartViewModel()                            // init loads the saved identifier
+        #expect(vm2.timeZone.identifier == "Asia/Tokyo")
+        UserDefaults.standard.removeObject(forKey: key)
     }
 }

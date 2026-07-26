@@ -10,7 +10,7 @@ settings:
     DEVELOPMENT_TEAM: LSKNNBG94G
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.0.2"
+    MARKETING_VERSION: "1.0.4"
     CURRENT_PROJECT_VERSION: "1"
     ENABLE_PREVIEWS: YES
     GENERATE_INFOPLIST_FILE: YES
@@ -37,6 +37,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"
         INFOPLIST_KEY_CFBundleDisplayName: Ephemeris
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.lifestyle
+        INFOPLIST_KEY_NSMotionUsageDescription: "The star field gently parallaxes as you tilt your phone."
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
   ephemerisTests:
@@ -54,6 +55,18 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/ephemeris.swift.app/Contents/MacOS/ephemeris.swift"
         BUNDLE_LOADER: "$(TEST_HOST)"
+  ephemerisUITests:
+    type: bundle.ui-testing
+    supportedDestinations: [iOS]
+    sources:
+      - path: ephemerisUITests
+    dependencies:
+      - target: ephemeris.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.ephemerisUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: ephemeris.swift
 schemes:
   ephemeris.swift:
     build:
@@ -64,3 +77,14 @@ schemes:
     test:
       targets:
         - ephemerisTests
+  ephemerisReel:
+    build:
+      targets:
+        ephemeris.swift: all
+        ephemerisUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - ephemerisUITests

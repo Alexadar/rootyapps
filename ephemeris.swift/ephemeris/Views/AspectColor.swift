@@ -3,14 +3,15 @@ import EphemerisKit
 
 /// UI color for each aspect type (kept out of the UI-free EphemerisKit core), keyed by name.
 extension AspectType {
+    /// Neon Nebula aspect palette.
     var color: Color {
         switch name {
-        case "Conjunction": Color(rgbHex: 0xe74c3c)
-        case "Sextile":     Color(rgbHex: 0x3498db)
-        case "Square":      Color(rgbHex: 0xe67e22)
-        case "Trine":       Color(rgbHex: 0x2ecc71)
-        case "Opposition":  Color(rgbHex: 0x9b59b6)
-        default:            Color(rgbHex: 0x8b93a3)
+        case "Conjunction": Color(rgbHex: 0xFF5A7A)   // hot pink
+        case "Sextile":     Color(rgbHex: 0x35E7FF)   // cyan
+        case "Square":      Color(rgbHex: 0xFFB020)   // amber
+        case "Trine":       Color(rgbHex: 0x4DF0A0)   // aurora green
+        case "Opposition":  Color(rgbHex: 0xC061FF)   // violet
+        default:            Color(rgbHex: 0x9A93FF)
         }
     }
 }
