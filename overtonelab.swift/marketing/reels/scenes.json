@@ -20,8 +20,8 @@
     "icon": "overtonelab.icon/Assets/1024.png"
   },
   "scenes": [
-    { "key": "Tempo",     "start": 0,  "end": 15, "title": "Type — it recomputes",   "subtitle": "Every value updates live" },
-    { "key": "Sabine",    "start": 15, "end": 25, "title": "Real room acoustics",    "subtitle": "RT60, room modes & Schroeder" },
-    { "key": "Benchmark", "start": 25, "end": 38, "title": "26 tools, one app",     "subtitle": "Partch · Sabine · Fletcher · Butterworth · Thiele +21" }
+    { "key": "Tempo",     "start": 0,  "end": 15, "src": [9, 20],  "title": "Type — it recomputes",   "subtitle": "Every value updates live" },
+    { "key": "Sabine",    "start": 15, "end": 25, "src": [33, 44], "title": "Real room acoustics",    "subtitle": "RT60, room modes & Schroeder" },
+    { "key": "Benchmark", "start": 25, "end": 38, "src": [56, 67], "title": "26 tools, one app",     "subtitle": "Partch · Sabine · Fletcher · Butterworth · Thiele +21" }
   ]
 }

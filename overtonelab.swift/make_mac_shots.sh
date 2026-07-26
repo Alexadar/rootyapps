@@ -13,14 +13,14 @@ set -euo pipefail
 ROOT=/Users/oleksandr/Projects/rootyapps
 APP_DIR="$ROOT/overtonelab.swift"
 PY=/Users/oleksandr/miniconda3/envs/fantastic/bin/python
-MACBIN="$APP_DIR/build/dd-mac/Build/Products/Debug/overtonelab.swift.app/Contents/MacOS/overtonelab.swift"
+MACBIN="$APP_DIR/build/dd-mac/Build/Products/Debug/Overtone Lab.app/Contents/MacOS/Overtone Lab"
 RAW="$APP_DIR/marketing/raw/mac"; mkdir -p "$RAW"; rm -f "$RAW"/*.png
 
 [ -x "$MACBIN" ] || ( cd "$APP_DIR" && xcodegen generate >/dev/null && \
   xcodebuild -scheme overtonelab.swift -destination 'platform=macOS' -derivedDataPath build/dd-mac build >/dev/null )
 
-kill_app(){ pkill -9 -f "MacOS/overtonelab.swift" 2>/dev/null || true
-  for _ in 1 2 3 4 5; do pgrep -f "MacOS/overtonelab.swift" >/dev/null || break; sleep 0.5; done; }
+kill_app(){ pkill -9 -f "MacOS/Overtone Lab" 2>/dev/null || true
+  for _ in 1 2 3 4 5; do pgrep -f "MacOS/Overtone Lab" >/dev/null || break; sleep 0.5; done; }
 
 capture(){  # 01_name  toolRawValue
   kill_app; sleep 0.8

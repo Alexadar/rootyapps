@@ -12,7 +12,7 @@ set -euo pipefail
 ROOT=/Users/oleksandr/Projects/rootyapps
 APP_DIR="$ROOT/overtonelab.swift"
 PY=/Users/oleksandr/miniconda3/envs/fantastic/bin/python
-MACBIN="$APP_DIR/build/dd-mac/Build/Products/Debug/overtonelab.swift.app/Contents/MacOS/overtonelab.swift"
+MACBIN="$APP_DIR/build/dd-mac/Build/Products/Debug/Overtone Lab.app/Contents/MacOS/Overtone Lab"
 REC="$APP_DIR/tools/recordwindow"
 CLIPS=/tmp/otl_macclips; rm -rf "$CLIPS"; mkdir -p "$CLIPS"
 BED="$APP_DIR/marketing/audio/jazz_groove.wav"
@@ -23,8 +23,8 @@ OUT="$APP_DIR/marketing/aso/mac/video"; mkdir -p "$OUT"
   xcodebuild -scheme overtonelab.swift -destination 'platform=macOS' -derivedDataPath build/dd-mac build >/dev/null )
 [ -x "$REC" ] || ( cd "$APP_DIR/tools" && swiftc -O RecordWindow.swift -o recordwindow )
 
-kill_app(){ pkill -9 -f "MacOS/overtonelab.swift" 2>/dev/null || true
-  for _ in 1 2 3 4 5; do pgrep -f "MacOS/overtonelab.swift" >/dev/null || break; sleep 0.4; done; }
+kill_app(){ pkill -9 -f "MacOS/Overtone Lab" 2>/dev/null || true
+  for _ in 1 2 3 4 5; do pgrep -f "MacOS/Overtone Lab" >/dev/null || break; sleep 0.4; done; }
 rec(){  # clip  tool  [demo]
   kill_app; sleep 0.7
   OVERTONELAB_DEMO="${3:-}" OVERTONELAB_TOOL="$2" "$MACBIN" >/dev/null 2>&1 & sleep 3.3

@@ -41,12 +41,29 @@ glass-on-glass cards and one accent everywhere. The redesign:
 
 ### Section accents (single source of wayfinding colour)
 
+All **seven** sections own an accent — the four originals plus Timing, Stereo and Utility, added with
+the tools that followed. Catalog order is Timing · Tuning · Acoustics · Signal · Stereo · Utility ·
+Design; the hues run cool → warm across that order so neighbouring groups stay distinguishable.
+
 | Section | Accent | Hex |
 |---|---|---|
+| Timing    | blue   | `#5B8DEF` |
 | Tuning    | amber  | `#F2B84B` |
 | Acoustics | aqua   | `#43C8C0` |
 | Signal    | violet | `#8B7BF0` |
+| Stereo    | green  | `#6FCF97` |
+| Utility   | rose   | `#E08AA0` |
 | Design    | coral  | `#F0785A` |
+
+The values above mirror `OverToneLab/Views/OTLColors.swift`, which is the source of truth — a new
+section MUST add its case there (the switch is exhaustive, so the compiler will tell you) and MUST be
+listed here.
+
+**Contrast (measured, WCAG relative luminance):** every accent clears **4.5:1 against all three
+surfaces** — `background` `#08080B`, `surface` `#141419`, `surfaceRaised` `#16161D`. Worst case is
+Signal violet at **5.31:1** on `surfaceRaised`; best is Tuning amber at 11.18:1 on `background`.
+That headroom is what lets the hero readout be pure accent rather than accent-on-white. Re-check any
+new accent at ≥ 4.5:1 on `surfaceRaised` (the tightest of the three).
 
 Exposed as `ToolSection.accent` / `Tool.accent`. Set `.tint(tool.accent)` once at the detail
 level and `ResultRow(emphasis:)` + `SubScreenPicker` inherit it.
