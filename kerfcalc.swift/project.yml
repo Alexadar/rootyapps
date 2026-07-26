@@ -1,0 +1,105 @@
+name: kerfcalc.swift
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+packages:
+  DimensionKit:
+    path: Kits/Dimension/DimensionKit
+  FramingKit:
+    path: Kits/Framing/FramingKit
+  GeometryKit:
+    path: Kits/Geometry/GeometryKit
+  MaterialsKit:
+    path: Kits/Materials/MaterialsKit
+  ConcreteKit:
+    path: Kits/Concrete/ConcreteKit
+targets:
+  kerfcalc.swift:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: DimensionKit
+        product: DimensionKit
+      - package: FramingKit
+        product: FramingKit
+      - package: GeometryKit
+        product: GeometryKit
+      - package: MaterialsKit
+        product: MaterialsKit
+      - package: ConcreteKit
+        product: ConcreteKit
+    sources:
+      - path: KerfCalc
+      - path: kerfcalc.icon
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.kerfcalc
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": kerfcalc-macOS.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: kerfcalc
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_CFBundleDisplayName: Kerf Calc
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+  kerfcalcTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS]
+    sources:
+      - path: kerfcalcTests
+    dependencies:
+      - target: kerfcalc.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.kerfcalcTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/kerfcalc.swift.app/kerfcalc.swift"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+  kerfcalcUITests:
+    type: bundle.ui-testing
+    supportedDestinations: [iOS]
+    sources:
+      - path: kerfcalcUITests
+    dependencies:
+      - target: kerfcalc.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.kerfcalcUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: kerfcalc.swift
+schemes:
+  kerfcalc.swift:
+    build:
+      targets:
+        kerfcalc.swift: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - kerfcalcTests
+  kerfcalcReel:
+    build:
+      targets:
+        kerfcalc.swift: all
+        kerfcalcUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - kerfcalcUITests

@@ -1,0 +1,29 @@
+{
+  "canvas": [1200, 1600],
+  "content_len": 30,
+  "preview_maxlen": 30,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#EDE9E0",
+    "bg_color_bottom": "#DCD7CB",
+    "title_color": "#16171B",
+    "subtitle_color": "#6E6F75",
+    "caption_band_percent": 20,
+    "side_padding": 40,
+    "border_width": 6,
+    "border_color": "#CFC9BC",
+    "border_radius": 26
+  },
+  "app": {
+    "name": "Kerf Calc",
+    "tagline": "The builder's field calculator",
+    "icon": "kerfcalc.icon/Assets/1024.png"
+  },
+  "scenes": [
+    { "key": "Spec",     "start": 0,  "end": 6,  "title": "Build it dead-on",       "subtitle": "The field calculator that gets it right" },
+    { "key": "Rafter",   "start": 6,  "end": 12, "title": "Every trade, one app",   "subtitle": "Rafters — with the code it cites" },
+    { "key": "Stairs",   "start": 12, "end": 18, "title": "Stairs to code",         "subtitle": "Riser, run, stringer — checked live" },
+    { "key": "Concrete", "start": 18, "end": 24, "title": "Order the right amount", "subtitle": "Yards, bags, trucks — no waste" },
+    { "key": "Roofing",  "start": 24, "end": 30, "title": "Roofing squares",        "subtitle": "Pitch-adjusted, ready to order" }
+  ]
+}
