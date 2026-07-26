@@ -6,14 +6,66 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		E00000000000000000000020 /* GeomagKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000010 /* GeomagKit */; };
+		E00000000000000000000021 /* FlareKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000011 /* FlareKit */; };
+		E00000000000000000000022 /* SolarWindKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000012 /* SolarWindKit */; };
+		E00000000000000000000023 /* AuroraKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000013 /* AuroraKit */; };
+		E00000000000000000000024 /* HpoKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000014 /* HpoKit */; };
+		E00000000000000000000025 /* SolarIndexKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000015 /* SolarIndexKit */; };
+		E00000000000000000000026 /* SpaceWeatherFeed in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000016 /* SpaceWeatherFeed */; };
+		E00000000000000000000049 /* SpaceWeatherWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = E00000000000000000000041 /* SpaceWeatherWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E00000000000000000000060 /* SpaceWeatherFeed in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000050 /* SpaceWeatherFeed */; };
+		E00000000000000000000061 /* GeomagKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000051 /* GeomagKit */; };
+		E00000000000000000000062 /* FlareKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000052 /* FlareKit */; };
+		E00000000000000000000063 /* SolarWindKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000053 /* SolarWindKit */; };
+		E00000000000000000000064 /* AuroraKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000054 /* AuroraKit */; };
+		E00000000000000000000065 /* HpoKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000055 /* HpoKit */; };
+		E00000000000000000000066 /* SolarIndexKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000056 /* SolarIndexKit */; };
+		E00000000000000000000077 /* SpaceWeatherWatchWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = E00000000000000000000091 /* SpaceWeatherWatchWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E000000000000000000000D1 /* SpaceWeatherWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = E00000000000000000000071 /* SpaceWeatherWatch.app */; platformFilter = ios; };
+		E000000000000000000000A0 /* SpaceWeatherFeed in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000080 /* SpaceWeatherFeed */; };
+		E000000000000000000000A1 /* GeomagKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000081 /* GeomagKit */; };
+		E000000000000000000000A2 /* FlareKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000082 /* FlareKit */; };
+		E000000000000000000000A3 /* SolarWindKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000083 /* SolarWindKit */; };
+		E000000000000000000000A4 /* AuroraKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000084 /* AuroraKit */; };
+		E000000000000000000000A5 /* HpoKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000085 /* HpoKit */; };
+		E000000000000000000000A6 /* SolarIndexKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000086 /* SolarIndexKit */; };
+		E000000000000000000000C0 /* SpaceWeatherFeed in Frameworks */ = {isa = PBXBuildFile; productRef = E000000000000000000000B0 /* SpaceWeatherFeed */; };
+		E000000000000000000000C1 /* GeomagKit in Frameworks */ = {isa = PBXBuildFile; productRef = E000000000000000000000B1 /* GeomagKit */; };
+		E000000000000000000000C2 /* FlareKit in Frameworks */ = {isa = PBXBuildFile; productRef = E000000000000000000000B2 /* FlareKit */; };
+		E000000000000000000000C3 /* SolarWindKit in Frameworks */ = {isa = PBXBuildFile; productRef = E000000000000000000000B3 /* SolarWindKit */; };
+		E000000000000000000000C4 /* AuroraKit in Frameworks */ = {isa = PBXBuildFile; productRef = E000000000000000000000B4 /* AuroraKit */; };
+		E000000000000000000000C5 /* HpoKit in Frameworks */ = {isa = PBXBuildFile; productRef = E000000000000000000000B5 /* HpoKit */; };
+		E000000000000000000000C6 /* SolarIndexKit in Frameworks */ = {isa = PBXBuildFile; productRef = E000000000000000000000B6 /* SolarIndexKit */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
-		1199DC5A2EBCC71C00896DBC /* eartharound.swift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = eartharound.swift.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1199DC5A2EBCC71C00896DBC /* Earth Around.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Earth Around.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E00000000000000000000041 /* SpaceWeatherWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SpaceWeatherWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E00000000000000000000071 /* SpaceWeatherWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpaceWeatherWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E00000000000000000000091 /* SpaceWeatherWatchWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SpaceWeatherWatchWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		1199DC5C2EBCC71C00896DBC /* eartharound.swift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = eartharound.swift;
+			sourceTree = "<group>";
+		};
+		E00000000000000000000030 /* DesignShared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DesignShared;
+			sourceTree = "<group>";
+		};
+		E00000000000000000000042 /* SpaceWeatherWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SpaceWeatherWidget;
+			sourceTree = "<group>";
+		};
+		E00000000000000000000072 /* SpaceWeatherWatch */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SpaceWeatherWatch;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -23,6 +75,55 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E00000000000000000000020 /* GeomagKit in Frameworks */,
+				E00000000000000000000021 /* FlareKit in Frameworks */,
+				E00000000000000000000022 /* SolarWindKit in Frameworks */,
+				E00000000000000000000023 /* AuroraKit in Frameworks */,
+				E00000000000000000000024 /* HpoKit in Frameworks */,
+				E00000000000000000000025 /* SolarIndexKit in Frameworks */,
+				E00000000000000000000026 /* SpaceWeatherFeed in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E00000000000000000000044 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E00000000000000000000060 /* SpaceWeatherFeed in Frameworks */,
+				E00000000000000000000061 /* GeomagKit in Frameworks */,
+				E00000000000000000000062 /* FlareKit in Frameworks */,
+				E00000000000000000000063 /* SolarWindKit in Frameworks */,
+				E00000000000000000000064 /* AuroraKit in Frameworks */,
+				E00000000000000000000065 /* HpoKit in Frameworks */,
+				E00000000000000000000066 /* SolarIndexKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E00000000000000000000074 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E000000000000000000000A0 /* SpaceWeatherFeed in Frameworks */,
+				E000000000000000000000A1 /* GeomagKit in Frameworks */,
+				E000000000000000000000A2 /* FlareKit in Frameworks */,
+				E000000000000000000000A3 /* SolarWindKit in Frameworks */,
+				E000000000000000000000A4 /* AuroraKit in Frameworks */,
+				E000000000000000000000A5 /* HpoKit in Frameworks */,
+				E000000000000000000000A6 /* SolarIndexKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E00000000000000000000094 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E000000000000000000000C0 /* SpaceWeatherFeed in Frameworks */,
+				E000000000000000000000C1 /* GeomagKit in Frameworks */,
+				E000000000000000000000C2 /* FlareKit in Frameworks */,
+				E000000000000000000000C3 /* SolarWindKit in Frameworks */,
+				E000000000000000000000C4 /* AuroraKit in Frameworks */,
+				E000000000000000000000C5 /* HpoKit in Frameworks */,
+				E000000000000000000000C6 /* SolarIndexKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,6 +134,9 @@
 			isa = PBXGroup;
 			children = (
 				1199DC5C2EBCC71C00896DBC /* eartharound.swift */,
+				E00000000000000000000030 /* DesignShared */,
+				E00000000000000000000042 /* SpaceWeatherWidget */,
+				E00000000000000000000072 /* SpaceWeatherWatch */,
 				1199DC5B2EBCC71C00896DBC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,14 +144,188 @@
 		1199DC5B2EBCC71C00896DBC /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1199DC5A2EBCC71C00896DBC /* eartharound.swift.app */,
+				1199DC5A2EBCC71C00896DBC /* Earth Around.app */,
+				E00000000000000000000041 /* SpaceWeatherWidget.appex */,
+				E00000000000000000000071 /* SpaceWeatherWatch.app */,
+				E00000000000000000000091 /* SpaceWeatherWatchWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		E00000000000000000000048 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E00000000000000000000049 /* SpaceWeatherWidget.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E00000000000000000000076 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E00000000000000000000077 /* SpaceWeatherWatchWidget.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E000000000000000000000D0 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				E000000000000000000000D1 /* SpaceWeatherWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		E00000000000000000000047 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1199DC522EBCC71C00896DBC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E00000000000000000000040;
+			remoteInfo = SpaceWeatherWidget;
+		};
+		E000000000000000000000D3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1199DC522EBCC71C00896DBC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E00000000000000000000070;
+			remoteInfo = SpaceWeatherWatch;
+		};
+		E000000000000000000000D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1199DC522EBCC71C00896DBC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E00000000000000000000090;
+			remoteInfo = SpaceWeatherWatchWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		E00000000000000000000046 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E00000000000000000000040 /* SpaceWeatherWidget */;
+			targetProxy = E00000000000000000000047 /* PBXContainerItemProxy */;
+		};
+		E000000000000000000000D2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilter = ios;
+			target = E00000000000000000000070 /* SpaceWeatherWatch */;
+			targetProxy = E000000000000000000000D3 /* PBXContainerItemProxy */;
+		};
+		E000000000000000000000D4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E00000000000000000000090 /* SpaceWeatherWatchWidget */;
+			targetProxy = E000000000000000000000D5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin PBXNativeTarget section */
+		E00000000000000000000070 /* SpaceWeatherWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E0000000000000000000007A /* Build configuration list for PBXNativeTarget "SpaceWeatherWatch" */;
+			buildPhases = (
+				E00000000000000000000073 /* Sources */,
+				E00000000000000000000074 /* Frameworks */,
+				E00000000000000000000075 /* Resources */,
+				E00000000000000000000076 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E000000000000000000000D4 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E00000000000000000000072 /* SpaceWeatherWatch */,
+				E00000000000000000000030 /* DesignShared */,
+			);
+			name = SpaceWeatherWatch;
+			packageProductDependencies = (
+				E00000000000000000000080 /* SpaceWeatherFeed */,
+				E00000000000000000000081 /* GeomagKit */,
+				E00000000000000000000082 /* FlareKit */,
+				E00000000000000000000083 /* SolarWindKit */,
+				E00000000000000000000084 /* AuroraKit */,
+				E00000000000000000000085 /* HpoKit */,
+				E00000000000000000000086 /* SolarIndexKit */,
+			);
+			productName = SpaceWeatherWatch;
+			productReference = E00000000000000000000071 /* SpaceWeatherWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E00000000000000000000090 /* SpaceWeatherWatchWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E0000000000000000000009A /* Build configuration list for PBXNativeTarget "SpaceWeatherWatchWidget" */;
+			buildPhases = (
+				E00000000000000000000093 /* Sources */,
+				E00000000000000000000094 /* Frameworks */,
+				E00000000000000000000095 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E00000000000000000000042 /* SpaceWeatherWidget */,
+				E00000000000000000000030 /* DesignShared */,
+			);
+			name = SpaceWeatherWatchWidget;
+			packageProductDependencies = (
+				E000000000000000000000B0 /* SpaceWeatherFeed */,
+				E000000000000000000000B1 /* GeomagKit */,
+				E000000000000000000000B2 /* FlareKit */,
+				E000000000000000000000B3 /* SolarWindKit */,
+				E000000000000000000000B4 /* AuroraKit */,
+				E000000000000000000000B5 /* HpoKit */,
+				E000000000000000000000B6 /* SolarIndexKit */,
+			);
+			productName = SpaceWeatherWatchWidget;
+			productReference = E00000000000000000000091 /* SpaceWeatherWatchWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		E00000000000000000000040 /* SpaceWeatherWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E0000000000000000000004A /* Build configuration list for PBXNativeTarget "SpaceWeatherWidget" */;
+			buildPhases = (
+				E00000000000000000000043 /* Sources */,
+				E00000000000000000000044 /* Frameworks */,
+				E00000000000000000000045 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E00000000000000000000042 /* SpaceWeatherWidget */,
+				E00000000000000000000030 /* DesignShared */,
+			);
+			name = SpaceWeatherWidget;
+			packageProductDependencies = (
+				E00000000000000000000050 /* SpaceWeatherFeed */,
+				E00000000000000000000051 /* GeomagKit */,
+				E00000000000000000000052 /* FlareKit */,
+				E00000000000000000000053 /* SolarWindKit */,
+				E00000000000000000000054 /* AuroraKit */,
+				E00000000000000000000055 /* HpoKit */,
+				E00000000000000000000056 /* SolarIndexKit */,
+			);
+			productName = SpaceWeatherWidget;
+			productReference = E00000000000000000000041 /* SpaceWeatherWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		1199DC592EBCC71C00896DBC /* eartharound.swift */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1199DC652EBCC71D00896DBC /* Build configuration list for PBXNativeTarget "eartharound.swift" */;
@@ -55,19 +333,31 @@
 				1199DC562EBCC71C00896DBC /* Sources */,
 				1199DC572EBCC71C00896DBC /* Frameworks */,
 				1199DC582EBCC71C00896DBC /* Resources */,
+				E00000000000000000000048 /* Embed App Extensions */,
+				E000000000000000000000D0 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E00000000000000000000046 /* PBXTargetDependency */,
+				E000000000000000000000D2 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				1199DC5C2EBCC71C00896DBC /* eartharound.swift */,
+				E00000000000000000000030 /* DesignShared */,
 			);
 			name = eartharound.swift;
 			packageProductDependencies = (
+				E00000000000000000000010 /* GeomagKit */,
+				E00000000000000000000011 /* FlareKit */,
+				E00000000000000000000012 /* SolarWindKit */,
+				E00000000000000000000013 /* AuroraKit */,
+				E00000000000000000000014 /* HpoKit */,
+				E00000000000000000000015 /* SolarIndexKit */,
+				E00000000000000000000016 /* SpaceWeatherFeed */,
 			);
 			productName = eartharound.swift;
-			productReference = 1199DC5A2EBCC71C00896DBC /* eartharound.swift.app */;
+			productReference = 1199DC5A2EBCC71C00896DBC /* Earth Around.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -94,12 +384,18 @@
 			);
 			mainGroup = 1199DC512EBCC71C00896DBC;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E00000000000000000000001 /* XCLocalSwiftPackageReference "SpaceWeatherKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1199DC5B2EBCC71C00896DBC /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				1199DC592EBCC71C00896DBC /* eartharound.swift */,
+				E00000000000000000000040 /* SpaceWeatherWidget */,
+				E00000000000000000000070 /* SpaceWeatherWatch */,
+				E00000000000000000000090 /* SpaceWeatherWatchWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -112,10 +408,52 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E00000000000000000000045 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E00000000000000000000075 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E00000000000000000000095 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		1199DC562EBCC71C00896DBC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E00000000000000000000043 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E00000000000000000000073 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E00000000000000000000093 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -246,6 +584,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AppGroup.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = LSKNNBG94G;
@@ -273,6 +612,8 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_CFBundleDisplayName = "Earth Around";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				"INFOPLIST_KEY_WKWatchOnly[sdk=watchos*]" = YES;
@@ -282,18 +623,18 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.1;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "oleksandr.aisixteen.eartharound-swift";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "oleksandr.aisixteen.eartharound";
+				PRODUCT_NAME = "Earth Around";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx watchos watchossimulator xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 26.1;
 			};
 			name = Debug;
@@ -303,6 +644,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AppGroup.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = LSKNNBG94G;
@@ -330,6 +672,8 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_CFBundleDisplayName = "Earth Around";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				"INFOPLIST_KEY_WKWatchOnly[sdk=watchos*]" = YES;
@@ -339,23 +683,227 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.1;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "oleksandr.aisixteen.eartharound-swift";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "oleksandr.aisixteen.eartharound";
+				PRODUCT_NAME = "Earth Around";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx watchos watchossimulator xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 26.1;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
+
+		E0000000000000000000004B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AppGroup.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = LSKNNBG94G;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "SpaceWeatherWidget-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Earth Around";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "oleksandr.aisixteen.eartharound.widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E0000000000000000000004C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AppGroup.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = LSKNNBG94G;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "SpaceWeatherWidget-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Earth Around";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "oleksandr.aisixteen.eartharound.widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+
+		E0000000000000000000007B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = AppGroup.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = LSKNNBG94G;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Earth Around";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "oleksandr.aisixteen.eartharound";
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "oleksandr.aisixteen.eartharound.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		E0000000000000000000007C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = AppGroup.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = LSKNNBG94G;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Earth Around";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "oleksandr.aisixteen.eartharound";
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "oleksandr.aisixteen.eartharound.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		E0000000000000000000009B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = AppGroup.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = LSKNNBG94G;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "SpaceWeatherWidget-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Earth Around";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "oleksandr.aisixteen.eartharound.watchkitapp.widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		E0000000000000000000009C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = AppGroup.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = LSKNNBG94G;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "SpaceWeatherWidget-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Earth Around";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "oleksandr.aisixteen.eartharound.watchkitapp.widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
 
 /* Begin XCConfigurationList section */
 		1199DC552EBCC71C00896DBC /* Build configuration list for PBXProject "eartharound.swift" */ = {
@@ -376,7 +924,156 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		E0000000000000000000004A /* Build configuration list for PBXNativeTarget "SpaceWeatherWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E0000000000000000000004B /* Debug */,
+				E0000000000000000000004C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E0000000000000000000007A /* Build configuration list for PBXNativeTarget "SpaceWeatherWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E0000000000000000000007B /* Debug */,
+				E0000000000000000000007C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E0000000000000000000009A /* Build configuration list for PBXNativeTarget "SpaceWeatherWatchWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E0000000000000000000009B /* Debug */,
+				E0000000000000000000009C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		E00000000000000000000001 /* XCLocalSwiftPackageReference "SpaceWeatherKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = SpaceWeatherKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E00000000000000000000010 /* GeomagKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GeomagKit;
+		};
+		E00000000000000000000011 /* FlareKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FlareKit;
+		};
+		E00000000000000000000012 /* SolarWindKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SolarWindKit;
+		};
+		E00000000000000000000013 /* AuroraKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AuroraKit;
+		};
+		E00000000000000000000014 /* HpoKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HpoKit;
+		};
+		E00000000000000000000015 /* SolarIndexKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SolarIndexKit;
+		};
+		E00000000000000000000016 /* SpaceWeatherFeed */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SpaceWeatherFeed;
+		};
+		E00000000000000000000050 /* SpaceWeatherFeed */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SpaceWeatherFeed;
+		};
+		E00000000000000000000051 /* GeomagKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GeomagKit;
+		};
+		E00000000000000000000052 /* FlareKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FlareKit;
+		};
+		E00000000000000000000053 /* SolarWindKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SolarWindKit;
+		};
+		E00000000000000000000054 /* AuroraKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AuroraKit;
+		};
+		E00000000000000000000055 /* HpoKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HpoKit;
+		};
+		E00000000000000000000056 /* SolarIndexKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SolarIndexKit;
+		};
+		E00000000000000000000080 /* SpaceWeatherFeed */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SpaceWeatherFeed;
+		};
+		E00000000000000000000081 /* GeomagKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GeomagKit;
+		};
+		E00000000000000000000082 /* FlareKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FlareKit;
+		};
+		E00000000000000000000083 /* SolarWindKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SolarWindKit;
+		};
+		E00000000000000000000084 /* AuroraKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AuroraKit;
+		};
+		E00000000000000000000085 /* HpoKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HpoKit;
+		};
+		E00000000000000000000086 /* SolarIndexKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SolarIndexKit;
+		};
+		E000000000000000000000B0 /* SpaceWeatherFeed */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SpaceWeatherFeed;
+		};
+		E000000000000000000000B1 /* GeomagKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GeomagKit;
+		};
+		E000000000000000000000B2 /* FlareKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FlareKit;
+		};
+		E000000000000000000000B3 /* SolarWindKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SolarWindKit;
+		};
+		E000000000000000000000B4 /* AuroraKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AuroraKit;
+		};
+		E000000000000000000000B5 /* HpoKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HpoKit;
+		};
+		E000000000000000000000B6 /* SolarIndexKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SolarIndexKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1199DC522EBCC71C00896DBC /* Project object */;
 }

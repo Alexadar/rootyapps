@@ -1,27 +1,23 @@
-//
-//  ContentView.swift
-//  eartharound.swift
-//
-//  Created by Oleksandr Koreniuk on 06.11.2025.
-//
-
 import SwiftUI
 
 struct ContentView: View {
+    // Theme is owned here so `.swTheme` sets the palette for the WHOLE root subtree
+    // (including the root's own header) — a `.swTheme` applied inside the root would
+    // only reach its children, not the root view's own `@Environment(\.sw)`.
+    @StateObject private var theme = ThemeStore()
+    @StateObject private var mode = ModeStore()
+    @StateObject private var demo = DemoDriver()
+
     var body: some View {
-        #if os(macOS)
-        MacOSContentView()
-        #elseif os(iOS)
-        IOSContentView()
-        #elseif os(watchOS)
-        WatchContentView()
-        #elseif os(tvOS)
-        TVOSContentView()
-        #elseif os(visionOS)
-        VisionOSContentView()
-        #else
-        Text("Unsupported platform")
-        #endif
+        SpaceWeatherRootView()
+            .environmentObject(theme)
+            .environmentObject(mode)
+            .environmentObject(demo)
+            .swTheme(theme.selected)
+            .task {
+                demo.applyInitialState(theme: theme, mode: mode)   // static flags (screenshots)
+                if DemoDriver.enabled { await demo.run(theme: theme, mode: mode) }
+            }
     }
 }
 
