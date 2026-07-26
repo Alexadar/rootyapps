@@ -10,6 +10,10 @@ enum Fmt {
 
     static func age(_ date: Date?, now: Date = Date()) -> String {
         guard let date else { return "no data" }
+        // Under a minute the relative formatter says "in 0 sec" — future tense for data we
+        // already have. NOAA/GFZ stamps can also sit a few seconds ahead of the device clock,
+        // which pushes it further into the future. Both read as broken; say "just now".
+        guard now.timeIntervalSince(date) >= 60 else { return "just now" }
         return rel.localizedString(for: date, relativeTo: now)
     }
 

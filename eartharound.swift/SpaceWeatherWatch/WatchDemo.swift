@@ -1,11 +1,12 @@
 import Foundation
 import SwiftUI
+import SpaceWeatherFeed
 
 /// Marketing self-drive for the watch, mirroring the phone's `DemoDriver`: static flags
 /// freeze one page for a screenshot, `EARTHAROUND_DEMO=1` walks all three for the video.
 /// Beats are logged as `REEL_SCENE <key> <epoch>` so the same align/frame tooling applies.
 ///
-///   EARTHAROUND_WATCH_PAGE=0|1|2   EARTHAROUND_DEMO=1
+///   EARTHAROUND_WATCH_PAGE=0|1|2   EARTHAROUND_THEME=dark|night   EARTHAROUND_DEMO=1
 ///
 /// Note: watchOS previews do not exist on the App Store — the video this drives is for the
 /// site and social only. The screenshots it freezes are the uploadable asset.
@@ -14,10 +15,15 @@ enum WatchDemo {
     static var enabled: Bool { env("EARTHAROUND_DEMO") == "1" }
     static func env(_ k: String) -> String? { ProcessInfo.processInfo.environment[k] }
 
-    /// One-shot page freeze for screenshots.
-    static func applyInitialPage(_ page: inout Int) {
+    /// One-shot page + theme freeze for screenshots. The theme has to be pinned because it
+    /// persists in the app group — whatever the phone last synced over (or a previous night
+    /// beat left behind) would otherwise silently recolour the whole capture set.
+    static func applyInitialState(_ page: inout Int) {
         if let p = env("EARTHAROUND_WATCH_PAGE"), let i = Int(p), (0...2).contains(i) {
             page = i
+        }
+        if let t = env("EARTHAROUND_THEME") {
+            SharedStore().themeRaw = (t == "night" ? SWThemeChoice.night : .dark).rawValue
         }
     }
 

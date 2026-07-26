@@ -7,8 +7,8 @@ import WidgetKit
 /// Three vertical pages: the hero readout, the Hp30/Kp geomagnetic detail, and
 /// wind/aurora context. Cache-first paint from the watch's own app-group container
 /// (the store preloads it), live refresh on activation, and the complications reload
-/// off the same fetch. Theme is the watch's own: app groups are per-device, so the
-/// phone's Night choice does not cross over — that would need WatchConnectivity.
+/// off the same fetch. The theme lives in this device's own app-group container — app
+/// groups don't span devices — and the phone's choice arrives over `WatchSync`.
 struct WatchRootView: View {
     @StateObject private var store = SpaceWeatherStore()
     @Environment(\.scenePhase) private var scenePhase
@@ -29,7 +29,7 @@ struct WatchRootView: View {
         .task {
             WatchSync.shared.start()          // receives the phone's theme/mode choices
             store.afterRefresh = { _ in WidgetCenter.shared.reloadAllTimelines() }
-            WatchDemo.applyInitialPage(&page)
+            WatchDemo.applyInitialState(&page)
             await store.refresh()
             if WatchDemo.enabled { await WatchDemo.run(page: { page = $0 }) }
         }

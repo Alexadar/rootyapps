@@ -45,6 +45,7 @@ xcrun simctl install "$UDID" "$BUILT_APP" >/dev/null
 PAGES=(readout geomag wind)
 for i in 0 1 2; do
   xcrun simctl terminate "$UDID" "$APP_BUNDLE" 2>/dev/null || true
+  SIMCTL_CHILD_EARTHAROUND_THEME="${THEME:-dark}" \
   SIMCTL_CHILD_EARTHAROUND_WATCH_PAGE=$i xcrun simctl launch "$UDID" "$APP_BUNDLE" >/dev/null
   sleep "$SETTLE"
   OUT=$(printf "%s/%02d_%s.png" "$RAW_DIR" $((i + 1)) "${PAGES[$i]}")
@@ -64,7 +65,7 @@ RAW_MOV="$RAW_DIR/video/capture.mov"; rm -f "$RAW_MOV"
 xcrun simctl io "$UDID" recordVideo --codec h264 --force "$RAW_MOV" &
 REC_PID=$!
 sleep 1
-SIMCTL_CHILD_EARTHAROUND_DEMO=1 xcrun simctl launch "$UDID" "$APP_BUNDLE" >/dev/null
+SIMCTL_CHILD_EARTHAROUND_THEME="${THEME:-dark}" SIMCTL_CHILD_EARTHAROUND_DEMO=1 xcrun simctl launch "$UDID" "$APP_BUNDLE" >/dev/null
 
 for _ in $(seq 1 45); do
   grep -q "REEL_END" "$SYSLOG" 2>/dev/null && break
