@@ -74,10 +74,15 @@ def render_captions(cfg, work):
     W, H = cfg["canvas"]
     st = cfg["style"]
     pad = st["side_padding"]
-    title_font = bold_font(int(W * 0.058))
-    sub_font = load_or_get_font(None, int(W * 0.038))
-    title_lh, sub_lh = int(W * 0.070), int(W * 0.050)
-    gap = int(W * 0.015)
+    # Type is sized as a fraction of WIDTH, which is right for a portrait phone canvas and far too
+    # big for a 16:9 landscape one (a Mac preview is 1920 wide but only 1080 tall). Override with
+    # `title_scale` / `subtitle_scale` for landscape — ~0.030 / 0.020 reads well at 1920×1080.
+    ts = float(st.get("title_scale", 0.058))
+    ss = float(st.get("subtitle_scale", 0.038))
+    title_font = bold_font(int(W * ts))
+    sub_font = load_or_get_font(None, int(W * ss))
+    title_lh, sub_lh = int(W * ts * 1.21), int(W * ss * 1.32)
+    gap = int(W * ts * 0.26)
     ribbon = bool(st.get("caption_ribbon", False))
     ribbon_a = int(round(255 * float(st.get("ribbon_opacity", 0.55))))
     ribbon_padv = int(H * float(st.get("ribbon_pad_percent", 0.035)))
