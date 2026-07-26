@@ -4,7 +4,10 @@ import SwiftUI
 /// The selected pill fills with the current `.tint` (set to the tool's section accent).
 /// Drop-in for the existing `SubScreenPicker(titles:selection:)` API.
 struct SubScreenPicker: View {
-    let titles: [String]
+    /// `LocalizedStringKey`, so `SubScreenPicker(titles: ["Note", "Tempo", …])` puts each literal
+    /// in the catalog. Sub-screen names are the tightest text in the app — check German and
+    /// Turkish on an iPhone before adding a fifth segment.
+    let titles: [LocalizedStringKey]
     @Binding var selection: Int
     @Namespace private var ns
 

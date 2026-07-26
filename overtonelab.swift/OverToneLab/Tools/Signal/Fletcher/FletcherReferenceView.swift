@@ -8,6 +8,6 @@ struct FletcherReferenceView: View {
         }
     }
     private func card(_ t: String, _ b: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) { CardHeader(title: t); Text(b).font(.callout).foregroundStyle(.secondary) }.glassCard()
+        VStack(alignment: .leading, spacing: 6) { CardHeader(title: L.loc(t)); Text(b).font(.callout).foregroundStyle(.secondary) }.glassCard()
     }
 }

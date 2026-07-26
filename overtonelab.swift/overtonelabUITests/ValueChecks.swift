@@ -45,6 +45,9 @@ final class ValueChecks: XCTestCase {
     private func check(_ toolRaw: String, _ values: [String]) {
         let app = XCUIApplication()
         app.launchEnvironment["OVERTONELAB_TOOL"] = toolRaw
+        // Pin English: results now follow the app language (a German user reads 0,81 s), so the
+        // expected strings below would otherwise depend on the host machine's locale.
+        app.launchEnvironment["OVERTONELAB_LANG"] = "en"
         app.launch()
         for v in values {
             XCTAssertTrue(app.staticTexts[v].firstMatch.waitForExistence(timeout: 8),

@@ -51,7 +51,7 @@ private struct SectionLabel: View {
     var body: some View {
         HStack(spacing: 8) {
             Capsule().fill(accent).frame(width: 4, height: 12)
-            Text(title.uppercased())
+            Text(L.loc(title)).textCase(.uppercase)
                 .font(.system(.caption2, design: .monospaced).weight(.semibold))
                 .tracking(1.4)
                 .foregroundStyle(OTL.textSecondary)

@@ -8,6 +8,7 @@ struct RootView: View {
     @StateObject private var favorites = FavoritesStore()
     @State private var selection: Tool? = deepLinkTool()
     @State private var path: [Tool] = deepLinkTool().map { [$0] } ?? []
+    @State private var showSettings = false
 
     var body: some View {
         Group {
@@ -20,12 +21,31 @@ struct RootView: View {
                 NavigationStack(path: $path) {
                     CatalogGrid(favorites: favorites)
                         .navigationDestination(for: Tool.self) { ToolDetailView(tool: $0) }
+                        .toolbar { settingsButton }
                 }
             }
             #endif
         }
         .preferredColorScheme(.dark)
+        #if os(iOS)
+        // On macOS the same screen is the Settings scene (⌘,), wired in OverToneLabApp.
+        .sheet(isPresented: $showSettings) {
+            NavigationStack { SettingsView() }
+                .presentationDetents([.medium])
+        }
+        #endif
     }
+
+    #if os(iOS)
+    private var settingsButton: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button { showSettings = true } label: {
+                Image(systemName: "gearshape")
+            }
+            .accessibilityIdentifier("settings.open")
+        }
+    }
+    #endif
 
     private var splitView: some View {
         NavigationSplitView {
@@ -42,6 +62,7 @@ struct RootView: View {
             .navigationTitle("Overtone Lab")
             #if os(iOS)
             .navigationSplitViewColumnWidth(min: 260, ideal: 290)
+            .toolbar { settingsButton }
             #endif
         } detail: {
             if let tool = selection {
@@ -85,7 +106,9 @@ private struct ToolGroup: View {
         } header: {
             HStack(spacing: 8) {
                 Capsule().fill(accent).frame(width: 4, height: 11)
-                Text(title.uppercased())
+                // `title` arrives as a String (ToolSection.rawValue / "Favorites"), so it needs
+                // L.loc — Text(String) renders verbatim and would ship English.
+                Text(L.loc(title)).textCase(.uppercase)
                     .font(.system(.caption2, design: .monospaced).weight(.semibold)).tracking(1.3)
             }
         }

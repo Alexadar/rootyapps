@@ -12,7 +12,7 @@ struct DriverView: View {
             }.glassCard()
             VStack(alignment: .leading, spacing: 8) {
                 CardHeader(title: "Guidance")
-                Text(vm.suggestedAlignment).font(.callout)
+                Text(L.loc(vm.suggestedAlignment)).font(.callout)
                 ResultRow(label: "Sealed Vb for Qtc 0.707", value: "\(Fmt.f(vm.vbForTarget, 1)) L", emphasis: true)
                 Text("From the driver's own datasheet parameters. Qtc 0.707 is the maximally-flat (Butterworth) sealed alignment.")
                     .font(.caption).foregroundStyle(.secondary)

@@ -29,7 +29,10 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    var title: String {
+    /// `LocalizedStringKey` so `Text(tool.title)` and `.navigationTitle(tool.title)` resolve
+    /// against the catalog. Tool names are surnames (Sabine, Partch, Thiele) and stay English
+    /// in every locale — they are listed in gen_xcstrings.py's DO_NOT_TRANSLATE.
+    var title: LocalizedStringKey {
         switch self {
         case .tempo: return "Tempo"; case .delay: return "Delay"; case .timecode: return "Timecode"; case .pitch: return "Pitch"
         case .partch: return "Partch"; case .comma: return "Comma"; case .mersenne: return "Mersenne"
@@ -44,7 +47,7 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    var subtitle: String {
+    var subtitle: LocalizedStringKey {
         switch self {
         case .tempo: return "Note length & tempo"
         case .delay: return "Delay & distance"

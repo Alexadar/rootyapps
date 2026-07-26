@@ -14,12 +14,18 @@ extension View {
 }
 
 /// Section header inside a card — monospaced, uppercased, tracked.
+///
+/// `title` is a `LocalizedStringKey` so the literal at the call site reaches Localizable.xcstrings;
+/// `trailing` stays a `String` because it carries a formatted number, never prose. Uppercasing is
+/// done with `.textCase(.uppercase)` rather than `String.uppercased()` so it follows the
+/// environment locale — Turkish dotless ı is the case this protects.
 struct CardHeader: View {
-    let title: String
+    let title: LocalizedStringKey
     var trailing: String? = nil
     var body: some View {
         HStack {
-            Text(title.uppercased())
+            Text(title)
+                .textCase(.uppercase)
                 .font(.system(.caption2, design: .monospaced).weight(.semibold))
                 .tracking(1)
                 .foregroundStyle(OTL.textSecondary)

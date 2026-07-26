@@ -2,8 +2,13 @@ import SwiftUI
 
 /// Labeled numeric input row — value shown in a monospaced chip (decimal pad on iOS).
 /// `range` clamps the committed value to the field's valid mathematical domain.
+///
+/// `title` is a `LocalizedStringKey` (the literal at the call site becomes the catalog key);
+/// `unit` stays a `String` — Hz, dB and m³ are the same in every language the app ships.
+/// The field parses with `.number`, which resolves against the environment locale, so a German
+/// user types `0,17` and `Fmt` prints `0,17` back. See `LanguageStore`.
 struct NumberField: View {
-    let title: String
+    let title: LocalizedStringKey
     @Binding var value: Double
     var unit: String = ""
     var range: ClosedRange<Double>? = nil
@@ -39,7 +44,7 @@ struct NumberField: View {
 
 /// Read-only result row: label left, monospaced value right. `emphasis` = the one hero readout.
 struct ResultRow: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: String
     var unit: String = ""
     var emphasis: Bool = false
