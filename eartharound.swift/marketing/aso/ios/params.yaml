@@ -1,0 +1,31 @@
+platform: ios
+size: [1320, 2868]        # iPhone 6.9" — APP_IPHONE_67
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/raw/ios
+  output_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/aso/ios
+
+style:
+  bg_gradient: true
+  bg_color_top: '#0C111B'
+  bg_color_bottom: '#080B14'
+  title_color: '#E8EEF6'
+  subtitle_color: '#4DF0A0'
+  screenshot_zoom: 0.85
+  text_row_percent: 18
+  screenshot_row_percent: 82
+  border_width: 7
+  border_color: '#17202F'
+  border_radius: 30
+  text_padding: 40
+  screenshot_padding: 40
+
+texts:
+  - title: Space weather, validated
+    subtitle: Solar + geomagnetic, live from NOAA & GFZ
+  - title: Hp30 storm resolution
+    subtitle: 30-minute geomagnetic detail Kp misses
+  - title: Night mode
+    subtitle: Red-shift built for aurora chasers
+  - title: No ads. No false alarms.
+    subtitle: Every number checked against the published standard

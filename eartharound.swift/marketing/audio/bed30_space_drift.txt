@@ -1,0 +1,2 @@
+bed30_space_drift.wav — Stable Audio 3 (sm-music / same-s, 30s, steps 24, seed 11) (2026-07-13)
+prompt: deep space ambient, slow evolving analog synth pads, warm shimmering drones, distant sub-bass swell, glassy bell textures, weightless cinematic, wide spacious reverb, no drums, no percussion, no vocals

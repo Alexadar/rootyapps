@@ -1,0 +1,4 @@
+bed30_space_aurora.wav — Stable Audio 3 (sm-music / same-s, 30s, steps 24, seed 22) (2026-07-13)
+prompt: cinematic space ambient, dark low drone, slow rising aurora shimmer, subtle pulsing synth arpeggio, magnetic tension resolving to awe, wide stereo field, no drums, no percussion, no vocals
+Scored into the iOS app-preview reel (loudnorm to -16 LUFS, fade in/out).
+Alternates from the same session: bed30_space_drift.wav (seed 11), bed30_space_observatory.wav (seed 33).
