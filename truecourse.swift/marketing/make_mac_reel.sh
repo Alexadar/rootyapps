@@ -7,7 +7,7 @@ set -euo pipefail
 ROOT=/Users/oleksandr/Projects/rootyapps
 APP_DIR="$ROOT/truecourse.swift"
 PY=/Users/oleksandr/miniconda3/envs/fantastic/bin/python
-MACBIN="$APP_DIR/build/dd-mac/Build/Products/Debug/truecourse.swift.app/Contents/MacOS/truecourse.swift"
+MACBIN="$APP_DIR/build/dd-mac/Build/Products/Debug/TrueCourse.app/Contents/MacOS/TrueCourse"
 REC="$APP_DIR/tools/recordwindow"
 CLIPS=/tmp/tc_macclips; rm -rf "$CLIPS"; mkdir -p "$CLIPS"
 OUT="$APP_DIR/marketing/aso/mac/video"; mkdir -p "$OUT"
@@ -16,8 +16,8 @@ OUT="$APP_DIR/marketing/aso/mac/video"; mkdir -p "$OUT"
   xcodebuild -scheme truecourse.swift -destination 'platform=macOS' -derivedDataPath build/dd-mac build >/dev/null )
 [ -x "$REC" ] || ( cd "$APP_DIR/tools" && swiftc -O RecordWindow.swift -o recordwindow )
 
-kill_app(){ pkill -9 -f "MacOS/truecourse.swift" 2>/dev/null || true
-  for _ in 1 2 3 4 5; do pgrep -f "MacOS/truecourse.swift" >/dev/null || break; sleep 0.5; done; }
+kill_app(){ pkill -9 -f "MacOS/TrueCourse" 2>/dev/null || true
+  for _ in 1 2 3 4 5; do pgrep -f "MacOS/TrueCourse" >/dev/null || break; sleep 0.5; done; }
 
 rec(){  # clip  tool  screen  demo
   kill_app; sleep 0.7

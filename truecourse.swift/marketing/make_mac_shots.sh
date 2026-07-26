@@ -6,14 +6,14 @@ set -euo pipefail
 ROOT=/Users/oleksandr/Projects/rootyapps
 APP_DIR="$ROOT/truecourse.swift"
 PY=/Users/oleksandr/miniconda3/envs/fantastic/bin/python
-MACBIN="$APP_DIR/build/dd-mac/Build/Products/Debug/truecourse.swift.app/Contents/MacOS/truecourse.swift"
+MACBIN="$APP_DIR/build/dd-mac/Build/Products/Debug/TrueCourse.app/Contents/MacOS/TrueCourse"
 RAW="$APP_DIR/marketing/raw/mac"; mkdir -p "$RAW"; rm -f "$RAW"/*.png
 
 [ -x "$MACBIN" ] || ( cd "$APP_DIR" && xcodegen generate >/dev/null && \
   xcodebuild -scheme truecourse.swift -destination 'platform=macOS' -derivedDataPath build/dd-mac build >/dev/null )
 
-kill_app(){ pkill -9 -f "MacOS/truecourse.swift" 2>/dev/null || true
-  for _ in 1 2 3 4 5; do pgrep -f "MacOS/truecourse.swift" >/dev/null || break; sleep 0.5; done; }
+kill_app(){ pkill -9 -f "MacOS/TrueCourse" 2>/dev/null || true
+  for _ in 1 2 3 4 5; do pgrep -f "MacOS/TrueCourse" >/dev/null || break; sleep 0.5; done; }
 
 capture(){  # 01_name  tool  screen(optional)
   kill_app; sleep 0.8

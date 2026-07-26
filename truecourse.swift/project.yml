@@ -11,7 +11,7 @@ settings:
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "1"
+    CURRENT_PROJECT_VERSION: "2"
     ENABLE_PREVIEWS: YES
     GENERATE_INFOPLIST_FILE: YES
 packages:
@@ -60,6 +60,7 @@ targets:
       - path: TrueCourse
     settings:
       base:
+        PRODUCT_NAME: TrueCourse
         PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.truecourse
         "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": truecourse-macOS.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
