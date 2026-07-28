@@ -1,7 +1,7 @@
 platform: ipad
 paths:
-  raw_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/raw/ipad
-  output_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/aso/ipad
+  raw_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/raw/en/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/aso/en/ipad
 style:
   bg_gradient: true
   bg_color_top: '#0C0A18'

@@ -1,7 +1,7 @@
 platform: mac
 paths:
-  raw_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/raw/mac
-  output_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/aso/mac
+  raw_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/raw/en/mac
+  output_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/aso/en/mac
 style:
   bg_gradient: true
   bg_color_top: '#0C0A18'

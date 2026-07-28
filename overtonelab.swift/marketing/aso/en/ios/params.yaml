@@ -1,7 +1,7 @@
 platform: ios
 paths:
-  raw_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/raw/ios_clean
-  output_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/aso/ios
+  raw_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/raw/en/ios
+  output_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/aso/en/ios
 style:
   bg_gradient: true
   bg_color_top: '#0C0A18'

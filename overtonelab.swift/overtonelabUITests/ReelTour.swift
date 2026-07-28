@@ -11,6 +11,12 @@ final class ReelTour: XCTestCase {
 
     func testReelTour() {
         let app = XCUIApplication()
+        // Localized reels: the walkthrough has to be recorded with the app IN that language.
+        // xcodebuild passes TEST_RUNNER_OVERTONELAB_LANG into this process with the prefix
+        // stripped; forward it to the app under test, which reads it in LanguageStore.
+        if let lang = ProcessInfo.processInfo.environment["OVERTONELAB_LANG"], !lang.isEmpty {
+            app.launchEnvironment["OVERTONELAB_LANG"] = lang
+        }
         app.launch()
         XCTAssertTrue(app.navigationBars["Overtone Lab"].waitForExistence(timeout: 10), "catalog missing")
         dwell(1.4)

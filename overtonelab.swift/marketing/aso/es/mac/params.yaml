@@ -1,0 +1,25 @@
+platform: mac
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/raw/es/mac
+  output_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/aso/es/mac
+style:
+  bg_gradient: true
+  bg_color_top: '#0C0A18'
+  bg_color_bottom: '#08080B'
+  title_color: '#ffffff'
+  subtitle_color: '#B79FEA'
+  text_col_percent: 40
+  screenshot_col_percent: 60
+  screenshot_zoom: 0.92
+  border_width: 8
+  border_radius: 22
+  text_padding: 80
+texts:
+  - title: "Overtone Lab en el Mac"
+    subtitle: "Todas las herramientas a un lado, el trabajo al otro"
+  - title: "Acústica de sala"
+    subtitle: "RT60, modos propios y frecuencia de Schroeder"
+  - title: "Diseño de altavoces"
+    subtitle: "Thiele-Small: selladas y bass-reflex"
+  - title: "Sonoridad de masterización"
+    subtitle: "LUFS integrados reales ITU-R BS.1770"
