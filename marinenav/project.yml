@@ -4,6 +4,7 @@ options:
   deploymentTarget:
     iOS: "26.0"
     macOS: "26.0"
+    watchOS: "26.0"
   createIntermediateGroups: true
 settings:
   base:
@@ -36,6 +37,15 @@ targets:
         product: GeodesyKit
       - package: CelestialNavKit
         product: CelestialNavKit
+      # The watch app ships INSIDE the iOS app (one purchase covers it) but declares
+      # WKRunsIndependentlyOfCompanionApp, so it also installs and runs on its own.
+      # destinationFilters pins the embed to iOS — a macOS build must not carry a watch app.
+      - target: marinenavWatch
+        embed: true
+        destinationFilters: [iOS]
+        copy:
+          destination: wrapper
+          subpath: Watch
     sources:
       - path: MarineNav
       - path: marinenav.icon
@@ -57,6 +67,37 @@ targets:
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+  marinenavWatch:
+    type: application
+    # `platform:`, NOT `supportedDestinations:` — XcodeGen rejects watchOS in a multiplatform
+    # target ("Create a separate target using platform for watchOS apps"). The phone/Mac target
+    # stays multiplatform; only this one is single-platform.
+    platform: watchOS
+    deploymentTarget: "26.0"
+    dependencies:
+      # Tides only for now. The other three Kits build for watchOS too, but nothing on the
+      # watch consumes them yet and an unused link is dead weight on a battery-bound device.
+      - package: TidesKit
+        product: TidesKit
+    sources:
+      - path: MarineNavWatch
+      # The offline station catalogue lives in the app layer, not in the Kits (the Kits are
+      # deliberately data-free). The watch app is standalone, so it needs its own copy of the
+      # constants compiled in — referenced in place rather than duplicated.
+      - path: MarineNav/StationCatalog.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.marinenav.watchkitapp
+        # Same 5.2.5 reasoning as the phone target: CFBundleName follows PRODUCT_NAME, and
+        # a target named `marinenavWatch` would otherwise surface as the app's name.
+        PRODUCT_NAME: "Marine Nav"
+        TARGETED_DEVICE_FAMILY: "4"
+        INFOPLIST_KEY_CFBundleDisplayName: Marine Nav
+        INFOPLIST_KEY_WKApplication: YES
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: oleksandr.aisixteen.marinenav
+        INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: YES
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+
   marinenavUITests:
     type: bundle.ui-testing
     supportedDestinations: [iOS]
@@ -70,6 +111,12 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: marinenav
 schemes:
+  marinenavWatch:
+    build:
+      targets:
+        marinenavWatch: all
+    run:
+      config: Debug
   marinenav:
     build:
       targets:

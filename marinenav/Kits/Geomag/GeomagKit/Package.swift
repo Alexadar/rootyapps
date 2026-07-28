@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "GeomagKit",
-    platforms: [.macOS(.v13), .iOS(.v16)],
+    platforms: [.macOS(.v13), .iOS(.v16), .watchOS(.v10)],
     products: [.library(name: "GeomagKit", targets: ["GeomagKit"])],
     targets: [
         .target(name: "GeomagKit"),
