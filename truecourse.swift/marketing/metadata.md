@@ -2,7 +2,7 @@
 
 Paste-ready listing copy. Bundle id `oleksandr.aisixteen.truecourse` · Team `LSKNNBG94G` ·
 on-device display name **TrueCourse** (the store name differs; that's fine). Buy-once, offline,
-no ads, no subscription. Category: Utilities. Price tier: **$4.99** (one-time).
+no ads, no subscription. Category: Utilities. Price tier: **$9.99** (one-time).
 
 ---
 
@@ -10,12 +10,19 @@ no ads, no subscription. Category: Utilities. Price tier: **$4.99** (one-time).
 `TrueCourse E6B`
 
 ## Subtitle (≤30)
-`Wind, TAS, density alt & fuel`
+`Aviation Calculator for Pilots`
 
 ## Keywords (≤100 chars, comma-separated, no spaces)
-`flight computer,wind triangle,crosswind,weight balance,cg,heading,groundspeed,mach,cfi,ppl,ifr`
+`flight,computer,wind,triangle,crosswind,density,altitude,airspeed,weight,balance,fuel,cg,heading,ifr`
 
-<!-- 94 chars. Name+subtitle already index "e6b, wind, tas, density altitude, fuel" — don't repeat. -->
+<!-- ASO rework 2026-07-26 (live). Name kept "TrueCourse E6B" per owner. Head noun "calculator"
+     + aviation/pilot now in subtitle; flight/computer/airspeed/altitude/density in keywords, so all
+     12 target queries combine ("e6b calculator", "density altitude", "flight computer", …). "true"
+     comes free from the TrueCourse CamelCase split. Prior set (subtitle "Wind, TAS, density alt &
+     fuel"; keywords "flight computer,wind triangle,…mach,cfi,ppl,ifr") left "calculator/aviation/
+     pilot/altitude/airspeed" unindexed — only ~3 of 12 queries formed. -->
+<!-- Free next wins (not applied): es-MX secondary locale (~160 free chars, must be self-sufficient);
+     re-run the positional diagnostic 2-3 weeks after this ships live. -->
 
 ## Promotional text (≤170)
 `The trustworthy E6B: validated FAA formulas for wind, airspeed, altitude, fuel, and weight & balance. No subscription, no ads, works offline on every Apple device.`
