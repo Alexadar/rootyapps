@@ -1,0 +1,32 @@
+platform: mac
+size: [2880, 1800]        # Mac App Store — APP_DESKTOP
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/raw/de/mac
+  output_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/aso/de/mac
+
+# TwoColumnStyle: caption left, the window right. The mac window is portrait-ish (720x900
+# points), so it sits comfortably in the right column without upscaling.
+style:
+  bg_gradient: true
+  bg_color_top: '#0C111B'
+  bg_color_bottom: '#080B14'
+  title_color: '#E8EEF6'
+  subtitle_color: '#4DF0A0'
+  screenshot_zoom: 1.0
+  text_col_percent: 42
+  screenshot_col_percent: 58
+  border_width: 8
+  border_color: '#17202F'
+  border_radius: 26
+  text_padding: 110
+  screenshot_padding: 90
+texts:
+  - title: "Sturm gerade jetzt?"
+    subtitle: "Klare Antworten, live von der NOAA"
+  - title: "Hp30-Detail"
+    subtitle: "Sturmauflösung im 30-Minuten-Takt"
+  - title: "Nachtmodus"
+    subtitle: "Rotverschiebung fürs Feld"
+  - title: "Keine Werbung. Kein Fehlalarm."
+    subtitle: "Jeder Wert gegen den veröffentlichten Standard geprüft"

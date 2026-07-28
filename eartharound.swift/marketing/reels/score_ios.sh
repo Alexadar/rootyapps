@@ -10,8 +10,11 @@
 set -euo pipefail
 
 APP_DIR="/Users/oleksandr/Projects/rootyapps/eartharound.swift"
+LOC="${1:-en}"
 BED="${BED:-$APP_DIR/marketing/audio/bed30_space_aurora.wav}"
-V="${V:-$APP_DIR/marketing/aso/ios/video/framed_preview_886x1920.mp4}"
+# The bed is language-agnostic: every locale is scored with the SAME generated audio, so no
+# existing bed is regenerated or overwritten (its prompt/seed live beside it in audio/*.txt).
+V="${V:-$APP_DIR/marketing/aso/$LOC/ios/video/framed_preview_886x1920.mp4}"
 OUT="${V%.mp4}_music.mp4"
 
 [ -f "$BED" ] || { echo "❌ bed not found: $BED"; exit 1; }

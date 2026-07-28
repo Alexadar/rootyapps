@@ -6,7 +6,7 @@ import SpaceWeatherFeed
 /// A panel container: chamfered HUD card with a ticked header that always cites its
 /// data source and shows how old the underlying observation is.
 struct Panel<Content: View>: View {
-    let title: String
+    let title: String.LocalizationValue
     let source: String
     var observedAt: Date? = nil
     /// Which feed this panel came from, so the badge can separate "the source publishes slowly"
@@ -42,7 +42,8 @@ struct StaleBadge: View {
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: icon).font(.caption2)
-            Text(label)
+            Text(SWText.str(label))
+                .textCase(.uppercase)
                 .font(.system(.caption2, design: .monospaced))
                 .tracking(0.6)
         }
@@ -70,12 +71,15 @@ struct StaleBadge: View {
         }
     }
 
-    private var label: String {
+    /// Uppercasing happens via `.textCase(.uppercase)` on the Text, not `.uppercased()` — the
+    /// latter ignores the locale and turns a Turkish "i" into "İ".
+    private var label: String.LocalizationValue {
+        let age = Fmt.age(observedAt)
         switch fetchOutcome {
-        case .skippedOffline:  return "OFFLINE · SHOWING LAST KNOWN"
-        case .skippedCellular: return "PAUSED ON CELLULAR · \(Fmt.age(observedAt).uppercased())"
-        case .failed, .empty:  return "COULDN'T REFRESH · \(Fmt.age(observedAt).uppercased())"
-        case .ok, .none:       return "UPDATED \(Fmt.age(observedAt).uppercased())"
+        case .skippedOffline:  return "Offline · showing last known"
+        case .skippedCellular: return "Paused on cellular · \(age)"
+        case .failed, .empty:  return "Couldn't refresh · \(age)"
+        case .ok, .none:       return "Observed \(age)"
         }
     }
 }
@@ -87,7 +91,7 @@ struct MetricTile: View {
     @Environment(\.sw) private var sw
     let value: String
     var unit: String? = nil
-    let caption: String
+    let caption: String.LocalizationValue
     var color: Color? = nil
 
     var body: some View {
@@ -104,7 +108,8 @@ struct MetricTile: View {
                         .foregroundStyle(sw.textSecondary)
                 }
             }
-            Text(caption.uppercased())
+            Text(SWText.str(caption))
+                .textCase(.uppercase)
                 .font(.system(size: 10, design: .monospaced).weight(.medium))
                 .tracking(1.0)
                 .foregroundStyle(sw.textTertiary)
@@ -112,7 +117,7 @@ struct MetricTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(caption), \(value) \(unit ?? "")")
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -122,7 +127,7 @@ struct ScaleChip: View {
     @Environment(\.sw) private var sw
     let label: String   // "G", "R", "S"
     let level: Int
-    let name: String    // "Quiet", "Minor", …
+    let name: String.LocalizationValue    // "Quiet", "Minor", …
 
     var body: some View {
         VStack(spacing: 5) {
@@ -143,7 +148,8 @@ struct ScaleChip: View {
                             .background(sw.chipFill, in: ChamferBox(cut: 8, radius: SWM.rTile))
                     }
                 }
-            Text(name.uppercased())
+            Text(SWText.str(name))
+                .textCase(.uppercase)
                 .font(.system(size: 9, design: .monospaced))
                 .tracking(0.8)
                 .foregroundStyle(sw.textTertiary)
@@ -151,7 +157,7 @@ struct ScaleChip: View {
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(label) scale, level \(level), \(name)")
+        .accessibilityLabel(Text(SWText.str("\(label) scale, level \(level)")))
     }
 }
 
@@ -159,10 +165,10 @@ struct ScaleChip: View {
 /// this stays SF Pro, sentence case.
 struct MeaningLine: View {
     @Environment(\.sw) private var sw
-    let text: String
-    init(_ text: String) { self.text = text }
+    let text: String.LocalizationValue
+    init(_ text: String.LocalizationValue) { self.text = text }
     var body: some View {
-        Text(text)
+        Text(SWText.str(text))
             .font(.footnote)
             .foregroundStyle(sw.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
@@ -173,10 +179,11 @@ struct MeaningLine: View {
 /// A small coupling/status flag. On-state fills with caution; off-state is outlined.
 struct FlagPill: View {
     @Environment(\.sw) private var sw
-    let text: String
+    let text: String.LocalizationValue
     let on: Bool
     var body: some View {
-        Text(text.uppercased())
+        Text(SWText.str(text))
+            .textCase(.uppercase)
             .font(.system(size: 10, design: .monospaced).weight(.semibold))
             .tracking(0.8)
             .padding(.horizontal, 9).padding(.vertical, 5)
@@ -188,6 +195,6 @@ struct FlagPill: View {
                     ChamferBox(cut: 6, radius: SWM.rChip).strokeBorder(sw.hairline, lineWidth: 1)
                 }
             }
-            .accessibilityLabel("\(text), \(on ? "active" : "inactive")")
+            .accessibilityValue(Text(on ? "active" : "inactive"))
     }
 }

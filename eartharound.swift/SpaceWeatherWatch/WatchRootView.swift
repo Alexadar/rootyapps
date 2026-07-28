@@ -27,6 +27,7 @@ struct WatchRootView: View {
         .tabViewStyle(.verticalPage)
         .overlay(alignment: .topLeading) { captureKeepalive }
         .environment(\.sw, palette)
+        .environment(\.locale, SWLanguage.sharedLocale)
         .task {
             WatchSync.shared.start()          // receives the phone's theme/mode choices
             store.afterRefresh = { _ in WidgetCenter.shared.reloadAllTimelines() }
@@ -70,13 +71,27 @@ private extension View {
 // MARK: - Page chrome
 
 private extension View {
-    /// watchOS floats the system time over the top of the screen, so page content has to
-    /// start below it — otherwise a right-aligned header value renders underneath the clock.
+    /// Top inset applies ONLY to top-aligned pages.
+    ///
+    /// watchOS reserves a tall safe strip at the top for the floating clock and almost nothing at
+    /// the bottom, so the two alignments want different treatment: a top-aligned page keeps the safe
+    /// area (it needs it to clear the clock), a centred one ignores it (or it lands visibly low).
+    ///
+    /// The gutters are asymmetric for the same reason on the other axis: the right edge carries
+    /// both the clock and the vertical page indicator, so a symmetric 4pt let right-aligned values
+    /// collide with the dots.
     func watchPage(_ sw: SWPalette, alignment: Alignment) -> some View {
-        self
-            .padding(.top, 18)
-            .padding(.horizontal, 4)
+        let startsAtTop = alignment == .topLeading || alignment == .top || alignment == .topTrailing
+        return self
+            .padding(.leading, 14)
+            .padding(.trailing, 26)
+            // A centred page centres against the PHYSICAL screen, not the safe area: watchOS reserves
+            // a tall strip up top for the clock and almost nothing at the bottom, so centring inside
+            // the safe area lands 23px low — measured 138px above vs 91px below on a 45mm. Ignoring
+            // only `.top` overcorrects the same distance the other way, which is why this is
+            // `.vertical`. Top-aligned pages keep the safe area; they need it to clear the clock.
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
+            .ignoresSafeArea(edges: startsAtTop ? [] : .vertical)
             .background(sw.background.ignoresSafeArea())
     }
 }
@@ -97,29 +112,31 @@ struct WatchReadoutPage: View {
                 Text("//")
                     .font(.system(.caption2, design: .monospaced).weight(.heavy))
                     .foregroundStyle(sw.brand)
-                Text(offline ? "KP LAST" : "KP NOW")
+                Text(offline ? "Kp last" : "Kp now")
+                    .textCase(.uppercase)
                     .font(.system(.caption2, design: .monospaced).weight(.semibold))
                     .tracking(1.4)
                     .foregroundStyle(sw.textSecondary)
                 Spacer()
-                Text("G\(gScale)")
+                Text(SWText.str("G\(gScale)"))
                     .font(.system(.caption2, design: .monospaced).weight(.heavy))
                     .foregroundStyle(sw.onAccent)
                     .padding(.horizontal, 5).padding(.vertical, 2)
                     .background(sw.severity(gScale), in: ChamferBox(cut: 4, radius: 2))
             }
 
-            Text(snapshot.kp != nil ? String(format: "%.1f", kpNow) : "—")
+            Text(snapshot.kp != nil ? Fmt.num(kpNow, 1) : "—")
                 .font(.system(size: 54, weight: .semibold, design: .monospaced))
                 .monospacedDigit()
                 .foregroundStyle(sw.severity(gScale))
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
-                .accessibilityLabel("Planetary Kp, \(String(format: "%.1f", kpNow)), level G\(gScale)")
+                .accessibilityLabel("Planetary Kp, \(Fmt.num(kpNow, 1)), level G\(gScale)")
 
             HStack(spacing: 12) {
-                watchStat(label: "AURORA",
-                          value: snapshot.aurora.map { "\($0.maxProbability)%" } ?? "—")
+                // Highest Kp that actually occurred in the window — forecast rows excluded.
+                watchStat(label: SWText.str("24H PEAK"),
+                          value: snapshot.kp?.peak24h.map { Fmt.num($0, 1) } ?? "—")
                 watchStat(label: "WIND",
                           value: snapshot.wind?.speed.map { Fmt.num($0, 0) } ?? "—", unit: "KM/S")
             }
@@ -140,7 +157,7 @@ struct WatchGeomagPage: View {
                 Text("//")
                     .font(.system(.caption2, design: .monospaced).weight(.heavy))
                     .foregroundStyle(sw.brand)
-                Text("HP30 24H")
+                Text(SWText.str("HP30 24H"))
                     .font(.system(.caption2, design: .monospaced).weight(.semibold))
                     .tracking(1.4)
                     .foregroundStyle(sw.textSecondary)
@@ -154,7 +171,7 @@ struct WatchGeomagPage: View {
             if let hpo = snapshot.hpo, !hpo.readings.isEmpty {
                 Hp30Chart(readings: last24h(hpo.readings))
             } else {
-                Text("No Hp30 data")
+                Text(SWText.str("No Hp30 data"))
                     .font(.system(.caption2, design: .monospaced))
                     .foregroundStyle(sw.textTertiary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -175,7 +192,7 @@ struct WatchGeomagPage: View {
 
     private func scaleChip(_ label: String, _ level: Int?) -> some View {
         let lvl = level ?? 0
-        return Text("\(label)\(lvl)")
+        return Text(SWText.str("\(label)\(lvl)"))
             .font(.system(.caption2, design: .monospaced).weight(.heavy))
             .monospacedDigit()
             .foregroundStyle(lvl > 0 ? sw.onAccent : sw.textSecondary)
@@ -203,7 +220,8 @@ struct WatchWindPage: View {
                 Text("//")
                     .font(.system(.caption2, design: .monospaced).weight(.heavy))
                     .foregroundStyle(sw.brand)
-                Text("SOLAR WIND")
+                Text(SWText.str("Solar Wind"))
+                    .textCase(.uppercase)
                     .font(.system(.caption2, design: .monospaced).weight(.semibold))
                     .tracking(1.4)
                     .foregroundStyle(sw.textSecondary)
@@ -216,6 +234,12 @@ struct WatchWindPage: View {
                 watchStat(label: "DENSITY", value: snapshot.wind?.density.map { Fmt.num($0, 1) } ?? "—", unit: "P/CM³")
                 watchStat(label: "X-RAY", value: snapshot.flare?.currentClass ?? "—")
             }
+            HStack(spacing: 12) {
+                watchStat(label: SWText.str("24H PEAK"),
+                          value: snapshot.flare?.peak24h?.maxClass ?? "—")
+                watchStat(label: SWText.str("Latest flare"),
+                          value: snapshot.flare?.latestFlare?.maxClass ?? "—")
+            }
             if let aurora = snapshot.aurora {
                 // Proportional, not mono: the mono caption is too wide to wrap on a watch and
                 // truncates to a single "Aurora may be visibl…". fixedSize lets it take the
@@ -223,11 +247,12 @@ struct WatchWindPage: View {
                 Text(aurora.viewLine)
                     .font(.caption2)
                     .foregroundStyle(sw.textSecondary)
-                    .lineLimit(3)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
-            Text("Updated \(Fmt.age(lastRefresh))")
+            Text(SWText.str("Updated \(Fmt.age(lastRefresh))"))
                 .font(.system(size: 10, design: .monospaced))
                 .foregroundStyle(Fmt.isStale(lastRefresh) ? sw.caution : sw.textTertiary)
         }
@@ -250,9 +275,11 @@ private struct WatchStatCell: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
+                .textCase(.uppercase)
                 .font(.system(size: 9, design: .monospaced).weight(.medium))
                 .tracking(1.0)
                 .foregroundStyle(sw.textTertiary)
+                .lineLimit(1).minimumScaleFactor(0.8)
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(value)
                     .font(.system(.footnote, design: .monospaced).weight(.semibold))

@@ -37,10 +37,10 @@ struct SimpleView: View {
                   observedAt: kp?.observedAt ?? snapshot.scales?.observedAt,
                   feed: .kp, status: status) {
                 HStack(spacing: 12) {
-                    MetricTile(value: g > 0 ? "G\(g)" : "None", caption: "storm level",
+                    MetricTile(value: g > 0 ? "G\(g)" : SWText.str("None"), caption: "storm level",
                                color: sw.severity(g))
                     if let k = kp {
-                        MetricTile(value: Fmt.num(k.now, 1), caption: k.activity)
+                        MetricTile(value: Fmt.num(k.now, 1), caption: SWText.key(k.activity))
                     }
                 }
                 if let k = kp {
@@ -52,15 +52,27 @@ struct SimpleView: View {
         }
     }
 
-    private func stormMeaning(g: Int, kp: KpPanel?) -> String {
-        let forecast = kp == nil ? "" : " Faded bars are NOAA's 3-day forecast."
+    /// One whole sentence per band rather than a word spliced into a clause. The old version
+    /// lowercased a Kit word and dropped it mid-sentence, which reads as broken grammar in any
+    /// language with cases or declensions — Ukrainian, German, Polish, Czech, Finnish.
+    private func stormMeaning(g: Int, kp: KpPanel?) -> String.LocalizationValue {
         guard g > 0 else {
             // NOAA's G0 backs "no storm", but quiet-vs-unsettled is a Kp call — with no Kp
             // we stop at what the data supports rather than adding a comfortable adjective.
             guard let k = kp else { return "No geomagnetic storm right now." }
-            return "No geomagnetic storm right now — conditions are \(Geomag.activity(forKp: k.now).lowercased()).\(forecast)"
+            switch Geomag.activityBand(forKp: k.now) {
+            case .quiet:
+                return "No geomagnetic storm right now — the field is quiet. Faded bars are NOAA's 3-day forecast."
+            case .unsettled:
+                return "No geomagnetic storm right now — the field is unsettled. Faded bars are NOAA's 3-day forecast."
+            case .active, .storm:
+                return "No geomagnetic storm right now — the field is active. Faded bars are NOAA's 3-day forecast."
+            }
         }
-        return "\(Geomag.gLabel(g)) geomagnetic storm in progress.\(forecast)"
+        let level = Geomag.gLabel(g)
+        return kp == nil
+            ? "\(level) geomagnetic storm in progress."
+            : "\(level) geomagnetic storm in progress. Faded bars are NOAA's 3-day forecast."
     }
 
     // MARK: - Will I see aurora?
@@ -74,7 +86,7 @@ struct SimpleView: View {
                 // The view line is computed from Kp; with no Kp it silently reads as Kp 0 and
                 // would state a confident, wrong latitude. Say nothing rather than that.
                 if snapshot.kp != nil {
-                    MeaningLine(a.viewLine)
+                    MeaningLine(SWText.auroraViewLine(kp: a.kp))
                 }
             }
             .tint(sw.side(.terra))
@@ -91,7 +103,7 @@ struct SimpleView: View {
                   feed: .flares, status: status) {
                 MetricTile(value: f.latestFlare?.maxClass ?? f.currentClass, caption: "latest flare",
                            color: sw.severity(flareClass: f.latestFlare?.maxClass ?? f.currentClass))
-                MeaningLine(f.latestFlare?.meaning ?? Flare.meaning(forClass: f.currentClass))
+                MeaningLine(SWText.key(f.latestFlare?.meaning ?? Flare.meaning(forClass: f.currentClass)))
                 // Radio blackouts and radiation storms ride on the same solar event but are
                 // scored separately — without this line an S-storm would read as "all quiet".
                 if r > 0 || s > 0 {

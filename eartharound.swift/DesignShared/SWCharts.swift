@@ -52,7 +52,7 @@ struct Hp30Chart: View {
         }
         .chartXAxis { AxisMarks(values: .stride(by: .hour, count: 12)) { _ in
             AxisGridLine().foregroundStyle(sw.hairline)
-            AxisValueLabel(format: .dateTime.hour(), centered: false)
+            AxisValueLabel(format: .dateTime.hour().locale(SWLanguage.sharedLocale), centered: false)
                 .foregroundStyle(sw.textTertiary).font(.system(.caption2, design: .monospaced))
         } }
         .chartYAxis { AxisMarks { _ in
@@ -68,7 +68,7 @@ struct Hp30Chart: View {
 
     private var a11y: String {
         guard let last = readings.last else { return "Hp30 chart, no data" }
-        return "Hp30 chart, latest \(String(format: "%.2f", last.value)), G1 threshold at 5"
+        return "Hp30 chart, latest \(Fmt.num(last.value, 2)), G1 threshold at 5"
     }
 }
 
@@ -100,7 +100,7 @@ struct KpBarChart: View {
         } }
         .chartXAxis { AxisMarks(values: .stride(by: .day, count: 1)) { _ in
             AxisGridLine().foregroundStyle(sw.hairline)
-            AxisValueLabel(format: .dateTime.weekday(), centered: true)
+            AxisValueLabel(format: .dateTime.weekday().locale(SWLanguage.sharedLocale), centered: true)
                 .foregroundStyle(sw.textTertiary).font(.system(.caption2, design: .monospaced))
         } }
         .padding(10)
@@ -111,7 +111,7 @@ struct KpBarChart: View {
 
     private var a11y: String {
         guard let now = series.last(where: { !$0.predicted }) else { return "Kp chart, no data" }
-        return "Kp bar chart, current \(String(format: "%.1f", now.kp))"
+        return "Kp bar chart, current \(Fmt.num(now.kp, 1))"
     }
 }
 
@@ -149,7 +149,7 @@ struct XRayFluxChart: View {
         } }
         .chartXAxis { AxisMarks(values: .stride(by: .hour, count: 6)) { _ in
             AxisGridLine().foregroundStyle(sw.hairline)
-            AxisValueLabel(format: .dateTime.hour())
+            AxisValueLabel(format: .dateTime.hour().locale(SWLanguage.sharedLocale))
                 .foregroundStyle(sw.textTertiary).font(.system(.caption2, design: .monospaced))
         } }
         .padding(10)

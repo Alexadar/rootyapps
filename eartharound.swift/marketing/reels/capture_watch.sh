@@ -21,8 +21,13 @@ SCHEME="${SCHEME:-SpaceWeatherWatch}"
 APP_BUNDLE="${APP_BUNDLE:-oleksandr.aisixteen.eartharound.watchkitapp}"
 SIM_NAME="${SIM_NAME:-SW-Watch-S11}"
 DERIVED="$APP_DIR/.build/watch-dd"
-RAW_DIR="$APP_DIR/marketing/raw/watch"
-VIDEO_DIR="$APP_DIR/marketing/aso/watch/video"
+LOC="${1:-en}"                 # BCP-47 tag; English is explicit, not a special case
+_WSCENES="$APP_DIR/marketing/reels/scenes_watch.json"
+[ "$LOC" = en ] || _WSCENES="$APP_DIR/marketing/reels/scenes_watch_$LOC.json"
+SCENES="${SCENES:-$_WSCENES}"
+SHOTS_ONLY="${SHOTS_ONLY:-0}"  # 1 = stills only, skip the walkthrough recording
+RAW_DIR="$APP_DIR/marketing/raw/$LOC/watch"
+VIDEO_DIR="$APP_DIR/marketing/aso/$LOC/watch/video"
 SETTLE="${SETTLE:-9}"          # first paint + live fetch
 
 mkdir -p "$RAW_DIR/video" "$VIDEO_DIR" "$DERIVED"
@@ -46,7 +51,8 @@ PAGES=(readout geomag wind)
 for i in 0 1 2; do
   xcrun simctl terminate "$UDID" "$APP_BUNDLE" 2>/dev/null || true
   SIMCTL_CHILD_EARTHAROUND_THEME="${THEME:-dark}" \
-  SIMCTL_CHILD_EARTHAROUND_WATCH_PAGE=$i xcrun simctl launch "$UDID" "$APP_BUNDLE" >/dev/null
+  SIMCTL_CHILD_EARTHAROUND_WATCH_PAGE=$i xcrun simctl launch "$UDID" "$APP_BUNDLE" \
+    -AppleLanguages "($LOC)" -AppleLocale "$LOC" >/dev/null
   sleep "$SETTLE"
   OUT=$(printf "%s/%02d_%s.png" "$RAW_DIR" $((i + 1)) "${PAGES[$i]}")
   xcrun simctl io "$UDID" screenshot "$OUT" >/dev/null 2>&1
@@ -54,6 +60,10 @@ for i in 0 1 2; do
 done
 
 # ── 2. Walkthrough video (web/social only — see header) ────────────────────
+if [ "$SHOTS_ONLY" = "1" ]; then
+  echo "✅ stills only ($LOC) in $RAW_DIR"
+  exit 0
+fi
 echo "▶ recording walkthrough"
 xcrun simctl terminate "$UDID" "$APP_BUNDLE" 2>/dev/null || true
 SYSLOG="$DERIVED/watch-syslog.log"; rm -f "$SYSLOG"

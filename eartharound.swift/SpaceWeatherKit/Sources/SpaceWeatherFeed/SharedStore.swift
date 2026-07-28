@@ -18,6 +18,7 @@ public struct SharedStore {
         public static let mode = "sw.mode"
         public static let status = "shared.status"
         public static let cellular = "net.cellular"
+        public static let language = "ui.language"
         public static let alertState = "alerts.state"
         public static let alertsEnabled = "alerts.enabled"
         public static let alertStorms = "alerts.storms"
@@ -86,6 +87,15 @@ public struct SharedStore {
             return s
         }
         nonmutating set { defaults.set(try? JSONEncoder().encode(newValue), forKey: Key.status) }
+    }
+
+    // MARK: Language
+
+    /// BCP-47 identifier, or nil to follow the system. Lives in the app group so the widget and
+    /// the complication render in the same language the app is showing.
+    public var languageCode: String? {
+        get { defaults.string(forKey: Key.language) }
+        nonmutating set { defaults.set(newValue, forKey: Key.language) }
     }
 
     // MARK: Cellular

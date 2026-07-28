@@ -85,6 +85,22 @@ public enum Geomag {
         }
     }
 
+    /// The activity band for a raw Kp — the classification WITHOUT the wording, so the app can
+    /// render it in the user's language. `activity(forKp:)` below is the English rendering and
+    /// stays the reference; localized UIs switch on this instead.
+    public enum ActivityBand: String, CaseIterable, Sendable {
+        case quiet, unsettled, active, storm
+    }
+
+    public static func activityBand(forKp kp: Double) -> ActivityBand {
+        switch kp {
+        case ..<1: return .quiet
+        case ..<3: return .unsettled
+        case ..<5: return .active
+        default: return .storm      // at storm level the G-scale carries the detail
+        }
+    }
+
     /// Plain-language activity word for a raw Kp (dashboard "what this means" line).
     public static func activity(forKp kp: Double) -> String {
         switch kp {

@@ -6,12 +6,15 @@ struct ContentView: View {
     // only reach its children, not the root view's own `@Environment(\.sw)`.
     @StateObject private var theme = ThemeStore()
     @StateObject private var mode = ModeStore()
+    @StateObject private var language = LanguageStore()
     @StateObject private var demo = DemoDriver()
 
     var body: some View {
         SpaceWeatherRootView()
             .environmentObject(theme)
             .environmentObject(mode)
+            .environmentObject(language)
+            .environment(\.locale, language.locale)
             .environmentObject(demo)
             .swTheme(theme.selected)
             .task {

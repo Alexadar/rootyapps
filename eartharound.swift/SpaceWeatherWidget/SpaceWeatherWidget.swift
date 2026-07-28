@@ -21,7 +21,11 @@ struct SpaceWeatherEntry: TimelineEntry {
         s.scales = ScalesPanel(g: 1, r: 0, s: 0, observedAt: now)
         s.wind = SolarWindPanel(speed: 620, density: 4.2, bt: 12, bz: -8.5, observedAt: now)
         s.aurora = AuroraPanel(maxProbability: 45, kp: 5.3, observedAt: now)
-        s.flare = FlarePanel(fluxSeries: [FluxSample(time: now, flux: 2.1e-6)], latestFlare: nil, observedAt: now)
+        s.flare = FlarePanel(fluxSeries: [FluxSample(time: now, flux: 2.1e-6)],
+                             latestFlare: FlareEvent(maxClass: "M1.0", maxTime: now, beginTime: nil),
+                             recentFlares: [FlareEvent(maxClass: "M1.0", maxTime: now, beginTime: nil),
+                                            FlareEvent(maxClass: "M3.2", maxTime: now, beginTime: nil)],
+                             observedAt: now)
         return SpaceWeatherEntry(date: now, snapshot: s, refreshedAt: now)
     }()
 }
@@ -38,9 +42,31 @@ struct SpaceWeatherProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SpaceWeatherEntry>) -> Void) {
+        // The cache is the floor, not the fallback of last resort. `fetchEntry` opens five NOAA
+        // connections, and on a wrist that is a real risk of never returning inside the extension's
+        // budget — chronod then kills the process and the complication is stuck on the placeholder,
+        // which renders as a grey blank forever. Whatever happens, we complete with something.
+        let cached = SharedStore().load()
+        let floor = cached.map { SpaceWeatherEntry(date: Date(), snapshot: $0.snapshot, refreshedAt: $0.at) }
+            ?? .placeholder
         Task {
-            let entry = await Self.fetchEntry()
+            let entry = await Self.fetchEntry(within: 12) ?? floor
             completion(Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(30 * 60))))
+        }
+    }
+
+    /// `fetchEntry()` bounded by a deadline. Returns nil if the network outlasts it, so the caller
+    /// can fall back to cache instead of holding the extension open until the system kills it.
+    static func fetchEntry(within seconds: Double) async -> SpaceWeatherEntry? {
+        await withTaskGroup(of: SpaceWeatherEntry?.self) { group in
+            group.addTask { await fetchEntry() }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
         }
     }
 
@@ -100,26 +126,28 @@ struct SpaceWeatherProvider: TimelineProvider {
     }
 }
 
+// Everything below is the system-sized widget, which does not exist on the watch — the synchronized
+// file group compiles this file into the watch complication target too, and `.systemSmall` is simply
+// unavailable there. `SpaceWeatherEntry` and `SpaceWeatherProvider` above stay: the complications
+// share that provider.
+#if !os(watchOS)
+
 struct SpaceWeatherWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "SpaceWeather", provider: SpaceWeatherProvider()) { entry in
             SpaceWeatherWidgetView(entry: entry, mode: .shared)
                 .environment(\.sw, SWThemeChoice.shared.palette)
+                .environment(\.locale, SWLanguage.sharedLocale)
         }
         .configurationDisplayName("Earth Around")
         .description("Planetary Kp, storm level, aurora chance and solar wind — live from NOAA.")
         .supportedFamilies(Self.families)
     }
 
-    static var families: [WidgetFamily] {
-        #if os(watchOS)
-        [.accessoryCircular, .accessoryRectangular, .accessoryInline]
-        #elseif os(macOS)
-        [.systemSmall, .systemMedium]
-        #else
-        [.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline]
-        #endif
-    }
+    /// System sizes only. The accessory families belong to `KpComplication`/`FlaresComplication`,
+    /// which draw the bar gauges; this widget advertising them too put a third "Earth Around" entry
+    /// in every complication picker showing an older, gauge-less readout.
+    static var families: [WidgetFamily] { [.systemSmall, .systemMedium] }
 }
 
 // MARK: - Views
@@ -141,9 +169,6 @@ struct SpaceWeatherWidgetView: View {
     var body: some View {
         Group {
             switch family {
-            case .accessoryInline: inline
-            case .accessoryCircular: circular
-            case .accessoryRectangular: rectangular
             case .systemMedium: medium
             default: small
             }
@@ -177,34 +202,105 @@ struct SpaceWeatherWidgetView: View {
     }
 
     private var medium: some View {
+        // Each column carries its OWN data age, because the two sides are not refreshed together:
+        // NOAA republishes X-ray flux every minute while Kp moves on a 3-hourly cadence, so one
+        // shared timestamp would have overstated the freshness of whichever side was older.
+        // Structurally identical columns also keep the two 44pt heroes on the same baseline.
         HStack(spacing: 14) {
-            small
+            VStack(alignment: .leading, spacing: 6) {
+                if simple { small } else { kpColumn }
+                columnFooter(entry.snapshot.kp?.observedAt)
+            }
             Rectangle().fill(sw.hairline).frame(width: 1)
-            VStack(alignment: .leading, spacing: 8) {
-                if simple {
-                    // The view line is derived from Kp; with no Kp it would state a confident,
-                    // wrong latitude, so it stays hidden rather than guessing.
-                    if let aurora = entry.snapshot.aurora, entry.snapshot.kp != nil {
-                        Text(aurora.viewLine)
-                            .font(.footnote)
-                            .foregroundStyle(sw.textSecondary)
-                            .lineLimit(4)
-                    }
-                } else {
-                    scaleline
-                    if let flare = entry.snapshot.flare {
-                        stat(label: "X-RAY", value: flare.currentClass)
-                    }
-                    if let bz = entry.snapshot.wind?.bz {
-                        stat(label: "BZ", value: Fmt.num(bz, 1), unit: "NT")
+            VStack(alignment: .leading, spacing: 6) {
+                Group {
+                    if simple {
+                        // The view line is derived from Kp; with no Kp it would state a confident,
+                        // wrong latitude, so it stays hidden rather than guessing.
+                        if let aurora = entry.snapshot.aurora, entry.snapshot.kp != nil {
+                            Text(aurora.viewLine)
+                                .font(.footnote)
+                                .foregroundStyle(sw.textSecondary)
+                                .lineLimit(4)
+                        }
+                    } else {
+                        flareColumn
                     }
                 }
-                Spacer(minLength: 0)
-                Text("Updated \(Fmt.age(entry.refreshedAt))")
-                    .font(.system(size: 9, design: .monospaced))
-                    .foregroundStyle(stale ? sw.caution : sw.textTertiary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                columnFooter(entry.snapshot.flare?.observedAt)
             }
+        }
+    }
+
+    /// When the SOURCE observed this column's data — not when we fetched it. "Updated" is reserved
+    /// for our own refresh; this is the observation time, same wording as the app's panel badges.
+    private func columnFooter(_ observedAt: Date?) -> some View {
+        Text(SWText.str("Observed \(Fmt.age(observedAt))"))
+            .font(.system(size: 9, design: .monospaced))
+            .foregroundStyle(Fmt.isStale(observedAt) ? sw.caution : sw.textTertiary)
+            .lineLimit(1).minimumScaleFactor(0.8)
             .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Kp column for the medium family — the mirror of `flareColumn`: same header shape, same 44pt
+    /// hero, and a 24 h peak in the same slot so the two sides can be read against each other.
+    /// `small` keeps AURORA/WIND for the systemSmall family, where there is no room for both.
+    private var kpColumn: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            readoutHeader
+            heroKp
+            HStack(spacing: 12) {
+                // Highest Kp that actually occurred in the window — forecast rows excluded.
+                stat(label: SWText.str("24H PEAK"),
+                     value: entry.snapshot.kp?.peak24h.map { Fmt.num($0, 1) } ?? "—")
+                stat(label: "WIND", value: windKms.map { Fmt.num($0, 0) } ?? "—", unit: "KM/S")
+            }
+        }
+    }
+
+    private var flareColumn: some View {
+        let flare = entry.snapshot.flare
+        let latest = flare?.latestFlare
+        // Hero is the LATEST flare event; if the Sun has thrown nothing yet we fall back to the
+        // current X-ray class so the column never reads as empty.
+        let heroClass = latest?.maxClass ?? flare?.currentClass
+        let r = latest?.rScale ?? flare?.rScale ?? 0
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 5) {
+                Text("//")
+                    .font(.system(.caption2, design: .monospaced).weight(.heavy))
+                    .foregroundStyle(sw.side(.solar))
+                Text(SWText.str("Latest flare"))
+                    .textCase(.uppercase)
+                    .font(.system(.caption2, design: .monospaced).weight(.semibold))
+                    .tracking(1.4)
+                    .foregroundStyle(sw.textSecondary)
+                Spacer()
+                Text(r > 0 ? "R\(r)" : "OK")
+                    .font(.system(.caption2, design: .monospaced).weight(.heavy))
+                    .foregroundStyle(sw.onAccent)
+                    .padding(.horizontal, 5).padding(.vertical, 2)
+                    .background(sw.severity(r), in: ChamferBox(cut: 4, radius: 2))
+            }
+            Text(heroClass ?? "—")
+                .font(.system(size: 44, weight: .semibold, design: .monospaced))
+                .monospacedDigit()
+                .foregroundStyle(sw.severity(flareClass: heroClass ?? ""))
+                .minimumScaleFactor(0.5)
+                .lineLimit(1)
+                .frame(maxHeight: .infinity)
+                .accessibilityLabel(Text(SWText.str("Latest flare")) + Text(" \(heroClass ?? "—")"))
+            HStack(spacing: 12) {
+                // What kind of day it has been, not just this minute.
+                if let flare, let peak = flare.peak24h {
+                    stat(label: SWText.str("24H PEAK"), value: peak.maxClass,
+                         unit: flare.count24h > 1 ? "×\(flare.count24h)" : nil)
+                }
+                if let flare {
+                    stat(label: "X-RAY", value: flare.currentClass)
+                }
+            }
         }
     }
 
@@ -213,7 +309,8 @@ struct SpaceWeatherWidgetView: View {
             Text("//")
                 .font(.system(.caption2, design: .monospaced).weight(.heavy))
                 .foregroundStyle(sw.brand)
-            Text(simple ? "STORM" : "KP NOW")
+            Text(simple ? "Storm" : "Kp now")
+                .textCase(.uppercase)
                 .font(.system(.caption2, design: .monospaced).weight(.semibold))
                 .tracking(1.4)
                 .foregroundStyle(sw.textSecondary)
@@ -227,14 +324,14 @@ struct SpaceWeatherWidgetView: View {
     }
 
     private var heroKp: some View {
-        Text(hasData ? String(format: "%.1f", kpNow) : "—")
+        Text(hasData ? Fmt.num(kpNow, 1) : "—")
             .font(.system(size: 44, weight: .semibold, design: .monospaced))
             .monospacedDigit()
             .foregroundStyle(sw.severity(gScale))
             .minimumScaleFactor(0.5)
             .lineLimit(1)
             .frame(maxHeight: .infinity)
-            .accessibilityLabel("Planetary Kp \(String(format: "%.1f", kpNow)), level G\(gScale)")
+            .accessibilityLabel("Planetary Kp, \(Fmt.num(kpNow, 1)), level G\(gScale)")
     }
 
     private var scaleline: some View {
@@ -282,54 +379,6 @@ struct SpaceWeatherWidgetView: View {
     }
 
     private var stale: Bool { Fmt.isStale(entry.refreshedAt) }
-
-    // MARK: accessory families (lock screen / watch)
-
-    private var inline: some View {
-        if simple {
-            Text(hasData ? "\(activity)\(auroraPct.map { " · aurora \($0)%" } ?? "")" : "Earth Around")
-        } else {
-            Text(hasData ? "KP \(String(format: "%.1f", kpNow)) · G\(gScale)" : "Earth Around")
-        }
-    }
-
-    private var circular: some View {
-        Gauge(value: min(kpNow, 9), in: 0...9) {
-            Text("KP")
-        } currentValueLabel: {
-            Text(hasData ? String(format: "%.1f", kpNow) : "—")
-                .monospacedDigit()
-        }
-        .gaugeStyle(.accessoryCircular)
-    }
-
-    @ViewBuilder private var rectangular: some View {
-        if simple {
-            VStack(alignment: .leading, spacing: 1) {
-                Text(hasData ? activity : "—")
-                    .font(.headline)
-                Text("Aurora \(auroraPct.map { "\($0)%" } ?? "—")")
-                    .font(.system(.caption2, design: .monospaced))
-            }
-        } else {
-            extendedRectangular
-        }
-    }
-
-    private var extendedRectangular: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            HStack(spacing: 4) {
-                Text("KP \(hasData ? String(format: "%.1f", kpNow) : "—")")
-                    .font(.system(.headline, design: .monospaced).weight(.bold))
-                    .monospacedDigit()
-                Text("G\(gScale)")
-                    .font(.system(.caption2, design: .monospaced).weight(.heavy))
-            }
-            Text("AUR \(auroraPct.map { "\($0)%" } ?? "—")  WND \(windKms.map { Fmt.num($0, 0) } ?? "—")")
-                .font(.system(.caption2, design: .monospaced))
-            Text(Geomag.activity(forKp: kpNow))
-                .font(.system(.caption2, design: .monospaced))
-                .opacity(0.7)
-        }
-    }
 }
+
+#endif

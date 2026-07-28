@@ -86,14 +86,15 @@ struct SpaceBackground: View {
 /// mandatory data-source citation (the trust moat — never drop it).
 struct PanelHeader: View {
     @Environment(\.sw) private var sw
-    let title: String
+    let title: String.LocalizationValue
     let source: String
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 7) {
             Text("//")
                 .font(.system(.caption2, design: .monospaced).weight(.heavy))
                 .foregroundStyle(.tint)   // set .tint(sw.side(panel.side)) at the panel
-            Text(title.uppercased())
+            Text(SWText.str(title))
+                .textCase(.uppercase)
                 .font(.system(.caption2, design: .monospaced).weight(.semibold))
                 .tracking(1.6)
                 .foregroundStyle(sw.textSecondary)
@@ -112,14 +113,15 @@ struct PanelHeader: View {
 /// Mono, uppercased group header with a side-accent tick — for sidebars & grids.
 struct SectionLabel: View {
     @Environment(\.sw) private var sw
-    let title: String
+    let title: String.LocalizationValue
     let accent: Color
     var body: some View {
         HStack(spacing: 8) {
             Text("//")
                 .font(.system(.caption2, design: .monospaced).weight(.heavy))
                 .foregroundStyle(accent)
-            Text(title.uppercased())
+            Text(SWText.str(title))
+                .textCase(.uppercase)
                 .font(.system(.caption2, design: .monospaced).weight(.semibold))
                 .tracking(1.6)
                 .foregroundStyle(sw.textSecondary)

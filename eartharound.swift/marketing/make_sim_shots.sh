@@ -10,7 +10,11 @@
 # Order matters — the first shots carry most of the decision, so it leads with Simple (the
 # first-run default) and only then shows the expert HUD.
 #
-#   raw/ios/0N_*.png  →  generate_screenshots.py (aso/ios/params.yaml)  →  aso/ios/1320x2868/
+# Pass a locale to capture the app running in that language:
+#     ./make_sim_shots.sh de       →  raw/de/0N_*.png
+# With no argument it captures English into raw/ios/, the original layout.
+#
+#   raw/<loc>/0N_*.png  →  generate_screenshots.py (aso/<loc>/params.yaml)  →  aso/<loc>/1320x2868/
 set -euo pipefail
 
 ROOT="/Users/oleksandr/Projects/rootyapps"
@@ -18,9 +22,15 @@ APP_DIR="$ROOT/eartharound.swift"
 PROJECT="$APP_DIR/eartharound.swift.xcodeproj"
 SCHEME="${SCHEME:-eartharound.swift}"
 APP_BUNDLE="${APP_BUNDLE:-oleksandr.aisixteen.eartharound}"
-SIM_NAME="${SIM_NAME:-Calc-iPhone17ProMax}"
 DERIVED="$APP_DIR/.build/shots-dd"
-RAW_DIR="${RAW_DIR:-$APP_DIR/marketing/raw/ios}"
+LOC="${1:-en}"                        # BCP-47 tag; English is explicit, not a special case
+PLATFORM="${PLATFORM:-ios}"           # ios | ipad — picks the simulator and the raw folder
+case "$PLATFORM" in
+  ipad) SIM_NAME="${SIM_NAME:-Calc-iPadPro13}" ;;
+  *)    SIM_NAME="${SIM_NAME:-Calc-iPhone17ProMax}" ;;
+esac
+# English keeps the original flat layout (raw/ios); every other language nests under its tag.
+RAW_DIR="${RAW_DIR:-$APP_DIR/marketing/raw/$LOC/$PLATFORM}"
 SETTLE="${SETTLE:-11}"        # first paint + live NOAA/GFZ fetch
 
 mkdir -p "$RAW_DIR" "$DERIVED"
@@ -42,12 +52,15 @@ xcrun simctl status_bar "$UDID" override \
   --cellularBars 4 --wifiBars 3 --dataNetwork wifi 2>/dev/null || true
 
 # name|MODE|TAB|THEME
+# Four shots, not five: Simple mode was removed from the app (the root view pins Extended at
+# launch), so the two Simple states these used to capture are unreachable — a screenshot of a
+# screen no user can open is exactly what Guideline 2.3.3 is about. What is left is the real
+# state space: two tabs x two themes.
 SHOTS=(
-  "01_simple_dark|simple|dashboard|dark"
-  "02_dashboard_dark|extended|dashboard|dark"
-  "03_geomag_dark|extended|geomagnetic|dark"
+  "01_dashboard_dark|extended|dashboard|dark"
+  "02_geomag_dark|extended|geomagnetic|dark"
+  "03_dashboard_night|extended|dashboard|night"
   "04_geomag_night|extended|geomagnetic|night"
-  "05_simple_night|simple|dashboard|night"
 )
 
 for spec in "${SHOTS[@]}"; do
@@ -60,8 +73,16 @@ for spec in "${SHOTS[@]}"; do
   SIMCTL_CHILD_EARTHAROUND_MODE="$mode" \
   SIMCTL_CHILD_EARTHAROUND_TAB="$tab" \
   SIMCTL_CHILD_EARTHAROUND_THEME="$theme" \
-    xcrun simctl launch "$UDID" "$APP_BUNDLE" >/dev/null
+    xcrun simctl launch "$UDID" "$APP_BUNDLE" \
+      -AppleLanguages "($LOC)" -AppleLocale "$LOC" >/dev/null
   sleep "$SETTLE"
+  # `simctl io screenshot` grabs the whole device screen — there is no per-window filter as there
+  # is on macOS. If another agent launches an app on this shared simulator during the settle, we
+  # would photograph theirs. Re-launching ours here is a no-op for state (already running) but
+  # brings it back to the front, shrinking that window from $SETTLE seconds to about one.
+  xcrun simctl launch "$UDID" "$APP_BUNDLE" \
+    -AppleLanguages "($LOC)" -AppleLocale "$LOC" >/dev/null 2>&1 || true
+  sleep 1
   xcrun simctl io "$UDID" screenshot "$RAW_DIR/$name.png" >/dev/null 2>&1
   echo "   $name  ($mode/$tab/$theme)"
 done
@@ -69,4 +90,4 @@ done
 xcrun simctl status_bar "$UDID" clear 2>/dev/null || true
 echo
 echo "✅ raw shots in $RAW_DIR"
-echo "   → /Users/oleksandr/miniconda3/envs/fantastic/bin/python $ROOT/marketing/generate_screenshots.py $APP_DIR/marketing/aso/ios/params.yaml"
+echo "   → /Users/oleksandr/miniconda3/envs/fantastic/bin/python $ROOT/marketing/generate_screenshots.py $APP_DIR/marketing/aso/$LOC/$PLATFORM/params.yaml"

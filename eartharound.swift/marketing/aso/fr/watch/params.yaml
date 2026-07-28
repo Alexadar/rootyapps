@@ -1,0 +1,31 @@
+platform: watch
+size: [416, 496]          # Apple Watch Series 10/11 46mm — APP_WATCH_SERIES_10
+
+# Watch captions must be far shorter than the phone's: the whole canvas is 416px wide, and
+# every font is scaled by canvas_width/1242, so a long title wraps to three lines and eats
+# the screenshot. Two or three words each.
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/raw/fr/watch
+  output_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/aso/fr/watch
+
+style:
+  bg_gradient: true
+  bg_color_top: '#0C111B'
+  bg_color_bottom: '#080B14'
+  title_color: '#E8EEF6'
+  subtitle_color: '#4DF0A0'
+  screenshot_zoom: 1.0
+  text_row_percent: 18
+  screenshot_row_percent: 82
+  border_width: 4
+  border_color: '#17202F'
+  border_radius: 34
+  text_padding: 60
+  screenshot_padding: 34
+texts:
+  - title: "Kp au poignet"
+    subtitle: "Niveau de tempête"
+  - title: "Détail Hp30"
+    subtitle: "Pas de 30 minutes"
+  - title: "Vent et aurore"
+    subtitle: "Vitesse, Bz, chance"

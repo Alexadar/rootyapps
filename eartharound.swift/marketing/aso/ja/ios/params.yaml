@@ -1,0 +1,33 @@
+platform: ios
+size: [1320, 2868]        # iPhone 6.9" — APP_IPHONE_67
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/raw/ja/ios
+  output_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/aso/ja/ios
+
+style:
+  bg_gradient: true
+  bg_color_top: '#0C111B'
+  bg_color_bottom: '#080B14'
+  title_color: '#E8EEF6'
+  subtitle_color: '#4DF0A0'
+  screenshot_zoom: 0.85
+  text_row_percent: 18
+  screenshot_row_percent: 82
+  border_width: 7
+  border_color: '#17202F'
+  border_radius: 30
+  text_padding: 40
+  screenshot_padding: 40
+
+# Order follows make_sim_shots.sh. Lead with Simple — it is the first-run default and the
+# answer most people came for; the expert HUD is the second beat, not the pitch.
+texts:
+  - title: "いま嵐は起きている？"
+    subtitle: "NOAA からライブで、はっきり答えます"
+  - title: "Hp30 の細かさ"
+    subtitle: "30分きざみで嵐をとらえる"
+  - title: "ナイトモード"
+    subtitle: "暗順応を守る赤方偏移"
+  - title: "広告なし。誤報なし。"
+    subtitle: "すべての値を公開された基準で検証"

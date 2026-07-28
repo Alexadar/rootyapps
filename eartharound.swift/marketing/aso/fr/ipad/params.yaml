@@ -1,0 +1,34 @@
+platform: ipad
+size: [2064, 2752]        # 13" iPad — APP_IPAD_PRO_3GEN_129. Apple now REQUIRES a
+                          # 13-inch set; 2048x2732 (12.9") no longer satisfies it, and
+                          # the raw captures are already 2064x2752 so this stops a downscale.
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/raw/fr/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/aso/fr/ipad
+
+style:
+  bg_gradient: true
+  bg_color_top: '#0C111B'
+  bg_color_bottom: '#080B14'
+  title_color: '#E8EEF6'
+  subtitle_color: '#4DF0A0'
+  screenshot_zoom: 0.9
+  text_row_percent: 16
+  screenshot_row_percent: 84
+  border_width: 8
+  border_color: '#17202F'
+  border_radius: 34
+  text_padding: 60
+  screenshot_padding: 60
+
+# Same story as the iPhone set, in the same order — Simple first, then the detail.
+texts:
+  - title: "Une tempête maintenant ?"
+    subtitle: "Des réponses claires, en direct de la NOAA"
+  - title: "Le détail Hp30"
+    subtitle: "Résolution des tempêtes à 30 minutes"
+  - title: "Mode nuit"
+    subtitle: "Décalage rouge pour le terrain"
+  - title: "Sans pub. Sans fausse alerte."
+    subtitle: "Chaque valeur vérifiée sur le standard publié"

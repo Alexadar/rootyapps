@@ -18,7 +18,8 @@ struct SWSegmented: View {
         HStack(spacing: 3) {
             ForEach(titles.indices, id: \.self) { i in
                 let selected = i == selection
-                Text(titles[i].uppercased())
+                Text(titles[i])
+                    .textCase(.uppercase)
                     .font(.system(.caption, design: .monospaced).weight(.bold))
                     .tracking(1.0)
                     .foregroundStyle(selected ? AnyShapeStyle(sw.onAccent)

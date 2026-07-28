@@ -42,6 +42,18 @@ public struct KpPanel: Equatable, Codable {
     public var gScale: Int { Geomag.gScale(forKp: now) }
     public var activity: String { Geomag.activity(forKp: now) }
     public var ap: Int { Geomag.ap(forKp: now) }
+
+    /// Highest OBSERVED Kp of the last 24 h — forecast rows are excluded, or the "peak" would be
+    /// a prediction rather than something that happened.
+    ///
+    /// The window is anchored to the newest observed sample rather than to `Date()`, so the value
+    /// is deterministic: the same series always yields the same peak, which is what makes it
+    /// testable and keeps the widget from flickering between timeline renders.
+    public var peak24h: Double? {
+        guard let end = series.last(where: { !$0.predicted })?.time else { return nil }
+        let cutoff = end.addingTimeInterval(-24 * 3600)
+        return series.filter { !$0.predicted && $0.time >= cutoff }.map(\.kp).max()
+    }
     public init(series: [KpSample], observedAt: Date?) {
         self.series = series; self.observedAt = observedAt
     }
@@ -71,12 +83,31 @@ public struct FlareEvent: Equatable, Codable {
 public struct FlarePanel: Equatable, Codable {
     public let fluxSeries: [FluxSample]
     public let latestFlare: FlareEvent?
+    /// Flares that peaked in the last 24 hours, newest first.
+    ///
+    /// Optional, and that is deliberate: synthesized `Codable` THROWS on a missing key for a
+    /// non-optional property, so adding one would make every snapshot already persisted in the
+    /// app group fail to decode — on upgrade the app would look like it had lost its data.
+    /// An optional decodes to nil instead.
+    public let recentFlares: [FlareEvent]?
     public let observedAt: Date?
     public var currentFlux: Double { fluxSeries.last?.flux ?? 0 }
     public var currentClass: String { Flare.classify(fluxWm2: currentFlux).label }
     public var rScale: Int { Flare.rScale(fluxWm2: currentFlux) }
-    public init(fluxSeries: [FluxSample], latestFlare: FlareEvent?, observedAt: Date?) {
-        self.fluxSeries = fluxSeries; self.latestFlare = latestFlare; self.observedAt = observedAt
+
+    /// Strongest flare of the last 24 h, ordered by peak flux — so M9.9 beats M1.0 and X1.0
+    /// beats both. `Flare.flux(forClass:)` is the same parser the Kit already oracle-tests.
+    public var peak24h: FlareEvent? {
+        (recentFlares ?? []).max {
+            (Flare.flux(forClass: $0.maxClass) ?? 0) < (Flare.flux(forClass: $1.maxClass) ?? 0)
+        }
+    }
+    public var count24h: Int { (recentFlares ?? []).count }
+
+    public init(fluxSeries: [FluxSample], latestFlare: FlareEvent?,
+                recentFlares: [FlareEvent]? = nil, observedAt: Date?) {
+        self.fluxSeries = fluxSeries; self.latestFlare = latestFlare
+        self.recentFlares = recentFlares; self.observedAt = observedAt
     }
 }
 

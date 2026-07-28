@@ -14,6 +14,32 @@ public enum SolarIndex {
         k * Double(10 * g + s)
     }
 
+    /// Activity band without the wording, so the app can localize it.
+    public enum Band: String, CaseIterable, Sendable {
+        case spotless, low, moderate, high, veryHigh
+    }
+
+    public static func activityBand(sunspotNumber r: Double) -> Band {
+        switch r {
+        case ..<1: return .spotless
+        case ..<25: return .low
+        case ..<75: return .moderate
+        case ..<150: return .high
+        default: return .veryHigh
+        }
+    }
+
+    /// F10.7 band. Shares `Band` but starts at `.low` — a radio flux is never "spotless".
+    public static func f107Band(_ sfu: Double) -> Band {
+        switch sfu {
+        case ..<70: return .spotless    // rendered as "Very low" for F10.7
+        case ..<100: return .low
+        case ..<150: return .moderate
+        case ..<200: return .high
+        default: return .veryHigh
+        }
+    }
+
     /// Plain-language solar activity from the sunspot number.
     public static func activity(sunspotNumber r: Double) -> String {
         switch r {

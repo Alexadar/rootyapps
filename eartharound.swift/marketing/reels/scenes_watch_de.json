@@ -1,0 +1,49 @@
+{
+  "canvas": [
+    1080,
+    1920
+  ],
+  "content_len": 11,
+  "preview_maxlen": 30,
+  "outro_dur": 2.4,
+  "_note": "Canvas is 1080x1920 — the standard for Reels/TikTok/Shorts, which upscale anything smaller. side_padding drives BOTH the video width and the caption wrap width, so it can't be pushed high to protect the watch's native 416x496 scale without breaking titles across lines. It plays at ~390px wide on a phone anyway, so the ~1.7x upscale here is invisible in practice. App Store Connect has NO watchOS preview slot (verified against Apple's app-preview specifications page: iPhone/iPad/Mac/Apple TV/Vision Pro only) — this clip is for the site and social; the uploadable watch asset is the 416x496 screenshot set.",
+  "style": {
+    "bg_color_top": "#0C111B",
+    "bg_color_bottom": "#080B14",
+    "title_color": "#E8EEF6",
+    "subtitle_color": "#4DF0A0",
+    "caption_band_percent": 20,
+    "side_padding": 190,
+    "border_width": 12,
+    "border_color": "#17202F",
+    "border_radius": 92
+  },
+  "app": {
+    "name": "Earth Around",
+    "tagline": "Die Sonne im Blick.",
+    "icon": "eartharound.swift/Assets.xcassets/AppIcon.appiconset/icon_1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Now",
+      "start": 0,
+      "end": 3.7,
+      "title": "Kp am Handgelenk",
+      "subtitle": "Sturmstufe jetzt"
+    },
+    {
+      "key": "Hpo",
+      "start": 3.7,
+      "end": 7.4,
+      "title": "Hp30-Detail",
+      "subtitle": "30-Minuten-Takt"
+    },
+    {
+      "key": "Wind",
+      "start": 7.4,
+      "end": 11,
+      "title": "Wind & Polarlicht",
+      "subtitle": "Tempo, Bz, Chance"
+    }
+  ]
+}

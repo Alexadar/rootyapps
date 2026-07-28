@@ -27,8 +27,18 @@ struct DashboardView: View {
         }
     }
 
-    private func scaleName(_ level: Int) -> String {
-        ["Quiet", "Minor", "Moderate", "Strong", "Severe", "Extreme"][min(max(level, 0), 5)]
+    /// Keyed off the level rather than an array position: the old version indexed a literal array,
+    /// so reordering it silently relabelled every storm. These are chip captions standing apart
+    /// from their noun, so the base form of each adjective is what the catalog carries.
+    private func scaleName(_ level: Int) -> String.LocalizationValue {
+        switch level {
+        case ...0: return "Quiet"
+        case 1:    return "Minor"
+        case 2:    return "Moderate"
+        case 3:    return "Strong"
+        case 4:    return "Severe"
+        default:   return "Extreme"
+        }
     }
 
     @ViewBuilder private var scalesPanel: some View {
@@ -53,11 +63,11 @@ struct DashboardView: View {
                 HStack(spacing: 12) {
                     MetricTile(value: Fmt.num(k.now, 1), caption: "Kp now",
                                color: sw.severity(k.gScale))
-                    MetricTile(value: k.gScale > 0 ? "G\(k.gScale)" : "—", caption: k.activity)
+                    MetricTile(value: k.gScale > 0 ? "G\(k.gScale)" : "—", caption: SWText.key(k.activity))
                     MetricTile(value: "\(k.ap)", unit: "ap", caption: "amplitude")
                 }
                 KpBarChart(series: k.series, showForecast: showForecast)
-                MeaningLine("Kp \(Fmt.num(k.now, 1)) — \(k.activity).\(showForecast ? " Faded bars are the NOAA 3-day forecast." : "")")
+                MeaningLine(SWText.kpMeaning(kp: Fmt.num(k.now, 1), activity: k.activity, forecast: showForecast))
             }
             .tint(sw.side(.terra))
         }
@@ -69,7 +79,7 @@ struct DashboardView: View {
                   feed: .wind, status: status) {
                 HStack(spacing: 12) {
                     MetricTile(value: Fmt.num(w.speed, 0), unit: "km/s",
-                               caption: w.speedDescription ?? "speed", color: sw.side(.link))
+                               caption: SWText.key(w.speedDescription, fallback: "speed"), color: sw.side(.link))
                     MetricTile(value: Fmt.num(w.density, 1), unit: "p/cm³", caption: "density")
                     MetricTile(value: Fmt.num(w.bz, 1), unit: "nT", caption: "Bz GSM",
                                color: (w.bz ?? 0) < 0 ? sw.warning : nil)
@@ -90,7 +100,7 @@ struct DashboardView: View {
         }
     }
 
-    private func windMeaning(_ w: SolarWindPanel) -> String {
+    private func windMeaning(_ w: SolarWindPanel) -> String.LocalizationValue {
         switch w.level {
         case .storming: return "Southward IMF and a fast wind are coupling energy in — storm conditions likely."
         case .elevated: return "Southward IMF is reconnecting with Earth's field; conditions are elevated."
@@ -105,14 +115,20 @@ struct DashboardView: View {
                 HStack(spacing: 12) {
                     MetricTile(value: f.currentClass, caption: "current flux",
                                color: sw.severity(flareClass: f.currentClass))
-                    MetricTile(value: f.rScale > 0 ? "R\(f.rScale)" : "—", caption: Flare.rLabel(f.rScale))
+                    MetricTile(value: f.rScale > 0 ? "R\(f.rScale)" : "—", caption: SWText.key(Flare.rLabel(f.rScale)))
                     if let ev = f.latestFlare {
                         MetricTile(value: ev.maxClass, caption: "latest flare",
                                    color: sw.severity(flareClass: ev.maxClass))
                     }
+                    // Strongest event of the last 24 h. Current flux says what the Sun is doing
+                    // this minute; this says what kind of day it has been.
+                    if let peak = f.peak24h {
+                        MetricTile(value: peak.maxClass, caption: "24h peak",
+                                   color: sw.severity(flareClass: peak.maxClass))
+                    }
                 }
                 XRayFluxChart(series: f.fluxSeries)
-                MeaningLine(f.latestFlare?.meaning ?? Flare.meaning(forClass: f.currentClass))
+                MeaningLine(SWText.key(f.latestFlare?.meaning ?? Flare.meaning(forClass: f.currentClass)))
             }
             .tint(sw.side(.solar))
         }
@@ -128,7 +144,7 @@ struct DashboardView: View {
                     MetricTile(value: Fmt.num(a.viewLineLatitude, 0), unit: "°",
                                caption: "view line (geomag lat)")
                 }
-                MeaningLine(a.viewLine)
+                MeaningLine(SWText.auroraViewLine(kp: a.kp))
             }
             .tint(sw.side(.terra))
         }
@@ -139,10 +155,10 @@ struct DashboardView: View {
             Panel(title: "Solar Activity", source: "NOAA SWPC · Wolf R", observedAt: s.observedAt,
                   feed: .solar, status: status) {
                 HStack(spacing: 12) {
-                    MetricTile(value: Fmt.int(s.sunspotNumber), caption: s.activity ?? "sunspot no.",
+                    MetricTile(value: Fmt.int(s.sunspotNumber), caption: SWText.key(s.activity, fallback: "sunspot no."),
                                color: sw.side(.solar))
                     MetricTile(value: Fmt.num(s.f107, 0), unit: "sfu",
-                               caption: "F10.7 · \(s.f107Level ?? "")")
+                               caption: SWText.f107(s.f107Level))
                     MetricTile(value: Fmt.int(s.regionCount), caption: "active regions")
                 }
                 MeaningLine("Sunspot number R = 10·groups + spots (Wolf/SILSO), from NOAA's solar-region report.")

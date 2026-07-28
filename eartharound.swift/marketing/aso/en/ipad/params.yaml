@@ -1,9 +1,11 @@
 platform: ipad
-size: [2048, 2732]        # 12.9"/13" iPad — APP_IPAD_PRO_129
+size: [2064, 2752]        # 13" iPad — APP_IPAD_PRO_3GEN_129. Apple now REQUIRES a
+                          # 13-inch set; 2048x2732 (12.9") no longer satisfies it, and
+                          # the raw captures are already 2064x2752 so this stops a downscale.
 
 paths:
-  raw_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/raw/ipad
-  output_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/aso/ipad
+  raw_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/raw/en/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/aso/en/ipad
 
 style:
   bg_gradient: true
@@ -24,9 +26,9 @@ style:
 texts:
   - title: Storm right now?
     subtitle: Plain answers, live from NOAA
-  - title: Or every number
-    subtitle: Solar wind, flares, aurora, Kp
   - title: Hp30 detail
     subtitle: 30-minute storm resolution
   - title: Night mode
     subtitle: Red-shift for the field
+  - title: No ads. No false alarms.
+    subtitle: Every value checked against the published standard

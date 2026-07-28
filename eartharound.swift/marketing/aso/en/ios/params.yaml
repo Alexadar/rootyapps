@@ -2,8 +2,8 @@ platform: ios
 size: [1320, 2868]        # iPhone 6.9" — APP_IPHONE_67
 
 paths:
-  raw_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/raw/ios
-  output_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/aso/ios
+  raw_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/raw/en/ios
+  output_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/aso/en/ios
 
 style:
   bg_gradient: true
@@ -25,8 +25,6 @@ style:
 texts:
   - title: Storm right now?
     subtitle: Plain answers, live from NOAA
-  - title: Or every number
-    subtitle: Solar wind, flares, aurora, Kp
   - title: Hp30 detail
     subtitle: 30-minute storm resolution
   - title: Night mode

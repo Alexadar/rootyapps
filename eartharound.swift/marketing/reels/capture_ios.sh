@@ -21,14 +21,24 @@ APP_DIR="$ROOT/eartharound.swift"
 PROJECT="$APP_DIR/eartharound.swift.xcodeproj"
 SCHEME="eartharound.swift"
 APP_BUNDLE="${APP_BUNDLE:-oleksandr.aisixteen.eartharound}"
-SIM_NAME="${SIM_NAME:-Calc-iPhone17ProMax}"
-SCENES="${SCENES:-$APP_DIR/marketing/reels/scenes.json}"
+LOC="${1:-en}"                # BCP-47 tag; English is explicit, not a special case
+PLATFORM="${PLATFORM:-ios}"   # ios | ipad — picks the simulator, the canvas and the output dir
+case "$PLATFORM" in
+  ipad) SIM_NAME="${SIM_NAME:-Calc-iPadPro13}" ;;
+  *)    SIM_NAME="${SIM_NAME:-Calc-iPhone17ProMax}" ;;
+esac
+# Each platform+locale has its own scene file: same timing and scene keys (they align to the
+# DemoDriver markers), different canvas and translated captions.
+_PREFIX="scenes"; [ "$PLATFORM" = ipad ] && _PREFIX="scenes_ipad"
+_DEFAULT_SCENES="$APP_DIR/marketing/reels/$_PREFIX.json"
+[ "$LOC" = en ] || _DEFAULT_SCENES="$APP_DIR/marketing/reels/${_PREFIX}_$LOC.json"
+SCENES="${SCENES:-$_DEFAULT_SCENES}"
 PYBIN="${PYBIN:-/Users/oleksandr/miniconda3/envs/fantastic/bin/python}"
 FRAME_PY="$ROOT/marketing/reels/frame_reel.py"
 ALIGN_PY="$ROOT/marketing/reels/align_scenes.py"
 
-RAW_DIR="$APP_DIR/marketing/raw/ios/video"
-ASO_DIR="$APP_DIR/marketing/aso/ios/video"
+RAW_DIR="$APP_DIR/marketing/raw/$LOC/$PLATFORM/video"
+ASO_DIR="$APP_DIR/marketing/aso/$LOC/$PLATFORM/video"
 DERIVED="$APP_DIR/.build/reel-dd"
 RAW_MOV="$RAW_DIR/capture.mov"
 
@@ -85,7 +95,8 @@ echo "▶ tour (DemoDriver, ~${CONTENT_LEN}s)"
 # MODE=extended belt-and-braces: the tour pins it too, but the beats scroll to Wind/Flare/Hpo
 # panels that only exist in Extended, so a Simple carry-over would record a broken reel.
 SIMCTL_CHILD_EARTHAROUND_DEMO=1 SIMCTL_CHILD_EARTHAROUND_MODE=extended \
-  xcrun simctl launch "$UDID" "$APP_BUNDLE" >/dev/null
+  xcrun simctl launch "$UDID" "$APP_BUNDLE" \
+    -AppleLanguages "($LOC)" -AppleLocale "$LOC" >/dev/null
 # Wait for the tour to actually finish (REEL_END), not for a guessed duration: under GPU
 # load the sim's encoder lags wall-clock, and `recordVideo` drops its trailing buffer on
 # SIGINT — so a tight sleep truncates the last beat. Poll the marker, then let the encoder

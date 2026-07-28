@@ -13,6 +13,9 @@ enum API {
     static var windRTSW     = URL(string: "\(swpc)/json/rtsw/rtsw_wind_1m.json")!
     static var xrays1Day    = URL(string: "\(swpc)/json/goes/primary/xrays-1-day.json")!
     static var flaresLatest = URL(string: "\(swpc)/json/goes/primary/xray-flares-latest.json")!
+    /// Event LIST (begin/max/end per flare). `xray-flares-latest` carries only the most recent
+    /// one, so a 24-hour tally needs this feed and a local time filter.
+    static var flares7Day   = URL(string: "\(swpc)/json/goes/primary/xray-flares-7-day.json")!
     static var scales       = URL(string: "\(swpc)/products/noaa-scales.json")!
     static var ovation      = URL(string: "\(swpc)/json/ovation_aurora_latest.json")!
     static var f107         = URL(string: "\(swpc)/json/f107_cm_flux.json")!

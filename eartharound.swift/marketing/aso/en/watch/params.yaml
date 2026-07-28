@@ -5,8 +5,8 @@ size: [416, 496]          # Apple Watch Series 10/11 46mm — APP_WATCH_SERIES_1
 # every font is scaled by canvas_width/1242, so a long title wraps to three lines and eats
 # the screenshot. Two or three words each.
 paths:
-  raw_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/raw/watch
-  output_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/aso/watch
+  raw_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/raw/en/watch
+  output_folder: /Users/oleksandr/Projects/rootyapps/eartharound.swift/marketing/aso/en/watch
 
 style:
   bg_gradient: true

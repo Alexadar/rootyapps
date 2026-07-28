@@ -8,18 +8,6 @@ import Foundation
 public enum FeedSource: String, CaseIterable, Codable, Sendable {
     case kp, flares, wind, scales, aurora, solar, hpo
 
-    public var displayName: String {
-        switch self {
-        case .kp:     return "Planetary Kp"
-        case .flares: return "Flares & X-ray flux"
-        case .wind:   return "Solar wind"
-        case .scales: return "NOAA scales"
-        case .aurora: return "Aurora"
-        case .solar:  return "Solar activity"
-        case .hpo:    return "Hp30"
-        }
-    }
-
     /// How often the publisher actually issues a new observation. Staleness has to be judged
     /// against this: a flat threshold marks F10.7 stale permanently and Hp30 never.
     /// Sources: NOAA SWPC product cadences; GFZ Hpo is a 30-minute index.

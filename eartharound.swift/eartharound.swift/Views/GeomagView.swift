@@ -85,7 +85,7 @@ struct GeomagView: View {
                   feed: .kp, status: status) {
                 KpBarChart(series: k.series, showForecast: showForecast)
                 HStack(spacing: 12) {
-                    MetricTile(value: Fmt.num(k.now, 1), caption: k.activity,
+                    MetricTile(value: Fmt.num(k.now, 1), caption: SWText.key(k.activity),
                                color: sw.severity(k.gScale))
                     MetricTile(value: "\(k.ap)", unit: "ap", caption: "current amplitude")
                     MetricTile(value: ap.map { "\($0.value)" } ?? "—", unit: "Ap",

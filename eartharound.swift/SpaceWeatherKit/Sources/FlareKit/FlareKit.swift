@@ -91,6 +91,24 @@ public enum Flare {
         }
     }
 
+    /// Which effect band a flare class falls in, without the wording, so the app can localize the
+    /// sentence. `meaning(forClass:)` below is the English rendering and stays the reference.
+    public enum Severity: String, CaseIterable, Sendable {
+        case major      // X — radio blackouts, possible radiation storm
+        case medium     // M — brief blackouts on the sunlit side
+        case common     // C — few noticeable effects
+        case background // A/B — nothing to report
+    }
+
+    public static func severity(forClass string: String) -> Severity {
+        switch string.first {
+        case "X": return .major
+        case "M": return .medium
+        case "C": return .common
+        default:  return .background
+        }
+    }
+
     /// Plain-language dashboard line for a flare class.
     public static func meaning(forClass string: String) -> String {
         switch string.first {

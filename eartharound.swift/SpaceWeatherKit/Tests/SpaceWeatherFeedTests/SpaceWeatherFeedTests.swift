@@ -1,6 +1,7 @@
 import Testing
 import Foundation
 @testable import SpaceWeatherFeed
+import FlareKit
 
 /// ORACLE = NOAA SWPC Space Weather Scales for the alert thresholds:
 ///  • Geomagnetic storm alerts key off the NOAA G level (G1=Kp5 … G5=Kp9) — an alert
@@ -53,8 +54,7 @@ struct SpaceWeatherFeedTests {
         // Onset G2: fires.
         var out = SpaceAlerts.evaluate(current: Self.snapshot(g: 2, kpNow: 6.3), prefs: Self.on, state: state, now: Self.t0)
         #expect(out.alerts.map(\.kind) == [.storm])
-        #expect(out.alerts[0].title == "G2 Moderate geomagnetic storm")
-        #expect(out.alerts[0].body.contains("Kp 6.3"))
+        #expect(out.alerts[0].detail == .storm(g: 2, kp: 6.3))
         state = out.state
 
         // Same G2 an hour later: silent.
@@ -115,7 +115,7 @@ struct SpaceWeatherFeedTests {
         // M4.2: fires with the Kit's meaning line.
         out = SpaceAlerts.evaluate(current: Self.snapshot(flareClass: "M4.2", flareMax: Self.t0), prefs: Self.on, state: state, now: Self.t0)
         #expect(out.alerts.map(\.kind) == [.flare])
-        #expect(out.alerts[0].title == "M4.2 solar flare")
+        #expect(out.alerts[0].detail == .flare(maxClass: "M4.2", meaning: Flare.meaning(forClass: "M4.2")))
         state = out.state
 
         // Same event re-seen: silent.
@@ -139,7 +139,7 @@ struct SpaceWeatherFeedTests {
         // 65%: fires.
         out = SpaceAlerts.evaluate(current: Self.snapshot(auroraPct: 65), prefs: Self.on, state: state, now: Self.t0)
         #expect(out.alerts.map(\.kind) == [.aurora])
-        #expect(out.alerts[0].title == "Aurora chance 65%")
+        #expect(out.alerts[0].detail == .aurora(probability: 65, kp: 2.0))
         state = out.state
 
         // Later the same UT day, still high: silent.

@@ -35,11 +35,33 @@ public struct AlertDedupeState: Equatable, Codable {
     public init() {}
 }
 
+/// An alert as DATA, never as prose.
+///
+/// Notifications are posted from the background task, where no view exists and so no
+/// `LocalizedStringKey` can be resolved. If the package built the sentence it would bake in
+/// whatever language the package was written in — English — and the user's choice in Settings
+/// could not reach it. So the engine decides WHAT happened and the app decides how to say it.
 public struct SpaceAlert: Equatable {
     public enum Kind: String { case storm, flare, aurora }
-    public let kind: Kind
-    public let title: String
-    public let body: String
+
+    public enum Detail: Equatable {
+        case storm(g: Int, kp: Double?)
+        case flare(maxClass: String, meaning: String)
+        case aurora(probability: Int, kp: Double)
+    }
+
+    public let detail: Detail
+
+    /// Stable identity for notification threading and dedupe.
+    public var kind: Kind {
+        switch detail {
+        case .storm:  return .storm
+        case .flare:  return .flare
+        case .aurora: return .aurora
+        }
+    }
+
+    public init(detail: Detail) { self.detail = detail }
 }
 
 /// Pure alert engine. Thresholds are the published NOAA scale boundaries, applied
@@ -62,10 +84,7 @@ public enum SpaceAlerts {
         if prefs.storms {
             if let g = current.scales?.g {
                 if g >= prefs.stormThreshold, g > state.lastStormG {
-                    let kp = current.kp.map { String(format: " — Kp %.1f", $0.now) } ?? ""
-                    alerts.append(SpaceAlert(kind: .storm,
-                                             title: "\(Geomag.gLabel(g)) geomagnetic storm",
-                                             body: "NOAA G\(g) conditions now\(kp)."))
+                    alerts.append(SpaceAlert(detail: .storm(g: g, kp: current.kp?.now)))
                 }
                 state.lastStormG = g
             }
@@ -76,9 +95,8 @@ public enum SpaceAlerts {
         // Solar flare — a new M/X event, identified by NOAA's max_time.
         if prefs.flares, let flare = current.flare?.latestFlare,
            flare.rScale >= 1, let maxTime = flare.maxTime, maxTime != state.lastFlareMaxTime {
-            alerts.append(SpaceAlert(kind: .flare,
-                                     title: "\(flare.maxClass) solar flare",
-                                     body: flare.meaning))
+            // The meaning is Kit prose and therefore a catalog KEY, not a finished sentence.
+            alerts.append(SpaceAlert(detail: .flare(maxClass: flare.maxClass, meaning: flare.meaning)))
             state.lastFlareMaxTime = maxTime
         }
 
@@ -86,9 +104,8 @@ public enum SpaceAlerts {
         if prefs.aurora, let aurora = current.aurora, aurora.maxProbability >= prefs.auroraThreshold {
             let day = Hpo.utDayStart(for: now)
             if day != state.lastAuroraUTDay {
-                alerts.append(SpaceAlert(kind: .aurora,
-                                         title: "Aurora chance \(aurora.maxProbability)%",
-                                         body: aurora.viewLine))
+                alerts.append(SpaceAlert(detail: .aurora(probability: aurora.maxProbability,
+                                                        kp: aurora.kp)))
                 state.lastAuroraUTDay = day
             }
         }

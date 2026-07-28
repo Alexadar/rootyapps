@@ -34,9 +34,13 @@ public enum NOAAService {
     private struct FlareLatest: Decodable {
         let max_class: String?; let max_time: String?; let begin_time: String?
     }
-    public static func flares() async throws -> FlarePanel {
+    public static func flares(now: Date = Date()) async throws -> FlarePanel {
         async let xrayData = Net.json(API.xrays1Day, as: [XRay].self)
         async let flareData = Net.json(API.flaresLatest, as: [FlareLatest].self)
+        // The 7-day list is the only feed carrying flare EVENTS; we keep the last 24 h of it.
+        // Failing softly: a 24-hour tally is a nice-to-have, and it must not take the whole
+        // flare panel down with it if this one endpoint is unavailable.
+        async let recentData = try? Net.json(API.flares7Day, as: [FlareLatest].self)
 
         let series: [FluxSample] = try await xrayData
             .filter { $0.energy == "0.1-0.8nm" }
@@ -49,7 +53,16 @@ public enum NOAAService {
                               maxTime: l.max_time.flatMap(DateFmt.parseUTC),
                               beginTime: l.begin_time.flatMap(DateFmt.parseUTC))
         }
-        return FlarePanel(fluxSeries: series, latestFlare: event, observedAt: series.last?.time)
+        let cutoff = now.addingTimeInterval(-24 * 3600)
+        let recent = (await recentData ?? []).compactMap { l -> FlareEvent? in
+            guard let cls = l.max_class, let t = l.max_time.flatMap(DateFmt.parseUTC), t >= cutoff
+            else { return nil }
+            return FlareEvent(maxClass: cls, maxTime: t,
+                              beginTime: l.begin_time.flatMap(DateFmt.parseUTC))
+        }.sorted { ($0.maxTime ?? .distantPast) > ($1.maxTime ?? .distantPast) }
+
+        return FlarePanel(fluxSeries: series, latestFlare: event,
+                          recentFlares: recent, observedAt: series.last?.time)
     }
 
     // MARK: Solar wind (freshest summary values + latest density)

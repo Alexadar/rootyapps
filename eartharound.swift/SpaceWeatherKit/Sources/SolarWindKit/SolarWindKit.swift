@@ -72,6 +72,20 @@ public enum SolarWind {
         return .calm
     }
 
+    /// Speed band without the wording, so the app can localize it.
+    public enum SpeedBand: String, CaseIterable, Sendable {
+        case slow, nominal, fastStream, veryFast
+    }
+
+    public static func speedBand(_ v: Double) -> SpeedBand {
+        switch v {
+        case ..<350: return .slow
+        case ..<500: return .nominal
+        case ..<700: return .fastStream
+        default: return .veryFast
+        }
+    }
+
     public static func speedDescription(_ v: Double) -> String {
         switch v {
         case ..<350: return "Slow"

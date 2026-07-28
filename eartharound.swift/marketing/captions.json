@@ -1,0 +1,504 @@
+{
+  "_readme": [
+    "Screenshot caption copy per locale, used to stamp out marketing/aso/<locale>/params.yaml.",
+    "",
+    "These are MARKETING lines, not translations: each one is rewritten to be short and idiomatic in",
+    "its own language, because the title renders as large display text and a literal translation of",
+    "'No ads. No false alarms.' overflows in German and Finnish. Meaning is preserved; wording is not.",
+    "",
+    "Never translated: Earth Around, NOAA, GFZ, Kp, Hp30.",
+    "watch_captions is a separate, much shorter set — the watch canvas is 416px wide and fonts scale with it, so phone-length titles wrap to three lines and eat the image."
+  ],
+  "captions": {
+    "en": [
+      [
+        "Storm right now?",
+        "Plain answers, live from NOAA"
+      ],
+      [
+        "Or every number",
+        "Solar wind, flares, aurora, Kp"
+      ],
+      [
+        "Hp30 detail",
+        "30-minute storm resolution"
+      ],
+      [
+        "Night mode",
+        "Red-shift for the field"
+      ],
+      [
+        "No ads. No false alarms.",
+        "Every value checked against the published standard"
+      ]
+    ],
+    "uk": [
+      [
+        "Буря просто зараз?",
+        "Прості відповіді, наживо з NOAA"
+      ],
+      [
+        "Або всі числа",
+        "Сонячний вітер, спалахи, сяйво, Kp"
+      ],
+      [
+        "Деталі Hp30",
+        "Роздільність бурі — 30 хвилин"
+      ],
+      [
+        "Нічний режим",
+        "Червоний зсув для поля"
+      ],
+      [
+        "Без реклами. Без фальшивих тривог.",
+        "Кожне значення звірене з опублікованим стандартом"
+      ]
+    ],
+    "de": [
+      [
+        "Sturm gerade jetzt?",
+        "Klare Antworten, live von der NOAA"
+      ],
+      [
+        "Oder jede Zahl",
+        "Sonnenwind, Eruptionen, Polarlicht, Kp"
+      ],
+      [
+        "Hp30-Detail",
+        "Sturmauflösung im 30-Minuten-Takt"
+      ],
+      [
+        "Nachtmodus",
+        "Rotverschiebung fürs Feld"
+      ],
+      [
+        "Keine Werbung. Kein Fehlalarm.",
+        "Jeder Wert gegen den veröffentlichten Standard geprüft"
+      ]
+    ],
+    "fr": [
+      [
+        "Une tempête maintenant ?",
+        "Des réponses claires, en direct de la NOAA"
+      ],
+      [
+        "Ou chaque chiffre",
+        "Vent solaire, éruptions, aurore, Kp"
+      ],
+      [
+        "Le détail Hp30",
+        "Résolution des tempêtes à 30 minutes"
+      ],
+      [
+        "Mode nuit",
+        "Décalage rouge pour le terrain"
+      ],
+      [
+        "Sans pub. Sans fausse alerte.",
+        "Chaque valeur vérifiée sur le standard publié"
+      ]
+    ],
+    "es": [
+      [
+        "¿Tormenta ahora mismo?",
+        "Respuestas claras, en vivo desde NOAA"
+      ],
+      [
+        "O cada número",
+        "Viento solar, llamaradas, aurora, Kp"
+      ],
+      [
+        "Detalle Hp30",
+        "Resolución de tormenta cada 30 minutos"
+      ],
+      [
+        "Modo noche",
+        "Desplazamiento al rojo para el campo"
+      ],
+      [
+        "Sin anuncios. Sin falsas alarmas.",
+        "Cada valor contrastado con el estándar publicado"
+      ]
+    ],
+    "it": [
+      [
+        "Tempesta proprio adesso?",
+        "Risposte chiare, in diretta da NOAA"
+      ],
+      [
+        "O ogni numero",
+        "Vento solare, brillamenti, aurora, Kp"
+      ],
+      [
+        "Dettaglio Hp30",
+        "Risoluzione della tempesta a 30 minuti"
+      ],
+      [
+        "Modalità notte",
+        "Spostamento al rosso sul campo"
+      ],
+      [
+        "Niente pubblicità. Nessun falso allarme.",
+        "Ogni valore verificato sullo standard pubblicato"
+      ]
+    ],
+    "pt-BR": [
+      [
+        "Tempestade agora?",
+        "Respostas claras, ao vivo da NOAA"
+      ],
+      [
+        "Ou cada número",
+        "Vento solar, erupções, aurora, Kp"
+      ],
+      [
+        "Detalhe Hp30",
+        "Resolução de tempestade a cada 30 minutos"
+      ],
+      [
+        "Modo noturno",
+        "Deslocamento ao vermelho para o campo"
+      ],
+      [
+        "Sem anúncios. Sem alarme falso.",
+        "Cada valor conferido com o padrão publicado"
+      ]
+    ],
+    "nl": [
+      [
+        "Nu een storm?",
+        "Heldere antwoorden, live van de NOAA"
+      ],
+      [
+        "Of elk getal",
+        "Zonnewind, uitbarstingen, poollicht, Kp"
+      ],
+      [
+        "Hp30-detail",
+        "Stormresolutie van 30 minuten"
+      ],
+      [
+        "Nachtmodus",
+        "Roodverschuiving voor het veld"
+      ],
+      [
+        "Geen advertenties. Geen loos alarm.",
+        "Elke waarde getoetst aan de gepubliceerde standaard"
+      ]
+    ],
+    "sv": [
+      [
+        "Storm just nu?",
+        "Tydliga svar, live från NOAA"
+      ],
+      [
+        "Eller varje siffra",
+        "Solvind, eruptioner, norrsken, Kp"
+      ],
+      [
+        "Hp30-detalj",
+        "Stormupplösning var 30:e minut"
+      ],
+      [
+        "Nattläge",
+        "Rödskift för fältet"
+      ],
+      [
+        "Ingen reklam. Inga falsklarm.",
+        "Varje värde kontrollerat mot den publicerade standarden"
+      ]
+    ],
+    "nb": [
+      [
+        "Storm akkurat nå?",
+        "Klare svar, direkte fra NOAA"
+      ],
+      [
+        "Eller hvert tall",
+        "Solvind, solutbrudd, nordlys, Kp"
+      ],
+      [
+        "Hp30-detalj",
+        "Stormoppløsning hvert 30. minutt"
+      ],
+      [
+        "Nattmodus",
+        "Rødforskyvning for feltet"
+      ],
+      [
+        "Ingen reklame. Ingen falsk alarm.",
+        "Hver verdi kontrollert mot den publiserte standarden"
+      ]
+    ],
+    "da": [
+      [
+        "Storm lige nu?",
+        "Klare svar, live fra NOAA"
+      ],
+      [
+        "Eller hvert tal",
+        "Solvind, soludbrud, nordlys, Kp"
+      ],
+      [
+        "Hp30-detalje",
+        "Stormopløsning hvert 30. minut"
+      ],
+      [
+        "Nattilstand",
+        "Rødforskydning til feltet"
+      ],
+      [
+        "Ingen reklamer. Ingen falsk alarm.",
+        "Hver værdi kontrolleret mod den offentliggjorte standard"
+      ]
+    ],
+    "fi": [
+      [
+        "Myrsky juuri nyt?",
+        "Selvät vastaukset, suorana NOAA:lta"
+      ],
+      [
+        "Tai jokainen luku",
+        "Aurinkotuuli, roihut, revontulet, Kp"
+      ],
+      [
+        "Hp30-tarkkuus",
+        "Myrskyn erottelu 30 minuutin välein"
+      ],
+      [
+        "Yötila",
+        "Punasiirtymä maastoon"
+      ],
+      [
+        "Ei mainoksia. Ei vääriä hälytyksiä.",
+        "Jokainen arvo tarkistettu julkaistua standardia vasten"
+      ]
+    ],
+    "pl": [
+      [
+        "Burza właśnie teraz?",
+        "Jasne odpowiedzi, na żywo z NOAA"
+      ],
+      [
+        "Albo każda liczba",
+        "Wiatr słoneczny, rozbłyski, zorza, Kp"
+      ],
+      [
+        "Szczegół Hp30",
+        "Rozdzielczość burzy co 30 minut"
+      ],
+      [
+        "Tryb nocny",
+        "Przesunięcie ku czerwieni w terenie"
+      ],
+      [
+        "Bez reklam. Bez fałszywych alarmów.",
+        "Każda wartość sprawdzona z opublikowanym standardem"
+      ]
+    ],
+    "cs": [
+      [
+        "Bouře právě teď?",
+        "Jasné odpovědi, živě z NOAA"
+      ],
+      [
+        "Nebo každé číslo",
+        "Sluneční vítr, erupce, polární záře, Kp"
+      ],
+      [
+        "Detail Hp30",
+        "Rozlišení bouře po 30 minutách"
+      ],
+      [
+        "Noční režim",
+        "Červený posun do terénu"
+      ],
+      [
+        "Žádné reklamy. Žádné plané poplachy.",
+        "Každá hodnota ověřená proti zveřejněnému standardu"
+      ]
+    ],
+    "tr": [
+      [
+        "Şu anda fırtına var mı?",
+        "Net yanıtlar, NOAA'dan canlı"
+      ],
+      [
+        "Ya da her sayı",
+        "Güneş rüzgârı, patlamalar, kutup ışığı, Kp"
+      ],
+      [
+        "Hp30 ayrıntısı",
+        "30 dakikalık fırtına çözünürlüğü"
+      ],
+      [
+        "Gece modu",
+        "Arazi için kırmızıya kayma"
+      ],
+      [
+        "Reklam yok. Yanlış alarm yok.",
+        "Her değer yayımlanmış standarda göre denetlendi"
+      ]
+    ],
+    "ja": [
+      [
+        "いま嵐は起きている？",
+        "NOAA からライブで、はっきり答えます"
+      ],
+      [
+        "すべての数値も",
+        "太陽風、フレア、オーロラ、Kp"
+      ],
+      [
+        "Hp30 の細かさ",
+        "30分きざみで嵐をとらえる"
+      ],
+      [
+        "ナイトモード",
+        "暗順応を守る赤方偏移"
+      ],
+      [
+        "広告なし。誤報なし。",
+        "すべての値を公開された基準で検証"
+      ]
+    ],
+    "ko": [
+      [
+        "지금 폭풍인가요?",
+        "NOAA에서 실시간으로, 명확한 답"
+      ],
+      [
+        "또는 모든 수치",
+        "태양풍, 플레어, 오로라, Kp"
+      ],
+      [
+        "Hp30 정밀도",
+        "30분 단위로 보는 폭풍"
+      ],
+      [
+        "야간 모드",
+        "어둠 적응을 지키는 적색 편이"
+      ],
+      [
+        "광고 없음. 거짓 경보 없음.",
+        "모든 값을 공개된 기준으로 검증"
+      ]
+    ],
+    "zh-Hans": [
+      [
+        "现在有风暴吗？",
+        "来自 NOAA 的实时数据，直接回答"
+      ],
+      [
+        "也可以看全部数据",
+        "太阳风、耀斑、极光、Kp"
+      ],
+      [
+        "Hp30 细节",
+        "30 分钟级的风暴分辨率"
+      ],
+      [
+        "夜间模式",
+        "红移，守住暗适应"
+      ],
+      [
+        "无广告。无误报。",
+        "每个数值都对照公开标准核验"
+      ]
+    ],
+    "zh-Hant": [
+      [
+        "現在有風暴嗎？",
+        "來自 NOAA 的即時資料，直接回答"
+      ],
+      [
+        "也可以看全部數據",
+        "太陽風、閃焰、極光、Kp"
+      ],
+      [
+        "Hp30 細節",
+        "30 分鐘級的風暴解析度"
+      ],
+      [
+        "夜間模式",
+        "紅移，守住暗適應"
+      ],
+      [
+        "無廣告。無誤報。",
+        "每個數值都對照公開標準核驗"
+      ]
+    ]
+  },
+  "watch_captions": {
+    "en": [
+      [
+        "Kp on your wrist",
+        "Storm level now"
+      ],
+      [
+        "Hp30 detail",
+        "30-minute resolution"
+      ],
+      [
+        "Wind and aurora",
+        "Speed, Bz, chance"
+      ]
+    ],
+    "de": [
+      [
+        "Kp am Handgelenk",
+        "Sturmstufe jetzt"
+      ],
+      [
+        "Hp30-Detail",
+        "30-Minuten-Takt"
+      ],
+      [
+        "Wind & Polarlicht",
+        "Tempo, Bz, Chance"
+      ]
+    ],
+    "ja": [
+      [
+        "手首で Kp",
+        "いまの嵐レベル"
+      ],
+      [
+        "Hp30 の細かさ",
+        "30分きざみ"
+      ],
+      [
+        "太陽風とオーロラ",
+        "速度・Bz・確率"
+      ]
+    ],
+    "fr": [
+      [
+        "Kp au poignet",
+        "Niveau de tempête"
+      ],
+      [
+        "Détail Hp30",
+        "Pas de 30 minutes"
+      ],
+      [
+        "Vent et aurore",
+        "Vitesse, Bz, chance"
+      ]
+    ],
+    "es": [
+      [
+        "Kp en la muñeca",
+        "Nivel de tormenta"
+      ],
+      [
+        "Detalle Hp30",
+        "Cada 30 minutos"
+      ],
+      [
+        "Viento y aurora",
+        "Velocidad, Bz, chance"
+      ]
+    ]
+  }
+}
