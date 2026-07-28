@@ -105,6 +105,11 @@ targets:
       # deliberately data-free). The watch app is standalone, so it needs its own copy of the
       # constants compiled in — referenced in place rather than duplicated.
       - path: MarineNav/StationCatalog.swift
+      # The SAME Icon Composer bundle the phone and Mac use. `.icon` is universal — its
+      # icon.json already declares `supported-platforms: { circles: [watchOS], squares: shared }`,
+      # so the watchOS circular variant comes out of this one source. No separate asset catalog.
+      - path: marinenav.icon
+        buildPhase: resources
     # XcodeGen GENERATES this file from `properties` — it does not read an existing one, so the
     # group must be declared here or the file is rewritten to an empty dict.
     #
@@ -123,11 +128,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.marinenav.watchkitapp
-        # watchOS cannot use the Icon Composer `.icon` bundle the phone/Mac target uses, so the
-        # watch carries its own asset catalog (same shape as eartharound's SpaceWeatherWatch).
-        # The source 1024 is RGBA and watchOS rejects an alpha channel, so it is flattened onto
-        # the design system's deep-navy canvas.
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_APPICON_NAME: marinenav
         # A wrist has no keypad worth typing coordinates on, so F2/F5 offer location — and
         # the string has to say plainly that it never leaves the device, because that is the
         # whole product promise.
