@@ -16,7 +16,7 @@ struct FileSizeView: View {
                 Stepper("Channels  \(Int(vm.channels))", value: $vm.channels, in: 1...8)
                 NumberField(title: "Duration", value: $vm.minutes, unit: "min", range: 0...100000)
                 ResultRow(label: "Size", value: "\(Fmt.f(vm.megabytes, 1)) MB", emphasis: true)
-                ResultRow(label: "Bytes", value: Fmt.f(vm.bytes, 0), unit: "B")
+                ResultRow(label: "Bytes", value: Fmt.count(vm.bytes), unit: "B")
                 Text("PCM data only (WAV/AIFF header excluded).")
                     .font(.caption).foregroundStyle(.secondary)
             }.glassCard()

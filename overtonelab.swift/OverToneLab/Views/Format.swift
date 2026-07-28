@@ -38,6 +38,22 @@ enum Fmt {
     static func timeOrDash(_ d: Date?) -> String { d.map { time.string(from: $0) } ?? "—" }
 
     static func f(_ x: Double, _ places: Int = 2) -> String { decimal(x, places) }
+
+    /// Large COUNTS — sample counts, frame counts, byte counts — where digit grouping is what a
+    /// reader actually wants (108,000 / 108.000 / 108 000, per locale).
+    ///
+    /// Deliberately NOT the default in `f`: physical quantities read wrong grouped. Audio work
+    /// writes a sample rate as 44100 Hz or 44.1 kHz, never "44,100 Hz", and every frequency,
+    /// level and dimension in this app is that kind of number. So grouping is opt-in at the few
+    /// call sites that are counting things rather than measuring them.
+    static func count(_ x: Double) -> String {
+        x.formatted(
+            FloatingPointFormatStyle<Double>()
+                .precision(.fractionLength(0))
+                .rounded(rule: .toNearestOrAwayFromZero)
+                .locale(locale)
+        )
+    }
     static func signed(_ x: Double, _ places: Int = 2) -> String { decimal(x, places, signed: true) }
     static func deg(_ x: Double, _ p: Int = 2) -> String { f(x, p) + "°" }
     /// Percent sign placement and spacing are locale-dependent (fr puts a space before it), so

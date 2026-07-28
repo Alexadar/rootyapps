@@ -11,7 +11,7 @@ struct SamplesView: View {
                     Text("44.1k").tag(44100.0); Text("48k").tag(48000.0)
                     Text("96k").tag(96000.0); Text("192k").tag(192000.0)
                 }.pickerStyle(.segmented)
-                ResultRow(label: "Samples", value: Fmt.f(vm.samples, 0), unit: "samples", emphasis: true)
+                ResultRow(label: "Samples", value: Fmt.count(vm.samples), unit: "samples", emphasis: true)
                 Text("Sample-accurate edit points: samples = seconds × sample rate.")
                     .font(.caption).foregroundStyle(.secondary)
             }.glassCard()
