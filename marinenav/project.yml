@@ -12,10 +12,10 @@ settings:
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0.0"
-    # Build 2: the day-window fix (StationDay). MARKETING_VERSION deliberately stays 1.0.0 —
-    # this version has never been public, so it must still debut as 1.0; a 1.0.1 would imply a
-    # 1.0 nobody saw. See docs/new_app_blueprint.md P8, and truecourse commit eb59379f.
-    CURRENT_PROJECT_VERSION: "2"
+    # Build 3: adds the Apple Watch app + complications (build 2 was the day-window fix alone).
+    # MARKETING_VERSION deliberately stays 1.0.0 — this version has never been public, so it
+    # must still debut as 1.0. See docs/new_app_blueprint.md P8, and truecourse commit eb59379f.
+    CURRENT_PROJECT_VERSION: "3"
     ENABLE_PREVIEWS: YES
     GENERATE_INFOPLIST_FILE: YES
 packages:
@@ -40,22 +40,15 @@ targets:
         product: GeodesyKit
       - package: CelestialNavKit
         product: CelestialNavKit
-      # ⛔️ The watch app is NOT embedded yet — it ships in 1.1, not in this build.
-      #
-      # `marinenavWatch` currently holds the structural v0.1 scaffold, not the adopted
-      # `watch_guidelines/` design. Embedding it would put an unstyled placeholder in front of
-      # App Review inside an otherwise finished app. The target stays in the project (its own
-      # scheme still builds and runs it) — only the embed is withheld.
-      #
-      # Restore this block verbatim when the watch design is adopted. WKRunsIndependently-
-      # OfCompanionApp means it also installs standalone; destinationFilters pins the embed to
-      # iOS so a macOS build never carries a watch payload.
-      # - target: marinenavWatch
-      #   embed: true
-      #   destinationFilters: [iOS]
-      #   copy:
-      #     destination: wrapper
-      #     subpath: Watch
+      # The watch app ships INSIDE the iOS app (one purchase covers it) and also declares
+      # WKRunsIndependentlyOfCompanionApp, so it installs and runs standalone too.
+      # destinationFilters pins the embed to iOS — a macOS build must not carry a watch app.
+      - target: marinenavWatch
+        embed: true
+        destinationFilters: [iOS]
+        copy:
+          destination: wrapper
+          subpath: Watch
     sources:
       - path: MarineNav
       - path: marinenav.icon

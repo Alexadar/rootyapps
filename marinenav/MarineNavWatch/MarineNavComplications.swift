@@ -33,6 +33,12 @@ struct TideEntry: TimelineEntry {
     /// Position of `height` between the day's low and high, 0…1 — the gauge's
     /// value, so the circular family reads with NO colour at all.
     let fraction: Double
+    /// The day's lowest low and highest high, formatted — the ends of the range
+    /// `fraction` is measured against. The corner family shows them at the ends of
+    /// its bezel arc the way Weather shows the day's low and high temperature, so the
+    /// needle position means something specific rather than "somewhere in a range".
+    let lowLabel: String
+    let highLabel: String
     /// Next turn.
     let nextKind: String?
     let nextTime: String?
@@ -42,15 +48,16 @@ struct TideEntry: TimelineEntry {
 
     static func noStation(_ date: Date) -> TideEntry {
         TideEntry(date: date, station: nil, zone: "", height: "—", unit: "",
-                  rising: true, fraction: 0.5, nextKind: nil, nextTime: nil,
-                  nextDate: nil, stale: false)
+                  rising: true, fraction: 0.5, lowLabel: "—", highLabel: "—",
+                  nextKind: nil, nextTime: nil, nextDate: nil, stale: false)
     }
 }
 
 struct TideTimelineProvider: TimelineProvider {
     func placeholder(in context: Context) -> TideEntry {
         TideEntry(date: Date(), station: "Station", zone: "PDT", height: "3.56", unit: "ft",
-                  rising: true, fraction: 0.62, nextKind: "High", nextTime: "11:58",
+                  rising: true, fraction: 0.62, lowLabel: "-0.4", highLabel: "6.1",
+                  nextKind: "High", nextTime: "11:58",
                   nextDate: Date().addingTimeInterval(8220), stale: false)
     }
 
@@ -97,6 +104,8 @@ struct TideTimelineProvider: TimelineProvider {
                 unit: unitLabel,
                 rising: Harmonics.slope(station, at: date) >= 0,
                 fraction: min(max((h - dayLo) / span, 0), 1),
+                lowLabel: dayLo.formatted(WatchFormat.number(1...1)),
+                highLabel: dayHi.formatted(WatchFormat.number(1...1)),
                 nextKind: next.map { $0.kind == .high ? "High" : "Low" },
                 nextTime: next.map { WatchFormat.time($0.date, zone: rec.timeZone) },
                 nextDate: next?.date,
@@ -156,19 +165,48 @@ struct TideComplicationView: View {
         .containerBackground(.clear, for: .widget)
     }
 
-    /// Corner: the numeral on the curved text edge, the trend and next turn in
-    /// the corner label.
+    /// Corner: the numeral and trend in the corner, and a GAUGE in the widget label,
+    /// which WidgetKit curves into an arc along the watch's bezel.
+    ///
+    /// Weather-style, and deliberately the same reading as `circular`: the arc runs from
+    /// the day's lowest low to its highest high, with those two values printed at its
+    /// ends, and the needle sits where the tide is now between them. That turns a bare
+    /// number into a position in the day — "3.36 ft" alone does not tell you whether that
+    /// is near the top of the tide or the bottom.
+    ///
+    /// Position, never hue: accessory families are tinted by the watch face, so colour
+    /// cannot carry meaning here. The trend arrow stays as the redundant non-hue encoding.
     private var corner: some View {
-        Text(entry.height)
-            .font(.system(size: 17, weight: .semibold, design: .monospaced))
-            .monospacedDigit()
-            .widgetLabel {
-                Text(entry.station == nil
-                     ? "Choose a station"
-                     : "\(entry.rising ? "↑" : "↓") \(entry.nextKind ?? "") \(entry.nextTime ?? "")")
+        Group {
+            if entry.station == nil {
+                Image(systemName: "water.waves")
+                    .font(.system(size: 15))
+                    .widgetLabel { Text("Choose a station") }
+                    .accessibilityLabel("Marine Nav: no tide station chosen yet")
+            } else {
+                HStack(spacing: 1) {
+                    Text(entry.height)
+                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
+                        .monospacedDigit()
+                    Image(systemName: trend).font(.system(size: 9, weight: .bold))
+                }
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+                .widgetLabel {
+                    Gauge(value: entry.fraction) {
+                        Text(entry.unit)
+                    } currentValueLabel: {
+                        Text(entry.height)
+                    } minimumValueLabel: {
+                        Text(entry.lowLabel).font(.system(.caption2, design: .monospaced))
+                    } maximumValueLabel: {
+                        Text(entry.highLabel).font(.system(.caption2, design: .monospaced))
+                    }
+                }
+                .accessibilityLabel(spokenNow)
             }
-            .accessibilityLabel(spokenNow)
-            .containerBackground(.clear, for: .widget)
+        }
+        .containerBackground(.clear, for: .widget)
     }
 
     /// Rectangular: the only family with room for the zone label, so it always
@@ -276,7 +314,8 @@ struct MarineNavComplications: WidgetBundle {
     TideComplication()
 } timeline: {
     TideEntry(date: .now, station: "San Francisco", zone: "PDT", height: "3.56", unit: "ft",
-              rising: true, fraction: 0.62, nextKind: "High", nextTime: "11:58",
+              rising: true, fraction: 0.62, lowLabel: "-0.4", highLabel: "6.1",
+              nextKind: "High", nextTime: "11:58",
               nextDate: .now.addingTimeInterval(8220), stale: false)
     TideEntry.noStation(.now)
 }
@@ -285,6 +324,17 @@ struct MarineNavComplications: WidgetBundle {
     TideComplication()
 } timeline: {
     TideEntry(date: .now, station: "San Francisco", zone: "PDT", height: "3.56", unit: "ft",
-              rising: true, fraction: 0.62, nextKind: "High", nextTime: "11:58",
+              rising: true, fraction: 0.62, lowLabel: "-0.4", highLabel: "6.1",
+              nextKind: "High", nextTime: "11:58",
               nextDate: .now.addingTimeInterval(8220), stale: false)
+}
+
+#Preview("Corner", as: .accessoryCorner) {
+    TideComplication()
+} timeline: {
+    TideEntry(date: .now, station: "San Francisco", zone: "PDT", height: "3.56", unit: "ft",
+              rising: true, fraction: 0.62, lowLabel: "-0.4", highLabel: "6.1",
+              nextKind: "High", nextTime: "11:58",
+              nextDate: .now.addingTimeInterval(8220), stale: false)
+    TideEntry.noStation(.now)
 }
