@@ -9,9 +9,23 @@ import TidesKit
 /// `Harmonics.extremes` returned — no prediction is repeated in the view layer.
 @MainActor
 final class TidesViewModel: ObservableObject {
-    @Published var stationID: String = StationCatalog.tideStations.first!.id
+    @Published var stationID: String = StationCatalog.tideStations.first!.id {
+        didSet {
+            // Re-anchor the day to the NEW station's today — but only if it was still the old
+            // station's today, i.e. the user never picked a date. A deliberately chosen date
+            // survives a station change. Stateless: `oldValue` is enough to tell the two apart.
+            guard let old = StationCatalog.tideStations.first(where: { $0.id == oldValue }),
+                  day == StationDay.today(in: old.timeZone) else { return }
+            day = StationDay.today(in: record.timeZone)
+        }
+    }
     @Published var unit: TideUnit = .feet
-    @Published var day: Date = Calendar.current.startOfDay(for: Date())
+    /// The station's today, NOT the device's — see `StationDay`.
+    @Published var day: Date
+
+    init() {
+        day = StationDay.today(in: StationCatalog.tideStations.first!.timeZone)
+    }
 
     var record: TideStationRecord {
         StationCatalog.tideStations.first { $0.id == stationID }

@@ -6,8 +6,21 @@ import TidesKit
 /// mariner reads), formats, and maps onto the chart's 0…1 axes.
 @MainActor
 final class CurrentsViewModel: ObservableObject {
-    @Published var stationKey: String = StationCatalog.currentStations.first!.stationKey
-    @Published var day: Date = Calendar.current.startOfDay(for: Date())
+    @Published var stationKey: String = StationCatalog.currentStations.first!.stationKey {
+        didSet {
+            // Same re-anchoring rule as Tides: follow the new station only while the day is
+            // still the old station's today (i.e. untouched by the user).
+            guard let old = StationCatalog.currentStations.first(where: { $0.stationKey == oldValue }),
+                  day == StationDay.today(in: old.timeZone) else { return }
+            day = StationDay.today(in: record.timeZone)
+        }
+    }
+    /// The station's today, NOT the device's — see `StationDay`.
+    @Published var day: Date
+
+    init() {
+        day = StationDay.today(in: StationCatalog.currentStations.first!.timeZone)
+    }
 
     var record: CurrentStationRecord {
         StationCatalog.currentStations.first { $0.stationKey == stationKey }

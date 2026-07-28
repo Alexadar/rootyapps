@@ -12,7 +12,10 @@ settings:
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "1"
+    # Build 2: the day-window fix (StationDay). MARKETING_VERSION deliberately stays 1.0.0 —
+    # this version has never been public, so it must still debut as 1.0; a 1.0.1 would imply a
+    # 1.0 nobody saw. See docs/new_app_blueprint.md P8, and truecourse commit eb59379f.
+    CURRENT_PROJECT_VERSION: "2"
     ENABLE_PREVIEWS: YES
     GENERATE_INFOPLIST_FILE: YES
 packages:
