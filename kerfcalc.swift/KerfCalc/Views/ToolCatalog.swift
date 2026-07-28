@@ -2,7 +2,7 @@ import SwiftUI
 
 enum ToolSection: String, CaseIterable, Identifiable {
     case framing = "Framing", concrete = "Concrete", takeoff = "Takeoff",
-         materials = "Materials", convert = "Convert"
+         materials = "Materials", pipe = "Pipe", convert = "Convert"
     var id: String { rawValue }
 }
 
@@ -11,6 +11,7 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
     case concrete, footing, rebar, aggregate, pavers  // Concrete
     case area, volume                                 // Takeoff
     case roofing, estimate, miter, lumber, mortar     // Materials
+    case offset, rollingOffset, cutLength, grade      // Pipe
     case units                                        // Convert
 
     var id: String { rawValue }
@@ -21,6 +22,7 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
         case .concrete, .footing, .rebar, .aggregate, .pavers: return .concrete
         case .area, .volume: return .takeoff
         case .roofing, .estimate, .miter, .lumber, .mortar: return .materials
+        case .offset, .rollingOffset, .cutLength, .grade: return .pipe
         case .units: return .convert
         }
     }
@@ -31,6 +33,7 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
         case .concrete: return "Concrete"; case .footing: return "Footing"; case .rebar: return "Rebar"; case .aggregate: return "Aggregate"; case .pavers: return "Pavers"
         case .area: return "Area"; case .volume: return "Volume"
         case .roofing: return "Roofing"; case .estimate: return "Estimate"; case .miter: return "Miter"; case .lumber: return "Lumber"; case .mortar: return "Mortar"
+        case .offset: return "Offset"; case .rollingOffset: return "Rolling Offset"; case .cutLength: return "Cut Length"; case .grade: return "Grade"
         case .units: return "Convert"
         }
     }
@@ -52,6 +55,10 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
         case .miter: return "Compound crown angles"
         case .lumber: return "Board feet"
         case .mortar: return "Mortar bags — block & brick"
+        case .offset: return "Set · travel · run · multiplier"
+        case .rollingOffset: return "Set + roll — true offset & travel"
+        case .cutLength: return "C-to-C less take-outs"
+        case .grade: return "Fall — in/ft · % · 1:N · °"
         case .units: return "ft-in ↔ decimal ↔ metric"
         }
     }
@@ -62,6 +69,7 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
         case .concrete: return "cube.transparent"; case .footing: return "rectangle.compress.vertical"; case .rebar: return "line.3.horizontal"; case .aggregate: return "circle.hexagongrid.fill"; case .pavers: return "square.grid.3x3.fill"
         case .area: return "square.dashed"; case .volume: return "shippingbox"
         case .roofing: return "house"; case .estimate: return "square.grid.3x3"; case .miter: return "arrowtriangle.left.and.line.vertical.and.arrowtriangle.right"; case .lumber: return "ruler"; case .mortar: return "square.grid.3x3.middle.filled"
+        case .offset: return "arrow.turn.right.up"; case .rollingOffset: return "rotate.3d"; case .cutLength: return "scissors"; case .grade: return "arrow.down.right"
         case .units: return "arrow.left.arrow.right"
         }
     }
@@ -72,6 +80,7 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
         case .concrete: return "45 bags/yd³"; case .footing: return "3.29 yd³"; case .rebar: return "#4 0.668/ft"; case .aggregate: return "1.35 t/yd³"; case .pavers: return "4.5 /ft²"
         case .area: return "π r²"; case .volume: return "27 ft³"
         case .roofing: return "6/12 →1.118"; case .estimate: return "35 sheets"; case .miter: return "35.3°"; case .lumber: return "10 bf"; case .mortar: return "13 blk/bag"
+        case .offset: return "45° ×1.414"; case .rollingOffset: return "√(set²+roll²)"; case .cutLength: return "C−C − take-outs"; case .grade: return "¼\"/ft = 1:48"
         case .units: return "1 ft = 0.3048 m"
         }
     }

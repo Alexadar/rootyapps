@@ -63,4 +63,20 @@ Kit: `Kits/Concrete/ConcreteKit` · Tests: `ConcreteKitOracleTests.swift`, `Site
 | Control joints | **ACI 360R** — max spacing 24–36× thickness(in) = 2–3× in feet (4"→8–12 ft) | ✅ |
 | Pavers / retaining | geometry (4×8 = 4.5/ft²); pattern waste % editable convention | ✅ |
 
-**Cross-checks still human-in-the-loop (RELEASE_CHECKLIST):** rafter table vs a physical framing square + one online calc; stairs vs an independent stair calculator; feet-inch vs `feetinch_oracle.py` (committed, re-runnable). Green ≠ safe-to-build; verify against the locally adopted code.
+## Calc #11–#16 — Pipe layout · PipeKit ✅ 34 tests (Kit only; not yet surfaced as tools)
+Kit: `Kits/Pipe/PipeKit` · Tests: `PipeOffsetOracleTests.swift`, `RollingOffsetOracleTests.swift`,
+`PipeCutOracleTests.swift`, `PipeGradeOracleTests.swift`, `PipeWeightOracleTests.swift`,
+`ParallelOffsetOracleTests.swift`
+| # | Calc | Convention source (cited in tests) | Test |
+|---|---|---|---|
+| 11 | Simple offset | **published fitting-multiplier tables** — travel (csc θ) 45°=1.414, 60°=1.155, 30°=2.000, 22½°=2.613, 11¼°=5.126; run (cot θ) 45°=1.000, 22½°=2.414, 11¼°=5.027 — **and** the identity that those constants *are* `1/sin θ` / `cos θ/sin θ` (asserted at 1e-9, so the table and the closed form corroborate each other) | ✅ 7 |
+| 12 | Rolling offset | identity — true offset `√(set²+roll²)` on 3-4-5 / 6-8-10 / 5-12-13; roll angle `atan(roll/set)`. Invariant: **reduces exactly to Calc #11 when roll = 0**; composes #11's cited multipliers rather than adding constants | ✅ 6 |
+| 13 | Cut length | **definition** — end-to-end = centre-to-centre − take-out A − take-out B, plus its inverse and a fittings-collide guard. Take-out values are **user-entered, NOT oracle-backed** (vary by manufacturer/material/joint); no table shipped | ✅ 4 |
+| 14 | Grade / fall | **IPC Table 704.1 / UPC 708.0** minimum drainage slopes, printed as all three spellings of one number: ¼″/ft = 2.08 % = 1:48 (≤2½″ pipe), ⅛″/ft = 1.04 % = 1:96 (larger). *Code-cycle* tier — edition varies by jurisdiction | ✅ 6 |
+| 15 | Pipe weight | identity — `π·(OD−t)·t·12·density` reproduces the **published steel rule 10.68·(OD−t)·t** at 0.2833 lb/in³; cross-checked against **ASME B36.10M** Sch-40 weights (2″=3.65, 4″=10.79, 6″=18.97 lb/ft). Density is **user-entered, NOT oracle-backed** | ✅ 5 |
+| 16 | Parallel offset | **`TODO(oracle):` NOT CITED** — `spacing·tan(θ/2)` is derived, not transcribed; the layout convention it assumes needs a published source. **Invariant-only** tests (vanishes at 0°, equals spacing at 90°, linear in spacing, monotonic in angle, reduces to #11 for one pipe). **Must not ship as a tool until cited** | ⚠️ 6 invariant |
+
+Scope boundary held: pipe **layout geometry only** — nothing electrical/conduit/NEC, no pressure, flow,
+sizing, friction loss, venting or fixture units, and no embedded fitting/manufacturer tables.
+
+**Cross-checks still human-in-the-loop (RELEASE_CHECKLIST):** rafter table vs a physical framing square + one online calc; stairs vs an independent stair calculator; feet-inch vs `feetinch_oracle.py` (committed, re-runnable); **pipe travel/run multipliers vs a physical fitting-multiplier card, and Calc #16 blocked pending a citation**. Green ≠ safe-to-build; verify against the locally adopted code.

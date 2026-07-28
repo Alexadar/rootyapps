@@ -40,6 +40,10 @@ struct ToolDetailView: View {
         case .miter: MiterToolView()
         case .lumber: LumberToolView()
         case .mortar: MortarToolView()
+        case .offset: OffsetToolView()
+        case .rollingOffset: RollingOffsetToolView()
+        case .cutLength: CutLengthToolView()
+        case .grade: GradeToolView()
         case .units: UnitsToolView()
         }
     }

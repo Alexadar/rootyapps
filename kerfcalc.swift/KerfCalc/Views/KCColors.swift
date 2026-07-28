@@ -54,6 +54,7 @@ extension ToolSection {
         case .concrete:  return Color(rgbHex: 0x7C8698) // slate
         case .takeoff:   return Color(rgbHex: 0x12B5A5) // teal
         case .materials: return Color(rgbHex: 0xF0785A) // coral
+        case .pipe:      return Color(rgbHex: 0x7B5BF2) // violet
         case .convert:   return Color(rgbHex: 0xD99A2B) // ochre
         }
     }
@@ -84,6 +85,10 @@ extension Tool {
         case .miter:     return "MIT"
         case .lumber:    return "BF"
         case .mortar:    return "MOR"
+        case .offset:        return "OFS"
+        case .rollingOffset: return "ROL"
+        case .cutLength:     return "CUT"
+        case .grade:         return "GRD"
         case .units:     return "CNV"
         }
     }

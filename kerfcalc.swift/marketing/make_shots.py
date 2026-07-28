@@ -23,10 +23,11 @@ def font(path, size): return ImageFont.truetype(path, size)
 
 SCENES = [
     ("01_spec",     ["Feet-inch math,", "done right."],  "The tape calculator that thinks in 1/16\"."),
-    ("02_formulas", ["16 trade", "calculators."],         "Framing, concrete, takeoff — searchable."),
+    ("02_formulas", ["20 trade", "calculators."],         "Framing, concrete, pipe, takeoff — searchable."),
     ("03_rafter",   ["Rafters", "in seconds."],           "Common · hip · valley · jack, with the cuts."),
     ("04_stairs",   ["Stairs", "to code."],               "Live IRC & IBC riser / tread checks."),
     ("05_concrete", ["Concrete", "takeoffs."],            "Yards, bags, trucks — no guessing."),
+    ("06_offset",   ["Pipe offsets,", "solved."],         "Travel, run and the multiplier — any angle."),
 ]
 
 def rounded(img, radius):

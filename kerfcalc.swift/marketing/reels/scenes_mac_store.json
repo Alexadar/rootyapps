@@ -1,0 +1,27 @@
+{
+  "_note": "App Store macOS preview (Guideline 2.3.4 compliant): full-bleed capture, captions overlaid ON the app, no bezel/background/outro. Rendered by marketing/reels/store_preview.py. `src` windows index into the concatenated 16:9 walkthrough (see mac_store_rec6.sh); scenes_mac.json remains the framed site/social cut.",
+  "canvas": [1920, 1080],
+  "preview_maxlen": 30,
+  "style": {
+    "title_color": "#FFFFFF",
+    "subtitle_color": "#E4E1D8",
+    "side_padding": 70,
+    "title_scale": 0.030,
+    "subtitle_scale": 0.020,
+    "caption_ribbon": true,
+    "ribbon_opacity": 0.74,
+    "ribbon_pad_percent": 0.035
+  },
+  "app": {
+    "name": "Kerf Calc",
+    "tagline": "The builder's field calculator"
+  },
+  "scenes": [
+    { "key": "spec",     "src": [1.2, 6.2],   "title": "Build it dead-on",       "subtitle": "The field calculator that gets it right" },
+    { "key": "rafter",   "src": [9.3, 14.1],  "title": "Every trade, one app",   "subtitle": "Rafters — with the code it cites" },
+    { "key": "stairs",   "src": [15.4, 19.6], "title": "Stairs to code",         "subtitle": "Riser, run, stringer — checked live" },
+    { "key": "concrete", "src": [20.5, 24.8], "title": "Order the right amount", "subtitle": "Yards, bags, trucks — no waste" },
+    { "key": "roofing",  "src": [25.7, 30.0], "title": "Roofing squares",        "subtitle": "Pitch-adjusted, ready to order" },
+    { "key": "offset",   "src": [31.0, 36.3], "title": "Pipe offsets, solved",   "subtitle": "Travel, run and the fitting multiplier" }
+  ]
+}

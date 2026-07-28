@@ -69,6 +69,22 @@ extension Tool {
             return ("Bags = block ⁄ 13    (brick ⁄ 37)",
                     "QUIKRETE Mason Mix #1136",
                     "100 block → 8 × 80-lb bags")
+        case .offset:
+            return ("Travel = Set · csc θ    Run = Set · cot θ",
+                    "fitting-multiplier tables · csc 45° = 1.41421356",
+                    "10\" set at 45° → 14.14\" travel, 10\" run")
+        case .rollingOffset:
+            return ("True offset = √(Set² + Roll²)    Travel = √(Set² + Roll²) · csc θ",
+                    "right-triangle trig · roll = atan(Roll ⁄ Set)",
+                    "6\" set, 8\" roll → 10\" true offset → 14.14\" travel at 45°")
+        case .cutLength:
+            return ("End-to-end = C-to-C − take-out A − take-out B",
+                    "definition · take-outs are yours to enter (vary by maker)",
+                    "24\" C-to-C less two 1½\" take-outs → 21\" cut")
+        case .grade:
+            return ("Fall = Run · fall⁄ft    % = fall⁄ft ÷ 12 · 100    1:N, N = 12 ÷ fall⁄ft",
+                    "IPC 704.1 / UPC 708.0 minimum slopes",
+                    "¼\"/ft = 2.08 % = 1:48 · 40 ft run → 10\" fall")
         case .units:
             return ("value · (m/from) ⁄ (m/to)",
                     "NIST SP 811 · in ≡ 25.4 mm",

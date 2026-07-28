@@ -1,5 +1,6 @@
 import SwiftUI
 import FramingKit
+import PipeKit
 
 /// Reference tab — the cited constants the calculators are built on. Offline, always available.
 struct ReferenceView: View {
@@ -27,12 +28,14 @@ struct ReferenceView: View {
                             }
                             VStack(spacing: 16) {
                                 if shows(.tables) { rafterTable }
+                                if shows(.tables) { fittingMultipliers }
                                 if shows(.standards) { standards }
                             }.frame(maxWidth: .infinity)
                         }
                     } else {
                         if shows(.codes) { stairCodes }
                         if shows(.tables) { rafterTable }
+                        if shows(.tables) { fittingMultipliers }
                         if shows(.conversions) { conversions }
                         if shows(.tables) { concrete }
                         if shows(.standards) { standards }
@@ -75,6 +78,30 @@ struct ReferenceView: View {
             note("Matches the printed steel-square table (NAVEDTRA 14044).")
         }.card()
     }
+
+    /// The pipe trades' fitting multipliers. Not a transcribed table — every figure is computed live
+    /// from `PipeKit`, which is exactly why the published constants and the trig agree.
+    private var fittingMultipliers: some View {
+        VStack(spacing: 8) {
+            CardHeader(title: "Pipe fitting multipliers", trailing: "csc θ / cot θ")
+            HStack {
+                Text("FITTING").font(.system(.caption2, design: .monospaced)).foregroundStyle(KC.textTertiary).frame(width: 64, alignment: .leading)
+                Text("TRAVEL").font(.system(.caption2, design: .monospaced)).foregroundStyle(KC.textTertiary).frame(maxWidth: .infinity, alignment: .trailing)
+                Text("RUN").font(.system(.caption2, design: .monospaced)).foregroundStyle(KC.textTertiary).frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            ForEach(fittingRows, id: \.0) { row in
+                HStack {
+                    Text(row.0).font(.system(.callout, design: .monospaced).weight(.semibold)).foregroundStyle(KC.textPrimary).frame(width: 64, alignment: .leading)
+                    Text(String(format: "%.4f", PipeOffset.travelMultiplier(fittingAngleDeg: row.1)))
+                        .font(.system(.callout, design: .monospaced)).foregroundStyle(KC.textSecondary).frame(maxWidth: .infinity, alignment: .trailing)
+                    Text(String(format: "%.4f", PipeOffset.runMultiplier(fittingAngleDeg: row.1)))
+                        .font(.system(.callout, design: .monospaced)).foregroundStyle(KC.textSecondary).frame(maxWidth: .infinity, alignment: .trailing)
+                }
+            }
+            note("Travel = set × csc θ, run = set × cot θ. The trade's printed constants (45° → 1.414) are these identities.")
+        }.card()
+    }
+    private let fittingRows: [(String, Double)] = [("60°", 60), ("45°", 45), ("30°", 30), ("22½°", 22.5), ("11¼°", 11.25)]
 
     private var conversions: some View {
         VStack(spacing: 10) {

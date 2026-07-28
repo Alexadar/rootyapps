@@ -12,23 +12,29 @@ struct SubScreenPicker: View {
         HStack(spacing: 3) {
             ForEach(titles.indices, id: \.self) { i in
                 let selected = i == selection
-                ZStack {
-                    if selected {
-                        RoundedRectangle(cornerRadius: KC.rChip + 1)
-                            .fill(KC.instrument)
-                            .matchedGeometryEffect(id: "seg", in: ns)
-                            .overlay(alignment: .bottom) {
-                                Capsule().fill(.tint).frame(height: 2).padding(.horizontal, 14).padding(.bottom, 3)
-                            }
+                // The pill lives in `.background` rather than a ZStack: a bare RoundedRectangle is
+                // vertically greedy, so in a short column (iPad's side-by-side inputs pane) it
+                // stretched the whole control to the proposed height. As a background it takes the
+                // padded label's size instead, while matchedGeometryEffect still animates the slide.
+                Text(titles[i])
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(selected ? AnyShapeStyle(KC.onInstrument)
+                                              : AnyShapeStyle(KC.textSecondary))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 9)
+                    .background {
+                        if selected {
+                            RoundedRectangle(cornerRadius: KC.rChip + 1)
+                                .fill(KC.instrument)
+                                .matchedGeometryEffect(id: "seg", in: ns)
+                                .overlay(alignment: .bottom) {
+                                    Capsule().fill(.tint).frame(height: 2).padding(.horizontal, 14).padding(.bottom, 3)
+                                }
+                        }
                     }
-                    Text(titles[i])
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(selected ? AnyShapeStyle(KC.onInstrument)
-                                                  : AnyShapeStyle(KC.textSecondary))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 9)
-                .contentShape(Rectangle())
+                    .contentShape(Rectangle())
                 .onTapGesture {
                     withAnimation(.snappy(duration: 0.22)) { selection = i }
                 }

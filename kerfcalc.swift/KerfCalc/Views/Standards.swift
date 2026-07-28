@@ -25,10 +25,13 @@ extension Standard {
         .init(name: "ASTM A615", governs: "rebar area & weight", edition: "A615-20", tier: .fixed),
         .init(name: "Framing square / NAVEDTRA 14044", governs: "rafter lengths", edition: "public domain", tier: .fixed),
         .init(name: "Plane geometry / trig", governs: "area, volume, pitch, miter", edition: "—", tier: .fixed),
+        .init(name: "Fitting multipliers (csc/cot θ)", governs: "pipe offset travel & run", edition: "trig identity", tier: .fixed),
+        .init(name: "ASME B36.10M", governs: "pipe weight cross-check", edition: "Sch-40 table", tier: .fixed),
 
         // Code cycle — revised on a ~3-year cadence; jurisdictions adopt different editions.
         .init(name: "IRC", governs: "residential stairs (R311.7)", edition: "2021", tier: .code),
         .init(name: "IBC", governs: "commercial stairs", edition: "2021", tier: .code),
+        .init(name: "IPC 704.1 / UPC 708.0", governs: "drainage slope minimums", edition: "2021", tier: .code),
         .init(name: "ACI 360R", governs: "slab control joints", edition: "360R-10", tier: .code),
         .init(name: "CRSI / ACI 318 §25.5", governs: "rebar lap (rule of thumb)", edition: "field approx.", tier: .code),
         .init(name: "NCMA TEK 3-2A", governs: "CMU grout volume", edition: "2005", tier: .code),

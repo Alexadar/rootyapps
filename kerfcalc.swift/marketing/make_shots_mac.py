@@ -18,6 +18,7 @@ SCENES = [
     ("03_concrete", "Concrete takeoffs.",      "Yards, bags, ready-mix trucks — plus waste."),
     ("04_stairs",   "Stairs to code.",         "Live IRC riser, tread & headroom checks."),
     ("05_roofing",  "Roofing squares.",        "Pitch-adjusted and ready to order."),
+    ("06_offset",   "Pipe offsets, solved.",   "Travel, run and the fitting multiplier — any angle."),
 ]
 
 def font(p, s): return ImageFont.truetype(p, s)

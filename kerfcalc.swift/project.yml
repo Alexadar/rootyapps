@@ -10,8 +10,8 @@ settings:
     DEVELOPMENT_TEAM: LSKNNBG94G
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "1.0.1"
+    CURRENT_PROJECT_VERSION: "2"
     ENABLE_PREVIEWS: YES
     GENERATE_INFOPLIST_FILE: YES
 packages:
@@ -25,6 +25,8 @@ packages:
     path: Kits/Materials/MaterialsKit
   ConcreteKit:
     path: Kits/Concrete/ConcreteKit
+  PipeKit:
+    path: Kits/Pipe/PipeKit
 targets:
   kerfcalc.swift:
     type: application
@@ -40,6 +42,8 @@ targets:
         product: MaterialsKit
       - package: ConcreteKit
         product: ConcreteKit
+      - package: PipeKit
+        product: PipeKit
     sources:
       - path: KerfCalc
       - path: kerfcalc.icon
@@ -47,6 +51,17 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.kerfcalc
+        # "Swift" is an Apple trademark — App Review 5.2.5 rejects it in the shipped app name or
+        # binary. The target is named kerfcalc.swift (internal only), so PRODUCT_NAME must be
+        # overridden or the binary ships as "kerfcalc.swift" and the macOS menu-bar title reads it.
+        # CFBundleName drives that menu title; CFBundleDisplayName drives Finder/Dock/menu items.
+        # Bundle identifier must NOT change (Apple: it would orphan existing installs).
+        # CFBundleName is always $(PRODUCT_NAME) (INFOPLIST_KEY_CFBundleName is not a supported
+        # key), so PRODUCT_NAME itself must read "Kerf Calc" to match the App Store name exactly.
+        PRODUCT_NAME: "Kerf Calc"
+        # Pin the Swift module name. It otherwise derives from PRODUCT_NAME ("Kerf Calc" → Kerf_Calc),
+        # so renaming the product silently breaks `@testable import` in the test targets.
+        PRODUCT_MODULE_NAME: KerfCalc
         "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": kerfcalc-macOS.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: kerfcalc
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
@@ -67,7 +82,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.kerfcalcTests
         GENERATE_INFOPLIST_FILE: YES
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/kerfcalc.swift.app/kerfcalc.swift"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Kerf Calc.app/Kerf Calc"
         BUNDLE_LOADER: "$(TEST_HOST)"
   kerfcalcUITests:
     type: bundle.ui-testing

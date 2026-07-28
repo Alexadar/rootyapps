@@ -4,7 +4,9 @@ import SwiftUI
 /// formula screen on the Formulas tab, and deep-link envs seed the launch surface.
 @MainActor
 final class Router: ObservableObject {
-    @Published var selectedTab: Int = launchTab()
+    /// Compact tab. A `KERFCALC_TOOL` deep link must land on the Formulas tab, not just push the tool
+    /// onto an unselected stack — otherwise the tool is invisible on iPhone and the launch shows Spec.
+    @Published var selectedTab: Int = launchTool() != nil ? 1 : launchTab()
     @Published var formulasPath: [Tool] = launchTool().map { [$0] } ?? []
     /// Sidebar selection for the regular-size-class split view.
     @Published var sidebar: SidebarItem? = launchTool().map(SidebarItem.tool) ?? .spec

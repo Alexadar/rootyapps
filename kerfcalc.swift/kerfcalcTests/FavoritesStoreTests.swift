@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import kerfcalc_swift
+@testable import KerfCalc
 
 /// Unit tests for the favourites persistence logic (offline UserDefaults-backed store).
 @MainActor
