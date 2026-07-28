@@ -1,0 +1,36 @@
+Tide and current predictions that work when your phone has no signal — because everything is computed on your device, not fetched from a server.
+
+Marine Nav carries NOAA's own published harmonic constants for its stations and runs the harmonic synthesis on board. Out at the mouth of the bay with no bars, in a marina basement, on a flight — the numbers are still there.
+
+WHAT IT DOES
+
+Tides — a full day's curve for the station you pick, with every high and low, the height right now and whether it's making or falling. In feet or metres. Times are always shown in the station's own time zone, labelled, because a tide table read in the wrong zone is a navigational error.
+
+Currents — slack water and maximum flood and ebb, in knots, with the set in degrees true. Flood above the line, ebb below.
+
+Declination — magnetic variation anywhere on earth from the World Magnetic Model 2025, with true-to-magnetic conversion for your heading.
+
+Distance & Bearing — great-circle passage on the WGS-84 ellipsoid: distance, initial and final course, and the direct problem (run a course and distance, get your arrival position).
+
+Sight Reduction — the full celestial worksheet. Dip, index correction, refraction, observed altitude, local hour angle, then computed altitude, azimuth and intercept by Marcq Saint-Hilaire.
+
+WHY THE NUMBERS ARE WORTH TRUSTING
+
+Every figure this app shows comes from a small, separately tested calculation library, and every one of those libraries is checked against a published external authority — not against itself.
+
+• Tides and currents are validated against NOAA's own published predictions, computed from NOAA's own published constants for the same station.
+• Magnetic declination is checked against all 100 official WMM2025 test values from NOAA/NCEI and the British Geological Survey.
+• Distance and bearing are checked against Vincenty's published worked line and Karney's multiprecision geodesic test set.
+• Sight reduction reproduces the worked example in Bowditch, The American Practical Navigator.
+
+Each screen names the library behind it and the authority it was tested against. Where a model has limits — astronomical tide only, no storm surge or wind; major-axis currents only; core magnetic field only — the app says so on the screen rather than in the small print.
+
+BUILT FOR THE HELM
+
+Large, monospaced readouts that don't jitter as values update. A night mode in two stages, including a red-shift mode that tells rising from falling by arrow rather than by colour. Universal — one purchase covers iPhone, iPad and Mac.
+
+HONEST ABOUT WHAT IT IS
+
+Buy once. No subscription, no advertising, no in-app purchases, no account, no tracking, no data collection. It never talks to the network, at all.
+
+This is an aid to planning, not a substitute for official tide tables, charts, or prudent seamanship.

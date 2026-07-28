@@ -1,0 +1,30 @@
+Marine Nav reel music — Stable Audio 3 (sm-music DiT / same-s decoder, 30 s, 44.1 kHz stereo)
+
+SCORED INTO THE RELEASE CUT:
+  bed30_surf_s40.wav — steps 40, seed 4141 (2026-07-28)
+
+prompt (identical for every bed below):
+  bright west coast surf rock instrumental, reverb-drenched twangy electric guitar,
+  spring reverb and tremolo, light shuffling brush drums, warm upright bass, sunny
+  Pacific coastline, breezy optimistic and easygoing, clean vintage tone, no vocals
+
+Step count matters more than seed here. Measured across the sweep (same prompt, seed 4141):
+
+  steps  crest  onset  centroid  peak   note
+      8   6.53  0.116     2953 Hz  0.85  the first cut — softest attacks
+     24   8.11  0.134     3329 Hz  0.85  most dynamic range
+     40   7.12  0.148     3718 Hz  0.85  crispest attacks + brightest  ← chosen
+     64   6.28  0.111     3506 Hz  0.75  past the point of diminishing returns
+
+"onset" is mean positive spectral flux — attack definition, which is what surf guitar and
+brush drums live on. 40 steps is +28% on that over 8 and costs 9.5 s to render instead of 4.1 s.
+
+Kept beside it, never overwrite:
+  bed30_surf_s24.wav   steps 24, seed 4141 — more dynamic, slightly darker
+  bed30_surf.wav       steps  8, seed 4141 — the original 8-step cut
+  bed30_surf_bright.wav steps 8, seed 7788 — airiest (centroid 3448 Hz), quietest
+  bed30_surf_warm.wav   steps 8, seed 2211 — warmest (centroid 2689 Hz)
+  REJECTED: steps 8, seed 3355, softer "fog lifting" prompt — peak 1.00, it clips.
+
+Muxed at loudnorm I=-16 LUFS, TP=-1.5, fade in 0.6 s / out 1.7 s, volume 0.8.
+Regenerate: marketing/reels/README.md §"Generate the music bed" — fully on device, no API.

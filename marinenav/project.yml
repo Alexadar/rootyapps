@@ -1,0 +1,91 @@
+name: marinenav
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+packages:
+  TidesKit:
+    path: Kits/Tides/TidesKit
+  GeomagKit:
+    path: Kits/Geomag/GeomagKit
+  GeodesyKit:
+    path: Kits/Geodesy/GeodesyKit
+  CelestialNavKit:
+    path: Kits/Celestial/CelestialNavKit
+targets:
+  marinenav:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: TidesKit
+        product: TidesKit
+      - package: GeomagKit
+        product: GeomagKit
+      - package: GeodesyKit
+        product: GeodesyKit
+      - package: CelestialNavKit
+        product: CelestialNavKit
+    sources:
+      - path: MarineNav
+      - path: marinenav.icon
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.marinenav
+        # "Swift" is an Apple trademark — App Review 5.2.5 rejects it in the shipped app
+        # name or binary. This target is deliberately named `marinenav` (no ".swift"), and
+        # PRODUCT_NAME is set explicitly because CFBundleName is always $(PRODUCT_NAME) and
+        # drives the macOS menu-bar title. Bundle identifier must NOT change later.
+        PRODUCT_NAME: "Marine Nav"
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": marinenav-macOS.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: marinenav
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_CFBundleDisplayName: Marine Nav
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.navigation
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+  marinenavUITests:
+    type: bundle.ui-testing
+    supportedDestinations: [iOS]
+    sources:
+      - path: marinenavUITests
+    dependencies:
+      - target: marinenav
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.marinenavUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: marinenav
+schemes:
+  marinenav:
+    build:
+      targets:
+        marinenav: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+  marinenavReel:
+    build:
+      targets:
+        marinenav: all
+        marinenavUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - marinenavUITests
