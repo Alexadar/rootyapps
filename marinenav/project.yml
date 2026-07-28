@@ -40,15 +40,22 @@ targets:
         product: GeodesyKit
       - package: CelestialNavKit
         product: CelestialNavKit
-      # The watch app ships INSIDE the iOS app (one purchase covers it) but declares
-      # WKRunsIndependentlyOfCompanionApp, so it also installs and runs on its own.
-      # destinationFilters pins the embed to iOS — a macOS build must not carry a watch app.
-      - target: marinenavWatch
-        embed: true
-        destinationFilters: [iOS]
-        copy:
-          destination: wrapper
-          subpath: Watch
+      # ⛔️ The watch app is NOT embedded yet — it ships in 1.1, not in this build.
+      #
+      # `marinenavWatch` currently holds the structural v0.1 scaffold, not the adopted
+      # `watch_guidelines/` design. Embedding it would put an unstyled placeholder in front of
+      # App Review inside an otherwise finished app. The target stays in the project (its own
+      # scheme still builds and runs it) — only the embed is withheld.
+      #
+      # Restore this block verbatim when the watch design is adopted. WKRunsIndependently-
+      # OfCompanionApp means it also installs standalone; destinationFilters pins the embed to
+      # iOS so a macOS build never carries a watch payload.
+      # - target: marinenavWatch
+      #   embed: true
+      #   destinationFilters: [iOS]
+      #   copy:
+      #     destination: wrapper
+      #     subpath: Watch
     sources:
       - path: MarineNav
       - path: marinenav.icon
@@ -78,19 +85,53 @@ targets:
     platform: watchOS
     deploymentTarget: "26.0"
     dependencies:
-      # Tides only for now. The other three Kits build for watchOS too, but nothing on the
-      # watch consumes them yet and an unused link is dead weight on a battery-bound device.
       - package: TidesKit
         product: TidesKit
+      # F5 declination reads WMM at the current position; F2 "nearest station" uses
+      # Vincenty.inverse for distance/bearing rather than a haversine in a view.
+      - package: GeomagKit
+        product: GeomagKit
+      - package: GeodesyKit
+        product: GeodesyKit
+      - target: marinenavWatchWidget
+        embed: true
     sources:
       - path: MarineNavWatch
+        excludes:
+          # Belongs to the widget extension only — it carries its own @main WidgetBundle,
+          # and a module may have exactly one.
+          - MarineNavComplications.swift
       # The offline station catalogue lives in the app layer, not in the Kits (the Kits are
       # deliberately data-free). The watch app is standalone, so it needs its own copy of the
       # constants compiled in — referenced in place rather than duplicated.
       - path: MarineNav/StationCatalog.swift
+    # XcodeGen GENERATES this file from `properties` — it does not read an existing one, so the
+    # group must be declared here or the file is rewritten to an empty dict.
+    #
+    # Required for complications: the timeline provider runs in the widget extension, a separate
+    # process with its own container, so without the group it cannot see the station chosen in
+    # the app and every family shows "no station chosen" forever.
+    #
+    # Both watch bundle IDs are registered with the APP_GROUPS capability via the ASC API
+    # (POST /v1/bundleIds + /v1/bundleIdCapabilities), mirroring eartharound's
+    # `...watchkitapp` / `...watchkitapp.widgets` pair.
+    entitlements:
+      path: marinenav-watch.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.oleksandr.aisixteen.marinenav
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.marinenav.watchkitapp
+        # watchOS cannot use the Icon Composer `.icon` bundle the phone/Mac target uses, so the
+        # watch carries its own asset catalog (same shape as eartharound's SpaceWeatherWatch).
+        # The source 1024 is RGBA and watchOS rejects an alpha channel, so it is flattened onto
+        # the design system's deep-navy canvas.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # A wrist has no keypad worth typing coordinates on, so F2/F5 offer location — and
+        # the string has to say plainly that it never leaves the device, because that is the
+        # whole product promise.
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Marine Nav uses your location only on this device, to find the nearest tide stations and compute magnetic variation. It is never sent anywhere — the app has no network access at all."
         # Same 5.2.5 reasoning as the phone target: CFBundleName follows PRODUCT_NAME, and
         # a target named `marinenavWatch` would otherwise surface as the app's name.
         PRODUCT_NAME: "Marine Nav"
@@ -100,6 +141,55 @@ targets:
         INFOPLIST_KEY_WKCompanionAppBundleIdentifier: oleksandr.aisixteen.marinenav
         INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: YES
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+
+  # Complications / Smart Stack. A widget extension is its OWN process with its OWN container,
+  # which is why it and the watch app share the App Group entitlement — see WatchStationStore.
+  marinenavWatchWidget:
+    type: app-extension
+    platform: watchOS
+    deploymentTarget: "26.0"
+    dependencies:
+      - package: TidesKit
+        product: TidesKit
+    sources:
+      # Only what the extension actually needs. WatchStationStore was extracted out of
+      # WatchStationPickerView for this: compiling the picker here dragged CoreLocation and
+      # GeodesyKit into the extension and failed to link (Vincenty.inverse undefined).
+      - path: MarineNavWatch/MarineNavComplications.swift
+      - path: MarineNavWatch/WatchStationStore.swift
+      - path: MarineNavWatch/WatchDesign.swift
+      - path: MarineNav/StationCatalog.swift
+    # XcodeGen GENERATES this file from `properties` — it does not read an existing one, so the
+    # group must be declared here or the file is rewritten to an empty dict.
+    #
+    # Required for complications: the timeline provider runs in the widget extension, a separate
+    # process with its own container, so without the group it cannot see the station chosen in
+    # the app and every family shows "no station chosen" forever.
+    #
+    # Both watch bundle IDs are registered with the APP_GROUPS capability via the ASC API
+    # (POST /v1/bundleIds + /v1/bundleIdCapabilities), mirroring eartharound's
+    # `...watchkitapp` / `...watchkitapp.widgets` pair.
+    entitlements:
+      path: marinenav-watch.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.oleksandr.aisixteen.marinenav
+    # An explicit Info.plist, exactly as eartharound ships SpaceWeatherWidget-Info.plist.
+    # `NSExtension` is a NESTED dictionary and the INFOPLIST_KEY_ mechanism cannot express one:
+    # INFOPLIST_KEY_NSExtensionPointIdentifier produced a plist with no NSExtension dict at all,
+    # which built and signed fine and then failed at INSTALL with
+    # "AppexBundleMissingNSExtensionDict".
+    info:
+      path: marinenav-watchwidget-Info.plist
+      properties:
+        CFBundleDisplayName: Marine Nav
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.marinenav.watchkitapp.widgets
+        PRODUCT_NAME: "Marine Nav Complications"
+        GENERATE_INFOPLIST_FILE: NO
 
   marinenavUITests:
     type: bundle.ui-testing
