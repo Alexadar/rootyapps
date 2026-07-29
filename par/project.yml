@@ -1,0 +1,196 @@
+name: Par
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+
+# `Capture` is a Debug-flavoured configuration used only by marketing/make_sim_shots.sh and
+# marketing/reels/make_reel.sh. It defines PAR_CAPTURE, which swaps the document browser for a
+# scratch tape so a screenshot lands on a working calculator. Never archive it.
+configs:
+  Debug: debug
+  Release: release
+  Capture: debug
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "4"
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+
+# The ten Foundation-only Kits. Their APIs and oracle corpora are frozen (PLAN.md §5);
+# the app consumes them and never edits them.
+packages:
+  DayCountKit:
+    path: Kits/DayCount/DayCountKit
+  TVMKit:
+    path: Kits/TVM/TVMKit
+  AmortKit:
+    path: Kits/Amort/AmortKit
+  CashFlowKit:
+    path: Kits/CashFlow/CashFlowKit
+  RateKit:
+    path: Kits/Rate/RateKit
+  BondKit:
+    path: Kits/Bond/BondKit
+  DepKit:
+    path: Kits/Depreciation/DepKit
+  PercentKit:
+    path: Kits/Percent/PercentKit
+  StatKit:
+    path: Kits/Stat/StatKit
+  RealEstateKit:
+    path: Kits/RealEstate/RealEstateKit
+
+targets:
+  Par:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: Par
+    dependencies:
+      - package: DayCountKit
+        product: DayCountKit
+      - package: TVMKit
+        product: TVMKit
+      - package: AmortKit
+        product: AmortKit
+      - package: CashFlowKit
+        product: CashFlowKit
+      - package: RateKit
+        product: RateKit
+      - package: BondKit
+        product: BondKit
+      - package: DepKit
+        product: DepKit
+      - package: PercentKit
+        product: PercentKit
+      - package: StatKit
+        product: StatKit
+      - package: RealEstateKit
+        product: RealEstateKit
+    settings:
+      base:
+        # The bundle identifier is registered and permanent: oleksandr.aisixteen.fincalc,
+        # matching the <prefix>.<slug> pattern every other app in this account uses. The App
+        # Store name ("Par: Financial Calculator") is a separate, changeable field.
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.fincalc
+        # CFBundleName is always $(PRODUCT_NAME) and drives the macOS menu-bar title, so the
+        # product name is set explicitly rather than inherited from the target name.
+        PRODUCT_NAME: Par
+        PRODUCT_MODULE_NAME: Par
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": par-macOS.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_CFBundleDisplayName: Par
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.finance
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        # A financial calculator that cannot be turned sideways loses customers — a competitor
+        # lost one over exactly this (DESIGN_BRIEF.md §2).
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+      configs:
+        Capture:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG PAR_CAPTURE"
+    # Par is the first DocumentGroup app in this repo. UTType(exportedAs:) fails at runtime
+    # without a matching declaration, and INFOPLIST_KEY_* settings can only express flat
+    # scalars — these arrays have to come from an info: block.
+    info:
+      path: Par/Info.plist
+      properties:
+        # A DocumentGroup app must say so, or iOS logs a warning at build time and the document
+        # browser cannot open files in place — the user's tape would be copied into the app's
+        # container instead of edited where it lives, which is the opposite of "tapes are documents".
+        UISupportsDocumentBrowser: true
+        LSSupportsOpeningDocumentsInPlace: true
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: oleksandr.aisixteen.fincalc.tape
+            UTTypeDescription: Par Tape
+            UTTypeConformsTo:
+              - public.json
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - partape
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Par Tape
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Owner
+            LSItemContentTypes:
+              - oleksandr.aisixteen.fincalc.tape
+
+  ParTests:
+    type: bundle.unit-test
+    # macOS only: a unit-test bundle needs no simulator, which keeps the whole verification
+    # story build-and-test with nothing booted (PLAN.md §6).
+    supportedDestinations: [macOS]
+    sources:
+      - path: ParTests
+    dependencies:
+      - target: Par
+      - package: TVMKit
+        product: TVMKit
+      - package: AmortKit
+        product: AmortKit
+      - package: CashFlowKit
+        product: CashFlowKit
+      - package: BondKit
+        product: BondKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.fincalcTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Par.app/Contents/MacOS/Par"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+  # UI tests: iOS only (XCUITest cannot drive the Mac app the way the reel needs), and the target
+  # the media pipeline builds. `ReelTour` drives the app-preview recording; `DeepLinkTests` pins the
+  # PAR_TOOL deep links both capture scripts depend on.
+  ParUITests:
+    type: bundle.ui-testing
+    supportedDestinations: [iOS]
+    sources:
+      - path: ParUITests
+    dependencies:
+      - target: Par
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.fincalcUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Par
+
+schemes:
+  Par:
+    build:
+      targets:
+        Par: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - ParTests
+
+  # The media scheme: builds the UI-test bundle for the `test` action so `build-for-testing` +
+  # `test-without-building` can drive a recording. `make_reel.sh` must pass
+  # ONLY_TESTING=ParUITests/ReelTour, or the recording captures the deep-link suite as well.
+  ParReel:
+    build:
+      targets:
+        Par: all
+        ParUITests: [test]
+    # Capture, not Debug: PAR_CAPTURE swaps the document browser for the calculator, so the
+    # recording opens on a working screen instead of an empty file list.
+    run:
+      config: Capture
+    test:
+      config: Capture
+      targets:
+        - ParUITests

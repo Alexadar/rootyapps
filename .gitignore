@@ -26,6 +26,7 @@ ephemeris.swift/ephemeris.swift.xcodeproj
 notescan.swift/notescan.swift.xcodeproj
 truecourse.swift/truecourse.swift.xcodeproj
 kerfcalc.swift/kerfcalc.swift.xcodeproj
+par/Par.xcodeproj
 
 # Friend's pdf-to-midi sidecar — cloned as local reference, not part of rootyapps
 pdf-to-midi

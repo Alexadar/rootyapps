@@ -1,0 +1,44 @@
+platform: mac
+size: [2880, 1800]        # macOS — APP_DESKTOP
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/par/marketing/raw/mac
+  output_folder: /Users/oleksandr/Projects/rootyapps/par/marketing/aso/mac
+
+# Par is dark-only, so the frame is too: a light band around a graphite app reads as a mistake.
+# Amber is the app's single accent and is spent here the same way — one line per screen, never on
+# decoration.
+#
+# A Mac canvas is landscape, so the copy sits in a column beside the window rather than in a band
+# above it: `text_col_percent` / `screenshot_col_percent`, not the row percentages the phone and
+# iPad files use. Getting that wrong does not error — it silently falls back and leaves the window
+# floating in dead space.
+style:
+  bg_gradient: true
+  bg_color_top: '#14161C'
+  bg_color_bottom: '#0B0C10'
+  title_color: '#F4F1EA'
+  subtitle_color: '#FF9F0A'
+  screenshot_zoom: 0.98
+  text_col_percent: 36
+  screenshot_col_percent: 64
+  border_width: 6
+  border_color: '#23262E'
+  border_radius: 22
+  text_padding: 80
+
+# Order follows make_mac_shots.sh — the same six tools as the iPad set, because at a regular width
+# the tape is already beside the calculator and no slot need be spent showing it alone.
+texts:
+  - title: The tape, beside the maths
+    subtitle: Every solve kept, labelled and printable
+  - title: The whole schedule
+    subtitle: A real table you can scroll, print and export
+  - title: NPV and IRR, honestly
+    subtitle: Grouped flows — and it says so when no rate balances them
+  - title: Priced like Treasury prices
+    subtitle: 31 CFR 356 Appendix B — all five formulas
+  - title: Conventions that disagree
+    subtitle: 30/360, 30E/360, ISDA, Actual — see the gap
+  - title: Which test binds
+    subtitle: DSCR or LTV, and the loan you actually get
