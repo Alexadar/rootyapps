@@ -19,8 +19,7 @@ struct WatchEventsView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            List {
+        List {
                 if events.isEmpty {
                     Text(L.loc("No events in this window.")).font(.caption)
                         .foregroundStyle(.secondary)
@@ -38,10 +37,8 @@ struct WatchEventsView: View {
                         }
                     }
                 }
-            }
-            .scrollContentBackground(.hidden)
-            .navigationTitle(L.loc("Events"))
         }
+        .scrollContentBackground(.hidden)
     }
 }
 

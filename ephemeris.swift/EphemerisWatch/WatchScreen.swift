@@ -66,34 +66,42 @@ struct WatchScreenList: View {
     }
 }
 
-/// The header every screen wears. It *is* the way back — a plain title with a chevron reads as
-/// decoration, so the exit is an obvious tinted disc at the size of a real tap target.
-struct WatchScreenHeader: View {
+/// Puts the way back into the top bar, beside the system clock.
+///
+/// watchOS keeps the clock top-right and leaves the left of that bar empty; every screen here
+/// used to spend a row of its own height on a header instead. Moving it up reclaims that space —
+/// which on a 176pt screen is the difference between a list showing four rows and five, and the
+/// difference between the chart being centred and being pushed down.
+///
+/// A modifier rather than three copies: the screens differ only in tint, and a copied chrome is
+/// how they start disagreeing about size and placement.
+struct WatchScreenChrome: ViewModifier {
     let screen: WatchScreen
     let onBack: () -> Void
-    /// Optional trailing control, used by the wheel for its Crown-step badge.
-    var trailing: AnyView? = nil
 
-    var body: some View {
-        HStack(spacing: 6) {
-            Button(action: onBack) {
-                HStack(spacing: 5) {
-                    Image(systemName: "list.bullet")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(screen.accent)
-                        .frame(width: 26, height: 26)
-                        .background(screen.accent.opacity(0.18), in: .circle)
-                    Text(screen.title)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
+    func body(content: Content) -> some View {
+        NavigationStack {
+            content
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(action: onBack) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "list.bullet")
+                                    .font(.system(size: 13, weight: .semibold))
+                                Text(screen.title).font(.system(size: 13, weight: .medium))
+                            }
+                            .foregroundStyle(screen.accent)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text(L.loc("All screens")))
+                    }
                 }
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text("All screens"))
-
-            Spacer(minLength: 2)
-            if let trailing { trailing }
         }
+    }
+}
+
+extension View {
+    func watchScreenChrome(_ screen: WatchScreen, onBack: @escaping () -> Void) -> some View {
+        modifier(WatchScreenChrome(screen: screen, onBack: onBack))
     }
 }

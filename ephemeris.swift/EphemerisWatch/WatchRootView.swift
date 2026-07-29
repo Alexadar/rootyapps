@@ -104,13 +104,10 @@ struct WatchRootView: View {
         }
     }
 
-    /// Header + body, so every screen carries the same one-tap way back to the list.
+    /// Every screen gets the same top-bar chrome, so the way back is in one place and no screen
+    /// spends body height on a header of its own.
     private func wrapped<C: View>(_ s: WatchScreen, @ViewBuilder _ body: () -> C) -> some View {
-        VStack(spacing: 4) {
-            WatchScreenHeader(screen: s) { withAnimation(.snappy) { screen = nil } }
-                .padding(.horizontal, 8)
-            body()
-        }
+        body().watchScreenChrome(s) { withAnimation(.snappy) { screen = nil } }
     }
 
     /// The wheel gets the whole screen; its controls live in the top bar beside the clock.
