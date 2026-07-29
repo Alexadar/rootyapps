@@ -123,6 +123,17 @@ struct WatchRootView: View {
     /// row lets the chart centre properly instead of being pushed down.
     ///
     /// `topBarTrailing` is deliberately not used: it is reported to crash at launch on watchOS.
+    ///
+    /// **Every button in this bar must end with `crownFocused = true`.** `digitalCrownRotation`
+    /// only delivers to the view holding focus, and `Button` is focusable, so a tap on the grain
+    /// or reset button moves focus off the wheel and the Crown goes dead until the screen is left
+    /// and re-entered. `.focusable()` and the `onAppear` claim below are not enough — focus has to
+    /// be taken back explicitly after each tap.
+    ///
+    /// It fails silently in the worst way: nothing crashes, the chart still renders, and the grain
+    /// button still visibly changes 6h→1d. Only the scrubbing stops, which reads as "the button
+    /// does nothing." It also cannot be caught here — no iOS or macOS build compiles this target's
+    /// focus behaviour, so the build stays green. It needs a wrist.
     private var wheelScreen: some View {
         NavigationStack {
             WatchWheel(positions: positions,
@@ -147,7 +158,7 @@ struct WatchRootView: View {
                             .buttonStyle(.plain)
                             .accessibilityLabel(Text(L.loc("All screens")))
 
-                            Button { step = step.next } label: {
+                            Button { step = step.next; crownFocused = true } label: {
                                 Text(verbatim: step.label)
                                     .font(.system(size: 12)).monospacedDigit()
                             }
@@ -159,7 +170,7 @@ struct WatchRootView: View {
                             if detents != 0 {
                                 Text(now, format: .dateTime.day().month(.abbreviated))
                                     .font(.system(size: 12)).foregroundStyle(.orange)
-                                Button { detents = 0 } label: {
+                                Button { detents = 0; crownFocused = true } label: {
                                     Image(systemName: "arrow.uturn.backward")
                                         .font(.system(size: 11))
                                 }
@@ -168,32 +179,6 @@ struct WatchRootView: View {
                         }
                     }
                 }
-        }
-    }
-
-    /// Crown grain + the scrubbed date. Both live in the header because the wheel itself must stay
-    /// uncluttered — it is already carrying twelve layers.
-    private var crownControls: some View {
-        HStack(spacing: 5) {
-            Button { step = step.next } label: {
-                Text(verbatim: step.label)
-                    .font(.system(size: 11)).monospacedDigit()
-                    .padding(.horizontal, 5).padding(.vertical, 1)
-                    .background(.white.opacity(0.16), in: .capsule)
-            }
-            .buttonStyle(.plain)
-
-            Text(now, format: step.showsTime
-                 ? .dateTime.day().month(.abbreviated).hour().minute()
-                 : .dateTime.day().month(.abbreviated))
-                .font(.system(size: 11))
-                .foregroundStyle(detents == 0 ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.orange))
-
-            if detents != 0 {
-                // One tap back to now — scrubbing all the way back is not an option at 5d/detent.
-                Button { detents = 0 } label: { Image(systemName: "arrow.uturn.backward") }
-                    .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(.orange)
-            }
         }
     }
 
