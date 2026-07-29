@@ -183,6 +183,7 @@ struct WatchToolView: View {
 /// Tempo — the one screen where the wrist beats the phone: tap the tempo instead of typing it.
 private struct TempoWatch: View {
     let accent: Color
+    @EnvironmentObject private var crownFocus: CrownFocus
     @StateObject private var tap = TapTempo()
     @State private var bpm: Double = 120
 
@@ -198,6 +199,9 @@ private struct TempoWatch: View {
             Button {
                 tap.tap()
                 bpm = tap.bpm
+                // This button is the whole point of the screen, and tapping it takes the crown's
+                // focus. Without this the tempo field goes dead the moment you tap a tempo.
+                crownFocus.reclaim()
             } label: {
                 Label("Tap tempo", systemImage: "hand.tap")
                     .font(.system(.caption, design: .monospaced))
@@ -392,6 +396,7 @@ private struct WebsterWatch: View {
 
 private struct BernoulliWatch: View {
     let accent: Color
+    @EnvironmentObject private var crownFocus: CrownFocus
     @State private var length: Double = 0.5
     @State private var isOpen = true
 
@@ -414,6 +419,7 @@ private struct BernoulliWatch: View {
                     .font(.system(.caption2, design: .monospaced))
             }
             .tint(accent)
+            .onChange(of: isOpen) { _, _ in crownFocus.reclaim() }   // a Toggle takes focus too
         }
     }
 }

@@ -42,6 +42,19 @@ struct StackedReadout: View {
     }
 }
 
+/// Signal that the crown's focus has to be taken back.
+///
+/// On watchOS `.digitalCrownRotation` only receives events while its view holds focus, and every
+/// Button and Toggle is focusable by default. So tapping "Tap tempo" — or any control beside a
+/// field — silently moves focus off the field and the crown goes dead: nothing crashes, no layout
+/// changes, the number just stops responding. Nothing in a build or a unit test can see this; it
+/// needs a wrist. Every button on a crown-driven screen calls `reclaim()` in its action.
+@MainActor
+final class CrownFocus: ObservableObject {
+    @Published private(set) var token = 0
+    func reclaim() { token &+= 1 }
+}
+
 /// A tappable card that becomes the Digital Crown's target (accent ring).
 /// Two-tier acceleration only — fine detent and fast spin, no third speed.
 struct CrownField: View {
@@ -53,6 +66,9 @@ struct CrownField: View {
     let targeted: Bool
     let accent: Color
     var fraction: Int = 0
+
+    @EnvironmentObject private var crownFocus: CrownFocus
+    @FocusState private var focused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
@@ -89,9 +105,16 @@ struct CrownField: View {
                 .strokeBorder(targeted ? accent.opacity(0.5) : OTL.hairline, lineWidth: 1)
         )
         .focusable(targeted)
+        .focused($focused)
         .digitalCrownRotation($value, from: range.lowerBound, through: range.upperBound,
                               by: step, sensitivity: .medium,
                               isContinuous: false, isHapticFeedbackEnabled: true)
+        // .focusable() alone is not enough: it makes focus *possible*, never keeps it. Focus has
+        // to be claimed on appear, re-claimed when this card becomes the target, and re-claimed
+        // after any sibling control took it.
+        .onAppear { focused = targeted }
+        .onChange(of: targeted) { _, isTarget in focused = isTarget }
+        .onChange(of: crownFocus.token) { _, _ in if targeted { focused = true } }
         .accessibilityLabel(Text(label))
         .accessibilityValue(Text(unit.isEmpty ? Fmt.f(value, fraction) : "\(Fmt.f(value, fraction)) \(unit)"))
         .accessibilityAdjustableAction { direction in

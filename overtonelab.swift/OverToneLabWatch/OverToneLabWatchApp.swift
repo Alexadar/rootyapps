@@ -10,11 +10,13 @@ import SwiftUI
 @main
 struct OverToneLabWatchApp: App {
     @StateObject private var language = LanguageStore()
+    @StateObject private var crownFocus = CrownFocus()
 
     var body: some Scene {
         WindowGroup {
             WatchRootView()
                 .environmentObject(language)
+                .environmentObject(crownFocus)
                 .environment(\.locale, language.locale)
         }
     }
