@@ -73,6 +73,9 @@ struct WatchNowView: View {
                 }
             } header: { Text(L.loc("Rising")) }
         }
+        // Without this the List paints its own dark background and the sky is only visible in
+        // the margins. Row backgrounds go too, so the cards read as glass over the stars.
+        .scrollContentBackground(.hidden)
     }
 }
 

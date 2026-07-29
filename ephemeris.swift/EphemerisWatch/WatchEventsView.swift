@@ -39,6 +39,7 @@ struct WatchEventsView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
             .navigationTitle(L.loc("Events"))
         }
     }

@@ -80,6 +80,11 @@ targets:
       - path: ephemeris/Views/ChartGeometry.swift
       - path: ephemeris/Views/ColorHex.swift
       - path: ephemeris/DesignSystem/LanguageStore.swift
+      # Same backdrop as the phone. MotionParallax already no-ops off iOS, so the
+      # file compiles unchanged; only the star density is platform-tuned.
+      - path: ephemeris/DesignSystem/NebulaBackground.swift
+      - path: ephemeris/DesignSystem/MotionParallax.swift
+      - path: ephemeris/DesignSystem/NebulaPalette.swift
       # One MoonDisc, drawn identically in the app and the complication.
       - path: EphemerisWidget/DateOnlyComplications.swift
       - path: ephemeris/Localizable.xcstrings

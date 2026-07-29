@@ -12,22 +12,29 @@ struct NebulaBackground: View {
     @ObservedObject private var motion = MotionParallax.shared
 
     var body: some View {
-        ZStack {
-            // ── Layer 0: static, fixed. Purple gradient + glows never move. ──
-            LinearGradient(colors: [NebulaPalette.bgTop, NebulaPalette.bgBottom],
-                           startPoint: .top, endPoint: .bottom)
+        // Glow radii are proportional to the canvas, not absolute. At the phone's ~390pt width
+        // the original 520/460 read as two soft corner glows; on a 176pt watch face the same
+        // numbers cover the whole screen, so the cyan flooded it and the backdrop came out blue
+        // instead of purple. Expressed as multiples of the width they look identical at any size.
+        GeometryReader { geo in
+            let w = max(geo.size.width, 1)
+            ZStack {
+                // ── Layer 0: static, fixed. Purple gradient + glows never move. ──
+                LinearGradient(colors: [NebulaPalette.bgTop, NebulaPalette.bgBottom],
+                               startPoint: .top, endPoint: .bottom)
 
-            RadialGradient(colors: [NebulaPalette.glowMagenta.opacity(0.9), .clear],
-                           center: UnitPoint(x: 0.18, y: 0.0),
-                           startRadius: 0, endRadius: 520)
+                RadialGradient(colors: [NebulaPalette.glowMagenta.opacity(0.9), .clear],
+                               center: UnitPoint(x: 0.18, y: 0.0),
+                               startRadius: 0, endRadius: w * 1.33)
 
-            RadialGradient(colors: [NebulaPalette.glowCyan.opacity(0.8), .clear],
-                           center: UnitPoint(x: 0.92, y: 0.26),
-                           startRadius: 0, endRadius: 460)
+                RadialGradient(colors: [NebulaPalette.glowCyan.opacity(0.8), .clear],
+                               center: UnitPoint(x: 0.92, y: 0.26),
+                               startRadius: 0, endRadius: w * 1.18)
 
-            // ── Layer 1: stars only. Parallax happens *inside* the canvas (overscanned
-            //    field), so this transparent layer always fills the screen. ──
-            StarField(tilt: motion.tilt)
+                // ── Layer 1: stars only. Parallax happens *inside* the canvas (overscanned
+                //    field), so this transparent layer always fills the screen. ──
+                StarField(tilt: motion.tilt)
+            }
         }
         .ignoresSafeArea()
         .onAppear { motion.start() }
@@ -40,14 +47,25 @@ struct NebulaBackground: View {
 private struct StarField: View {
     var tilt: CGSize
 
+    /// Fewer, slower stars on the wrist. 90 stars at 10fps is right for a phone and is both
+    /// visually cluttered and needlessly expensive on a 176pt screen — watchOS already pauses
+    /// animation when the wrist drops, but there is no reason to burn the frames it does render.
+    #if os(watchOS)
+    static let starCount = 34
+    static let frameInterval = 0.2
+    #else
+    static let starCount = 90
+    static let frameInterval = 0.1
+    #endif
+
     var body: some View {
-        TimelineView(.animation(minimumInterval: 0.1)) { tl in
+        TimelineView(.animation(minimumInterval: Self.frameInterval)) { tl in
             let time = tl.date.timeIntervalSinceReferenceDate
             Canvas { ctx, size in
                 let margin = 26.0                       // ≥ max parallax shift (|tilt|·18 ≤ 18)
                 let dx = tilt.width * 18, dy = tilt.height * 18
                 var rng = SeededRNG(seed: 0xEDA5)
-                for _ in 0..<90 {
+                for _ in 0..<Self.starCount {
                     let x = -margin + Double(rng.next()) / Double(UInt32.max) * (size.width + 2 * margin)
                     let y = -margin + Double(rng.next()) / Double(UInt32.max) * (size.height + 2 * margin)
                     let r = 0.6 + Double(rng.next()) / Double(UInt32.max) * 1.1

@@ -58,6 +58,11 @@ struct WatchRootView: View {
 
     var body: some View {
         ZStack {
+            // One backdrop behind every screen, not per-screen: the star twinkle then continues
+            // across a navigation change instead of restarting, and the transition slides the
+            // content over a still sky rather than sliding the sky with it.
+            NebulaBackground()
+
             if let screen {
                 content(for: screen)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
@@ -108,13 +113,15 @@ struct WatchRootView: View {
         }
     }
 
+    /// The wheel gets the whole screen; its controls live in the top bar beside the clock.
+    ///
+    /// watchOS puts the clock top-right and leaves the left of that bar empty, so `topBarLeading`
+    /// (watchOS 10+) reclaims space that was otherwise wasted — and removing the in-body header
+    /// row lets the chart centre properly instead of being pushed down.
+    ///
+    /// `topBarTrailing` is deliberately not used: it is reported to crash at launch on watchOS.
     private var wheelScreen: some View {
-        VStack(spacing: 2) {
-            WatchScreenHeader(screen: .wheel,
-                              onBack: { withAnimation(.snappy) { screen = nil } },
-                              trailing: AnyView(crownControls))
-                .padding(.horizontal, 8)
-
+        NavigationStack {
             WatchWheel(positions: positions,
                        aspects: Aspects.detect(in: positions, orbFactor: 1.0),
                        houses: houses)
@@ -126,6 +133,38 @@ struct WatchRootView: View {
                                       by: 1, sensitivity: .medium,
                                       isContinuous: false, isHapticFeedbackEnabled: true)
                 .onAppear { crownFocused = true }
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        HStack(spacing: 5) {
+                            Button { withAnimation(.snappy) { screen = nil } } label: {
+                                Image(systemName: "list.bullet")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(WatchScreen.wheel.accent)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(Text(L.loc("All screens")))
+
+                            Button { step = step.next } label: {
+                                Text(verbatim: step.label)
+                                    .font(.system(size: 12)).monospacedDigit()
+                            }
+                            .buttonStyle(.plain)
+
+                            // Only while scrubbed. A chart showing next month must never be
+                            // mistakable for now, so the date appears in amber the moment the
+                            // Crown moves — and disappears again to keep the bar clean at rest.
+                            if detents != 0 {
+                                Text(now, format: .dateTime.day().month(.abbreviated))
+                                    .font(.system(size: 12)).foregroundStyle(.orange)
+                                Button { detents = 0 } label: {
+                                    Image(systemName: "arrow.uturn.backward")
+                                        .font(.system(size: 11))
+                                }
+                                .buttonStyle(.plain).foregroundStyle(.orange)
+                            }
+                        }
+                    }
+                }
         }
     }
 
@@ -164,5 +203,6 @@ struct WatchRootView: View {
                     .foregroundStyle(p.retrograde ? Color.orange : Color.primary)
             }
         }
+        .scrollContentBackground(.hidden)
     }
 }

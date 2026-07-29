@@ -60,6 +60,7 @@ struct WatchScreenList: View {
                 }
                 .buttonStyle(.plain)
             }
+            .scrollContentBackground(.hidden)
             .navigationTitle("Ephemeris")
         }
     }
