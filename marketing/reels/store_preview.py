@@ -29,7 +29,7 @@ from pathlib import Path
 
 MARKETING = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(MARKETING))
-from screenshots_generator.helpers import load_or_get_font, wrap_text   # noqa: E402
+from screenshots_generator.helpers import load_or_get_font, wrap_text, font_covers  # noqa: E402
 from PIL import Image, ImageDraw                                        # noqa: E402
 
 ENC = ["-c:v", "libx264", "-profile:v", "high", "-crf", "20",
@@ -48,17 +48,26 @@ def probe(path, entries, stream=True):
     return out.splitlines()[0]
 
 
-def bold_font(size):
+def bold_font(size, text=""):
+    """Bold where possible — but COVERAGE WINS.
+
+    Pass the caption. Every font below is Latin-only, so a Japanese title rendered in any of them
+    comes out as □□□□ with no error raised anywhere: `getbbox` reports a perfectly normal width for
+    the .notdef box. A regular-weight CJK face is strictly better than bold tofu, so on a miss this
+    hands off to the shared chain, which rasterises and compares to prove real glyphs exist.
+    """
     for p in ("/System/Library/Fonts/HelveticaNeue.ttc",
               "/System/Library/Fonts/SFNS.ttf",
               "/Library/Fonts/Arial Bold.ttf"):
         if os.path.exists(p):
             try:
                 from PIL import ImageFont
-                return ImageFont.truetype(p, size)
+                f = ImageFont.truetype(p, size)
             except Exception:
-                pass
-    return load_or_get_font(None, size)
+                continue
+            if not text or font_covers(f, text):
+                return f
+    return load_or_get_font(None, size, text)
 
 
 def render_captions(cfg, work):
@@ -79,8 +88,8 @@ def render_captions(cfg, work):
     # `title_scale` / `subtitle_scale` for landscape — ~0.030 / 0.020 reads well at 1920×1080.
     ts = float(st.get("title_scale", 0.058))
     ss = float(st.get("subtitle_scale", 0.038))
-    title_font = bold_font(int(W * ts))
-    sub_font = load_or_get_font(None, int(W * ss))
+    # Fonts are picked PER SCENE, inside the loop below, from that scene's own text — a set chosen
+    # up here can only be right for whatever language the first caption happens to be in.
     title_lh, sub_lh = int(W * ts * 1.21), int(W * ss * 1.32)
     gap = int(W * ts * 0.26)
     ribbon = bool(st.get("caption_ribbon", False))
@@ -93,6 +102,8 @@ def render_captions(cfg, work):
     for i, sc in enumerate(cfg["scenes"]):
         cap = Image.new("RGBA", (W, H), (0, 0, 0, 0))
         d = ImageDraw.Draw(cap)
+        title_font = bold_font(int(W * ts), sc["title"])
+        sub_font = load_or_get_font(None, int(W * ss), sc["subtitle"])
         tlines = wrap_text(sc["title"], title_font, W - 2 * pad)
         slines = wrap_text(sc["subtitle"], sub_font, W - 2 * pad)
         block = len(tlines) * title_lh + gap + len(slines) * sub_lh
@@ -111,11 +122,24 @@ def render_captions(cfg, work):
                     bd.line([(0, yy), (W, yy)], fill=(0, 0, 0, int(ribbon_a * (yy / feather))))
             cap.alpha_composite(band, (0, top))
         else:
-            scrim = Image.new("RGBA", (W, scrim_h))
+            # The scrim must cover the TEXT, not a fixed fraction of the frame. `scrim_height_percent`
+            # was sized for a one-line subtitle; any caption that wraps an extra line grows the block
+            # upward and the top line ends up on bare UI. Japanese hit this first (few spaces, so
+            # `wrap_text` breaks late), but it is language-agnostic — a long German line does it too.
+            band_h = min(H, max(scrim_h, H - y0 + int(H * 0.04)))
+            # Ramp to full opacity ABOVE the text, then hold. A pure bottom-up gradient puts the
+            # first caption line wherever the block happens to start — for a tall block that is the
+            # nearly-transparent end of the ramp (alpha ~5/255), so the top line sits on bare UI
+            # even though the band technically reaches it. Feathering only the part above the text
+            # keeps the soft edge and guarantees the text itself is backed.
+            band_top = H - band_h
+            feather = max(1, min(y0 - band_top, band_h))
+            scrim = Image.new("RGBA", (W, band_h))
             sd = ImageDraw.Draw(scrim)
-            for y in range(scrim_h):
-                sd.line([(0, y), (W, y)], fill=(0, 0, 0, int(scrim_a * (y / scrim_h) ** scrim_g)))
-            cap.alpha_composite(scrim, (0, H - scrim_h))
+            for y in range(band_h):
+                a = scrim_a * (y / feather) ** scrim_g if y < feather else scrim_a
+                sd.line([(0, y), (W, y)], fill=(0, 0, 0, int(min(a, scrim_a))))
+            cap.alpha_composite(scrim, (0, band_top))
 
         y = y0
         for ln in tlines:

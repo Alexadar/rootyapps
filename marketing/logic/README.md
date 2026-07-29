@@ -354,6 +354,44 @@ python3 ../marketing/logic/fetch_reviews.py --all us
 
 ---
 
+## Writing metadata — which endpoint owns which field
+
+The single most common mistake: fields shown side-by-side on one App Store Connect screen live on
+**different resources**, and a PATCH to the wrong one silently does nothing useful.
+
+| Field | Endpoint | Scope |
+|---|---|---|
+| `description`, `keywords`, `whatsNew`, `promotionalText`, `supportUrl`, `marketingUrl` | `PATCH /v1/appStoreVersionLocalizations/{id}` | per VERSION — **iOS and macOS are separate** |
+| `subtitle`, `name`, `privacyPolicyUrl` | `PATCH /v1/appInfoLocalizations/{id}` | per APP INFO — shared across platforms |
+| primary / secondary category | `PATCH /v1/appInfos/{id}` with a `relationships` body | app-level |
+| `copyright`, `releaseType` | `PATCH /v1/appStoreVersions/{id}` | per version |
+| attach a build | `PATCH /v1/appStoreVersions/{id}/relationships/build` | per version |
+
+**⚠️ Categories:** the documented `PATCH /v1/appInfos/{id}/relationships/primaryCategory` returns
+**403 FORBIDDEN_ERROR**. Patch the `appInfos` resource itself with a `relationships` body instead:
+
+```python
+asc.patch(f"/v1/appInfos/{info_id}", {"data": {"type": "appInfos", "id": info_id,
+    "relationships": {
+        "primaryCategory":   {"data": {"type": "appCategories", "id": "WEATHER"}},
+        "secondaryCategory": {"data": {"type": "appCategories", "id": "REFERENCE"}}}}})
+```
+
+Valid ids come from `GET /v1/appCategories?exists[parent]=false`.
+
+**⛔️ NEVER write the `name` field.** A new localization inherits the app name from the primary
+language, which is what you want. Writing it per-locale is how an app ends up renamed in one market.
+`add_locale.py` deliberately omits it.
+
+**Support URL must resolve.** App Review follows it; a 404 is a rejection. If the per-app page does
+not exist yet, use the site root (which does resolve) and flag it — do not invent a plausible path.
+
+**Staging vs the submit boundary.** Uploading a build, attaching it to a draft version, and filling
+every metadata field are ALL staging — the version stays `PREPARE_FOR_SUBMISSION` and nothing goes
+to review. Two actions cross the line and need explicit human go-ahead: submitting the version, and
+assigning a build to an **external** TestFlight group (that triggers Beta App Review and emails the
+testers). A tester added to a group with no build sits at `NOT_INVITED` and mails nobody.
+
 ## Common Workflows
 
 ### 🚀 Quick Start: Complete Portfolio Analysis
@@ -482,6 +520,41 @@ After gathering data with these scripts:
 3. Compare competitors using similar tools
 4. Make informed decisions about metadata updates
 5. Track changes over time by running scripts periodically
+
+---
+
+## Related Documentation
+
+---
+
+### 8. fetch_sales_reports.py (Sales & Trends Reports — NEW, untested end-to-end)
+
+**Purpose**: Fetch units sold / proceeds from the Sales and Trends Reports API
+(`v1/salesReports`). This is a DIFFERENT endpoint family from App Analytics
+(`analyticsReportRequests`) and is the fastest path to "units sold" (roughly
+1-day lag, daily granularity, TSV format).
+
+**Blocker**: requires the account's 8-digit Vendor Number, which the App Store
+Connect REST API does not expose anywhere. Get it from the App Store Connect web
+UI: Payments and Financial Reports -> Vendor Number. Pass it via `ASC_VENDOR_NUMBER`.
+
+**Usage**:
+```bash
+cd /Users/oleksandr/Projects/rootyapps
+ASC_KEY_ID=55B6L3J65N \
+ASC_ISSUER_ID=057ddafb-cb0e-4410-9e0a-00e24f6e1688 \
+ASC_KEY_PATH=keys/AuthKey_55B6L3J65N.p8.txt \
+ASC_VENDOR_NUMBER=<vendor number> \
+conda run -n fantastic python3 marketing/logic/fetch_sales_reports.py 2026-07-25 tmp/marketing
+```
+
+**Output**: `sales_<date>.tsv.gz` (raw) and `sales_<date>.tsv` (decoded) with
+per-SKU units + proceeds for that day. Response is gzip TSV, not JSON — uses
+`Accept: application/a-gzip` instead of the JSON helpers in `asc_client.py`.
+
+**Status as of 2026-07-26**: written but not yet verified against real data —
+no vendor number was available in this repo/session. Once someone runs it
+successfully, promote this section and note it as confirmed-working.
 
 ---
 

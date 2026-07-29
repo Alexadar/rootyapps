@@ -95,8 +95,8 @@ class TwoColumnStyle(ScreenshotStyle):
 
         # === TEXT COLUMN ===
         scale_factor = canvas_width / 2880
-        title_font = load_or_get_font(None, int(140 * scale_factor))
-        subtitle_font = load_or_get_font(None, int(70 * scale_factor))
+        title_font = load_or_get_font(None, int(140 * scale_factor), title)
+        subtitle_font = load_or_get_font(None, int(70 * scale_factor), subtitle or "")
 
         text_padding = int(self.text_padding * scale_factor)
         title_lines = wrap_text(title, title_font, text_col_width - text_padding * 2)
@@ -253,8 +253,8 @@ class TopBottomStyle(ScreenshotStyle):
         scale_factor = canvas_width / 1242  # Base on iPhone 6.5" width
 
         # === TEXT ROW (TOP) ===
-        title_font = load_or_get_font(None, int(90 * scale_factor))
-        subtitle_font = load_or_get_font(None, int(50 * scale_factor))
+        title_font = load_or_get_font(None, int(90 * scale_factor), title)
+        subtitle_font = load_or_get_font(None, int(50 * scale_factor), subtitle or "")
 
         text_padding = int(self.text_padding * scale_factor)
         title_lines = wrap_text(title, title_font, canvas_width - text_padding * 2)

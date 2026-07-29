@@ -94,18 +94,71 @@ def crop_screenshot(screenshot: Image.Image, crop_region: str = 'full', move_dow
         return screenshot
 
 
-def load_or_get_font(font_path: str, size: int) -> ImageFont.FreeTypeFont:
-    """Load a font or return default"""
+# Tried in order; the first one that can render the caption wins. Helvetica leads because it is
+# the established look for Latin and Cyrillic — it just has no CJK glyphs at all.
+_FONT_CHAIN = (
+    '/System/Library/Fonts/Helvetica.ttc',
+    '/System/Library/Fonts/Hiragino Sans GB.ttc',        # ja + zh
+    '/System/Library/Fonts/AppleSDGothicNeo.ttc',        # ko
+    '/System/Library/Fonts/Supplemental/Arial Unicode.ttf',  # universal last resort
+    '/Library/Fonts/Arial.ttf',
+)
+
+_coverage_cache = {}
+
+
+def _renders(font: ImageFont.FreeTypeFont, ch: str) -> bool:
+    """True if `font` has a real glyph for `ch`.
+
+    Font metrics cannot answer this: a missing glyph falls back to .notdef, which is the tofu
+    box — it has a perfectly normal non-zero width, so `getbbox` reports success while the
+    caption renders as □□□□. The only reliable check is to rasterise the character and compare
+    it against a codepoint that is guaranteed absent.
+    """
+    key = (font.path, font.size, ch)
+    if key in _coverage_cache:
+        return _coverage_cache[key]
+
+    def raster(c: str) -> bytes:
+        img = Image.new('L', (max(8, font.size * 2), max(8, font.size * 2)), 0)
+        ImageDraw.Draw(img).text((2, 2), c, font=font, fill=255)
+        return img.tobytes()
+
+    result = raster(ch) != raster('￿')   # U+FFFF is a noncharacter: never has a glyph
+    _coverage_cache[key] = result
+    return result
+
+
+def font_covers(font: ImageFont.FreeTypeFont, text: str) -> bool:
+    """True if `font` has a real glyph for every character in `text`."""
+    return all(_renders(font, ch) for ch in text if not ch.isspace())
+
+
+def load_or_get_font(font_path: str, size: int, text: str = '') -> ImageFont.FreeTypeFont:
+    """Load a font that can actually render `text`.
+
+    Pass the caption so a Japanese, Korean or Chinese line does not silently come out as tofu
+    boxes — which is exactly what happened before this existed: the app UI inside the frame was
+    perfect Japanese while the marketing headline above it was □□□□□□, and nothing errored.
+    """
     if font_path and os.path.exists(font_path):
         return ImageFont.truetype(font_path, size)
 
-    try:
-        return ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', size)
-    except:
+    fallback = None
+    for path in _FONT_CHAIN:
+        if not os.path.exists(path):
+            continue
         try:
-            return ImageFont.truetype('/Library/Fonts/Arial.ttf', size)
-        except:
-            return ImageFont.load_default()
+            font = ImageFont.truetype(path, size)
+        except Exception:
+            continue
+        fallback = fallback or font
+        if not text:
+            return font
+        if all(_renders(font, ch) for ch in text if not ch.isspace()):
+            return font
+
+    return fallback or ImageFont.load_default()
 
 
 def wrap_text(text: str, font: ImageFont.FreeTypeFont, max_width: int) -> List[str]:
@@ -136,3 +189,47 @@ def wrap_text(text: str, font: ImageFont.FreeTypeFont, max_width: int) -> List[s
             lines.append(' '.join(current_line))
 
     return lines
+
+
+def collect_captures(raw_path, texts, label=""):
+    """Raw captures paired with caption texts, with the count mismatch made LOUD.
+
+    Neither the capture step nor the framing step deletes anything, so changing a shot plan leaves
+    old captures sitting beside the new ones — and the caller slices `[:len(texts)]`, i.e. the first
+    N ALPHABETICALLY. `01_dashboard_dark.png` and a leftover `01_simple_dark.png` both survive, both
+    sort into the first two slots, and the wrong pair ships. Earth Around shipped exactly that.
+
+    Returns the same sorted list the callers expect; it only reports.
+    """
+    files = sorted(f for f in raw_path.glob('*')
+                   if f.suffix.lower() in ('.png', '.jpg', '.jpeg'))
+    tag = f" [{label}]" if label else ""
+    if len(files) != len(texts):
+        print(f"⚠️  {len(files)} captures but {len(texts)} caption texts{tag} — "
+              f"using the first {min(len(files), len(texts))} ALPHABETICALLY:")
+        for f in files[:len(texts)]:
+            print(f"       {f.name}")
+        if len(files) > len(texts):
+            print(f"    ↳ {len(files) - len(texts)} capture(s) ignored. If the shot plan changed, "
+                  f"DELETE the stale names in {raw_path} — do not rely on this slice.")
+    return files
+
+
+def purge_stale_outputs(size_folder, keep, pattern="screenshot_*.png"):
+    """Delete framed outputs numbered above `keep`.
+
+    The framing step overwrites screenshot_01..N and leaves screenshot_(N+1).. untouched, so a
+    5-shot set re-rendered as 4 keeps a stale fifth image — which then uploads as if it were current.
+    """
+    from pathlib import Path
+    folder = Path(size_folder)
+    if not folder.exists():
+        return
+    removed = []
+    for f in sorted(folder.glob(pattern)):
+        digits = ''.join(c for c in f.stem if c.isdigit())
+        if digits and int(digits) > keep:
+            f.unlink()
+            removed.append(f.name)
+    if removed:
+        print(f"🧹 removed {len(removed)} stale output(s) beyond #{keep}: {', '.join(removed)}")

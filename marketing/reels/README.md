@@ -50,6 +50,43 @@ Note the macOS preview of a live app may still be the old framed cut — Apple a
 Overtone Lab's Mac preview on the same day it rejected the iOS one. It is still non-compliant;
 re-render it with `store_preview.py` on the next macOS update rather than as its own submission.
 
+## Localized captions — coverage beats weight (READ THIS)
+
+Every renderer here (`store_preview.py`, `frame_reel.py`, `mac_frame_reel.py`) draws captions from
+`<app>/marketing/reels/scenes[_<platform>][_<loc>].json`. Two rules, both learned by shipping the
+bug:
+
+**Pass the scene's text to the font selector, per scene, inside the loop.** A missing glyph renders
+as `.notdef` (□) whose advance width is perfectly normal, so `getbbox` succeeds, nothing raises, and
+a Japanese caption ships as □□□□ over flawless Japanese footage. `bold_font(size, text)` and
+`load_or_get_font(None, size, text)` fall back through `_FONT_CHAIN` and prove coverage by
+rasterising and comparing against U+FFFF. A bold Latin face wins on weight and loses on coverage —
+coverage must win, regular-weight CJK is strictly better than bold tofu. A font chosen ONCE before
+the scene loop can only be right for whichever language the first caption happens to be in.
+
+This bug was found and fixed three separate times because each renderer had its own private font
+helper. There is one `font_covers` in `screenshots_generator/helpers.py`. Import it.
+
+**Landscape needs explicit type scales — and the key you reach for is the wrong one.**
+`store_preview.py` sizes type as a fraction of WIDTH, which is right for a portrait phone canvas
+and far too big for 16:9. Set `title_scale` / `subtitle_scale` in the scene JSON (~0.030 / 0.020
+reads well at 1920×1080). `caption_scale` is a **`frame_reel` key that `store_preview` ignores** —
+setting only that leaves the portrait defaults in force and you get a 111px title and a 72px
+subtitle on a 1080px-tall frame, which wraps, overflows its backing, and lands on the UI. It fails
+by silently degrading to a wrong default rather than erroring, so check the rendered frame, not the
+config.
+
+**Size the caption backing from the text block, not from the frame.** A scrim set to "30% of
+height" is calibrated for a one-line subtitle in English; any language that wraps an extra line
+grows the block upward and the top line lands on bare UI. Japanese hits it first (few spaces, so
+wrapping breaks late) but long German compounds do it too. Compute the block, then make the backing
+at least that tall plus padding.
+
+Height alone is not enough: a pure bottom-up gradient puts the first caption line wherever the block
+happens to start, and for a tall block that is the nearly-transparent end of the ramp (alpha ≈ 5/255)
+— the band technically reaches the text while leaving it unbacked. Ramp to full opacity in the strip
+ABOVE the text, then hold it flat behind the text itself.
+
 ## Pipeline
 
 | File | Role |
@@ -145,14 +182,24 @@ swiftc -O marketing/reels/RecordWindow.swift -o marketing/reels/recordwindow   #
 Plus a host requirement: **Screen Recording permission** must be granted once to the terminal you
 run from (System Settings → Privacy & Security → Screen Recording), or SCK silently records black.
 
-**Per-scene loop:**
+**Per-scene loop — launch in the BACKGROUND, never steal focus:**
 ```bash
 pkill -9 -f "MacOS/<app>"; while pgrep -f "MacOS/<app>" >/dev/null; do sleep 0.3; done
-open -n "<app>.app" --env <APP>_TZ=America/Los_Angeles --env <APP>_TAB=0 --env <APP>_DEMO=1
+open -n -g "<app>.app" --env <APP>_TZ=America/Los_Angeles --env <APP>_TAB=0 --env <APP>_DEMO=1
 sleep 3.3                                   # let the window settle
-WID=$(swift winid.swift)                     # Quartz lookup (owner + layer 0)
-./recordwindow "$WID" 7 macclip_chart.mov
+PID=$(pgrep -f "MacOS/<app>" | head -1)
+./recordwindow --pid "$PID" 7 macclip_chart.mov
 ```
+
+**`-g` is the whole point** (`open --background`): a capture run is 5–10 relaunches, and without it every
+single one yanks focus off whatever the user is doing. It costs nothing, because ScreenCaptureKit's
+`SCContentFilter(desktopIndependentWindow:)` records the window's **own composited content** — the app
+never has to be frontmost, or even visible. Verified: backgrounded window records at full size with
+normal content (mean luma ~194, not black). `screencapture -o -x -l<winID>` for stills is equally
+happy with a backgrounded window.
+
+Prefer `--pid` over a window ID (RecordWindow.swift says so too) — it skips the Quartz lookup, which is
+the step that cares about on-screen state. Do **not** use `-j/--hide`: a hidden app may stop compositing.
 
 Then compose + frame:
 ```bash
@@ -202,10 +249,41 @@ np.savez(str(OUT/"t5gemma_f16.npz"), **arrs)
 cd ~/Projects/AudioProto/reference/stable-audio-3/optimized/mlx
 /Users/oleksandr/miniconda3/envs/fantastic/bin/python scripts/sa3_mlx.py \
   --prompt "calm cosmic ambient, warm analog pads, soft arpeggios, ethereal, spacious, no drums" \
-  --dit sm-music --decoder same-s --seconds 30 --steps 8 --out /tmp/bed30.wav
+  --dit sm-music --decoder same-s --seconds 30 --steps 100 --out /tmp/bed30.wav
 ```
 `--dit sm-music|sm-sfx|medium`, `--decoder same-s|same-l`, `--seconds N`. Output is 44.1 kHz
 stereo WAV. (License: Stability AI Community License, free < $1M revenue; + Gemma license.)
+
+**Use a HIGH step count — 100, not 8.** Low-step output is the diffusion sampler's rough draft:
+it sounds thin and grainy, smears transients, and drifts in the tail — all of which are obvious
+once the bed sits under a quiet 30 s reel and a listener taps to unmute. Steps are the one knob
+here that trades wall-clock for quality, and the wall-clock is trivial: ~4 s per 10 s of audio at
+8 steps, so even 100 steps is a couple of minutes for a bed you will ship for years and reuse
+across every locale of every reel. There is no reason to economise on it.
+
+**Record the prompt AND the seed next to the .wav.** A bed with no recorded seed cannot be
+regenerated — you can only make a different one, and a reel scored with a different bed is a
+different reel. Write `<bed>.txt` beside it with prompt, seed, dit/decoder, seconds and steps, and
+never overwrite an existing bed: add a new file beside it.
+
+**Normalise the bed, then leave it raw otherwise.** Generation comes out quiet and inconsistent
+run to run — a 100-step `sm-music` bed measured -23.0 dB mean / -7.0 dB peak, which is inaudible
+once the mux applies `volume=0.85`. Normalise once, to a level, not by ear:
+
+```bash
+ffmpeg -i raw.wav -af loudnorm=I=-16:TP=-1.5:LRA=11 -ar 44100 -ac 2 bed.wav   # -> ~-17.6 dB mean
+```
+
+**Do NOT bake fades into the bed.** `store_preview.py` applies its own fade-in (0.6s), fade-out
+(1.5s) and `volume=0.85` at mux time. Ephemeris's original `bed30.wav` had fades already baked in
+*and* a note telling the next person not to re-apply them — but the renderer applies them
+unconditionally, so every reel scored with it was double-faded. The bed is raw audio; the mux owns
+the envelope.
+
+**Use a negative prompt.** `--negative-prompt "drums, percussion, beat, vocals, harsh, distorted,
+noisy"` is worth more than extra steps for keeping a bed out of the way of the footage: an
+app-preview bed must never pull attention, and the sampler will happily add a beat you did not ask
+for.
 
 ## Mux the bed into a framed preview
 Fit/fade the bed to the clip length and encode AAC 256k (Apple spec):
