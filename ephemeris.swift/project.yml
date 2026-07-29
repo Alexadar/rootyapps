@@ -82,7 +82,6 @@ targets:
       - path: ephemeris/DesignSystem/LanguageStore.swift
       # One MoonDisc, drawn identically in the app and the complication.
       - path: EphemerisWidget/DateOnlyComplications.swift
-      - path: EphemerisWidget/MoonDisc.swift
       - path: ephemeris/Localizable.xcstrings
         buildPhase: resources
     settings:

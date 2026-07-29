@@ -52,16 +52,11 @@ struct WatchNowView: View {
 
             if let moon {
                 Section {
-                    HStack(spacing: 8) {
-                        // The drawn phase, not a glyph: the shape carries the information, and it
-                        // is the same view the complication uses so the two cannot disagree.
-                        MoonDisc(elongation: Self.elongation(at: date))
-                            .frame(width: 22, height: 22)
-                        Text(L.loc(ZodiacSign.from(longitude: moon.longitude).name)).font(.caption)
-                        Spacer()
-                        Text(verbatim: "\(Int(Self.illumination(at: date) * 100))%")
-                            .font(.caption).monospacedDigit().foregroundStyle(.secondary)
-                    }
+                    // Text, not a drawn disc. The phase shape never rendered correctly on device
+                    // and a wrong moon is worse than no moon — the number is unambiguous.
+                    LabeledRow(glyph: moon.body.glyph,
+                               label: L.loc(ZodiacSign.from(longitude: moon.longitude).name),
+                               value: "\(Int(Self.illumination(at: date) * 100))%")
                 } header: { Text(L.loc("Moon")) }
             }
 
