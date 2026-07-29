@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "FletcherKit",
-    platforms: [.macOS(.v13), .iOS(.v16)],
+    platforms: [.macOS(.v13), .iOS(.v16), .watchOS(.v9)],
     products: [.library(name: "FletcherKit", targets: ["FletcherKit"])],
     targets: [
         .target(name: "FletcherKit"),

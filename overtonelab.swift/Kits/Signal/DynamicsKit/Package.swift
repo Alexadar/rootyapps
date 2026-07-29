@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "DynamicsKit",
-    platforms: [.macOS(.v13), .iOS(.v16)],
+    platforms: [.macOS(.v13), .iOS(.v16), .watchOS(.v9)],
     products: [.library(name: "DynamicsKit", targets: ["DynamicsKit"])],
     targets: [
         .target(name: "DynamicsKit"),

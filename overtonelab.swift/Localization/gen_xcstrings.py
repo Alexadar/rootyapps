@@ -58,7 +58,8 @@ NUMERIC_ATOM = re.compile(r'^[\s\d/.,:×x+\-–—−°%¢]*(?:k|Hz|kHz|dB|st|¢
 # argument, so scanning only Text(...) would miss almost everything.
 LITERAL = re.compile(
     r'(?:Text|Label|navigationTitle|Button|Toggle|Picker|Section|accessibilityLabel|'
-    r'CardHeader\(title:|NumberField\(title:|ResultRow\(label:|footnote|caption)'
+    r'CardHeader\(title:|NumberField\(title:|ResultRow\(label:|'
+    r'StackedReadout\(label:|CrownField\(label:|footnote|caption)'
     r'\(?\s*"([^"\\]{2,})"'
 )
 # SubScreenPicker(titles: ["Note", "Tempo", ...]) — pull each element.

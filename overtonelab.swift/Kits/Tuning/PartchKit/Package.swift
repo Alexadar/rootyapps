@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PartchKit",
-    platforms: [.macOS(.v13), .iOS(.v16)],
+    platforms: [.macOS(.v13), .iOS(.v16), .watchOS(.v9)],
     products: [.library(name: "PartchKit", targets: ["PartchKit"])],
     targets: [
         .target(name: "PartchKit"),

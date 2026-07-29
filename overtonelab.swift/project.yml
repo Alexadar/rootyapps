@@ -142,17 +142,52 @@ targets:
     deploymentTarget: "26.0"
     # Only the five Kits the seven shipping tools need. The other 17 stay off the wrist with
     # the 19 cut tools — see DESIGN_GUIDELINES §8.
+    # Every Kit: all 26 tools ship on the wrist, so the watch links what the phone links.
     dependencies:
+      - package: PartchKit
+        product: PartchKit
+      - package: CommaKit
+        product: CommaKit
+      - package: MersenneKit
+        product: MersenneKit
+      - package: SabineKit
+        product: SabineKit
+      - package: WebsterKit
+        product: WebsterKit
+      - package: BernoulliKit
+        product: BernoulliKit
+      - package: ButterworthKit
+        product: ButterworthKit
+      - package: FletcherKit
+        product: FletcherKit
+      - package: BenchmarkKit
+        product: BenchmarkKit
+      - package: ThieleKit
+        product: ThieleKit
       - package: TimingKit
         product: TimingKit
       - package: PitchKit
         product: PitchKit
-      - package: SPLKit
-        product: SPLKit
-      - package: SabineKit
-        product: SabineKit
       - package: AudioUtilKit
         product: AudioUtilKit
+      - package: FormantKit
+        product: FormantKit
+      - package: SPLKit
+        product: SPLKit
+      - package: PassiveKit
+        product: PassiveKit
+      - package: BiquadKit
+        product: BiquadKit
+      - package: DynamicsKit
+        product: DynamicsKit
+      - package: RoomModesKit
+        product: RoomModesKit
+      - package: AirAbsorptionKit
+        product: AirAbsorptionKit
+      - package: InterferenceKit
+        product: InterferenceKit
+      - package: StereoKit
+        product: StereoKit
     sources:
       - path: OverToneLabWatch
       - path: DesignShared          # same tokens and the SAME Localizable.xcstrings as phone

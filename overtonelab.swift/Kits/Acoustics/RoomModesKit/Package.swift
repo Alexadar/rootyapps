@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "RoomModesKit",
-    platforms: [.macOS(.v13), .iOS(.v16)],
+    platforms: [.macOS(.v13), .iOS(.v16), .watchOS(.v9)],
     products: [.library(name: "RoomModesKit", targets: ["RoomModesKit"])],
     targets: [
         .target(name: "RoomModesKit"),

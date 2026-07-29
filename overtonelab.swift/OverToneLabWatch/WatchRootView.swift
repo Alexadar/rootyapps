@@ -4,38 +4,61 @@ import PitchKit
 import SPLKit
 import SabineKit
 import AudioUtilKit
+import PartchKit
+import CommaKit
+import MersenneKit
+import WebsterKit
+import BernoulliKit
+import FormantKit
+import RoomModesKit
+import AirAbsorptionKit
+import InterferenceKit
+import ButterworthKit
+import FletcherKit
+import PassiveKit
+import BiquadKit
+import DynamicsKit
+import StereoKit
+import ThieleKit
 
-// MARK: - Curation
+// MARK: - Paging model
 
-extension Tool {
-    /// The only tools that ship on watchOS: one or two inputs, one number out.
-    /// The other 19 stay on phone and Mac — Thiele and Biquad need too many inputs, Room Modes
-    /// and Formant answer with a list, and Timecode and File are slower here than on a keyboard.
-    /// See DESIGN_GUIDELINES §8.
-    static let watchTools: [Tool] = [.tempo, .delay, .pitch, .spl, .sabine, .levels, .pan]
+/// One page per tool, plus the catalog at index 0.
+///
+/// The list is a *page*, not a pushed screen: swiping up from the first tool reveals it and
+/// swiping back down returns, so the gesture that opens the catalog also closes it. That is why
+/// there is no back button — adding one would put two competing ways to leave the same page.
+enum WatchPage: Hashable {
+    case list
+    case tool(Tool)
 }
 
-// MARK: - Front door — "Straight In"
+// MARK: - Front door
 
 /// Opens on the last-used tool, already showing a number: zero taps to an answer.
-/// Crown-page or swipe between the seven. A bounded list of seven is what makes this safe;
-/// over 26 it would be a maze.
+/// Crown-page or swipe between all 26; swipe past the first to reach the catalog.
 struct WatchRootView: View {
     @AppStorage("otl.watch.lastTool") private var lastToolID: String = Tool.tempo.rawValue
-
-    private var selection: Binding<Tool> {
-        Binding(get: { Tool(rawValue: lastToolID).flatMap { Tool.watchTools.contains($0) ? $0 : nil } ?? .tempo },
-                set: { lastToolID = $0.rawValue })
-    }
+    @State private var page: WatchPage = .list
 
     var body: some View {
-        TabView(selection: selection) {
-            ForEach(Tool.watchTools) { tool in
-                WatchToolView(tool: tool).tag(tool)
+        TabView(selection: $page) {
+            WatchToolList(selection: $page)
+                .tag(WatchPage.list)
+            ForEach(Tool.allCases) { tool in
+                WatchToolView(tool: tool).tag(WatchPage.tool(tool))
             }
         }
-        .tabViewStyle(.verticalPage)          // page dots teach the seven on first run
+        .tabViewStyle(.verticalPage)
         .background(OTL.background)
+        .onAppear {
+            // Land on the tool the wrist was last using, not on the catalog: the whole point of
+            // this app is that the answer is already on screen when it lights up.
+            if let last = Tool(rawValue: lastToolID) { page = .tool(last) }
+        }
+        .onChange(of: page) { _, new in
+            if case .tool(let t) = new { lastToolID = t.rawValue }
+        }
     }
 }
 
@@ -53,32 +76,76 @@ struct WatchToolView: View {
                         .font(.system(.caption, design: .monospaced).weight(.semibold))
                         .foregroundStyle(OTL.textSecondary)
                 }
-                switch tool {
-                case .tempo:  TempoWatch(accent: tool.accent)
-                case .delay:  DelayWatch(accent: tool.accent)
-                case .pitch:  PitchWatch(accent: tool.accent)
-                case .spl:    SPLWatch(accent: tool.accent)
-                case .sabine: SabineWatch(accent: tool.accent)
-                case .levels: LevelsWatch(accent: tool.accent)
-                case .pan:    PanWatch(accent: tool.accent)
-                default:      EmptyView()
-                }
+                body(for: tool)
             }
             .padding(.horizontal, 8)
             .padding(.bottom, 6)
         }
         .containerBackground(tool.accent.gradient.opacity(0.18), for: .tabView)
     }
+
+    // Split in two: a single 26-case switch in one `body` blows past the type-checker's
+    // expression limit and the compiler reports it as an unrelated error miles away.
+    @ViewBuilder private func body(for tool: Tool) -> some View {
+        switch tool.section {
+        case .timing, .tuning, .design: firstHalf(tool)
+        default: secondHalf(tool)
+        }
+    }
+
+    @ViewBuilder private func firstHalf(_ tool: Tool) -> some View {
+        let a = tool.accent
+        switch tool {
+        case .tempo:    TempoWatch(accent: a)
+        case .delay:    DelayWatch(accent: a)
+        case .timecode: TimecodeWatch(accent: a)
+        case .pitch:    PitchWatch(accent: a)
+        case .partch:   PartchWatch(accent: a)
+        case .comma:    CommaWatch(accent: a)
+        case .mersenne: MersenneWatch(accent: a)
+        case .thiele:   ThieleWatch(accent: a)
+        default:        EmptyView()
+        }
+    }
+
+    @ViewBuilder private func secondHalf(_ tool: Tool) -> some View {
+        let a = tool.accent
+        switch tool {
+        case .sabine:      SabineWatch(accent: a)
+        case .webster:     WebsterWatch(accent: a)
+        case .bernoulli:   BernoulliWatch(accent: a)
+        case .formant:     FormantWatch(accent: a)
+        case .spl:         SPLWatch(accent: a)
+        case .roommodes:   RoomModesWatch(accent: a)
+        case .air:         AirWatch(accent: a)
+        case .sbir:        SBIRWatch(accent: a)
+        case .butterworth: ButterworthWatch(accent: a)
+        case .fletcher:    FletcherWatch(accent: a)
+        case .benchmark:   BenchmarkWatch(accent: a)
+        case .passive:     PassiveWatch(accent: a)
+        case .biquad:      BiquadWatch(accent: a)
+        case .compressor:  CompressorWatch(accent: a)
+        case .sra:         SRAWatch(accent: a)
+        case .levels:      LevelsWatch(accent: a)
+        case .file:        FileWatch(accent: a)
+        case .pan:         PanWatch(accent: a)
+        default:           EmptyView()
+        }
+    }
 }
 
-// MARK: - The seven
+/// Every screen below is the tool's *primary* sub-screen only. Reference tables and the second
+/// and third sub-screens stay on phone and Mac — a wrist is for the one number you need mid-take,
+/// and inputs beyond the two most consequential ones sit at the phone's own defaults so the two
+/// devices agree when you check them side by side.
+
+// MARK: - Timing
 
 /// Tempo — the one screen where the wrist beats the phone: tap the tempo instead of typing it.
 private struct TempoWatch: View {
     let accent: Color
     @StateObject private var tap = TapTempo()
     @State private var bpm: Double = 120
-    @State private var targeted = true
 
     private var ms: Double { Tempo.noteMs(bpm: bpm, division: 4) }
 
@@ -88,7 +155,7 @@ private struct TempoWatch: View {
                            accent: accent, hero: true)
             StackedReadout(label: "One bar", value: Fmt.f(Tempo.barMs(bpm: bpm, beats: 4, beatUnit: 4), 0), unit: "ms")
             CrownField(label: "Tempo", value: $bpm, unit: "BPM",
-                       step: 1, range: 30...300, targeted: targeted, accent: accent)
+                       step: 1, range: 30...300, targeted: true, accent: accent)
             Button {
                 tap.tap()
                 bpm = tap.bpm
@@ -118,6 +185,27 @@ private struct DelayWatch: View {
     }
 }
 
+private struct TimecodeWatch: View {
+    let accent: Color
+    @State private var frames: Double = 108_000     // 1 h at 30 fps
+    @State private var fps: Double = 30
+
+    private var label: String {
+        SMPTE.timecode(frameCount: Int(frames), fps: Int(fps), dropFrame: false).label
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "Timecode", value: label, accent: accent, hero: true)
+            StackedReadout(label: "Duration", value: Fmt.f(frames / max(fps, 1), 2), unit: "s")
+            CrownField(label: "Frame count", value: $frames, unit: "",
+                       step: 1, range: 0...900_000, targeted: true, accent: accent)
+            CrownField(label: "Frame rate", value: $fps, unit: "fps",
+                       step: 1, range: 23...60, targeted: false, accent: accent)
+        }
+    }
+}
+
 private struct PitchWatch: View {
     let accent: Color
     @State private var midi: Double = 69          // A4
@@ -135,26 +223,81 @@ private struct PitchWatch: View {
     }
 }
 
-private struct SPLWatch: View {
+// MARK: - Tuning
+
+private struct PartchWatch: View {
     let accent: Color
-    @State private var spl: Double = 100
-    @State private var distance: Double = 4
+    @State private var low: Double = 220
+    @State private var high: Double = 330
     @State private var target = 0
+
+    private var cents: Double { Spectral.cents(high / max(low, 0.0001)) }
+    private var just: (num: Int, den: Int, cents: Double) {
+        Spectral.nearestJustRatio(cents: cents, oddLimit: 15)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            StackedReadout(label: "SPL at new distance",
-                           value: Fmt.f(SPL.atDistance(spl1: spl, from: 1, to: max(distance, 0.1)), 1),
-                           unit: "dB", accent: accent, hero: true)
-            CrownField(label: "SPL at reference", value: $spl, unit: "dB",
-                       step: 0.5, range: 40...140, targeted: target == 0, accent: accent, fraction: 1)
+            StackedReadout(label: "Interval", value: Fmt.f(cents, 1), unit: "¢", accent: accent, hero: true)
+            StackedReadout(label: "Nearest just", value: "\(just.num):\(just.den)",
+                           unit: Fmt.signed(cents - just.cents, 1) + " ¢")
+            CrownField(label: "Lower", value: $low, unit: "Hz",
+                       step: 1, range: 20...4000, targeted: target == 0, accent: accent)
                 .onTapGesture { target = 0 }
-            CrownField(label: "New distance", value: $distance, unit: "m",
-                       step: 0.5, range: 0.5...100, targeted: target == 1, accent: accent, fraction: 1)
+            CrownField(label: "Upper", value: $high, unit: "Hz",
+                       step: 1, range: 20...4000, targeted: target == 1, accent: accent)
                 .onTapGesture { target = 1 }
         }
     }
 }
+
+private struct CommaWatch: View {
+    let accent: Color
+    @State private var edo: Double = 12
+
+    private var step: Double { 1200 / max(edo, 1) }
+    /// How far this EDO's best fifth misses just — the number that decides whether a temperament
+    /// is usable, and the reason anyone opens this tool away from a desk.
+    private var fifthError: Double {
+        let k = (Tuning.justFifthCents / step).rounded()
+        return k * step - Tuning.justFifthCents
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "Step size", value: Fmt.f(step, 2), unit: "¢", accent: accent, hero: true)
+            StackedReadout(label: "Best fifth error", value: Fmt.signed(fifthError, 2), unit: "¢")
+            CrownField(label: "Divisions per octave", value: $edo, unit: "EDO",
+                       step: 1, range: 5...72, targeted: true, accent: accent)
+        }
+    }
+}
+
+private struct MersenneWatch: View {
+    let accent: Color
+    @State private var freq: Double = 110
+    @State private var length: Double = 0.65
+    @State private var target = 0
+
+    private var newtons: Double {
+        Strings.tensionN(frequencyHz: freq, lengthM: max(length, 0.01), linearDensityKgPerM: 0.005)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "Tension", value: Fmt.f(newtons, 1), unit: "N", accent: accent, hero: true)
+            StackedReadout(label: "Tension", value: Fmt.f(newtons / 4.4482216, 1), unit: "lbf")
+            CrownField(label: "Frequency", value: $freq, unit: "Hz",
+                       step: 1, range: 20...1000, targeted: target == 0, accent: accent)
+                .onTapGesture { target = 0 }
+            CrownField(label: "Scale length", value: $length, unit: "m",
+                       step: 0.01, range: 0.2...2, targeted: target == 1, accent: accent, fraction: 2)
+                .onTapGesture { target = 1 }
+        }
+    }
+}
+
+// MARK: - Acoustics
 
 private struct SabineWatch: View {
     let accent: Color
@@ -180,6 +323,337 @@ private struct SabineWatch: View {
     }
 }
 
+private struct WebsterWatch: View {
+    let accent: Color
+    @State private var throatCm: Double = 2.5
+    @State private var mouthCm: Double = 40
+    @State private var target = 0
+
+    private func area(_ diaCm: Double) -> Double { .pi * pow(diaCm / 100 / 2, 2) }
+    private var flare: Double {
+        let t = area(throatCm), m = area(mouthCm)
+        guard t > 0, m > 0 else { return 0 }
+        return log(m / t) / 0.6                       // 60 cm horn, the phone's default length
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "Cutoff", value: Fmt.f(Horns.expHornCutoffHz(flareConstant: flare), 1),
+                           unit: "Hz", accent: accent, hero: true)
+            StackedReadout(label: "Flare constant", value: Fmt.f(flare, 2), unit: "1/m")
+            CrownField(label: "Throat diameter", value: $throatCm, unit: "cm",
+                       step: 0.5, range: 1...20, targeted: target == 0, accent: accent, fraction: 1)
+                .onTapGesture { target = 0 }
+            CrownField(label: "Mouth diameter", value: $mouthCm, unit: "cm",
+                       step: 1, range: 5...200, targeted: target == 1, accent: accent)
+                .onTapGesture { target = 1 }
+        }
+    }
+}
+
+private struct BernoulliWatch: View {
+    let accent: Color
+    @State private var length: Double = 0.5
+    @State private var isOpen = true
+
+    private var hz: Double {
+        isOpen ? Pipes.openPipeHz(lengthM: max(length, 0.01), harmonic: 1)
+               : Pipes.closedPipeHz(lengthM: max(length, 0.01), harmonic: 1)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "Fundamental", value: Fmt.f(hz, 1), unit: "Hz", accent: accent, hero: true)
+            StackedReadout(label: "Second harmonic",
+                           value: Fmt.f(isOpen ? Pipes.openPipeHz(lengthM: max(length, 0.01), harmonic: 2)
+                                               : Pipes.closedPipeHz(lengthM: max(length, 0.01), harmonic: 3), 1),
+                           unit: "Hz")
+            CrownField(label: "Length", value: $length, unit: "m",
+                       step: 0.01, range: 0.05...5, targeted: true, accent: accent, fraction: 2)
+            Toggle(isOn: $isOpen) {
+                Text("Open both ends")
+                    .font(.system(.caption2, design: .monospaced))
+            }
+            .tint(accent)
+        }
+    }
+}
+
+private struct FormantWatch: View {
+    let accent: Color
+    @State private var tractCm: Double = 17.5
+
+    private func formant(_ n: Int) -> Double {
+        Formants.formantHz(tractLengthM: max(tractCm, 1) / 100, n: n)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "F1", value: Fmt.f(formant(1), 0), unit: "Hz", accent: accent, hero: true)
+            StackedReadout(label: "F2", value: Fmt.f(formant(2), 0), unit: "Hz")
+            CrownField(label: "Tract length", value: $tractCm, unit: "cm",
+                       step: 0.5, range: 8...25, targeted: true, accent: accent, fraction: 1)
+        }
+    }
+}
+
+private struct SPLWatch: View {
+    let accent: Color
+    @State private var spl: Double = 100
+    @State private var distance: Double = 4
+    @State private var target = 0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "SPL at new distance",
+                           value: Fmt.f(SPL.atDistance(spl1: spl, from: 1, to: max(distance, 0.1)), 1),
+                           unit: "dB", accent: accent, hero: true)
+            CrownField(label: "SPL at reference", value: $spl, unit: "dB",
+                       step: 0.5, range: 40...140, targeted: target == 0, accent: accent, fraction: 1)
+                .onTapGesture { target = 0 }
+            CrownField(label: "New distance", value: $distance, unit: "m",
+                       step: 0.5, range: 0.5...100, targeted: target == 1, accent: accent, fraction: 1)
+                .onTapGesture { target = 1 }
+        }
+    }
+}
+
+private struct RoomModesWatch: View {
+    let accent: Color
+    @State private var length: Double = 5
+    @State private var width: Double = 4
+    @State private var target = 0
+
+    private var modes: [RoomModes.Mode] {
+        RoomModes.modes(lengthM: max(length, 1), widthM: max(width, 1), heightM: 2.8,
+                        speed: 343, maxHz: 300)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "Lowest mode", value: Fmt.f(modes.first?.hz ?? 0, 1),
+                           unit: "Hz", accent: accent, hero: true)
+            StackedReadout(label: "Modes below 300 Hz", value: Fmt.count(Double(modes.count)))
+            // Height stays at the phone's 2.8 m default: two dimensions fit the wrist, three do not.
+            CrownField(label: "Length", value: $length, unit: "m",
+                       step: 0.1, range: 2...20, targeted: target == 0, accent: accent, fraction: 1)
+                .onTapGesture { target = 0 }
+            CrownField(label: "Width", value: $width, unit: "m",
+                       step: 0.1, range: 2...20, targeted: target == 1, accent: accent, fraction: 1)
+                .onTapGesture { target = 1 }
+        }
+    }
+}
+
+private struct AirWatch: View {
+    let accent: Color
+    @State private var freq: Double = 4000
+    @State private var distance: Double = 100
+    @State private var target = 0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "Loss over distance",
+                           value: Fmt.f(Atmosphere.lossDB(freqHz: freq, tempC: 20, humidityPct: 50,
+                                                          distanceM: distance, pressureKPa: 101.325), 2),
+                           unit: "dB", accent: accent, hero: true)
+            StackedReadout(label: "Absorption",
+                           value: Fmt.f(Atmosphere.absorptionDBPerKm(freqHz: freq, tempC: 20,
+                                                                     humidityPct: 50, pressureKPa: 101.325), 2),
+                           unit: "dB/km")
+            CrownField(label: "Frequency", value: $freq, unit: "Hz",
+                       step: 100, range: 100...20000, targeted: target == 0, accent: accent)
+                .onTapGesture { target = 0 }
+            CrownField(label: "Distance", value: $distance, unit: "m",
+                       step: 5, range: 5...1000, targeted: target == 1, accent: accent)
+                .onTapGesture { target = 1 }
+        }
+    }
+}
+
+private struct SBIRWatch: View {
+    let accent: Color
+    @State private var distance: Double = 0.6
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "First notch",
+                           value: Fmt.f(Comb.boundaryNotches(distanceM: max(distance, 0.05), count: 1).first ?? 0, 1),
+                           unit: "Hz", accent: accent, hero: true)
+            StackedReadout(label: "First peak",
+                           value: Fmt.f(Comb.boundaryFirstPeak(distanceM: max(distance, 0.05)), 1), unit: "Hz")
+            CrownField(label: "Distance to boundary", value: $distance, unit: "m",
+                       step: 0.05, range: 0.05...5, targeted: true, accent: accent, fraction: 2)
+        }
+    }
+}
+
+// MARK: - Signal
+
+private struct ButterworthWatch: View {
+    let accent: Color
+    @State private var fc: Double = 1000
+    @State private var test: Double = 2000
+    @State private var target = 0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "Response",
+                           value: Fmt.f(Filters.butterworthDB(order: 4, ratio: test / max(fc, 0.0001)), 2),
+                           unit: "dB", accent: accent, hero: true)
+            StackedReadout(label: "Slope (4th order)", value: "24", unit: "dB/oct")
+            CrownField(label: "Cutoff", value: $fc, unit: "Hz",
+                       step: 10, range: 20...20000, targeted: target == 0, accent: accent)
+                .onTapGesture { target = 0 }
+            CrownField(label: "Test frequency", value: $test, unit: "Hz",
+                       step: 10, range: 20...20000, targeted: target == 1, accent: accent)
+                .onTapGesture { target = 1 }
+        }
+    }
+}
+
+private struct FletcherWatch: View {
+    let accent: Color
+    @State private var freq: Double = 1000
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "A-weighting", value: Fmt.signed(Weighting.aWeightingDB(freq), 2),
+                           unit: "dB", accent: accent, hero: true)
+            StackedReadout(label: "C-weighting", value: Fmt.signed(Weighting.cWeightingDB(freq), 2), unit: "dB")
+            CrownField(label: "Frequency", value: $freq, unit: "Hz",
+                       step: 10, range: 10...20000, targeted: true, accent: accent)
+        }
+    }
+}
+
+private struct BenchmarkWatch: View {
+    let accent: Color
+    @State private var measured: Double = -9
+    @State private var streamTarget: Double = -14      // Spotify / Apple Music
+    @State private var target = 0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "Gain to target", value: Fmt.signed(streamTarget - measured, 1),
+                           unit: "dB", accent: accent, hero: true)
+            CrownField(label: "Measured", value: $measured, unit: "LUFS",
+                       step: 0.1, range: -40...0, targeted: target == 0, accent: accent, fraction: 1)
+                .onTapGesture { target = 0 }
+            CrownField(label: "Target", value: $streamTarget, unit: "LUFS",
+                       step: 0.5, range: -30...0, targeted: target == 1, accent: accent, fraction: 1)
+                .onTapGesture { target = 1 }
+        }
+    }
+}
+
+private struct PassiveWatch: View {
+    let accent: Color
+    @State private var kOhms: Double = 1
+    @State private var microFarads: Double = 1
+    @State private var target = 0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "RC cutoff",
+                           value: Fmt.f(Passive.rcCutoffHz(resistanceOhms: max(kOhms, 0.001) * 1000,
+                                                           capacitanceFarads: max(microFarads, 0.001) * 1e-6), 1),
+                           unit: "Hz", accent: accent, hero: true)
+            CrownField(label: "Resistance", value: $kOhms, unit: "kΩ",
+                       step: 0.1, range: 0.1...1000, targeted: target == 0, accent: accent, fraction: 1)
+                .onTapGesture { target = 0 }
+            CrownField(label: "Capacitance", value: $microFarads, unit: "µF",
+                       step: 0.01, range: 0.01...100, targeted: target == 1, accent: accent, fraction: 2)
+                .onTapGesture { target = 1 }
+        }
+    }
+}
+
+private struct BiquadWatch: View {
+    let accent: Color
+    @State private var f0: Double = 1000
+    @State private var q: Double = 0.7071
+    @State private var target = 0
+
+    private var coeffs: Biquad.Coeffs {
+        Biquad.design(.lowpass, fs: 48000, f0: max(f0, 10), q: max(q, 0.1), gainDB: 0)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "Level at cutoff",
+                           value: Fmt.signed(Biquad.magnitudeDB(coeffs, hz: max(f0, 10), fs: 48000), 2),
+                           unit: "dB", accent: accent, hero: true)
+            StackedReadout(label: "One octave up",
+                           value: Fmt.signed(Biquad.magnitudeDB(coeffs, hz: max(f0, 10) * 2, fs: 48000), 2),
+                           unit: "dB")
+            // Lowpass at 48 kHz — the phone is where you pick a kind and a sample rate.
+            CrownField(label: "Cutoff", value: $f0, unit: "Hz",
+                       step: 10, range: 20...20000, targeted: target == 0, accent: accent)
+                .onTapGesture { target = 0 }
+            CrownField(label: "Q", value: $q, unit: "",
+                       step: 0.05, range: 0.1...10, targeted: target == 1, accent: accent, fraction: 3)
+                .onTapGesture { target = 1 }
+        }
+    }
+}
+
+private struct CompressorWatch: View {
+    let accent: Color
+    @State private var input: Double = -10
+    @State private var threshold: Double = -20
+    @State private var target = 0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "Gain reduction",
+                           value: Fmt.f(Compressor.gainReductionDB(inputDB: input, thresholdDB: threshold,
+                                                                   ratio: 4, kneeDB: 6), 2),
+                           unit: "dB", accent: accent, hero: true)
+            StackedReadout(label: "Output",
+                           value: Fmt.signed(Compressor.outputLevelDB(inputDB: input, thresholdDB: threshold,
+                                                                      ratio: 4, kneeDB: 6, makeupDB: 0), 2),
+                           unit: "dB")
+            // 4:1 with a 6 dB knee — the phone's defaults, so both devices agree at a glance.
+            CrownField(label: "Input", value: $input, unit: "dB",
+                       step: 0.5, range: -60...10, targeted: target == 0, accent: accent, fraction: 1)
+                .onTapGesture { target = 0 }
+            CrownField(label: "Threshold", value: $threshold, unit: "dB",
+                       step: 0.5, range: -60...0, targeted: target == 1, accent: accent, fraction: 1)
+                .onTapGesture { target = 1 }
+        }
+    }
+}
+
+// MARK: - Stereo
+
+private struct SRAWatch: View {
+    let accent: Color
+    @State private var micAngle: Double = 110
+    @State private var spacing: Double = 17
+    @State private var target = 0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "Recording angle",
+                           value: Fmt.f(Stereo.recordingAngleDeg(micAngleDeg: micAngle, spacingCm: spacing,
+                                                                 pattern: .cardioid, speed: 343), 1),
+                           unit: "°", accent: accent, hero: true)
+            StackedReadout(label: "Time difference at 45°",
+                           value: Fmt.f(Stereo.timeDifferenceUs(sourceDeg: 45, spacingCm: spacing, speed: 343), 1),
+                           unit: "µs")
+            CrownField(label: "Microphone angle", value: $micAngle, unit: "°",
+                       step: 1, range: 0...180, targeted: target == 0, accent: accent)
+                .onTapGesture { target = 0 }
+            CrownField(label: "Spacing", value: $spacing, unit: "cm",
+                       step: 0.5, range: 0...60, targeted: target == 1, accent: accent, fraction: 1)
+                .onTapGesture { target = 1 }
+        }
+    }
+}
+
+// MARK: - Utility
+
 private struct LevelsWatch: View {
     let accent: Color
     @State private var db: Double = 6
@@ -191,6 +665,32 @@ private struct LevelsWatch: View {
             StackedReadout(label: "Power ratio", value: Fmt.f(Levels.powerRatio(db: db), 3), unit: "×")
             CrownField(label: "Level", value: $db, unit: "dB",
                        step: 0.5, range: -60...60, targeted: true, accent: accent, fraction: 1)
+        }
+    }
+}
+
+private struct FileWatch: View {
+    let accent: Color
+    @State private var minutes: Double = 3
+    @State private var bits: Double = 24
+    @State private var target = 0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "File size",
+                           value: Fmt.f(FileInfo.sizeMB(sampleRate: 48000, bitDepth: bits,
+                                                        channels: 2, seconds: minutes * 60), 1),
+                           unit: "MB", accent: accent, hero: true)
+            StackedReadout(label: "Dynamic range",
+                           value: Fmt.f(FileInfo.dynamicRangeDB(bitDepth: bits), 1), unit: "dB")
+            // 48 kHz stereo — the common case; the phone covers the rest.
+            CrownField(label: "Duration", value: $minutes, unit: "min",
+                       step: 0.5, range: 0.5...600, targeted: target == 0, accent: accent, fraction: 1)
+                .onTapGesture { target = 0 }
+            // 8-bit detent so the crown can only land on 8, 16, 24 or 32.
+            CrownField(label: "Bit depth", value: $bits, unit: "bit",
+                       step: 8, range: 8...32, targeted: target == 1, accent: accent)
+                .onTapGesture { target = 1 }
         }
     }
 }
@@ -208,6 +708,32 @@ private struct PanWatch: View {
             StackedReadout(label: "Right gain", value: Fmt.f(Levels.voltageDB(ratio: max(g.right, 1e-6)), 1), unit: "dB")
             CrownField(label: "Pan", value: $position, unit: "",
                        step: 0.05, range: -1...1, targeted: true, accent: accent, fraction: 2)
+        }
+    }
+}
+
+// MARK: - Design
+
+private struct ThieleWatch: View {
+    let accent: Color
+    @State private var vb: Double = 50
+    @State private var qts: Double = 0.4
+    @State private var target = 0
+
+    private var driver: Driver { Driver(fsHz: 25, qts: max(qts, 0.05), vasLiters: 100) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            StackedReadout(label: "Qtc (sealed)", value: Fmt.f(Sealed.qtc(driver, vbLiters: max(vb, 1)), 3),
+                           accent: accent, hero: true)
+            StackedReadout(label: "F3", value: Fmt.f(Sealed.f3Hz(driver, vbLiters: max(vb, 1)), 1), unit: "Hz")
+            // fs 25 Hz, Vas 100 L — the phone's default driver; change those there.
+            CrownField(label: "Box volume", value: $vb, unit: "L",
+                       step: 1, range: 2...500, targeted: target == 0, accent: accent)
+                .onTapGesture { target = 0 }
+            CrownField(label: "Qts", value: $qts, unit: "",
+                       step: 0.01, range: 0.1...1.2, targeted: target == 1, accent: accent, fraction: 2)
+                .onTapGesture { target = 1 }
         }
     }
 }
