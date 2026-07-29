@@ -19,8 +19,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = ROOT / "Localization"
-CATALOG = ROOT / "OverToneLab" / "Localizable.xcstrings"
-SCAN = [ROOT / "OverToneLab"]
+CATALOG = ROOT / "DesignShared" / "Localizable.xcstrings"
+SCAN = [ROOT / "OverToneLab", ROOT / "DesignShared", ROOT / "OverToneLabWatch"]
 SKIP_FILES = re.compile(r"ReferenceView\.swift$")
 
 # Never translated, even inside a Text(...).

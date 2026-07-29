@@ -41,29 +41,12 @@ glass-on-glass cards and one accent everywhere. The redesign:
 
 ### Section accents (single source of wayfinding colour)
 
-All **seven** sections own an accent — the four originals plus Timing, Stereo and Utility, added with
-the tools that followed. Catalog order is Timing · Tuning · Acoustics · Signal · Stereo · Utility ·
-Design; the hues run cool → warm across that order so neighbouring groups stay distinguishable.
-
 | Section | Accent | Hex |
 |---|---|---|
-| Timing    | blue   | `#5B8DEF` |
 | Tuning    | amber  | `#F2B84B` |
 | Acoustics | aqua   | `#43C8C0` |
 | Signal    | violet | `#8B7BF0` |
-| Stereo    | green  | `#6FCF97` |
-| Utility   | rose   | `#E08AA0` |
 | Design    | coral  | `#F0785A` |
-
-The values above mirror `OverToneLab/Views/OTLColors.swift`, which is the source of truth — a new
-section MUST add its case there (the switch is exhaustive, so the compiler will tell you) and MUST be
-listed here.
-
-**Contrast (measured, WCAG relative luminance):** every accent clears **4.5:1 against all three
-surfaces** — `background` `#08080B`, `surface` `#141419`, `surfaceRaised` `#16161D`. Worst case is
-Signal violet at **5.31:1** on `surfaceRaised`; best is Tuning amber at 11.18:1 on `background`.
-That headroom is what lets the hero readout be pure accent rather than accent-on-white. Re-check any
-new accent at ≥ 4.5:1 on `surfaceRaised` (the tightest of the three).
 
 Exposed as `ToolSection.accent` / `Tool.accent`. Set `.tint(tool.accent)` once at the detail
 level and `ResultRow(emphasis:)` + `SubScreenPicker` inherit it.
@@ -137,7 +120,55 @@ See `RootView.example.swift` for the size-class switch and the split-view sideba
 
 ---
 
-## 8. Rules
+## 8. Apple Watch (watchOS 26, dark only)
+
+A 26-tool catalog and a keyboardless 41 mm screen are incompatible, so the watch app is a
+**curation, not a port**. Same tokens, same accents, same one-hero-readout rule.
+
+**Ships (7)** — Tempo, Delay, Pitch, SPL, Sabine, Levels, Pan. One or two inputs, one number
+out. **Cut (19)** — Thiele/Biquad (too many inputs), Room Modes/Formant (the answer is a
+list), Air/SBIR/SRA (4+ inputs of crown work), Timecode/File (slower than a keyboard), and
+the bench/studio tools that are read as curves or tables.
+
+**Front door — "Straight In".** The app opens on the last-used tool already showing a number
+(zero taps). Swipe/crown-page between the seven; long-press opens the picker. A bounded list
+of seven is what makes this safe — over 26 it would be a maze.
+
+**Digital Crown replaces every number field.** Tap a card to make it the crown target (accent
+ring). Two-tier acceleration only — fine detent and fast spin, no third speed. Haptic detent
+per step, stronger at limits. Hero recomputes live; no Done button.
+
+| Quantity | Detent | Fast | Why |
+|---|---|---|---|
+| Tempo | 1 BPM | 5 BPM | Range 30–300 |
+| Frequency | logarithmic | ⅓ octave | 40 Hz and 4 kHz feel the same |
+| Note / pitch | 1 semitone | 1 octave | Snaps chromatic — never between notes |
+| Room volume | 5 m³ | 25 m³ | Rooms are estimated; finer implies false precision |
+| Distance | 0.5 m | 2 m | Sub-metre matters near a source |
+| Level | 0.5 dB | 3 dB | Audible floor / power doubling |
+
+**Tap tempo ships.** Four taps locks BPM to the mean of the last eight intervals, ±0.5 BPM,
+haptic per tap. It is the one input the wrist does better than the phone.
+
+**Layout rule — stack, never row.** Labels sit *above* their value. A side-by-side row breaks
+the moment the label is a German compound (`Nachhallzeit`, `Schröder-Frequenz`); a stack just
+gets taller and the number never moves or shrinks. No label is measured at English width.
+49 mm buys a bigger hero (56 → 64 pt) and both inputs without scrolling — not more content.
+
+**Notation is never CSS-uppercased.** `text-transform: uppercase` corrupts technical strings:
+it cases `ΣSα` → `ΣSΑ`, where uppercase Alpha is glyph-identical to a Latin A, so the label
+reads as the wrong quantity. Author caption labels in their final case instead, and keep
+Greek/math symbols and superscripts (`m³`, `ΣSα`, `Qtc`) out of any uppercasing transform.
+
+**Complication** — pins *one chosen tool*, not the app, and shows that tool's last computed
+answer in its section accent (250 ms, 0.81 s). No network or timeline refresh; the value
+changes only when the user does. Tapping opens that tool directly.
+
+See `OTLWatch.example.swift` for the root, `CrownField`, `StackedReadout`, and `TapTempo`.
+
+---
+
+## 9. Rules
 
 **Do**
 - One section accent per tool, everywhere it appears.

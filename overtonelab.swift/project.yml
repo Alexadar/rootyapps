@@ -108,8 +108,12 @@ targets:
         product: InterferenceKit
       - package: StereoKit
         product: StereoKit
+      - target: OverToneLabWatch
+        embed: true                 # "Embed Watch Content" — iOS only
+        platformFilter: iOS
     sources:
       - path: OverToneLab
+      - path: DesignShared          # tokens, Fmt, LanguageStore, ToolCatalog + the string catalog
       - path: overtonelab.icon
         buildPhase: resources
     settings:
@@ -130,6 +134,40 @@ targets:
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+  OverToneLabWatch:
+    type: application
+    # `platform:`, not `supportedDestinations:` — XcodeGen rejects watchOS in a multiplatform
+    # target ("cannot contain watchOS in supportedDestinations").
+    platform: watchOS
+    deploymentTarget: "26.0"
+    # Only the five Kits the seven shipping tools need. The other 17 stay off the wrist with
+    # the 19 cut tools — see DESIGN_GUIDELINES §8.
+    dependencies:
+      - package: TimingKit
+        product: TimingKit
+      - package: PitchKit
+        product: PitchKit
+      - package: SPLKit
+        product: SPLKit
+      - package: SabineKit
+        product: SabineKit
+      - package: AudioUtilKit
+        product: AudioUtilKit
+    sources:
+      - path: OverToneLabWatch
+      - path: DesignShared          # same tokens and the SAME Localizable.xcstrings as phone
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.overtonelab.watchkitapp
+        PRODUCT_NAME: Overtone Lab
+        INFOPLIST_KEY_CFBundleDisplayName: Overtone Lab
+        INFOPLIST_KEY_WKApplication: YES
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: oleksandr.aisixteen.overtonelab
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        WATCHOS_DEPLOYMENT_TARGET: "26.0"
+        TARGETED_DEVICE_FAMILY: "4"
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+
   overtonelabUITests:
     type: bundle.ui-testing
     supportedDestinations: [iOS]
