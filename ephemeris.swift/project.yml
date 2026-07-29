@@ -1,19 +1,23 @@
 name: ephemeris.swift
 options:
   bundleIdPrefix: oleksandr.aisixteen
+  developmentLanguage: en
   deploymentTarget:
     iOS: "26.0"
     macOS: "26.0"
+    watchOS: "10.0"
   createIntermediateGroups: true
 settings:
   base:
     DEVELOPMENT_TEAM: LSKNNBG94G
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.0.4"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "1.0.5"
+    CURRENT_PROJECT_VERSION: "5"
     ENABLE_PREVIEWS: YES
     GENERATE_INFOPLIST_FILE: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
 packages:
   EphemerisKit:
     path: EphemerisKit
@@ -30,6 +34,10 @@ targets:
         buildPhase: resources
     settings:
       base:
+        # The target is named "ephemeris.swift", which would otherwise make the product,
+        # binary and macOS menu-bar name literally "ephemeris.swift" — App Review 5.2.5
+        # rejects "Swift" in the app name. PRODUCT_NAME pins the real name.
+        PRODUCT_NAME: Ephemeris
         PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.ephemeris
         "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": ephemeris-macOS.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: liquid_icon
@@ -40,6 +48,52 @@ targets:
         INFOPLIST_KEY_NSMotionUsageDescription: "The star field gently parallaxes as you tilt your phone."
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+  # ── Watch app ────────────────────────────────────────────────────────────
+  # Standalone on purpose: it computes everything itself via EphemerisKit, so it works with the
+  # phone out of range. Only preferences cross from the phone, and they cross over
+  # WatchConnectivity — app groups are per-device and do NOT reach the wrist.
+  EphemerisWatch:
+    type: application
+    platform: watchOS
+    dependencies:
+      - package: EphemerisKit
+        product: EphemerisKit
+      # Embeds the complications into the watch app. Without this the extension compiles and is
+      # then discarded — the complication simply never appears in the face picker.
+      - target: EphemerisWidget
+        embed: true
+    sources:
+      - path: EphemerisWatch
+    settings:
+      base:
+        PRODUCT_NAME: Ephemeris
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.ephemeris.watchkitapp
+        CODE_SIGN_ENTITLEMENTS: AppGroup.entitlements
+        INFOPLIST_KEY_CFBundleDisplayName: Ephemeris
+        INFOPLIST_KEY_WKApplication: YES
+        INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: YES
+
+  # ── Complications / widgets ──────────────────────────────────────────────
+  # One extension serving watchOS and iOS: the accessory families it declares appear on the watch
+  # face and on the iPhone Lock Screen, so the same code covers both.
+  EphemerisWidget:
+    type: app-extension
+    platform: watchOS
+    dependencies:
+      - package: EphemerisKit
+        product: EphemerisKit
+    sources:
+      - path: EphemerisWidget
+    info:
+      path: EphemerisWidget-Info.plist
+    settings:
+      base:
+        PRODUCT_NAME: EphemerisWidget
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.ephemeris.watchkitapp.widgets
+        CODE_SIGN_ENTITLEMENTS: AppGroup.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+
   ephemerisTests:
     type: bundle.unit-test
     supportedDestinations: [macOS]
@@ -53,7 +107,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.ephemerisTests
         GENERATE_INFOPLIST_FILE: YES
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/ephemeris.swift.app/Contents/MacOS/ephemeris.swift"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Ephemeris.app/Contents/MacOS/Ephemeris"
         BUNDLE_LOADER: "$(TEST_HOST)"
   ephemerisUITests:
     type: bundle.ui-testing
@@ -68,6 +122,12 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: ephemeris.swift
 schemes:
+  EphemerisWatch:
+    build:
+      targets:
+        EphemerisWatch: all
+    run:
+      config: Debug
   ephemeris.swift:
     build:
       targets:

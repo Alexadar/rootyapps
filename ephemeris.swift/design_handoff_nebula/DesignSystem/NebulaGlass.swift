@@ -11,7 +11,6 @@ extension View {
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(.ultraThinMaterial)                         // frosts what's behind
-                    .opacity(0.54)                                    // …sheerer still, so the sky reads through the glass
                     .overlay(
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                             .fill(dense ? NebulaPalette.cardFillAlt : NebulaPalette.cardFill)
@@ -54,7 +53,8 @@ struct NebulaCardHeader: View {
 
 // MARK: - Zodiac sign chip
 
-/// Solid violet chip with a white sign glyph — used in Positions, the wheel, and Cycle.
+/// Solid violet chip with a white sign glyph — used in Positions rows, Cycle
+/// events and the Events timeline.
 struct SignChip: View {
     let glyph: String
     var size: CGFloat = 22
@@ -64,5 +64,42 @@ struct SignChip: View {
             .foregroundStyle(NebulaPalette.signGlyph)
             .frame(width: size, height: size)
             .background(NebulaPalette.sign, in: .rect(cornerRadius: size * 0.27))
+    }
+}
+
+/// Glass sign tile — used ONLY on the chart wheel (v2): translucent fill
+/// with a violet stroke instead of the solid chip.
+struct WheelSignTile: View {
+    let glyph: String
+    var size: CGFloat = 22
+    var body: some View {
+        Text(glyph)
+            .font(.system(size: size * 0.55))
+            .foregroundStyle(Color(rgbHex: 0xD9C9FF))
+            .frame(width: size, height: size)
+            .background(Color.white.opacity(0.06), in: .rect(cornerRadius: size * 0.32))
+            .overlay(RoundedRectangle(cornerRadius: size * 0.32)
+                .strokeBorder(Color(rgbHex: 0xB496FF).opacity(0.5), lineWidth: 1))
+    }
+}
+
+// MARK: - Phase progress bar (Cycle card, v2)
+
+/// Magenta→cyan gradient fill on a violet track, with a soft magenta glow.
+struct PhaseProgressBar: View {
+    /// 0…1 — e.g. Double(day) / Double(length)
+    let fraction: Double
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color(rgbHex: 0x966EFF).opacity(0.16))
+                Capsule()
+                    .fill(LinearGradient(colors: [NebulaPalette.accent, NebulaPalette.accentCyan],
+                                         startPoint: .leading, endPoint: .trailing))
+                    .frame(width: geo.size.width * fraction)
+                    .shadow(color: NebulaPalette.accent.opacity(0.6), radius: 5)
+            }
+        }
+        .frame(height: 6)
     }
 }
