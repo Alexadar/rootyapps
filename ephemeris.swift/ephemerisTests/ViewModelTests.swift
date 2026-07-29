@@ -1,7 +1,7 @@
 import Testing
 import Foundation
 import EphemerisKit
-@testable import ephemeris_swift
+@testable import Ephemeris
 
 @Suite("ChartViewModel")
 @MainActor

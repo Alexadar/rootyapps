@@ -48,6 +48,9 @@ struct MomentControls: View {
             // Time zone — searchable, persisted to preferences.
             TimeZoneRow(timeZone: $vm.timeZone)
 
+            // Place — offline entry only; needed for the angles and houses.
+            LocationRow(location: $vm.location)
+
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text("Orb factor").foregroundStyle(.secondary)
@@ -66,7 +69,9 @@ struct MomentControls: View {
         .glassCard()
     }
 
-    private var stepLabel: String {
+    /// `LocalizedStringKey`, not `String` — a `String` return would make `Text(stepLabel)` pick the
+    /// non-localizing overload and leave this button English everywhere.
+    private var stepLabel: LocalizedStringKey {
         switch stepSeconds {
         case 3_600:   return "Hour"
         case 604_800: return "Week"

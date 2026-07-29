@@ -4,11 +4,16 @@ import EphemerisKit
 
 private struct MacTab: Identifiable {
     let id: Int
-    let title: String
+    /// LocalizedStringKey, not String — `Label`/`help` would otherwise take the verbatim overload.
+    let title: LocalizedStringKey
     let icon: String
 }
 
 struct MacOSContentView: View {
+    /// Read straight from the environment, not via ReelDriver: that type is @MainActor, and
+    /// referencing its static from the App's Scene builder stopped the window being created.
+    static let isReelRun = ProcessInfo.processInfo.environment["EPHEMERIS_REEL"] == "1"
+
     @StateObject private var vm = ChartViewModel()
     // Lets screenshot tooling open a specific section via EPHEMERIS_TAB.
     @State private var selection = Int(ProcessInfo.processInfo.environment["EPHEMERIS_TAB"] ?? "0") ?? 0
@@ -60,17 +65,37 @@ struct MacOSContentView: View {
                 }
             }
         }
+        .settingsToolbar()
         .preferredColorScheme(.dark)   // celestial UI is always dark — keeps glass + text legible
-        .frame(minWidth: 820, minHeight: 640)
+        // A preview-reel run sizes the CONTENT to 16:9, which — because the scene uses
+        // `.windowResizability(.contentSize)` — makes the window exactly 1600x900.
+        //
+        // Done here rather than by resizing the window: the App Store's macOS preview canvas is
+        // 1920x1080, and the normal portrait window scaled into it leaves ~480px of black down
+        // each side, which is "framing" under Guideline 2.3.4 just as much as a device bezel.
+        // Two other routes failed — `.defaultSize` is ignored once macOS has a saved window
+        // frame, and touching the Scene builder to branch on the reel flag stopped the app from
+        // creating a window at all. Sizing the content leaves both the scene and AppKit alone.
+        // min alone is not enough — it is only a floor, and `.contentSize` then lets the content
+        // set the height (1010, giving 1600x1010 and still ~100px of bar). Pinning max as well
+        // makes it exactly 16:9. Clamping the height is safe: the body is a ScrollView.
+        // 848, not 900: `.contentSize` sizes the CONTENT, and the title bar adds 52pt on top —
+        // asking for 900 of content produced a 1600x952 window, which is 1.68:1 and still leaves
+        // bars in a 16:9 canvas. 1600x848 of content is a 1600x900 window: exactly 16:9.
+        .frame(minWidth: Self.isReelRun ? 1600 : 820,
+               maxWidth: Self.isReelRun ? 1600 : nil,
+               minHeight: Self.isReelRun ? 848 : 640,
+               maxHeight: Self.isReelRun ? 848 : nil)
     }
 
     @ViewBuilder private var content: some View {
         switch selection {
         case 0:
             MomentControls(vm: vm)
-            ChartWheel(positions: vm.positions, aspects: vm.aspects)
+            ChartWheel(positions: vm.positions, aspects: vm.aspects, houses: vm.houses)
                 .onAppear { vm.startChartDemo() }
                 .onDisappear { vm.stopChartDemo() }
+            HousesCard(vm: vm)
         case 1:
             MomentControls(vm: vm)
             PositionsTable(positions: vm.positions)

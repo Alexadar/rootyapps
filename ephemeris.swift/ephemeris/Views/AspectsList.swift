@@ -4,10 +4,11 @@ import EphemerisKit
 /// Stage 3 — aspects computed from the positions.
 struct AspectsList: View {
     let aspects: [DetectedAspect]
+    @Environment(\.locale) private var locale
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            CardHeader(title: "Aspects", trailing: "\(aspects.count)")
+            CardHeader(title: "Aspects", trailing: Text(aspects.count, format: .number))
             if aspects.isEmpty {
                 Text("No aspects within the current orb.")
                     .font(.callout).foregroundStyle(NebulaPalette.textSecondary).italic()
@@ -19,11 +20,18 @@ struct AspectsList: View {
                             .foregroundStyle(.white)
                             .frame(width: 24, height: 24)
                             .background(a.type.color, in: .rect(cornerRadius: 6))
-                        Text("\(a.a.glyph) \(a.a.name)")
-                        Text(a.type.name).foregroundStyle(NebulaPalette.textSecondary)
-                        Text("\(a.b.glyph) \(a.b.name)")
+                        // Glyph verbatim + name resolved through the catalog, joined as one
+                        // String. Interpolating both into `Text("\(glyph) \(name)")` would make
+                        // the whole thing a format-string key, which misses and leaves the Kit's
+                        // English body name on screen.
+                        Text(verbatim: a.a.glyph + " " + L.string(a.a.name, locale: locale))
+                        Text(L.loc(a.type.name)).foregroundStyle(NebulaPalette.textSecondary)
+                        Text(verbatim: a.b.glyph + " " + L.string(a.b.name, locale: locale))
                         Spacer()
-                        Text(String(format: "orb %.2f°", a.orb))
+                        // `String(format:)` hardcodes a "." separator; most of Europe writes "1,25".
+                        // Interpolating a pre-formatted String keeps the extracted key a plain
+                        // "orb %@°" rather than a numeric specifier that varies by platform.
+                        Text("orb \(a.orb.formatted(.number.precision(.fractionLength(2)).locale(locale)))°")
                             .font(.caption).monospacedDigit().foregroundStyle(NebulaPalette.textSecondary)
                     }
                     .font(.callout)

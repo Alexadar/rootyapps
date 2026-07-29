@@ -33,18 +33,27 @@ extension View {
 
 // MARK: - Header (matches CardHeader, restyled)
 
+/// The header is uppercased, which makes it the one place a plain `Text(key)` can't do the job:
+/// `title.uppercased()` would collapse the key to a `String` before lookup (shipping English), and
+/// `.textCase(.uppercase)` is silently ignored outside `List`/`Form`. So the key is resolved
+/// through `L.string`, which reads the chosen language's bundle, then uppercased with that same
+/// locale — which matters for Turkish, where i maps to İ rather than I.
+///
+/// `trailing` is a `Text` because its two uses differ in kind: a translated house-system name, and
+/// a raw count that must never be looked up as a key.
 struct NebulaCardHeader: View {
     let title: String
-    var trailing: String? = nil
+    var trailing: Text? = nil
+    @Environment(\.locale) private var locale
     var body: some View {
         HStack {
-            Text(title.uppercased())
+            Text(verbatim: L.string(title, locale: locale).uppercased(with: locale))
                 .font(.caption.weight(.semibold))
                 .tracking(0.6)
                 .foregroundStyle(NebulaPalette.textHead)
             Spacer()
             if let trailing {
-                Text(trailing)
+                trailing
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(NebulaPalette.accent)
             }

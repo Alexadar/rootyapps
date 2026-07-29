@@ -69,8 +69,10 @@ public enum SynodicCycle {
         let retro = Ephemeris.isRetrograde(body, at: date)
 
         var title = retro ? "Retrograde" : "Direct"
+        var visibility: SynodicPhase.Visibility?
         if body.isInferior {
             let evening = relativeLongitude(body, date) > 0
+            visibility = evening ? .eveningStar : .morningStar
             let star = evening ? "Evening star (Epimethean)" : "Morning star (Promethean)"
             title = "\(star) · \(retro ? "retrograde" : "direct")"
         }
@@ -82,6 +84,7 @@ public enum SynodicCycle {
             if let n = next { length = Int(n.date.timeIntervalSince(p.date) / 86_400) }
         }
         return SynodicPhase(body: body, title: title, detail: detail, retrograde: retro,
+                            visibility: visibility,
                             start: prev, end: next, dayInPhase: dayIn, phaseLengthDays: length)
     }
 

@@ -39,16 +39,22 @@ struct EphemerisTests {
     }
 
     /// Cross-check against NASA/JPL Horizons geocentric ecliptic longitude of date
-    /// (ObsEcLon) for 2026-06-21 00:00 UTC. Tolerances reflect Schlyter precision.
+    /// (ObsEcLon) for 2026-06-21 00:00 UTC.
+    ///
+    /// Tolerances are **0.1° (6′)**, not the 0.25–1.0° they used to be. Those older numbers were
+    /// conservative guesses, and a 60′ bound would happily pass a serious regression: a
+    /// 3,940-sample sweep against Horizons (see `AccuracyTests` / `Oracles.swift`) puts the real
+    /// worst-case error for these six bodies at 3.4′ over 1900–2100. 6′ leaves honest margin.
     @Test func planetCrossCheck() {
         let t = utc(2026, 6, 21, 0, 0)
+        let tol = 0.1
         let refs: [(CelestialBody, Double, Double)] = [
-            (.sun,      89.6656, 0.25),
-            (.mercury, 113.3888, 0.8),
-            (.venus,   128.7542, 0.8),
-            (.mars,     54.3946, 0.8),
-            (.jupiter, 118.0494, 1.0),
-            (.saturn,   13.6804, 1.0),
+            (.sun,      89.6656, tol),
+            (.mercury, 113.3888, tol),
+            (.venus,   128.7542, tol),
+            (.mars,     54.3946, tol),
+            (.jupiter, 118.0494, tol),
+            (.saturn,   13.6804, tol),
         ]
         for (body, expected, tol) in refs {
             let lon = Ephemeris.longitude(of: body, at: t)

@@ -62,19 +62,31 @@ public struct SynodicEvent: Identifiable, Hashable {
 }
 
 /// The segment of the cycle a moment falls in, between two events.
+///
+/// `title` and `detail` are pre-composed English sentences, which makes them useful for export and
+/// tests but unusable for display: a runtime-composed string can never be a localization key. The
+/// UI therefore reads `visibility`, `retrograde` and `start`/`end` and composes its own translated
+/// version. The two strings stay for the CSV contract and are deliberately not shown as-is.
 public struct SynodicPhase {
+    /// Which side of the Sun an inferior planet is on — the part of `title` that isn't derivable
+    /// from `retrograde` alone. Nil for superior planets, which are never morning/evening stars.
+    public enum Visibility: String, Codable, Hashable { case eveningStar, morningStar }
+
     public let body: CelestialBody
     public let title: String       // e.g. "Morning star · retrograde"
     public let detail: String      // e.g. "Inferior conjunction → Station direct"
     public let retrograde: Bool
+    public let visibility: Visibility?
     public let start: SynodicEvent?
     public let end: SynodicEvent?
     public let dayInPhase: Int?
     public let phaseLengthDays: Int?
 
     public init(body: CelestialBody, title: String, detail: String, retrograde: Bool,
+                visibility: Visibility? = nil,
                 start: SynodicEvent?, end: SynodicEvent?, dayInPhase: Int?, phaseLengthDays: Int?) {
         self.body = body; self.title = title; self.detail = detail; self.retrograde = retrograde
+        self.visibility = visibility
         self.start = start; self.end = end; self.dayInPhase = dayInPhase; self.phaseLengthDays = phaseLengthDays
     }
 }

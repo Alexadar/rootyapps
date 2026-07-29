@@ -5,6 +5,7 @@ import EphemerisKit
 /// relative to the Sun. Defaults to Mercury's phases.
 struct CycleView: View {
     @ObservedObject var vm: ChartViewModel
+    @Environment(\.locale) private var locale
 
     private static let bodies: [CelestialBody] = CelestialBody.allCases.filter { $0 != .sun && $0 != .moon }
 
@@ -19,13 +20,38 @@ struct CycleView: View {
     private var picker: some View {
         VStack(alignment: .leading, spacing: 10) {
             CardHeader(title: "Synodic cycle")
-            Picker("CelestialBody", selection: $vm.cycleBody) {
-                ForEach(Self.bodies) { Text("\($0.glyph)  \($0.name)").tag($0) }
+            Picker("Body", selection: $vm.cycleBody) {
+                // Glyph verbatim, name resolved through the catalog, then joined as one String.
+                // `Text("\(glyph)  \(name)")` would leave the Kit's English name untranslated, and
+                // `Text(...) + Text(...)` is deprecated — so resolve first, render once.
+                ForEach(Self.bodies) {
+                    Text(verbatim: $0.glyph + "  " + L.string($0.name, locale: locale)).tag($0)
+                }
             }
             .pickerStyle(.menu)
             .labelsHidden()
         }
         .glassCard()
+    }
+
+    /// The Kit composes `phase.title`/`phase.detail` in English at runtime, so neither can be a
+    /// catalog key — feeding them to `L.loc` would silently return the English sentence. These
+    /// rebuild the same text from the structured fields, translating each part on its own.
+    private static func phaseTitle(_ phase: SynodicPhase, _ locale: Locale) -> Text {
+        let motion = L.string(phase.retrograde ? "Retrograde" : "Direct", locale: locale)
+        guard let visibility = phase.visibility else { return Text(verbatim: motion) }
+        let star = visibility == .eveningStar
+            ? "Evening star (Epimethean)" : "Morning star (Promethean)"
+        return Text(verbatim: L.string(star, locale: locale) + " · " + motion)
+    }
+
+    /// "Inferior conjunction → Station direct". Uses `kind.label` rather than `kind.short`: the
+    /// long forms are the ones the catalog already carries, so this needs no extra vocabulary.
+    private static func phaseDetail(_ phase: SynodicPhase, _ locale: Locale) -> Text {
+        func side(_ event: SynodicEvent?) -> String {
+            event.map { L.string($0.kind.label, locale: locale) } ?? "—"
+        }
+        return Text(verbatim: side(phase.start) + " → " + side(phase.end))
     }
 
     private func phaseCard(_ phase: SynodicPhase) -> some View {
@@ -35,15 +61,16 @@ struct CycleView: View {
                 Text(vm.cycleBody.glyph + "\u{FE0E}").font(.largeTitle)
                     .foregroundStyle(NebulaPalette.glyph).nebulaGlow()
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(phase.title).font(.headline)
-                    Text(phase.detail).font(.subheadline).foregroundStyle(NebulaPalette.textSecondary)
+                    Self.phaseTitle(phase, locale).font(.headline)
+                    Self.phaseDetail(phase, locale).font(.subheadline)
+                        .foregroundStyle(NebulaPalette.textSecondary)
                     if let day = phase.dayInPhase, let len = phase.phaseLengthDays {
                         Text("Day \(day) of \(len)").font(.caption).foregroundStyle(NebulaPalette.textFaint)
                     }
                 }
                 Spacer()
                 if phase.retrograde {
-                    Text("℞").font(.title).foregroundStyle(NebulaPalette.retrograde)
+                    Text(verbatim: "℞").font(.title).foregroundStyle(NebulaPalette.retrograde)
                 }
             }
         }
@@ -63,15 +90,16 @@ struct CycleView: View {
                             .frame(width: 30, height: 30)
                             .background(NebulaPalette.accent.opacity(0.15), in: .circle)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(e.kind.label).font(.callout)
+                            Text(L.loc(e.kind.label)).font(.callout)
                             HStack(spacing: 6) {
                                 SignChip(glyph: ZodiacSign.from(longitude: e.longitude).glyph, size: 18)
-                                Text(String(format: "%.1f°", e.longitude))
+                                Text(verbatim: e.longitude.formatted(
+                                    .number.precision(.fractionLength(1)).locale(locale)) + "°")
                                     .font(.caption).foregroundStyle(NebulaPalette.textSecondary)
                             }
                         }
                         Spacer()
-                        Text(e.date.formatted(date: .abbreviated, time: .omitted))
+                        Text(e.date, format: .dateTime.day().month(.abbreviated).year())
                             .font(.caption).monospacedDigit().foregroundStyle(NebulaPalette.textSecondary)
                     }
                 }

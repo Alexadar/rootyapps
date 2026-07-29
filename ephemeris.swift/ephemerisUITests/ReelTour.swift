@@ -31,7 +31,10 @@ final class ReelTour: XCTestCase {
         //    an orb sweep, each lighting its control. The tour must NOT touch the slider here
         //    (that fought the in-app demo and failed the run); just linger while it plays. ──
         dwell(5.4)
-        autoScroll(app, max: 1); dwell(1.2)       // reveal chart wheel only if it overflows
+        // Scroll unconditionally: the Chart tab now ends with the Houses card (cusp table +
+        // system picker), which is the headline feature and must appear in the reel.
+        swipeOnce(app); dwell(1.0)
+        swipeOnce(app); dwell(1.8)
 
         // ── The rest of the app ──
         // .auto = swipe only while content overflows (cheap check); .fixed for the known-long
@@ -84,15 +87,59 @@ final class ReelTour: XCTestCase {
         (scroll.exists ? scroll : app).swipeUp(velocity: .init(rawValue: 520))
     }
 
-    private func tapTab(_ app: XCUIApplication, _ label: String) {
-        // iPhone: bottom tabBar. iPad (iOS 26) renders the tab bar differently — fall back to
-        // a plain button match so the same tour drives both.
-        // .firstMatch: iPad's iOS 26 floating tab bar nests buttons inside cells, so a plain
-        // query resolves to multiple elements and .tap() throws.
-        let tabBtn = app.tabBars.buttons[label].firstMatch
-        if tabBtn.waitForExistence(timeout: 3) { tabBtn.tap(); return }
-        let btn = app.buttons[label].firstMatch
-        if btn.waitForExistence(timeout: 3) { btn.tap() }
+    /// Tab order, which is fixed by `IOSContentView`. Position is the only locale-independent
+    /// handle we have: the visible label is translated, so `buttons["Positions"]` matches
+    /// nothing once the app runs in German or Japanese.
+    private static let tabIndex = ["Chart": 0, "Positions": 1, "Aspects": 2, "Cycle": 3, "Events": 4]
+
+    /// The five tab buttons, in visual order, however this OS chooses to expose them.
+    ///
+    /// iPhone puts them in a `tabBar`. iPad's iOS 26 floating tab bar does **not** publish a
+    /// `tabBar` element at all — `app.tabBars.firstMatch` never resolves, which silently left the
+    /// whole iPad reel on its launch tab while the captions advanced through all five scenes.
+    /// So each container is tried in turn and the first that yields exactly five hittable buttons
+    /// wins. `REEL_TABS` records which one, because the answer differs per OS and per device and
+    /// is the first thing worth knowing when this breaks again.
+    private func tabButtons(_ app: XCUIApplication) -> [XCUIElement] {
+        let candidates: [(String, XCUIElementQuery)] = [
+            ("tabBar",   app.tabBars.buttons),
+            ("toolbar",  app.toolbars.buttons),
+            ("segment",  app.segmentedControls.buttons),
+            ("window",   app.windows.buttons),
+        ]
+        for (name, query) in candidates {
+            let hittable = query.allElementsBoundByIndex.filter { $0.exists && $0.isHittable }
+            NSLog("REEL_TABS container=%@ hittable=%d", name, hittable.count)
+            if hittable.count >= Self.tabIndex.count {
+                // Tab bars sit at one edge; anything else hittable (a settings gear, a stepper)
+                // is elsewhere. Taking the five that share the dominant edge coordinate keeps
+                // stray buttons out without depending on any label.
+                let byY = Dictionary(grouping: hittable) { Int($0.frame.midY / 40) }
+                if let row = byY.values.filter({ $0.count >= Self.tabIndex.count })
+                                      .max(by: { $0.count < $1.count }) {
+                    return row.sorted { $0.frame.minX < $1.frame.minX }
+                }
+            }
+        }
+        return []
+    }
+
+    private func tapTab(_ app: XCUIApplication, _ key: String) {
+        guard let idx = Self.tabIndex[key] else { return }
+        let tabs = tabButtons(app)
+        if idx < tabs.count {
+            tabs[idx].tap()
+            // Selection is the only locale-independent evidence the tap landed — the label is
+            // translated, so there is nothing else to assert against.
+            if tabs[idx].isSelected { return }
+        }
+        // An English run can still match by label; also a genuine fallback if selection state
+        // stops being exposed.
+        for q in [app.tabBars.buttons[key], app.buttons[key]] where q.firstMatch.exists {
+            if q.firstMatch.isHittable { q.firstMatch.tap(); return }
+        }
+        XCTFail("could not reach tab '\(key)' (resolved \(tabs.count) tab buttons) — "
+                + "reel would show the wrong screen under the right caption")
     }
 
     private func mark(_ key: String) { NSLog("REEL_SCENE %@ %.3f", key, Date().timeIntervalSince1970) }

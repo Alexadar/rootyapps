@@ -4,20 +4,24 @@ import EphemerisKit
 
 struct IOSContentView: View {
     @StateObject private var vm = ChartViewModel()
-    // Lets screenshot tooling open a specific tab via SIMCTL_CHILD_EPHEMERIS_TAB.
-    @State private var selection = Int(ProcessInfo.processInfo.environment["EPHEMERIS_TAB"] ?? "0") ?? 0
+    // Tab selection lives in ReelDriver rather than @State so the preview-reel tour can advance
+    // it in-process. Driving it from a UI test meant finding the tab bar, which is translated on
+    // every locale and not even exposed as a tabBar on iPad — see ReelDriver for the three ways
+    // that failed silently. Normal launches are unaffected: it just holds EPHEMERIS_TAB.
+    @StateObject private var reel = ReelDriver()
 
     // Native TabView → the real iOS 26 Liquid Glass tab bar (floats in the glass layer).
     // The sky is each tab's `.background(AppBackground())`: gradient + glows are static,
     // only the stars parallax (in-canvas, so no exposed edge), tilt zeroed at launch so
     // holding the phone upright doesn't shove the sky into a black bar.
     var body: some View {
-        TabView(selection: $selection) {
+        TabView(selection: $reel.tab) {
             tab("Chart", "circle.hexagongrid", 0) {
                 MomentControls(vm: vm)
-                ChartWheel(positions: vm.positions, aspects: vm.aspects)
+                ChartWheel(positions: vm.positions, aspects: vm.aspects, houses: vm.houses)
                     .onAppear { vm.startChartDemo() }
                     .onDisappear { vm.stopChartDemo() }
+                HousesCard(vm: vm)
             }
             tab("Positions", "list.star", 1) {
                 MomentControls(vm: vm)
@@ -33,15 +37,17 @@ struct IOSContentView: View {
                 EventsView(events: vm.timelineEvents, now: vm.instant)
             }
         }
-        // Selecting Chart restarts the demo from the top — the reel tour bounces away and back
-        // so the choreography replays inside the recorded window (onAppear alone is unreliable
-        // in TabView, which keeps tab content mounted).
-        .onChange(of: selection) { _, newValue in
+        // Selecting Chart restarts the demo from the top (onAppear alone is unreliable in
+        // TabView, which keeps tab content mounted).
+        .onChange(of: reel.tab) { _, newValue in
             if newValue == 0 { vm.startChartDemo() }
         }
+        .onAppear { reel.start() }
     }
 
-    private func tab<Content: View>(_ title: String, _ icon: String, _ tag: Int,
+    // `title` is a LocalizedStringKey so `navigationTitle`/`Label` hit their localizing overloads;
+    // a `String` here would silently select the verbatim ones and leave the tab bar English.
+    private func tab<Content: View>(_ title: LocalizedStringKey, _ icon: String, _ tag: Int,
                                     @ViewBuilder _ content: () -> Content) -> some View {
         NavigationStack {
             ScrollView {
@@ -50,6 +56,7 @@ struct IOSContentView: View {
             }
             .background(AppBackground())
             .navigationTitle(title)
+            .settingsToolbar()
         }
         .tabItem { Label(title, systemImage: icon) }
         .tag(tag)

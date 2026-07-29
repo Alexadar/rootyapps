@@ -9,7 +9,8 @@ extension View {
 
 /// Uppercase card header, Nebula styling.
 struct CardHeader: View {
+    /// The English catalog key. Resolved by `NebulaCardHeader`, which must uppercase it.
     let title: String
-    var trailing: String? = nil
+    var trailing: Text? = nil
     var body: some View { NebulaCardHeader(title: title, trailing: trailing) }
 }

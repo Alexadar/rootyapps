@@ -5,6 +5,8 @@ import EphemerisKit
 struct ChartWheel: View {
     let positions: [BodyPosition]
     let aspects: [DetectedAspect]
+    /// Cusps to overlay; nil when no place is set (the wheel then draws exactly as before).
+    var houses: HouseCusps? = nil
 
     var body: some View {
         Canvas { ctx, size in
@@ -34,6 +36,25 @@ struct ChartWheel: View {
                     .font(.system(size: chip * 0.6)).foregroundStyle(NebulaPalette.signGlyph), at: gp)
             }
 
+            // House cusps — thin spokes across the inner disc, numbered just inside the band.
+            // Drawn under the chords so the aspect pattern still reads on top.
+            if let houses {
+                let faint = GraphicsContext.Shading.color(NebulaPalette.ring.opacity(0.55))
+                for n in 1...12 {
+                    let lon = houses.cusp(n)
+                    var spoke = Path()
+                    spoke.move(to: pt(c, Rpl * 0.30, lon))
+                    spoke.addLine(to: pt(c, Rin, lon))
+                    ctx.stroke(spoke, with: faint,
+                               style: StrokeStyle(lineWidth: 0.75, dash: [s * 0.012, s * 0.010]))
+                    // House number in the middle of the house, just inside the zodiac band.
+                    let mid = lon + AstroMath.norm360(houses.cusp(n + 1) - lon) / 2
+                    ctx.draw(Text(n, format: .number)
+                        .font(.system(size: s * 0.026))
+                        .foregroundStyle(NebulaPalette.textFaint), at: pt(c, Rin * 0.90, mid))
+                }
+            }
+
             // Aspect chords — neon double-stroke (halo + core)
             for a in aspects {
                 guard let pa = positions.first(where: { $0.body == a.a }),
@@ -45,6 +66,29 @@ struct ChartWheel: View {
                            style: StrokeStyle(lineWidth: s * 0.013, lineCap: .round))
                 ctx.stroke(line, with: .color(a.type.color),
                            style: StrokeStyle(lineWidth: s * 0.004, lineCap: .round))
+            }
+
+            // The four angles — heavier accent axes, drawn over the chords so they stay legible.
+            if let houses {
+                let a = houses.angles
+                for (lon, label) in [(a.ascendant, "AC"), (a.midheaven, "MC")] {
+                    var axis = Path()
+                    axis.move(to: pt(c, Rpl * 0.30, lon))
+                    axis.addLine(to: pt(c, Rin, lon))
+                    ctx.stroke(axis, with: .color(NebulaPalette.accent.opacity(0.85)),
+                               style: StrokeStyle(lineWidth: s * 0.005, lineCap: .round))
+                    // Opposite end (DC / IC) — same axis, lighter.
+                    var opposite = Path()
+                    opposite.move(to: pt(c, Rpl * 0.30, lon + 180))
+                    opposite.addLine(to: pt(c, Rin, lon + 180))
+                    ctx.stroke(opposite, with: .color(NebulaPalette.accent.opacity(0.35)),
+                               style: StrokeStyle(lineWidth: s * 0.003, lineCap: .round))
+                    // Label sits in the empty lane between the planet ring and the zodiac band
+                    // (the same lane as the house numbers), so it doesn't sit on top of a glyph.
+                    ctx.draw(Text(label)
+                        .font(.system(size: s * 0.030, weight: .bold))
+                        .foregroundStyle(NebulaPalette.accent), at: pt(c, Rin * 0.96, lon))
+                }
             }
 
             // Planet glyphs — glowing light symbols

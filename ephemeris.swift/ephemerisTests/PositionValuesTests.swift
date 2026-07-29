@@ -1,7 +1,7 @@
 import Testing
 import Foundation
 import EphemerisKit
-@testable import ephemeris_swift
+@testable import Ephemeris
 
 /// UI value tests — verify the *exact figures* the Positions/Aspects views render
 /// (zodiac sign, degree-minute string, retrograde flag, aspect orb) for known
@@ -43,14 +43,17 @@ struct PositionValuesTests {
     /// the engine suite validates, re-asserted at the ViewModel layer.
     @Test func positionsMatchHorizons() {
         let v = vm(at: utc(2026, 6, 21, 0, 0))
-        // body, Horizons longitude, expected sign, tolerance (Schlyter precision)
+        // body, Horizons longitude, expected sign, tolerance.
+        // 0.1° (6′) — matched to the Kit's measured accuracy, not the old 0.25–1.0° guesses.
+        // See EphemerisKit's AccuracyTests/Oracles for the 3,940-sample Horizons sweep.
+        let tol = 0.1
         let refs: [(CelestialBody, Double, ZodiacSign, Double)] = [
-            (.sun,      89.6656, .gemini, 0.25),
-            (.mercury, 113.3888, .cancer, 0.8),
-            (.venus,   128.7542, .leo,    0.8),
-            (.mars,     54.3946, .taurus, 0.8),
-            (.jupiter, 118.0494, .cancer, 1.0),
-            (.saturn,   13.6804, .aries,  1.0),
+            (.sun,      89.6656, .gemini, tol),
+            (.mercury, 113.3888, .cancer, tol),
+            (.venus,   128.7542, .leo,    tol),
+            (.mars,     54.3946, .taurus, tol),
+            (.jupiter, 118.0494, .cancer, tol),
+            (.saturn,   13.6804, .aries,  tol),
         ]
         for (body, lon, sign, tol) in refs {
             let p = pos(v, body)

@@ -9,7 +9,7 @@ struct EventsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            CardHeader(title: "Events", trailing: "\(events.count)")
+            CardHeader(title: "Events", trailing: Text(events.count, format: .number))
             if events.isEmpty {
                 Text("No events in this window.").font(.callout).foregroundStyle(NebulaPalette.textSecondary)
             } else {
@@ -20,18 +20,18 @@ struct EventsView: View {
                             .frame(width: 30, height: 30)
                             .background(NebulaPalette.accent.opacity(0.15), in: .circle)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(e.label()).font(.callout)
+                            EventLabel.text(for: e).font(.callout)
                             HStack(spacing: 6) {
-                                Text(e.eventClass.rawValue).foregroundStyle(NebulaPalette.accent)
+                                Text(EventLabel.className(for: e)).foregroundStyle(NebulaPalette.accent)
                                 if e.retroA || e.retroB {
-                                    Text("℞").foregroundStyle(NebulaPalette.retrograde)
+                                    Text(verbatim: "℞").foregroundStyle(NebulaPalette.retrograde)
                                 }
-                                Text("#\(e.code)").foregroundStyle(NebulaPalette.textFaint)
+                                Text(verbatim: "#\(e.code)").foregroundStyle(NebulaPalette.textFaint)
                             }
                             .font(.caption2)
                         }
                         Spacer()
-                        Text(e.date.formatted(date: .abbreviated, time: .omitted))
+                        Text(e.date, format: .dateTime.day().month(.abbreviated).year())
                             .font(.caption).monospacedDigit()
                             .foregroundStyle(Calendar.current.isDate(e.date, inSameDayAs: now)
                                              ? NebulaPalette.textPrimary : NebulaPalette.textSecondary)
