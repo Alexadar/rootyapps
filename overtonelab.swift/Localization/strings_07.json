@@ -570,6 +570,25 @@
       "ja": "Qts",
       "ko": "Qts",
       "pt-BR": "Qts"
+    },
+    "All tools": {
+      "comment": "Watch — accessibility label on the header button that returns to the tool list",
+      "de": "Alle Werkzeuge",
+      "fr": "Tous les outils",
+      "es": "Todas las herramientas",
+      "it": "Tutti gli strumenti",
+      "pl": "Wszystkie narzędzia",
+      "uk": "Усі інструменти",
+      "cs": "Všechny nástroje",
+      "hu": "Összes eszköz",
+      "ro": "Toate instrumentele",
+      "el": "Όλα τα εργαλεία",
+      "tr": "Tüm araçlar",
+      "nl": "Alle gereedschappen",
+      "sv": "Alla verktyg",
+      "ja": "すべてのツール",
+      "ko": "모든 도구",
+      "pt-BR": "Todas as ferramentas"
     }
   }
 }

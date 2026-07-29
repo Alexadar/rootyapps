@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 import TimingKit
 import PitchKit
 import SPLKit
@@ -25,9 +26,12 @@ import ThieleKit
 
 /// One page per tool, plus the catalog at index 0.
 ///
-/// The list is a *page*, not a pushed screen: swiping up from the first tool reveals it and
-/// swiping back down returns, so the gesture that opens the catalog also closes it. That is why
-/// there is no back button — adding one would put two competing ways to leave the same page.
+/// Two states, one at a time: the catalog, or one tool.
+///
+/// There is no paging between tools. It was tried on the wrist and lost twice over — reaching the
+/// catalog from the 20th tool was twenty swipes, and vertical paging fought the Digital Crown for
+/// every turn, so a crown twist meant to change a value would leave the screen instead. Removing
+/// it hands the crown back to the fields, which is the only thing it should ever have driven here.
 enum WatchPage: Hashable {
     case list
     case tool(Tool)
@@ -36,21 +40,23 @@ enum WatchPage: Hashable {
 // MARK: - Front door
 
 /// Opens on the last-used tool, already showing a number: zero taps to an answer.
-/// Crown-page or swipe between all 26; swipe past the first to reach the catalog.
+/// Back to the catalog is a left-to-right swipe or a tap on the header.
 struct WatchRootView: View {
     @AppStorage("otl.watch.lastTool") private var lastToolID: String = Tool.tempo.rawValue
     @State private var page: WatchPage = .list
 
     var body: some View {
-        TabView(selection: $page) {
-            WatchToolList(selection: $page)
-                .tag(WatchPage.list)
-            ForEach(Tool.allCases) { tool in
-                WatchToolView(tool: tool).tag(WatchPage.tool(tool))
+        ZStack {
+            OTL.background.ignoresSafeArea()
+            switch page {
+            case .list:
+                WatchToolList(selection: $page)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+            case .tool(let tool):
+                WatchToolView(tool: tool, page: $page)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
-        .tabViewStyle(.verticalPage)
-        .background(OTL.background)
         .onAppear {
             // Land on the tool the wrist was last using, not on the catalog: the whole point of
             // this app is that the answer is already on screen when it lights up.
@@ -66,22 +72,55 @@ struct WatchRootView: View {
 
 struct WatchToolView: View {
     let tool: Tool
+    @Binding var page: WatchPage
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 5) {
-                    Image(systemName: tool.symbol).foregroundStyle(tool.accent)
-                    Text(tool.title)
-                        .font(.system(.caption, design: .monospaced).weight(.semibold))
-                        .foregroundStyle(OTL.textSecondary)
+                // The header IS the way back to the catalog. Paging down works too, but from the
+                // 20th tool that is twenty swipes — the list has to be one tap from anywhere.
+                Button { page = .list } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: tool.symbol).foregroundStyle(tool.accent)
+                        Text(tool.title)
+                            .font(.system(.caption, design: .monospaced).weight(.semibold))
+                            .foregroundStyle(OTL.textSecondary)
+                        Spacer(minLength: 2)
+                        // Twice the glyph it started as, on its own tinted disc: at a glance this
+                        // has to read as the way out, not as decoration next to the title.
+                        Image(systemName: "list.bullet")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(tool.accent)
+                            .frame(width: 34, height: 34)
+                            .background(tool.accent.opacity(0.16), in: .circle)
+                    }
+                    .contentShape(.rect)
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("All tools"))
                 body(for: tool)
             }
             .padding(.horizontal, 8)
             .padding(.bottom, 6)
         }
-        .containerBackground(tool.accent.gradient.opacity(0.18), for: .tabView)
+        .background(
+            RadialGradient(colors: [tool.accent.opacity(0.18), .clear],
+                           center: .top, startRadius: 0, endRadius: 170)
+                .ignoresSafeArea()
+        )
+        // Swipe left-to-right → the catalog: the same direction watchOS uses for "back" everywhere
+        // else, so the hand already knows it. The header button stays as the visible affordance.
+        // simultaneousGesture, not gesture, so the screen still scrolls; the 2:1 test keeps a
+        // diagonal scroll from being read as a sideways flick.
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 30)
+                .onEnded { drag in
+                    guard drag.translation.width > 40,
+                          abs(drag.translation.width) > abs(drag.translation.height) * 2 else { return }
+                    WKInterfaceDevice.current().play(.click)
+                    withAnimation { page = .list }
+                }
+        )
     }
 
     // Split in two: a single 26-case switch in one `body` blows past the type-checker's

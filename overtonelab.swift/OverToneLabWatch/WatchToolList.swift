@@ -1,11 +1,8 @@
 import SwiftUI
 
-/// The catalog, as the FIRST page of the same vertical TabView — not a pushed screen.
-///
-/// The original design paged straight between tools with no way to see what existed. Adding a
-/// list as page zero keeps the sweeps exactly as they are: tapping a row jumps paging to that
-/// tool, and swiping back up returns here. That is why there is no back button — the gesture
-/// that got you here also brings you back.
+/// The catalog — the app's other half. Tap a row, get that tool; swipe left-to-right or tap the
+/// tool's header to come back. Nothing pages between tools any more, so the crown belongs to the
+/// fields and this list is the only way to change which tool you are on.
 struct WatchToolList: View {
     @Binding var selection: WatchPage
 
@@ -15,7 +12,7 @@ struct WatchToolList: View {
                 Section {
                     ForEach(Tool.tools(in: section)) { tool in
                         Button {
-                            selection = .tool(tool)
+                            withAnimation { selection = .tool(tool) }
                         } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: tool.symbol)
@@ -52,6 +49,6 @@ struct WatchToolList: View {
             }
         }
         .listStyle(.carousel)
-        .containerBackground(OTL.background.gradient, for: .tabView)
+        .background(OTL.background.ignoresSafeArea())
     }
 }
