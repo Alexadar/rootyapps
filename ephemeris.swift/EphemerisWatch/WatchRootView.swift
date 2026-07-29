@@ -73,7 +73,13 @@ struct WatchRootView: View {
         }
         .onAppear {
             WatchBridge.shared.start()
-            if screen == nil { screen = WatchScreen(rawValue: lastScreenID) ?? .wheel }
+            if screen == nil {
+                // EPHEMERIS_SCREEN pins the opening screen for screenshot tooling, mirroring the
+                // phone's EPHEMERIS_TAB. Without it a capture run would need one build per screen.
+                let forced = ProcessInfo.processInfo.environment["EPHEMERIS_SCREEN"]
+                screen = forced.flatMap(WatchScreen.init(rawValue:))
+                       ?? WatchScreen(rawValue: lastScreenID) ?? .wheel
+            }
         }
         .onChange(of: screen) { _, new in if let new { lastScreenID = new.rawValue } }
         .onReceive(NotificationCenter.default.publisher(for: .ephemerisSharedStoreChanged)) { _ in

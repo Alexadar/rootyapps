@@ -1,0 +1,39 @@
+{
+  "_note": "Apple Watch section for 1.0.5 build 6, PREPENDED to the existing whatsNew (see push_watch_whatsnew.py). The watch app is the headline of this build, so it leads. Complications listed are Retrograde + next event ONLY — the Moon and Rising Sign complications were removed before ship, so no locale may promise them. The word for 'complication' and for 'watch face' was taken from Apple's own localized watchOS User Guide per locale, not translated: Greek is 'πολυπλοκότητες' (not the medical 'επιπλοκές'), Ukrainian is 'функції' (not the calque 'ускладнення'), and es-ES/es-MX genuinely differ ('esfera del reloj' vs 'carátula').",
+
+  "en-US": "NEW: AN APPLE WATCH APP.\n\nThe chart on your wrist. The Digital Crown scrolls through time and the planets move with it. Positions, retrogrades, the Moon's phase and the events ahead are all computed on the watch itself, offline. Complications for the watch face show the current retrogrades and the next event.\n\nIncluded with the app — no extra purchase.\n\n",
+
+  "de-DE": "NEU: EINE APP FÜR DIE APPLE WATCH.\n\nDas Horoskoprad am Handgelenk. Die Digital Crown dreht die Zeit vor und zurück — die Planeten wandern mit. Positionen, Rückläufe, Mondphase und die kommenden Ereignisse werden direkt auf der Uhr berechnet, offline. Komplikationen fürs Zifferblatt zeigen die aktuellen Rückläufe und das nächste Ereignis.\n\nIn der App enthalten — kein zusätzlicher Kauf.\n\n",
+
+  "fr-FR": "NOUVEAU : UNE APP POUR L'APPLE WATCH.\n\nLa carte du ciel au poignet. La Digital Crown fait défiler le temps — les planètes suivent. Positions, rétrogradations, phase de la Lune et événements à venir sont calculés sur la montre elle-même, hors ligne. Des complications pour le cadran affichent les rétrogradations en cours et le prochain événement.\n\nIncluse dans l'app — sans achat supplémentaire.\n\n",
+
+  "es-ES": "NUEVO: UNA APP PARA EL APPLE WATCH.\n\nLa carta en la muñeca. La Digital Crown recorre el tiempo y los planetas se mueven con él. Posiciones, retrogradaciones, la fase de la Luna y los próximos eventos se calculan en el propio reloj, sin conexión. Las complicaciones para la esfera del reloj muestran las retrogradaciones actuales y el próximo evento.\n\nIncluida en la app, sin compra adicional.\n\n",
+
+  "es-MX": "NUEVO: UNA APP PARA EL APPLE WATCH.\n\nLa carta en la muñeca. La Digital Crown recorre el tiempo y los planetas se mueven con él. Posiciones, retrogradaciones, la fase de la Luna y los próximos eventos se calculan en el propio reloj, sin conexión. Las complicaciones para la carátula muestran las retrogradaciones actuales y el próximo evento.\n\nIncluida en la app, sin compra adicional.\n\n",
+
+  "pt-BR": "NOVIDADE: UM APP PARA O APPLE WATCH.\n\nO mapa no pulso. A Digital Crown percorre o tempo e os planetas acompanham. Posições, retrogradações, a fase da Lua e os próximos eventos são calculados no próprio relógio, offline. As complicações para o mostrador mostram as retrogradações atuais e o próximo evento.\n\nIncluído no app — sem compra adicional.\n\n",
+
+  "it": "NOVITÀ: UN'APP PER APPLE WATCH.\n\nLa carta al polso. La Digital Crown scorre il tempo e i pianeti si muovono con esso. Posizioni, retrogradazioni, la fase della Luna e i prossimi eventi vengono calcolati sull'orologio stesso, offline. Le complicazioni per il quadrante mostrano le retrogradazioni in corso e il prossimo evento.\n\nInclusa nell'app, senza acquisti aggiuntivi.\n\n",
+
+  "nl-NL": "NIEUW: EEN APP VOOR DE APPLE WATCH.\n\nDe horoscoop om de pols. Met de Digital Crown schuif je door de tijd en bewegen de planeten mee. Posities, retrogradaties, de maanfase en de komende gebeurtenissen worden op het horloge zelf berekend, offline. Complicaties voor de wijzerplaat tonen de huidige retrogradaties en de eerstvolgende gebeurtenis.\n\nInbegrepen bij de app — geen extra aankoop.\n\n",
+
+  "sv": "NYTT: EN APP FÖR APPLE WATCH.\n\nHoroskopet på handleden. Digital Crown rullar genom tiden och planeterna följer med. Positioner, retrograder, månfasen och kommande händelser beräknas på klockan själv, offline. Komplikationer för urtavlan visar pågående retrograder och nästa händelse.\n\nIngår i appen — inget extra köp.\n\n",
+
+  "pl": "NOWOŚĆ: APLIKACJA NA APPLE WATCH.\n\nKosmogram na nadgarstku. Digital Crown przewija czas, a planety poruszają się razem z nim. Pozycje, retrogradacje, faza Księżyca i nadchodzące wydarzenia są obliczane na samym zegarku, bez internetu. Komplikacje na tarczy zegarka pokazują trwające retrogradacje i najbliższe wydarzenie.\n\nW zestawie z aplikacją — bez dodatkowych zakupów.\n\n",
+
+  "uk": "НОВЕ: ЗАСТОСУНОК ДЛЯ APPLE WATCH.\n\nКарта неба на зап'ясті. Digital Crown прокручує час, і планети рухаються разом із ним. Позиції, ретроградності, фаза Місяця та найближчі події обчислюються просто на годиннику, без інтернету. Функції на циферблаті показують поточні ретроградності й наступну подію.\n\nВходить до застосунку — без додаткових покупок.\n\n",
+
+  "cs": "NOVINKA: APLIKACE PRO APPLE WATCH.\n\nHoroskop na zápěstí. Digital Crown posouvá čas a planety se pohybují s ním. Polohy, retrogradace, fáze Měsíce i nadcházející události se počítají přímo na hodinkách, offline. Komplikace na ciferníku ukazují probíhající retrogradace a nejbližší událost.\n\nSoučást aplikace — bez dalších nákupů.\n\n",
+
+  "hu": "ÚJDONSÁG: APPLE WATCH ALKALMAZÁS.\n\nA horoszkópkerék a csuklón. A Digital Crown végiggörgeti az időt, a bolygók pedig vele mozognak. A pozíciók, a retrográd bolygók, a Hold fázisa és a közelgő események magán az órán, offline számítódnak ki. Az óraszámlapra tehető komplikációk az aktuális retrográd bolygókat és a következő eseményt mutatják.\n\nAz alkalmazás része — nincs további vásárlás.\n\n",
+
+  "ro": "NOU: O APLICAȚIE PENTRU APPLE WATCH.\n\nHarta cerului pe încheietură. Digital Crown derulează timpul, iar planetele se mișcă odată cu el. Pozițiile, retrogradările, faza Lunii și evenimentele următoare sunt calculate chiar pe ceas, offline. Complicațiile pentru cadranul de ceas arată retrogradările curente și următorul eveniment.\n\nInclusă în aplicație — fără achiziții suplimentare.\n\n",
+
+  "el": "ΝΕΟ: ΜΙΑ ΕΦΑΡΜΟΓΗ ΓΙΑ ΤΟ APPLE WATCH.\n\nΟ χάρτης του ουρανού στον καρπό. Το Digital Crown κυλά τον χρόνο και οι πλανήτες κινούνται μαζί του. Οι θέσεις, οι ανάδρομες πορείες, η φάση της Σελήνης και τα επόμενα γεγονότα υπολογίζονται στο ίδιο το ρολόι, χωρίς σύνδεση. Οι πολυπλοκότητες για την πρόσοψη ρολογιού δείχνουν τις τρέχουσες ανάδρομες πορείες και το επόμενο γεγονός.\n\nΠεριλαμβάνεται στην εφαρμογή — χωρίς πρόσθετη αγορά.\n\n",
+
+  "tr": "YENİ: APPLE WATCH UYGULAMASI.\n\nGökyüzü haritası bilekte. Digital Crown zamanı ileri geri sarar, gezegenler de onunla birlikte hareket eder. Konumlar, gerileme hareketleri, Ay'ın evresi ve yaklaşan olaylar doğrudan saatin üzerinde, çevrimdışı hesaplanır. Saat kadranı için komplikasyonlar süregelen gerilemeleri ve bir sonraki olayı gösterir.\n\nUygulamaya dahildir — ek satın alma yok.\n\n",
+
+  "ja": "新機能：Apple Watch App。\n\n星図を手首に。Digital Crown を回すと時間が進み、惑星もそれに合わせて動きます。天体の位置、逆行、月の満ち欠け、これからの天文現象は、すべて時計本体でオフライン計算されます。文字盤用のコンプリケーションには、現在の逆行と次の天文現象が表示されます。\n\nApp に含まれます。追加購入は不要です。\n\n",
+
+  "ko": "새로운 기능: Apple Watch 앱.\n\n손목 위의 천궁도. Digital Crown을 돌리면 시간이 흐르고 행성도 함께 움직입니다. 위치, 역행, 달의 위상, 다가오는 천문 현상까지 모두 시계에서 오프라인으로 계산됩니다. 시계 페이스용 컴플리케이션은 현재 역행 중인 행성과 다음 현상을 보여 줍니다.\n\n앱에 포함되어 있습니다. 추가 구매가 필요하지 않습니다.\n\n"
+}
