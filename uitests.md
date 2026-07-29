@@ -294,6 +294,26 @@ a screen (`CalcModel`, a view model, a settings store), it needs a `bundle.unit-
 is where "every toggle, both directions" goes. The UI suite then asserts the toggle **exists and is
 hooked up once**, not that it is correct in all 64 combinations.
 
+> **Adding that target: `TEST_HOST` must be set by hand in this monorepo.** XcodeGen derives
+> `TEST_HOST` from the **target** name, but every app here sets a different `PRODUCT_NAME` for
+> Guideline 5.2.5 (`marinenav` → "Marine Nav"). The derived path does not exist and the build fails
+> before a single test runs:
+>
+> ```
+> Could not find test host for <app>Tests: TEST_HOST evaluates to
+>   ".../Debug-iphonesimulator/marinenav.app/marinenav"
+> ```
+>
+> The bundle layout also differs per platform, so it needs two values:
+>
+> ```yaml
+> TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Marine Nav.app/Marine Nav"
+> "TEST_HOST[sdk=macosx*]": "$(BUILT_PRODUCTS_DIR)/Marine Nav.app/Contents/MacOS/Marine Nav"
+> BUNDLE_LOADER: "$(TEST_HOST)"
+> ```
+>
+> And remember §9: on macOS the unit and UI targets need **separate** `xcodebuild` invocations.
+
 **A dead toggle is caught by the model test only if the toggle's binding is the thing under test.**
 If the model is right and the view binds to the wrong property, only the UI catches it — so keep
 exactly one UI assertion per control: flip it on screen, assert the readout changed.
@@ -425,10 +445,47 @@ grep -rl "digitalCrownRotation" --include='*.swift' . | xargs grep -ln "Button\|
 ```
 
 Fix: `@FocusState`, `.focused($x)` on the crown view, and set it back in `.onAppear` **and** every
-button's action. `.focusable()` alone is not enough.
+button's action. `.focusable()` alone is not enough. Two reclaim points are easy to miss: **sheet
+dismiss** (a sheet takes focus away with it) and **leaving the always-on state** (the view becomes
+focusable again but nothing re-focuses it).
 
-**Nothing catches this but a wrist** — it only manifests on watchOS, and iOS/macOS builds compile
-neither the target nor its focus behaviour.
+### ✅ Correction: this IS testable. Write the regression test.
+
+An earlier version of this section said only a wrist could catch it. That was wrong, and it cost a
+real bug shipping unverified. **The crown is scriptable:**
+
+```swift
+XCUIDevice.shared.rotateDigitalCrown(delta: 10)                    // since Xcode 13
+XCUIDevice.shared.rotateDigitalCrown(delta: 10, velocity: .slow)
+```
+
+In `XCUIAutomation`'s `XCUIDevice.h` as `rotateDigitalCrownByDelta:`, gated on
+`TARGET_OS_WATCH || TARGET_OS_VISION`, mapped to those Swift names by apinotes. Verify against your
+own SDK rather than trusting this doc:
+
+```bash
+grep -rh -A2 rotateDigitalCrown \
+  /Applications/Xcode.app/Contents/Developer/Platforms/*/Developer/Library/Frameworks
+```
+
+The test is four steps, and step 4 is the bug:
+
+1. read the readout
+2. `rotateDigitalCrown` → assert it changed (precondition: scrubbing works)
+3. tap the button that steals focus
+4. `rotateDigitalCrown` again → assert it changed **again**
+
+Before the fix, step 4 changes nothing. This needs a `bundle.ui-testing` target with
+`platform: watchOS` and `TEST_TARGET_NAME: <watch app>` — the phone's UI-test target cannot reach
+the watch app.
+
+What still needs a wrist is **rendering**, not interaction: whether a complication looks right on a
+real face, and the grey-background/`containerBackground` class of defect. "Install and look" applies
+to appearance only.
+
+⚠ `XCUIDevice.Button.back` does **not** exist on watchOS. To leave a sheet, tap something that calls
+`dismiss()` — and if the readout is your assertion subject, re-select the value already in use so
+dismissing does not also change the data.
 
 ---
 
@@ -468,6 +525,77 @@ That is not a code bug. macOS XCUITest needs the host process to hold **Accessib
 **System Settings → Privacy & Security → Accessibility**, add the terminal you run from (and
 Xcode). iOS/iPad simulators need nothing. Ask the owner — it is their machine, and the run takes
 over their screen.
+
+### ⚠ A macOS run can stop and ask for the user's PASSWORD — wait for them
+
+macOS may put up an authorization dialog partway through: an admin-password prompt, a Developer
+Tools access request, or a first-time Accessibility/automation grant. **The run is not hung, it is
+blocked on a human.** Nothing appears in the log while it waits.
+
+If you are an agent with a command timeout, this is the trap: a 10-minute timeout fires, the run is
+killed, and it looks like a test hang or a permissions failure. It is neither.
+
+**The diagnostic signature — learn to recognise it.** A run blocked on a dialog stalls right after
+
+```
+marinenavUITests-Runner[…] [Default] Running tests...
+```
+
+with **zero `Test Case` lines**. That is the tell. XCTest runs test classes alphabetically, so if a
+single *test* were hanging, every class sorting before it would already have reported. No output at
+all means nothing ever started — the block is before the first test, i.e. environmental, not code.
+
+This cost real time once: a stall was blamed on the last test class alphabetically, on the reasoning
+"excluded it, the next run passed." That is correlation, not diagnosis — and it was wrong. Run alone,
+the accused class passed in 50 s. Check the `Test Case` count before blaming any test.
+
+- **Do not kill a macOS test run that has gone quiet.** Tell the owner a dialog may be waiting and
+  give them time to type the password.
+- Prefer a **background run plus a monitor on the log** over a foreground command with a timeout, so
+  a wait costs nothing.
+- Once granted, it is remembered — the next run goes straight through. Budget for it on the FIRST
+  macOS run of a machine or after an Xcode update.
+
+### The same error has a second cause, which has nothing to do with permissions
+
+**Never put a unit-test target and a UI-test target in the same macOS `xcodebuild` invocation.**
+
+```bash
+# WRONG on macOS — prints the automation-mode error above even with permission granted
+xcodebuild test … -destination 'platform=macOS' \
+  -only-testing:<app>UITests -only-testing:<app>Tests
+
+# RIGHT — two invocations
+xcodebuild test … -destination 'platform=macOS' -only-testing:<app>Tests      # unit
+xcodebuild test … -destination 'platform=macOS' -only-testing:<app>UITests    # UI
+```
+
+A unit-test target launches the app as its `TEST_HOST`; the UI runner then tries to launch and
+automate the *same* app. A macOS app is single-instance, so they fight — the same focus fight §12
+warns about for `-parallel-testing-enabled`, arriving disguised as a permissions error. iOS is
+unaffected: both targets can share one invocation there.
+
+Diagnostic that separates the two causes: if the **unit** tests in that run passed and only the UI
+runner failed, permission is fine and this is your problem.
+
+### `descendants(matching: .any).matching(<predicate>)` times out on macOS
+
+```
+Failed to get matching snapshots: Timed out while evaluating UI query.
+```
+
+Matching by **identifier** over `.any` is cheap on both platforms. Matching by a **compound
+predicate** over `.any` walks every element in the tree evaluating `label OR value`, and on macOS it
+does not merely run slowly — it fails, after burning ~135 s. Scope the element type:
+
+```swift
+// times out on macOS
+app.descendants(matching: .any).matching(textMatches(needle)).firstMatch
+// fine, and what you meant anyway — a visible label
+app.descendants(matching: .staticText).matching(textMatches(needle)).firstMatch
+```
+
+Check any last-resort text fallback in a reel/tour helper for this too, not just the assertions.
 
 ---
 

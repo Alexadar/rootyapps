@@ -20,12 +20,12 @@ struct ContentView: View {
     /// `xcrun simctl launch <sim> <bundle> -tool declination`.
     /// Capture/automation affordance only — no product behaviour depends on it.
     static var initialTool: Tool {
-        let args = ProcessInfo.processInfo.arguments
-        if let i = args.firstIndex(of: "-tool"), i + 1 < args.count,
-           let t = Tool(rawValue: args[i + 1]) {
-            return t
+        // DEBUG-only: see `LaunchOverride`. A Release app must not let its navigation be
+        // driven from outside — on macOS that would be `open --args -tool …`.
+        guard let raw = LaunchOverride.argument("tool"), let t = Tool(rawValue: raw) else {
+            return .tides
         }
-        return .tides
+        return t
     }
 
     var body: some View {

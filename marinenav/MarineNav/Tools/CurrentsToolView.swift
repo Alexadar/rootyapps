@@ -200,13 +200,16 @@ struct CurrentsToolView: View {
             }
 
             ToolSection(title: "Axis") {
+                // NOAA's published mean flood/ebb directions for the station — date-independent.
                 ResultRow(label: "Mean flood",
                           value: String(format: "%.0f", model.station.meanFloodDirectionDeg),
-                          unit: "°T")
+                          unit: "°T",
+                          identifier: "result.meanFlood")
                 MarineDivider()
                 ResultRow(label: "Mean ebb",
                           value: String(format: "%.0f", model.station.meanEbbDirectionDeg),
-                          unit: "°T")
+                          unit: "°T",
+                          identifier: "result.meanEbb")
             }
 
             ModelCaveat(title: "Limits of this model",

@@ -23,7 +23,7 @@ final class IdentifierChecks: XCTestCase {
 
     func testTidesIdentifiers() {
         let app = launch(tool: "tides")
-        expect(app, ["input.station", "input.day", "input.units",
+        expect(app, ["input.station", "input.day", "input.units.feet",
                      "result.nowHeight", "result.nowSlope",
                      "chart.tideCurve", "result.extreme.0"])
     }
@@ -54,7 +54,7 @@ final class IdentifierChecks: XCTestCase {
 
     func testSightReductionIdentifiers() {
         let app = launch(tool: "sightReduction")
-        expect(app, ["input.hsDeg", "input.hsMin", "input.indexError", "input.indexSide",
+        expect(app, ["input.hsDeg", "input.hsMin", "input.indexError", "input.indexSide.true",
                      "input.heightOfEye", "input.ghaDeg", "input.ghaMin",
                      "input.decDeg", "input.decMin",
                      "input.assumedLat", "input.assumedLon",
@@ -64,11 +64,15 @@ final class IdentifierChecks: XCTestCase {
 
     // MARK: - The ReelTour contract
     //
-    // ReelTour taps `buttons["tool.<raw>"]`, then the navigation-bar back button,
-    // then swipes a scroll view. Each is asserted here on the element KIND the tour
-    // actually queries — a redesign that turned the sidebar into a tab bar, or that
-    // let a toolbar item become `navigationBars.buttons.firstMatch` on the detail
-    // screen, would break the capture without breaking any other test.
+    // ReelTour resolves catalog rows BY IDENTIFIER ONLY (`toolRow`), then taps the
+    // navigation-bar back button, then swipes a scroll view. Each is asserted here the
+    // way the tour actually queries it — a redesign that turned the sidebar into a tab
+    // bar, or that let a toolbar item become `navigationBars.buttons.firstMatch` on the
+    // detail screen, would break the capture without breaking any other test.
+    //
+    // These used to assert `buttons["tool.<raw>"]`, pinning the element TYPE. That is
+    // trap 2: SwiftUI does not publish the same type on every platform, and the target
+    // was iOS-only so the mismatch could never surface.
 
     func testReelTourContract() {
         let app = XCUIApplication()
@@ -76,20 +80,33 @@ final class IdentifierChecks: XCTestCase {
         goToCatalog(app)
 
         for tool in ["tides", "currents", "declination", "distanceBearing", "sightReduction"] {
-            XCTAssertTrue(app.buttons["tool.\(tool)"].firstMatch.waitForExistence(timeout: 5),
-                          "ReelTour taps buttons[\"tool.\(tool)\"] — sidebar rows must stay buttons")
+            XCTAssertTrue(toolRow(app, tool).waitForExistence(timeout: 5),
+                          "ReelTour resolves tool.\(tool) by identifier — the row must stay addressable")
         }
 
-        app.buttons["tool.currents"].firstMatch.tap()
+        toolRow(app, "currents").tap()
         XCTAssertTrue(app.scrollViews.firstMatch.waitForExistence(timeout: 5),
                       "ReelTour swipes app.scrollViews.firstMatch")
 
-        let back = app.navigationBars.buttons.firstMatch
-        XCTAssertTrue(back.waitForExistence(timeout: 5),
-                      "ReelTour taps navigationBars.buttons.firstMatch to go back")
-        back.tap()
-        XCTAssertTrue(app.buttons["tool.tides"].firstMatch.waitForExistence(timeout: 5),
-                      "back() must return to the catalog, not somewhere else")
+        // ⚠ LAYOUT-DEPENDENT, and this is what the iPad run caught. On compact width the tool
+        // was PUSHED, so there is a back button and popping it returns to the catalog. On
+        // regular width (iPad, Mac) the sidebar never left: there is nothing to pop, and
+        // `navigationBars.buttons.firstMatch` is the SIDEBAR TOGGLE — tapping it hides the very
+        // rows this test then looks for. `ReelTour.back()` guards on hittability for exactly
+        // this reason; the contract test must model the same two worlds or it asserts an
+        // iPhone-only truth and fails on iPad against a perfectly correct app.
+        if toolRow(app, "tides").isHittable {
+            // Regular width: selecting a tool swapped the detail pane and the catalog stayed put.
+            XCTAssertTrue(toolRow(app, "tides").waitForExistence(timeout: 5),
+                          "regular width: the sidebar must stay addressable after selecting a tool")
+        } else {
+            let back = app.navigationBars.buttons.firstMatch
+            XCTAssertTrue(back.waitForExistence(timeout: 5),
+                          "compact width: ReelTour taps navigationBars.buttons.firstMatch to go back")
+            back.tap()
+            XCTAssertTrue(toolRow(app, "tides").waitForExistence(timeout: 5),
+                          "back() must return to the catalog, not somewhere else")
+        }
     }
 
     /// The catalog labels are ReelTour's last-resort fallback, so they are part of
@@ -98,9 +115,30 @@ final class IdentifierChecks: XCTestCase {
         let app = XCUIApplication()
         app.launch()
         goToCatalog(app)
-        for title in ["Tides", "Currents", "Declination", "Distance & Bearing", "Sight Reduction"] {
-            XCTAssertTrue(app.staticTexts[title].firstMatch.waitForExistence(timeout: 5),
-                          "ReelTour falls back to staticTexts[\"\(title)\"]")
+        // Read the title FROM THE ROW, found by identifier. Two earlier shapes both failed on
+        // macOS and each failed for a different reason worth remembering:
+        //
+        //   app.descendants(matching: .any).matching(textMatches(title))
+        //       -> "Timed out while evaluating UI query" after 135 s (predicate over everything)
+        //   app.descendants(matching: .staticText).matching(textMatches(title))
+        //       -> fast, but only 'Tides' resolved: macOS does not publish these row titles as
+        //          staticText, which is trap 2 again — I had swapped one type assumption for
+        //          another.
+        //
+        // Anchoring on the identifier and searching WITHIN that row is both cheap (a handful of
+        // elements, not the whole tree) and type-agnostic.
+        let titles = [("tides", "Tides"), ("currents", "Currents"),
+                      ("declination", "Declination"),
+                      ("distanceBearing", "Distance & Bearing"),
+                      ("sightReduction", "Sight Reduction")]
+        for (tool, title) in titles {
+            let row = toolRow(app, tool)
+            XCTAssertTrue(row.waitForExistence(timeout: 5), "row tool.\(tool) must exist")
+            let readable = row.text.contains(title)
+                || row.descendants(matching: .any).matching(textMatches(title)).firstMatch.exists
+            XCTAssertTrue(readable,
+                          "'\(title)' must be readable on its row — ReelTour's last-resort "
+                          + "fallback matches on it. Row text was '\(row.text)'")
         }
     }
 
@@ -119,10 +157,10 @@ final class IdentifierChecks: XCTestCase {
     /// sits behind the navigation-bar back button. On iPad/Mac the sidebar is already
     /// visible and this is a no-op.
     private func goToCatalog(_ app: XCUIApplication) {
-        if app.buttons["tool.tides"].firstMatch.waitForExistence(timeout: 3) { return }
+        if toolRow(app, "tides").waitForExistence(timeout: 3) { return }
         let back = app.navigationBars.buttons.firstMatch
         if back.waitForExistence(timeout: 3) { back.tap() }
-        _ = app.buttons["tool.tides"].firstMatch.waitForExistence(timeout: 5)
+        _ = toolRow(app, "tides").waitForExistence(timeout: 5)
     }
 
     private func expect(_ app: XCUIApplication, _ identifiers: [String],

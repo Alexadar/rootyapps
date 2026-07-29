@@ -112,9 +112,9 @@ struct SightReductionToolView: View {
                     degreeField($model.indexArcmin, range: 0...10, suffix: "′",
                                 fraction: 0...1, identifier: "input.indexError")
                     MarineSegmented(selection: $model.indexOffTheArc,
-                                    options: [(true, "Off arc"), (false, "On arc")])
+                                    options: [(true, "Off arc"), (false, "On arc")],
+                                    idPrefix: "input.indexSide")
                         .frame(width: 140)
-                        .accessibilityIdentifier("input.indexSide")
                 }
                 .frame(minHeight: MarineMetrics.controlHeight)
                 .padding(.horizontal, 12)

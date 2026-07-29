@@ -353,11 +353,21 @@ struct NumberField: View {
     }
 }
 
-/// Segmented choice, restyled. Keeps `accessibilityIdentifier` on the control.
+/// Segmented choice, restyled.
+///
+/// ⚠ Each option carries its OWN identifier, `<idPrefix>.<value>`. Two reasons:
+///
+/// 1. Trap 1 — an identifier on the container overwrites its children's, so a caller that only
+///    put `input.units` on the `HStack` left no way to address one segment: not a test, not
+///    VoiceOver. Identifiers belong on the leaves.
+/// 2. A unit toggle is exactly the control that ships broken (relabels without converting), and
+///    proving it works means tapping a SPECIFIC segment, not "the control".
 struct MarineSegmented<T: Hashable>: View {
     @Environment(\.marine) private var theme
     @Binding var selection: T
     let options: [(value: T, title: String)]
+    /// Prefix for the per-option identifiers, e.g. `input.units` -> `input.units.meters`.
+    var idPrefix: String? = nil
 
     var body: some View {
         HStack(spacing: 0) {
@@ -371,6 +381,7 @@ struct MarineSegmented<T: Hashable>: View {
                         .foregroundStyle(selected ? theme.palette.surface : theme.palette.inkDim)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier(idPrefix.map { "\($0).\(option.value)" } ?? "")
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))

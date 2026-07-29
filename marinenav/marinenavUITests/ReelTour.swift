@@ -39,12 +39,17 @@ final class ReelTour: XCTestCase {
     // MARK: steps
 
     /// Tap a catalog row by its accessibility identifier (set in ContentView).
+    ///
+    /// Queried type-agnostically: SwiftUI publishes the row as a `button` on iOS but not
+    /// necessarily on macOS, and the old three-step `buttons` → `otherElements` → `staticTexts`
+    /// fallback silently tapped the WRONG thing when the first two missed — which is exactly how
+    /// a reel gets captured against the default screen.
     private func open(_ app: XCUIApplication, _ tool: String) {
-        let cell = app.buttons["tool.\(tool)"].firstMatch
-        if cell.waitForExistence(timeout: 4) { cell.tap(); return }
-        let other = app.otherElements["tool.\(tool)"].firstMatch
-        if other.waitForExistence(timeout: 2) { other.tap(); return }
-        app.staticTexts[label(for: tool)].firstMatch.tap()
+        let row = toolRow(app, tool)
+        if row.waitForExistence(timeout: 4) { row.tap(); return }
+        // Last resort only, and now loud about it: a silent fallback produced subtly wrong video.
+        NSLog("REEL_WARN row tool.%@ not found by identifier — falling back to its title", tool)
+        textElement(app, label(for: tool)).tap()
     }
 
     private func label(for tool: String) -> String {
@@ -66,7 +71,9 @@ final class ReelTour: XCTestCase {
     /// whatever `staticTexts` fallback happens to match. Hittability is the test, not existence:
     /// after an iPhone push the catalog rows are often still in the hierarchy, just off-screen.
     private func back(_ app: XCUIApplication) {
-        if app.buttons["tool.tides"].firstMatch.isHittable { dwell(0.4); return }
+        // Hittability, not existence — after an iPhone push the rows are often still in the
+        // hierarchy, just off-screen. Type-agnostic for the same reason as `open`.
+        if toolRow(app, "tides").isHittable { dwell(0.4); return }
         let b = app.navigationBars.buttons.firstMatch
         if b.exists { b.tap() }
         dwell(0.7)

@@ -337,3 +337,33 @@ Authored against the source; **not compiled here**. Before review:
    the crown on F1 and F5.
 5. Grep for `preferredColorScheme` — exactly one hit, in `WatchRootView`.
 6. Grep for `.hidden()` next to `accessibilityIdentifier` — zero hits.
+
+---
+
+## Adopted 2026-07-29 — deviations from this handoff
+
+The files here are the PRE-ADOPTION baseline and are deliberately left unchanged, so
+"was this defect in the handoff or did we introduce it?" stays answerable. What shipped
+differs in these ways:
+
+1. **Crown focus (defect in this handoff).** `WatchTidesNowView` and `WatchDeclinationView`
+   use `.focusable(…)` but never bind `@FocusState`. On watchOS `.digitalCrownRotation`
+   only delivers to the view that HOLDS focus and `Button` is focusable by default, so
+   tapping any sibling button silently kills the crown — worst on Tides, where **NOW** is
+   exactly what you press after scrubbing. Shipped code adds `@FocusState crownFocused`,
+   `.focused($crownFocused)`, and reclaims focus in `onAppear`, in every button action, on
+   sheet dismiss, and on leaving the always-on state. Declination is subtler: its crown and
+   its "Use my position" button are in different branches, so the crown appears with focus
+   still on a button that no longer exists.
+2. **`WatchStationStore` moved to its own file and onto the App Group suite.** The widget
+   extension is a separate process; against standard `UserDefaults` every complication
+   family renders "no station chosen" forever. Splitting the file also stops the extension
+   compiling the picker, which dragged in CoreLocation/GeodesyKit and failed to link.
+3. **Nonisolated reads** added to the store: `TimelineProvider` and default arguments are
+   not main-actor isolated and cannot touch `shared`.
+4. **Scrub-on-launch guarded.** `onAppear { resetScrub }` writes `crownMinute`, which fired
+   `.onChange` and opened the app already "scrubbing".
+5. **Corner complication** rebuilt as a Weather-style bezel arc carrying the day's low and
+   high, rather than a bare numeral.
+6. **Crown sensitivity** raised to `.high` on both screens; Tides keeps `by: 15` so the
+   cursor still lands on the 97-sample grid.

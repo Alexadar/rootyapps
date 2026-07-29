@@ -71,6 +71,12 @@ struct WatchDeclinationView: View {
     /// screen. Labelled as stale when used.
     @AppStorage("watch.lastLat") private var lastLat: Double = .nan
     @AppStorage("watch.lastLon") private var lastLon: Double = .nan
+    /// ⚠ watchOS: the crown only reaches the view that HOLDS FOCUS, and `Button` is focusable
+    /// by default, so `.focusable()` alone is not enough. Here the trap is subtler than a
+    /// sibling button: the crown and the "Use my position" button live in DIFFERENT branches,
+    /// so once a fix arrives the crown appears while focus is still on a button that no longer
+    /// exists — and the heading silently refuses to turn.
+    @FocusState private var crownFocused: Bool
 
     private var coordinate: (coord: CLLocationCoordinate2D, live: Bool)? {
         if case .located(let l) = location.state {
@@ -175,6 +181,10 @@ struct WatchDeclinationView: View {
                             }
                         }
                         .focusable(!luminanceReduced)
+                        .focused($crownFocused)
+                        // Fires when this branch appears — i.e. the moment a position lands
+                        // and the heading control replaces the opt-in button.
+                        .onAppear { crownFocused = true }
                         .digitalCrownRotation($model.trueHeading,
                                               from: 0, through: 360, by: 1,
                                               // 360 one-degree detents at .low was a lot of
@@ -182,6 +192,9 @@ struct WatchDeclinationView: View {
                                               sensitivity: .high,
                                               isContinuous: true,
                                               isHapticFeedbackEnabled: true)
+                        .onChange(of: luminanceReduced) { _, dimmed in
+                            if !dimmed { crownFocused = true }
+                        }
 
                         if !luminanceReduced {
                             HStack(spacing: 6) {
@@ -209,6 +222,7 @@ struct WatchDeclinationView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                             Button {
                                 location.request()
+                                crownFocused = true
                             } label: {
                                 Label("Use my position", systemImage: "location")
                                     .font(WatchType.label)

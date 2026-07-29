@@ -30,9 +30,9 @@ struct WatchRootView: View {
     /// `TabView`, so there is no other way to drive them from a script. Capture/automation
     /// affordance only; no product behaviour depends on it.
     static var initialPage: Page {
-        let args = ProcessInfo.processInfo.arguments
-        guard let i = args.firstIndex(of: "-page"), i + 1 < args.count else { return .tides }
-        switch args[i + 1] {
+        // DEBUG-only: see `LaunchOverride`.
+        guard let raw = LaunchOverride.argument("page") else { return .tides }
+        switch raw {
         case "currents":    return .currents
         case "mark":        return .mark
         case "declination": return .declination

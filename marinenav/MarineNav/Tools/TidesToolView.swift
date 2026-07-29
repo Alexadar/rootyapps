@@ -235,11 +235,15 @@ struct TidesToolView: View {
             }
 
             ToolSection(title: "Datum") {
-                ResultRow(label: "Chart datum", value: "MLLW")
+                ResultRow(label: "Chart datum", value: "MLLW",
+                          identifier: "result.chartDatum")
                 MarineDivider()
+                // NOAA's published Z0 for the station — date-independent, so this is the one
+                // number on this screen a UI test can assert against a citation.
                 ResultRow(label: "Mean sea level above datum",
                           value: model.format(model.station.meanWaterLevel),
-                          unit: model.unitLabel)
+                          unit: model.unitLabel,
+                          identifier: "result.meanSeaLevel")
                 MarineDivider()
                 Text("Heights are above mean lower low water, the datum US charts sound to.")
                     .font(MarineType.caption)
@@ -311,9 +315,9 @@ struct TidesToolView: View {
             MarineDivider()
 
             MarineSegmented(selection: $model.unit,
-                            options: [(.feet, "Feet"), (.meters, "Metres")])
+                            options: [(.feet, "Feet"), (.meters, "Metres")],
+                            idPrefix: "input.units")
                 .padding(MarineMetrics.cardPadding)
-                .accessibilityIdentifier("input.units")
         }
         .padding(.bottom, MarineMetrics.sectionGap)
     }

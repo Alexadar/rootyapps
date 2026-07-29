@@ -12,10 +12,13 @@ settings:
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0.0"
-    # Build 3: adds the Apple Watch app + complications (build 2 was the day-window fix alone).
+    # Build 4: watchOS crown focus fix — `.digitalCrownRotation` only reaches the view holding
+    # focus, and Button is focusable by default, so tapping NOW (or the station picker, or the
+    # location opt-in) silently killed the crown. Build 3 shipped that defect.
+    # Build 3 added the Apple Watch app + complications; build 2 was the day-window fix alone.
     # MARKETING_VERSION deliberately stays 1.0.0 — this version has never been public, so it
     # must still debut as 1.0. See docs/new_app_blueprint.md P8, and truecourse commit eb59379f.
-    CURRENT_PROJECT_VERSION: "3"
+    CURRENT_PROJECT_VERSION: "4"
     ENABLE_PREVIEWS: YES
     GENERATE_INFOPLIST_FILE: YES
 packages:
@@ -98,6 +101,8 @@ targets:
       # deliberately data-free). The watch app is standalone, so it needs its own copy of the
       # constants compiled in — referenced in place rather than duplicated.
       - path: MarineNav/StationCatalog.swift
+      # The one gated door for launch overrides, shared with the phone/Mac target.
+      - path: MarineNav/LaunchOverride.swift
       # The SAME Icon Composer bundle the phone and Mac use. `.icon` is universal — its
       # icon.json already declares `supported-platforms: { circles: [watchOS], squares: shared }`,
       # so the watchOS circular variant comes out of this one source. No separate asset catalog.
@@ -185,9 +190,52 @@ targets:
         PRODUCT_NAME: "Marine Nav Complications"
         GENERATE_INFOPLIST_FILE: NO
 
+  # §C.2 — the state space, off the UI. Combinatorial coverage through a real screen is ~1.1 s
+  # per interaction and never gets run; against the view models it is microseconds.
+  marinenavTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: marinenavTests
+    dependencies:
+      - target: marinenav
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.marinenavTests
+        GENERATE_INFOPLIST_FILE: YES
+        # TEST_HOST must be set BY HAND. XcodeGen derives it from the TARGET name (`marinenav`),
+        # but this app sets PRODUCT_NAME to "Marine Nav" for Guideline 5.2.5 — so the derived
+        # path `marinenav.app/marinenav` does not exist and the build fails with "Could not find
+        # test host". The bundle layout also differs per platform.
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Marine Nav.app/Marine Nav"
+        "TEST_HOST[sdk=macosx*]": "$(BUILT_PRODUCTS_DIR)/Marine Nav.app/Contents/MacOS/Marine Nav"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+  # watchOS UI tests. The crown IS scriptable: XCUIDevice.rotateDigitalCrown(delta:) exists
+  # (XCUIDevice.h, gated on TARGET_OS_WATCH, mapped by apinotes from
+  # rotateDigitalCrownByDelta:). So the focus-theft bug is a regression test, not a manual check.
+  marinenavWatchUITests:
+    type: bundle.ui-testing
+    platform: watchOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: marinenavWatchUITests
+      # Reused in place, NOT copied: same `text` / `textMatches` / `any` helpers the phone suite
+      # uses, so a macOS-vs-iOS attribute fix reaches both.
+      - path: marinenavUITests/UITestSupport.swift
+    dependencies:
+      - target: marinenavWatch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.marinenavWatchUITests
+        TEST_TARGET_NAME: marinenavWatch
+
   marinenavUITests:
     type: bundle.ui-testing
-    supportedDestinations: [iOS]
+    # macOS too: the app ships on the Mac, and with [iOS] alone `xcodebuild` refuses the macOS
+    # destination outright ("does not support My Mac's platform") — so every hard-coded element
+    # type in the suite was untested on the one platform where that trap actually bites.
+    supportedDestinations: [iOS, macOS]
     sources:
       - path: marinenavUITests
     dependencies:
@@ -202,8 +250,13 @@ schemes:
     build:
       targets:
         marinenavWatch: all
+        marinenavWatchUITests: [test]
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - marinenavWatchUITests
   marinenav:
     build:
       targets:
@@ -217,9 +270,11 @@ schemes:
       targets:
         marinenav: all
         marinenavUITests: [test]
+        marinenavTests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
         - marinenavUITests
+        - marinenavTests

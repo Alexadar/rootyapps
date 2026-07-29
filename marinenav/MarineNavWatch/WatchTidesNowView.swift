@@ -135,6 +135,13 @@ struct WatchTidesNowView: View {
     /// Set only around the programmatic `crownMinute` write in `resetScrub`, so that
     /// write is not mistaken for the user turning the crown.
     @State private var ignoreNextCrownChange = false
+    /// ⚠ watchOS: `.digitalCrownRotation` only delivers to the view that HOLDS FOCUS, and
+    /// `Button` is focusable by default. `.focusable()` alone is not enough — tapping any
+    /// sibling button moves focus off the scroll view and the crown goes silently dead.
+    /// Nothing crashes and nothing looks wrong; the day just stops scrubbing. Focus has to be
+    /// reclaimed explicitly after every button on this screen. (Same pattern ephemeris's
+    /// watch root already uses.)
+    @FocusState private var crownFocused: Bool
     @State private var showStationPicker = false
 
     /// Re-renders the readout on the minute. The always-on state is not a live
@@ -174,7 +181,10 @@ struct WatchTidesNowView: View {
                                 .monospacedDigit()
                             Text(snap.zone).font(WatchType.mono11)
                             Spacer(minLength: 4)
-                            Button("NOW") { withAnimation { resetScrub(snap) } }
+                            Button("NOW") {
+                                withAnimation { resetScrub(snap) }
+                                crownFocused = true          // else the crown dies on the tap
+                            }
                                 .font(.system(size: 11, weight: .semibold))
                                 .buttonStyle(.plain)
                                 .foregroundStyle(theme.palette.water)
@@ -234,6 +244,7 @@ struct WatchTidesNowView: View {
             // The crown owns the day. Detents every 15 minutes match the sample
             // grid, so the cursor never lands between two knowns.
             .focusable(!luminanceReduced)
+            .focused($crownFocused)
             .digitalCrownRotation($crownMinute,
                                   from: 0, through: 1440, by: 15,
                                   // .high = less rotation per detent. Kept `by: 15` so the
@@ -250,11 +261,20 @@ struct WatchTidesNowView: View {
                 model.isScrubbing = true
                 model.scrubMinute = new
             }
-            .onAppear { resetScrub(snap) }
+            .onAppear { resetScrub(snap); crownFocused = true }
+            // Coming back from the always-on state the view becomes focusable again, but
+            // nothing re-focuses it on its own.
+            .onChange(of: luminanceReduced) { _, dimmed in
+                if !dimmed { crownFocused = true }
+            }
         }
         .environment(\.watchTheme, luminanceReduced ? theme.dimmed : theme)
         .sheet(isPresented: $showStationPicker) {
             WatchStationPickerView(selection: $model.stationID)
+        }
+        // The sheet takes focus with it; reclaim it on the way back.
+        .onChange(of: showStationPicker) { _, shown in
+            if !shown { crownFocused = true }
         }
         .onReceive(minuteTick) { now in
             guard !luminanceReduced else { return }
