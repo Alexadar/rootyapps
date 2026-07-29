@@ -105,9 +105,9 @@ struct ChartWheel: View {
         .nebulaCard()
     }
 
-    /// 0° Aries at left, counterclockwise (matches the demo).
+    /// 0° Aries at left, counterclockwise. Shared with the watch via `ChartGeometry` — this was
+    /// duplicated once and the copies silently disagreed about direction.
     private func pt(_ c: CGPoint, _ r: CGFloat, _ lon: Double) -> CGPoint {
-        let ang = (180 - lon) * .pi / 180
-        return CGPoint(x: c.x + r * cos(ang), y: c.y - r * sin(ang))
+        ChartGeometry.point(center: c, radius: r, longitude: lon)
     }
 }

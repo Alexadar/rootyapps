@@ -1,4 +1,5 @@
 import SwiftUI
+import EphemerisKit
 #if os(macOS)
 import AppKit
 #endif
@@ -21,6 +22,11 @@ struct EphemerisApp: App {
                 // tree in the new language with no relaunch.
                 .environment(\.locale, language.locale)
                 .tint(NebulaPalette.accent)
+                #if os(iOS)
+                // The watch cannot read the phone's app group — app groups do not cross devices —
+                // so the place and language are pushed over WatchConnectivity instead.
+                .onAppear { WatchBridge.shared.start() }
+                #endif
                 .preferredColorScheme(.dark)   // Nebula is a single fully-dark theme
         }
         #if os(macOS)

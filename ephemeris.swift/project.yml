@@ -28,6 +28,10 @@ targets:
     dependencies:
       - package: EphemerisKit
         product: EphemerisKit
+      # Embeds the watch app so both ship in one build and one App Store record.
+      - target: EphemerisWatch
+        embed: true
+        platformFilter: iOS
     sources:
       - path: ephemeris
       - path: liquid_icon.icon
@@ -58,19 +62,42 @@ targets:
     dependencies:
       - package: EphemerisKit
         product: EphemerisKit
-      # Embeds the complications into the watch app. Without this the extension compiles and is
-      # then discarded — the complication simply never appears in the face picker.
+      # Embeds the complications. Without this the extension builds and is then discarded, so the
+      # complication never appears in the face picker.
       - target: EphemerisWidget
         embed: true
     sources:
       - path: EphemerisWatch
+      # Same Icon Composer source as the phone and Mac — one icon, three platforms, so a tweak
+      # can never land on some of them and not others.
+      - path: liquid_icon.icon
+        buildPhase: resources
+      # Shared with the phone rather than copied: the aspect palette is the same product, and a
+      # second copy would drift the moment either is tweaked. The string catalog is shared for the
+      # same reason — one catalogue serving both targets is what stops the same sentence being
+      # translated twice and differently.
+      - path: ephemeris/Views/AspectColor.swift
+      - path: ephemeris/Views/ChartGeometry.swift
+      - path: ephemeris/Views/ColorHex.swift
+      - path: ephemeris/DesignSystem/LanguageStore.swift
+      # One MoonDisc, drawn identically in the app and the complication.
+      - path: EphemerisWidget/DateOnlyComplications.swift
+      - path: EphemerisWidget/MoonDisc.swift
+      - path: ephemeris/Localizable.xcstrings
+        buildPhase: resources
     settings:
       base:
         PRODUCT_NAME: Ephemeris
         PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.ephemeris.watchkitapp
+        ASSETCATALOG_COMPILER_APPICON_NAME: liquid_icon
         CODE_SIGN_ENTITLEMENTS: AppGroup.entitlements
         INFOPLIST_KEY_CFBundleDisplayName: Ephemeris
         INFOPLIST_KEY_WKApplication: YES
+        # Companion, not watch-only — matching eartharound: the watch app ships inside the iOS
+        # app record, so one listing and one price cover both. RunsIndependently keeps it usable
+        # with the phone out of range, which matters because it computes everything on-device.
+        # WKWatchOnly is mutually exclusive with these two and must NOT be set.
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: oleksandr.aisixteen.ephemeris
         INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: YES
 
   # ── Complications / widgets ──────────────────────────────────────────────
@@ -84,14 +111,13 @@ targets:
         product: EphemerisKit
     sources:
       - path: EphemerisWidget
-    info:
-      path: EphemerisWidget-Info.plist
     settings:
       base:
         PRODUCT_NAME: EphemerisWidget
         PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.ephemeris.watchkitapp.widgets
         CODE_SIGN_ENTITLEMENTS: AppGroup.entitlements
         GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: EphemerisWidget-Info.plist
         SKIP_INSTALL: YES
 
   ephemerisTests:

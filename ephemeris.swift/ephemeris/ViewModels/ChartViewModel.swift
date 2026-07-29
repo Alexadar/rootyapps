@@ -58,6 +58,11 @@ final class ChartViewModel: ObservableObject {
                                    name: d.string(forKey: Self.placeKey))
         }
         recompute()   // didSet doesn't fire during init, so seed here
+        // …and neither does the shared-store mirror. Without this the app group stays empty for
+        // anyone who simply launches with a place already saved, so every complication that needs
+        // an observer renders its "no place" state forever — which looks like the place was never
+        // set rather than never shared.
+        syncShared()
     }
 
     private func persistTimeZone() {
@@ -68,7 +73,22 @@ final class ChartViewModel: ObservableObject {
         UserDefaults.standard.set(houseSystem.rawValue, forKey: Self.houseSystemKey)
     }
 
+    /// Mirror the observer to the app group (for this device's widgets) AND across the pairing
+    /// (for the watch). Two channels because they cover different gaps: the group does not cross
+    /// devices, and WatchConnectivity does not serve extensions.
+    private func syncShared() {
+        let store = SharedStore()
+        store.write(location: location)
+        store.write(houseSystem: houseSystem)
+        #if os(iOS)
+        WatchBridge.shared.push(location: location,
+                                languageCode: UserDefaults.standard.string(forKey: "appLanguage") ?? "",
+                                houseSystem: houseSystem)
+        #endif
+    }
+
     private func persistLocation() {
+        syncShared()
         let d = UserDefaults.standard
         guard let location else {
             [Self.latKey, Self.lonKey, Self.placeKey].forEach(d.removeObject(forKey:))
