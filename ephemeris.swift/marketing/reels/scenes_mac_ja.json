@@ -19,39 +19,39 @@
   },
   "app": {
     "name": "Ephemeris",
-    "tagline": "Your pocket sky almanac",
+    "tagline": "ポケットの中の天空暦",
     "icon": "liquid_icon.icon/Assets/1024.png"
   },
   "scenes": [
     {
       "key": "chart",
       "clip": "macclip_chart.mov",
-      "title": "Houses, angles, aspects",
-      "subtitle": "A full chart for any moment"
+      "title": "ハウスとアングル",
+      "subtitle": "どの瞬間も完全なチャート"
     },
     {
       "key": "positions",
       "clip": "macclip_positions.mov",
-      "title": "Every body, placed",
-      "subtitle": "Sign, degree & daily motion"
+      "title": "すべての天体を配置",
+      "subtitle": "星座・度数・日々の運行"
     },
     {
       "key": "aspects",
       "clip": "macclip_aspects.mov",
-      "title": "Aspects at a glance",
-      "subtitle": "Color-coded and orb-aware"
+      "title": "アスペクトを一目で",
+      "subtitle": "色分けとオーブ対応"
     },
     {
       "key": "cycle",
       "clip": "macclip_cycle.mov",
-      "title": "Follow the synodic cycle",
-      "subtitle": "Phases, elongations, stations"
+      "title": "会合周期を追う",
+      "subtitle": "位相・離角・留"
     },
     {
       "key": "events",
       "clip": "macclip_events.mov",
-      "title": "Never miss a moment",
-      "subtitle": "Ingresses, lunations, retrogrades"
+      "title": "見逃さない",
+      "subtitle": "入宮・朔望・逆行"
     }
   ]
 }

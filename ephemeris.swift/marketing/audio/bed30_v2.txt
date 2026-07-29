@@ -1,0 +1,37 @@
+bed30_v2.wav — Ephemeris Sky app-preview music bed (current)
+
+Generated 2026-07-29 with the on-device MLX port of Stable Audio 3.
+
+  model     dit sm-music, decoder same-s
+  seconds   30
+  steps     100          <- high on purpose; 8-step output is the sampler's rough draft
+  seed      20260729     <- recorded, so this exact bed can be reproduced
+  cfg       default
+  render    38.8s wall, peak RAM 1.94 GB
+
+prompt:
+  calm cosmic ambient, warm analog synth pads, slow shimmering arpeggio, deep spacious reverb,
+  weightless and hopeful, gentle evolving drone, no drums, no percussion, no vocals
+
+negative prompt:
+  drums, percussion, beat, vocals, harsh, distorted, noisy
+
+Reproduce exactly:
+  cd ~/Projects/AudioProto/reference/stable-audio-3/optimized/mlx
+  /Users/oleksandr/miniconda3/envs/fantastic/bin/python scripts/sa3_mlx.py \
+    --prompt "<above>" --negative-prompt "<above>" \
+    --dit sm-music --decoder same-s --seconds 30 --steps 100 --seed 20260729 \
+    --out bed30_v2.wav
+
+Post-step (already applied to the shipped file):
+  ffmpeg -i <raw> -af loudnorm=I=-16:TP=-1.5:LRA=11 -ar 44100 -ac 2 bed30_v2.wav
+  raw generation came out at -23.0 dB mean / -7.0 dB peak, which is inaudible once store_preview
+  applies its own volume=0.85. Normalised to -16 LUFS: now -17.6 dB mean / -2.3 dB peak.
+
+NO fades and no gain beyond that normalisation are baked in, unlike bed30.wav. store_preview.py
+applies its own fade-in (0.6s), fade-out (1.5s) and volume=0.85 at mux time — bed30.wav ALSO had
+fades baked in, so every reel scored with it was double-faded. Do not pre-fade this file.
+
+Supersedes bed30.wav, which is kept beside it and must not be deleted: it is the bed the
+Jul 26 English reels were scored with, its seed was never recorded (so it cannot be regenerated),
+and its two provenance notes disagree about what prompt produced it.

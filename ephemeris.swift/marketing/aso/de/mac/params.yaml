@@ -1,0 +1,29 @@
+platform: mac
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/ephemeris.swift/marketing/raw/de/mac
+  output_folder: /Users/oleksandr/Projects/rootyapps/ephemeris.swift/marketing/aso/de/mac
+
+style:
+  bg_gradient: true
+  bg_color_top: '#0B1020'
+  bg_color_bottom: '#1A1330'
+  title_color: '#ffffff'
+  subtitle_color: '#9FB4FF'
+  screenshot_zoom: 1.0
+  screenshot_move_down: 0
+  border_width: 10
+  border_radius: 36
+  text_padding: 60
+
+texts:
+  - title: "Ephemeris Sky"
+    subtitle: "Positionen, Aspekte & synodischer Zyklus"
+  - title: "Jede Position"
+    subtitle: "Tropisch, geozentrisch, zum Datum"
+  - title: "Aspekte"
+    subtitle: "Berechnet, nicht geraten"
+  - title: "Merkurs Phasen"
+    subtitle: "Konjunktionen, Rückläufe, Stationen"
+  - title: "Ereignis-Zeitleiste"
+    subtitle: "Eintritte, Lunationen & Aspekte"

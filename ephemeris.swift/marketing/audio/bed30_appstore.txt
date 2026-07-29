@@ -1,0 +1,33 @@
+bed30_appstore.wav — the music currently ON SALE, recovered from the App Store (2026-07-29)
+
+THIS IS THE CANONICAL BED. It is the track a customer hears today on the live 1.0.4 listing.
+
+How it was recovered, and why it had to be:
+  The bed that shipped with the first submission was never kept. `bed30.wav` in this folder is a
+  LATER, different track (cosmic ambient) — it correlates 0.008 with what the store serves, while
+  correlating 0.998 with the July framed_preview files, i.e. bed30.wav is what we uploaded in July
+  but Apple still serves the asset processed at FIRST upload. `bed30.txt` describes a "noir
+  late-night radio / open-road night-drive" track, which matches what came back — so that file was
+  the original bed's provenance note all along, left behind after the .wav itself was replaced.
+
+  App Store Connect exposes appPreviews[].videoUrl on a READY_FOR_SALE version. It serves an HLS
+  master playlist, not an mp4, so it must be pulled with ffmpeg from the highest audio rendition:
+
+    videoUrl -> master.m3u8 -> EXT-X-MEDIA GROUP-ID="audio-stereo-128"
+    ffmpeg -i <that .m3u8> -ac 2 -ar 44100 live_audio.wav
+
+Post-processing applied to the file in this folder:
+  ffmpeg -i live_audio.wav -af loudnorm=I=-16:TP=-1.5:LRA=11 -ar 44100 -ac 2 bed30_appstore.wav
+  Recovered at -25.5 dB RMS because the served asset already carries the mux's volume=0.85 plus
+  Apple's HE-AAC re-encode. Normalised to -16 LUFS: now -18.6 dB mean / -4.5 dB peak.
+
+Caveats, stated plainly:
+  • It is a lossy recovery — 128 kbit/s AAC decoded back to WAV, not the original render.
+  • It already has the mux's fade-in/fade-out baked in, so the mux's own fades land on top. At
+    0.6s in and 1.5s out that is cosmetically negligible, but it is not a raw bed.
+  • No prompt or seed exists for it, so it cannot be regenerated — only re-recovered from the
+    store. Do not delete this file.
+
+Siblings:
+  bed30.wav        — cosmic ambient, replaced the original at some point; NOT what is on sale
+  bed30_v2.wav     — new 100-step render, seed 20260729, reproducible; unused while this is canonical

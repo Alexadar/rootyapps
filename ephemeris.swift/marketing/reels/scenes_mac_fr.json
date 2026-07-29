@@ -19,39 +19,39 @@
   },
   "app": {
     "name": "Ephemeris",
-    "tagline": "Your pocket sky almanac",
+    "tagline": "Votre almanach du ciel de poche",
     "icon": "liquid_icon.icon/Assets/1024.png"
   },
   "scenes": [
     {
       "key": "chart",
       "clip": "macclip_chart.mov",
-      "title": "Houses, angles, aspects",
-      "subtitle": "A full chart for any moment"
+      "title": "Maisons, angles, aspects",
+      "subtitle": "Un thème complet, à tout instant"
     },
     {
       "key": "positions",
       "clip": "macclip_positions.mov",
-      "title": "Every body, placed",
-      "subtitle": "Sign, degree & daily motion"
+      "title": "Chaque astre, situé",
+      "subtitle": "Signe, degré & mouvement diurne"
     },
     {
       "key": "aspects",
       "clip": "macclip_aspects.mov",
-      "title": "Aspects at a glance",
-      "subtitle": "Color-coded and orb-aware"
+      "title": "Les aspects d'un coup d'œil",
+      "subtitle": "Couleurs et orbes maîtrisés"
     },
     {
       "key": "cycle",
       "clip": "macclip_cycle.mov",
-      "title": "Follow the synodic cycle",
-      "subtitle": "Phases, elongations, stations"
+      "title": "Suivre le cycle synodique",
+      "subtitle": "Phases, élongations, stations"
     },
     {
       "key": "events",
       "clip": "macclip_events.mov",
-      "title": "Never miss a moment",
-      "subtitle": "Ingresses, lunations, retrogrades"
+      "title": "Ne rien manquer",
+      "subtitle": "Ingrès, lunaisons, rétrogradations"
     }
   ]
 }

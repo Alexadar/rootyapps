@@ -1,0 +1,90 @@
+{
+  "_readme": [
+    "Per-locale reel captions + outro tagline. gen_scenes.py stamps these into scenes_<locale>.json,",
+    "reusing the English scenes.json for timing, canvas, style and the scene KEYS — only the words",
+    "change, because the timing aligns to the demo tour and must not drift per language.",
+    "",
+    "Reel captions are tighter than screenshot captions: they sit in a 22% caption band over a",
+    "moving frame and are on screen for 4-5 seconds. A line that wraps to three lines is unreadable",
+    "at that length, so these are shorter than the equivalent lines in ../captions.json.",
+    "",
+    "Never translated: Ephemeris Sky."
+  ],
+  "locales": {
+    "de": {
+      "tagline": "Deine Himmelsalmanach für unterwegs",
+      "scenes": [
+        [
+          "Häuser, Achsen, Aspekte",
+          "Ein volles Horoskop für jeden Moment"
+        ],
+        [
+          "Jeder Körper, verortet",
+          "Zeichen, Grad & Tagesbewegung"
+        ],
+        [
+          "Aspekte auf einen Blick",
+          "Farbcodiert und orbisgenau"
+        ],
+        [
+          "Dem synodischen Zyklus folgen",
+          "Phasen, Elongationen, Stationen"
+        ],
+        [
+          "Nichts mehr verpassen",
+          "Eintritte, Lunationen, Rückläufe"
+        ]
+      ]
+    },
+    "fr": {
+      "tagline": "Votre almanach du ciel de poche",
+      "scenes": [
+        [
+          "Maisons, angles, aspects",
+          "Un thème complet, à tout instant"
+        ],
+        [
+          "Chaque astre, situé",
+          "Signe, degré & mouvement diurne"
+        ],
+        [
+          "Les aspects d'un coup d'œil",
+          "Couleurs et orbes maîtrisés"
+        ],
+        [
+          "Suivre le cycle synodique",
+          "Phases, élongations, stations"
+        ],
+        [
+          "Ne rien manquer",
+          "Ingrès, lunaisons, rétrogradations"
+        ]
+      ]
+    },
+    "ja": {
+      "tagline": "ポケットの中の天空暦",
+      "scenes": [
+        [
+          "ハウスとアングル",
+          "どの瞬間も完全なチャート"
+        ],
+        [
+          "すべての天体を配置",
+          "星座・度数・日々の運行"
+        ],
+        [
+          "アスペクトを一目で",
+          "色分けとオーブ対応"
+        ],
+        [
+          "会合周期を追う",
+          "位相・離角・留"
+        ],
+        [
+          "見逃さない",
+          "入宮・朔望・逆行"
+        ]
+      ]
+    }
+  }
+}
