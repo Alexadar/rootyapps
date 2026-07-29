@@ -1,0 +1,177 @@
+name: storypole
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+packages:
+  DimensionKit:
+    path: Kits/Dimension/DimensionKit
+  LayoutKit:
+    path: Kits/Layout/LayoutKit
+  VolumeKit:
+    path: Kits/Volume/VolumeKit
+  PitchKit:
+    path: Kits/Pitch/PitchKit
+  GeometryKit:
+    path: Kits/Geometry/GeometryKit
+  LumberKit:
+    path: Kits/Lumber/LumberKit
+  GaugeKit:
+    path: Kits/Gauge/GaugeKit
+targets:
+  storypole:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: DimensionKit
+        product: DimensionKit
+      - package: LayoutKit
+        product: LayoutKit
+      - package: VolumeKit
+        product: VolumeKit
+      - package: PitchKit
+        product: PitchKit
+      - package: GeometryKit
+        product: GeometryKit
+      - package: LumberKit
+        product: LumberKit
+      - package: GaugeKit
+        product: GaugeKit
+      - target: StorypoleWatch
+        embed: true                 # "Embed Watch Content" — iOS only
+        platformFilter: iOS
+    sources:
+      - path: Storypole
+      - path: DesignShared          # tokens, Fmt, LanguageStore, ToolCatalog + the string catalog
+      - path: storypole.icon
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.storypole
+        # Guideline 5.2.5 (Apple trademarks). With GENERATE_INFOPLIST_FILE the generator always
+        # sets CFBundleName (= the macOS menu-bar title) from PRODUCT_NAME and silently ignores
+        # INFOPLIST_KEY_CFBundleName. Without this the binary would ship as the target name.
+        # This has bitten this repo three times.
+        PRODUCT_NAME: Storypole
+        # Pin the Swift module name so renaming the product cannot break `@testable import`.
+        PRODUCT_MODULE_NAME: Storypole
+        # The App Group is what makes Xcode register EXPLICIT bundle IDs. A wildcard profile
+        # (LSKNNBG94G.*) cannot carry an app group, so with no capability Xcode signs everything
+        # with the team wildcard and no App ID is ever created — which is why a plain
+        #  build registers nothing. See the root README.
+        # The Mac entitlements deliberately DO NOT carry the app group. A capability on macOS
+        # forces a Mac App Development profile, and every `-destination platform=macOS` build then
+        # fails without `-allowProvisioningUpdates` — including the UI-test runs. The group exists
+        # for a watch complication to share state on one device; macOS has neither, so it gains
+        # nothing and would cost the simplest build path the project has.
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": storypole-macOS.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": storypole.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": storypole.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: storypole
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_CFBundleDisplayName: Storypole
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        # The incumbent ships no landscape at all — 1★ 2023-04-09: "What app nowadays does not
+        # work in landscape? THIS ONE!" — so the iPhone gets every orientation too.
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+
+  StorypoleWatch:
+    type: application
+    # `platform:`, not `supportedDestinations:` — XcodeGen rejects watchOS in a multiplatform target.
+    platform: watchOS
+    deploymentTarget: "26.0"
+    # Only the Kits the seven wrist tools need. Layout and Lumber stay off the wrist with the
+    # nine cut tools — see docs/DESIGN_BRIEF_storypole.md, platform matrix.
+    dependencies:
+      - package: DimensionKit
+        product: DimensionKit
+      - package: PitchKit
+        product: PitchKit
+      - package: GeometryKit
+        product: GeometryKit
+      - package: LumberKit
+        product: LumberKit
+      - package: GaugeKit
+        product: GaugeKit
+    sources:
+      - path: StorypoleWatch
+      - path: DesignShared          # same tokens and the SAME Localizable.xcstrings as phone
+      - path: storypole.icon        # the Icon Composer source, shared with phone/Mac
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.storypole.watchkitapp
+        CODE_SIGN_ENTITLEMENTS: storypole.entitlements
+        PRODUCT_NAME: Storypole
+        PRODUCT_MODULE_NAME: StorypoleWatch
+        INFOPLIST_KEY_CFBundleDisplayName: Storypole
+        INFOPLIST_KEY_WKApplication: YES
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: oleksandr.aisixteen.storypole
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        WATCHOS_DEPLOYMENT_TARGET: "26.0"
+        TARGETED_DEVICE_FAMILY: "4"
+        ASSETCATALOG_COMPILER_APPICON_NAME: storypole
+        # No GLOBAL_ACCENT_COLOR_NAME here. The watch target compiles no asset catalog — its
+        # sources are StorypoleWatch, DesignShared and the .icon — so naming one produced
+        # "Accent color 'AccentColor' is not present in any asset catalogs" on every build.
+        # The watch tints from SP.accent in code, which is where its colour belongs anyway.
+
+  storypoleUITests:
+    type: bundle.ui-testing
+    # macOS too: the app ships on the Mac, so the suite has to be runnable there. Without this
+    # xcodebuild refuses with "does not support My Mac's platform".
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: storypoleUITests
+    dependencies:
+      - target: storypole
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.storypoleUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: storypole
+schemes:
+  # The routine gate is `swift test` in each Kit plus `xcodebuild build` per platform and the
+  # authored #Previews. The test action below exists for EXPLICIT runs against a real device:
+  #
+  #   xcodebuild test -scheme storypole -destination 'id=<device udid>' \
+  #     -only-testing:storypoleUITests
+  #
+  # Run it on an iPad at least once — the incumbent's defining failure is an iPad-only crash, so a
+  # green iPhone run proves nothing about it. Never point this at a simulator.
+  # The watch app needs its own scheme: `xcodebuild -target … -derivedDataPath` is rejected
+  # ("-scheme is required"), and the storypole scheme cannot target a watch simulator because its
+  # primary target is iOS/macOS. Marketing capture builds the watch app on its own.
+  StorypoleWatch:
+    build:
+      targets:
+        StorypoleWatch: all
+    run:
+      config: Debug
+
+  storypole:
+    build:
+      targets:
+        storypole: all
+        storypoleUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - storypoleUITests

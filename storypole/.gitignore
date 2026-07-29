@@ -1,0 +1,8 @@
+build/
+.build/
+*.xcodeproj
+DerivedData/
+.DS_Store
+# App-icon and asset-catalog PNGs are deliberately NOT ignored — they are tracked source.
+marketing/**/*.png
+marketing/**/*.mp4

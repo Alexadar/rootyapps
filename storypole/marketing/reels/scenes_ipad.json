@@ -1,0 +1,71 @@
+{
+  "canvas": [
+    1200,
+    1600
+  ],
+  "content_len": 26.8,
+  "preview_maxlen": 26.8,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#2A251D",
+    "bg_color_bottom": "#12100D",
+    "title_color": "#F5F2EA",
+    "subtitle_color": "#F2C94C",
+    "caption_band_percent": 22,
+    "side_padding": 46,
+    "border_width": 7,
+    "border_color": "#353026",
+    "border_radius": 30
+  },
+  "app": {
+    "name": "Storypole",
+    "tagline": "Feet, inches & fractions",
+    "icon": "storypole.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Tape",
+      "title": "Add the way a tape reads",
+      "subtitle": "Feet, inches and fractions \u2014 never decimals",
+      "src": [
+        30.2,
+        38.1
+      ],
+      "start": 0.0,
+      "end": 7.9
+    },
+    {
+      "key": "Blade",
+      "title": "Drag the tape itself",
+      "subtitle": "Place the mark, down to a sixteenth",
+      "src": [
+        38.5,
+        45.5
+      ],
+      "start": 7.9,
+      "end": 14.9
+    },
+    {
+      "key": "Layout",
+      "title": "Every mark, not a spacing",
+      "subtitle": "Divide a span, get the list for the board",
+      "src": [
+        51.0,
+        56.6
+      ],
+      "start": 14.9,
+      "end": 20.5
+    },
+    {
+      "key": "Reference",
+      "title": "Every number has a source",
+      "subtitle": "NIST \u00b7 Federal Register \u00b7 USDA, quoted",
+      "src": [
+        58.5,
+        64.8
+      ],
+      "start": 20.5,
+      "end": 26.8
+    }
+  ]
+}

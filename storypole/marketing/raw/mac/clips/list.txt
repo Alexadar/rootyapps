@@ -1,0 +1,4 @@
+file '/Users/oleksandr/Projects/rootyapps/storypole/marketing/raw/mac/clips/1_tape.mp4'
+file '/Users/oleksandr/Projects/rootyapps/storypole/marketing/raw/mac/clips/2_layout.mp4'
+file '/Users/oleksandr/Projects/rootyapps/storypole/marketing/raw/mac/clips/3_lumber.mp4'
+file '/Users/oleksandr/Projects/rootyapps/storypole/marketing/raw/mac/clips/4_reference.mp4'

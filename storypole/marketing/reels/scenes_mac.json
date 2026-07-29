@@ -1,0 +1,73 @@
+{
+  "canvas": [
+    1920,
+    1080
+  ],
+  "content_len": 25.6,
+  "preview_maxlen": 25.6,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#2A251D",
+    "bg_color_bottom": "#12100D",
+    "title_color": "#F5F2EA",
+    "subtitle_color": "#F2C94C",
+    "caption_band_percent": 22,
+    "side_padding": 46,
+    "border_width": 7,
+    "border_color": "#353026",
+    "border_radius": 30,
+    "title_scale": 0.03,
+    "subtitle_scale": 0.02
+  },
+  "app": {
+    "name": "Storypole",
+    "tagline": "Feet, inches & fractions",
+    "icon": "storypole.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Tape",
+      "src": [
+        0.4,
+        6.8
+      ],
+      "start": 0.0,
+      "end": 6.4,
+      "title": "Add the way a tape reads",
+      "subtitle": "Feet, inches and fractions \u2014 never decimals"
+    },
+    {
+      "key": "Layout",
+      "src": [
+        7.4,
+        13.8
+      ],
+      "start": 6.4,
+      "end": 12.8,
+      "title": "Every mark, not a spacing",
+      "subtitle": "Divide a span, get the list for the board"
+    },
+    {
+      "key": "Lumber",
+      "src": [
+        14.4,
+        20.8
+      ],
+      "start": 12.8,
+      "end": 19.2,
+      "title": "Why a 2\u00d74 is 1\u00bd\" \u00d7 3\u00bd\"",
+      "subtitle": "Nominal vs dressed, from NIST PS 20-20"
+    },
+    {
+      "key": "Reference",
+      "src": [
+        21.4,
+        27.8
+      ],
+      "start": 19.2,
+      "end": 25.6,
+      "title": "Every number has a source",
+      "subtitle": "NIST \u00b7 Federal Register \u00b7 USDA, quoted"
+    }
+  ]
+}

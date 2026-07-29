@@ -78,3 +78,8 @@ Thumbs.db
 
 # Cloned external repos (working copies, not part of rootyapps)
 repos/
+
+# Intermediate reel captures. `marketing/raw/**/video/capture.mov` was already covered; the
+# per-scene mac clips are the same kind of thing — regenerable output of make_mac_reel.sh.
+# No .mov is tracked anywhere in this repo; the shipped artefact is the rendered mp4 under aso/.
+**/marketing/raw/**/*.mov
