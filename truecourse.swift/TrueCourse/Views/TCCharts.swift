@@ -73,6 +73,7 @@ struct WindTriangleView: View {
             glyph.fill(aircraftPath(), with: .color(tc.textPrimary))
         }
         .accessibilityElement()
+        .accessibilityIdentifier("chart.windTriangle")
         .accessibilityLabel(
             "Wind triangle. Heading \(Int(solution.trueHeading)) degrees, "
             + "ground speed \(Int(solution.groundSpeed)) knots, "
@@ -181,6 +182,8 @@ struct CGEnvelopeChart: View {
             }
         }
         .frame(minHeight: 260)
+        .accessibilityElement()
+        .accessibilityIdentifier("chart.cgEnvelope")
         .accessibilityLabel(
             "Weight and balance. Loaded \(Int(takeoff.weight)) pounds at CG "
             + String(format: "%.1f", takeoff.arm) + " inches, "

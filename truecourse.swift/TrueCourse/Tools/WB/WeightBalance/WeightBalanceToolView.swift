@@ -95,7 +95,8 @@ struct WeightBalanceToolView: View {
             .inputColumn()
             ResultCard(accent: tc.accent(.performance)) {
                 VStack(alignment: .leading, spacing: 12) {
-                    CardHeader(title: "Result", trailing: vm.inside ? "IN ENVELOPE" : "OUT")
+                    CardHeader(title: "Result", trailing: vm.inside ? "IN ENVELOPE" : "OUT",
+                               trailingID: "verdict.loading")
                     ResultRow(label: "Centre of gravity", value: Fmt.f(vm.result.cgIn, 1), unit: "in", emphasis: true)
                     ResultRow(label: "Gross weight", value: Fmt.i(vm.result.totalWeightLb), unit: "lb")
                     ResultRow(label: "Total moment", value: Fmt.i(vm.result.totalMomentLbIn), unit: "lb·in")
@@ -108,7 +109,8 @@ struct WeightBalanceToolView: View {
     private var envelopeScreen: some View {
         VStack(alignment: .leading, spacing: 12) {
             CardHeader(title: "CG envelope",
-                       trailing: vm.inside ? "WITHIN LIMITS" : "OUT OF LIMITS")
+                       trailing: vm.inside ? "WITHIN LIMITS" : "OUT OF LIMITS",
+                       trailingID: "verdict.envelope")
             CGEnvelopeChart(
                 envelopes: [CGEnvelope(name: "Normal",
                                        vertices: vm.envelope.map { (arm: $0.cgIn, weight: $0.weightLb) })],

@@ -6,7 +6,7 @@ import Foundation
 /// start moving — and they move slowly enough to read, because the reel now plays at natural
 /// speed (the tour is kept under `preview_maxlen`, so `make_reel.sh` applies no speed-up).
 enum DemoSweep {
-    static var isOn: Bool { ProcessInfo.processInfo.environment["TRUECOURSE_DEMO"] != nil }
+    static var isOn: Bool { LaunchOverride.isSet("TRUECOURSE_DEMO") }
 
     static let tickInterval: TimeInterval = 0.06
     static let warmup = 25        // ~1.5 s still, while the scene settles

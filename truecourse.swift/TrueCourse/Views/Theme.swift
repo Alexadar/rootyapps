@@ -50,6 +50,9 @@ struct CardHeader: View {
     @Environment(\.tc) private var tc
     let title: String
     var trailing: String? = nil
+    /// Optional stable id for the trailing text (e.g. a pass/fail verdict) so a test can read it by
+    /// identifier instead of its (screen-varying) string. Invisible — no layout/pixels change.
+    var trailingID: String? = nil
     var body: some View {
         HStack {
             Text(title.uppercased())
@@ -61,6 +64,7 @@ struct CardHeader: View {
                 Text(trailing)
                     .font(.system(.caption, design: .monospaced).weight(.semibold))
                     .foregroundStyle(.tint)   // set .tint(calc.accent) at the screen level
+                    .accessibilityIdentifier(trailingID ?? "")
             }
         }
     }

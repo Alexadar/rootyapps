@@ -107,13 +107,24 @@ final class AccuracyChecks: XCTestCase {
     }
 
     /// The W&B envelope screen has no numeric ResultRow — assert the in-limits verdict shows.
+    /// Read by the stable `verdict.envelope` id (not the raw string, which differs from the Loading
+    /// screen's "IN ENVELOPE") and via `.text` (a plain Text has an empty `label` on macOS).
     func testWeightBalanceEnvelopeVerdict() {
-        let app = XCUIApplication()
-        app.launchEnvironment["TRUECOURSE_TOOL"] = "wb"
-        app.launchEnvironment["TRUECOURSE_SCREEN"] = "1"
-        app.launch()
-        XCTAssertTrue(app.staticTexts["WITHIN LIMITS"].firstMatch.waitForExistence(timeout: 8),
-                      "default W&B loading should read WITHIN LIMITS")
+        let app = launchTrueCourse(tool: "wb", screen: 1)
+        let verdict = app.any("verdict.envelope")
+        XCTAssertTrue(verdict.waitForExistence(timeout: 8), "envelope verdict not found")
+        XCTAssertTrue(verdict.text.contains("WITHIN LIMITS"),
+                      "default W&B load should read WITHIN LIMITS, got ‘\(verdict.text)’")
         app.terminate()
+    }
+
+    /// Coverage guard (§C.1): every shipping tool must appear in `cases` above. Adding a 10th tool
+    /// without a numeric check fails here — the diff makes the omission visible. (UI targets are
+    /// black-box, so the catalog can't be imported; the expected set is duplicated on purpose.)
+    func testEveryToolHasANumericCheck() {
+        let covered = Set(cases.map(\.tool))
+        let expected: Set<String> = ["wind", "airspeed", "altitude", "nav",
+                                     "fuel", "climb", "wb", "convert", "timer"]
+        XCTAssertEqual(covered, expected, "the catalog ships 9 tools; each needs a numeric check")
     }
 }

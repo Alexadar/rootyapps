@@ -107,6 +107,7 @@ struct ConvertToolView: View {
                 }
                 .pickerStyle(.menu)
                 .tint(tc.accent(.tools))
+                .accessibilityIdentifier("convert.category")
 
                 Picker("From", selection: $vm.fromIndex) {
                     ForEach(vm.category.units.indices, id: \.self) { i in
@@ -114,6 +115,7 @@ struct ConvertToolView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .accessibilityIdentifier("convert.from")
 
                 NumberField(title: "Value", value: $vm.input)
             }

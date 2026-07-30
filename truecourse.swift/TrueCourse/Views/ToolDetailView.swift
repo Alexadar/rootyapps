@@ -37,4 +37,4 @@ struct ToolDetailView: View {
 }
 
 /// Initial sub-screen from the screenshot env hook (shared across tools; one launch at a time).
-func initialScreen() -> Int { Int(ProcessInfo.processInfo.environment["TRUECOURSE_SCREEN"] ?? "0") ?? 0 }
+func initialScreen() -> Int { Int(LaunchOverride.value("TRUECOURSE_SCREEN") ?? "0") ?? 0 }

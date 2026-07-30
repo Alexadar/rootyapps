@@ -74,7 +74,7 @@ struct RootView: View {
 }
 
 private func deepLinkTool() -> Tool? {
-    ProcessInfo.processInfo.environment["TRUECOURSE_TOOL"].flatMap(Tool.init(rawValue:))
+    LaunchOverride.value("TRUECOURSE_TOOL").flatMap(Tool.init(rawValue:))
 }
 
 /// Sidebar accent source: an explicit pinned colour (Favorites) or the group accent.
@@ -116,7 +116,9 @@ private struct ToolGroup: View {
                 .swipeActions(edge: .leading) {
                     Button { favorites.toggle(tool) } label: {
                         Image(systemName: favorites.isFavorite(tool) ? "star.slash" : "star")
-                    }.tint(tc.star)
+                    }
+                    .tint(tc.star)
+                    .accessibilityIdentifier("fav.\(tool.rawValue)")
                 }
             }
         } header: {

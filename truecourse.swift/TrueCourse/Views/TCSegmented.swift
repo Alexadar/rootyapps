@@ -31,6 +31,7 @@ struct SubScreenPicker: View {
                         withAnimation(.snappy(duration: 0.22)) { selection = i }
                     }
                     .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+                    .accessibilityIdentifier("seg.\(i)")
             }
         }
         .padding(3)

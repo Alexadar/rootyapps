@@ -83,6 +83,22 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.truecourseUITests
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: truecourse.swift
+  # App-target state-space coverage (§C.2): fast hosted unit tests that @testable-import the app
+  # module to drive the view-models (ConvertViewModel etc.) directly — combinatorics belong here,
+  # never in XCUITest. iOS-only: the logic is platform-independent, so one sim run proves it.
+  truecourseModelTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS]
+    sources:
+      - path: truecourseModelTests
+    dependencies:
+      - target: truecourse.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.truecourseModelTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/TrueCourse.app/TrueCourse"
+        BUNDLE_LOADER: "$(TEST_HOST)"
 schemes:
   truecourse.swift:
     build:
@@ -90,6 +106,22 @@ schemes:
         truecourse.swift: all
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - truecourseUITests
+  # Fast app-target state-space tests, iOS-only, kept in their own scheme so a macOS run of the
+  # `truecourse.swift` scheme is never blocked by an iOS-only test target.
+  truecourseModelTests:
+    build:
+      targets:
+        truecourseModelTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - truecourseModelTests
   truecourseReel:
     build:
       targets:
