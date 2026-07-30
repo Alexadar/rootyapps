@@ -162,13 +162,13 @@ struct TapeCalcWatch: View {
     var body: some View {
         VStack(alignment: .leading, spacing: SP.s2) {
             StackedReadout(label: "Running total", value: total.formatted(toDenominator: 16),
-                           accent: accent, hero: true)
+                           accent: accent, hero: true, identifier: "watch.total")
 
             CrownScalePicker(scale: $scale, accent: accent) { crownFocused = true }
 
             TapeCrownField(label: "Add / subtract",
                            sixteenths: $entrySixteenths, targeted: true, accent: accent,
-                           stepSixteenths: scale.sixteenths)
+                           stepSixteenths: scale.sixteenths, identifier: "watch.entry")
                 .focused($crownFocused)
 
             HStack(spacing: SP.s2) {
@@ -236,7 +236,7 @@ struct ConvertWatch: View {
                 .focused($crownFocused)
             StackedReadout(label: "Millimetres",
                            value: Fmt.f(Units.convert(v.inchesValue, from: .inch, to: .millimeter), 1),
-                           unit: "mm")
+                           unit: "mm", identifier: "watch.mm")
             StackedReadout(label: "Metres",
                            value: Fmt.f(Units.convert(v.inchesValue, from: .inch, to: .meter), 3), unit: "m")
             StackedReadout(label: "Decimal inches", value: Fmt.f(v.inchesValue, 3), unit: "in")
@@ -252,7 +252,7 @@ struct RoofPitchWatch: View {
     var body: some View {
         VStack(alignment: .leading, spacing: SP.s2) {
             StackedReadout(label: "Angle", value: Fmt.f(Pitch.angleFromPitch(riseIn12: rise), 2),
-                           unit: "°", accent: accent, hero: true)
+                           unit: "°", accent: accent, hero: true, identifier: "watch.angle")
             WatchNumberField(label: "Rise in 12", value: $rise, unit: "in", step: 0.5, range: 0...36,
                              targeted: true, accent: accent, places: 1)
             StackedReadout(label: "Slope", value: Fmt.f(Pitch.slopePercent(rise: rise, run: 12), 1), unit: "%")
@@ -277,7 +277,7 @@ struct DiagonalWatch: View {
         VStack(alignment: .leading, spacing: SP.s2) {
             StackedReadout(label: "Diagonal",
                            value: FeetInch.approx(inches: d, den: 16).formatted(toDenominator: 16),
-                           accent: accent, hero: true)
+                           accent: accent, hero: true, identifier: "watch.diagonal")
             CrownScalePicker(scale: $scale, accent: accent) { crownFocused = true }
             TapeCrownField(label: "Side A", sixteenths: $aSixteenths, targeted: targetA,
                            accent: accent, stepSixteenths: scale.sixteenths)
@@ -304,7 +304,7 @@ struct CircleWatch: View {
         VStack(alignment: .leading, spacing: SP.s2) {
             StackedReadout(label: "Wrap",
                            value: FeetInch.approx(inches: c, den: 16).formatted(toDenominator: 16),
-                           accent: accent, hero: true)
+                           accent: accent, hero: true, identifier: "watch.wrap")
             CrownScalePicker(scale: $scale, accent: accent) { crownFocused = true }
             TapeCrownField(label: "Diameter", sixteenths: $sixteenths, targeted: true,
                            accent: accent, stepSixteenths: scale.sixteenths)
@@ -326,7 +326,7 @@ struct BoardFeetWatch: View {
         let bf = BoardFeet.value(thicknessIn: thickness, widthIn: width, lengthFt: lengthFt)
         VStack(alignment: .leading, spacing: SP.s2) {
             StackedReadout(label: "Board feet", value: Fmt.f(bf, 2), unit: "BF",
-                           accent: accent, hero: true)
+                           accent: accent, hero: true, identifier: "watch.bf")
             WatchNumberField(label: "Thickness", value: $thickness, unit: "in", step: 0.5,
                              range: 0.5...12, targeted: target == 0, accent: accent, places: 1)
                 .onTapGesture { target = 0 }
@@ -351,10 +351,11 @@ struct WireGaugeWatch: View {
         VStack(alignment: .leading, spacing: SP.s2) {
             StackedReadout(label: AWG.name(gage: n) == "" ? "Diameter" : "Diameter",
                            value: Fmt.f(AWG.diameterInch(gage: n), 4), unit: "in",
-                           accent: accent, hero: true)
+                           accent: accent, hero: true, identifier: "watch.awgInch")
             WatchNumberField(label: "Gage", value: $gage, step: 1, range: -3...36,
                              targeted: true, accent: accent)
-            StackedReadout(label: "Millimetres", value: Fmt.f(AWG.diameterMillimetres(gage: n), 3), unit: "mm")
+            StackedReadout(label: "Millimetres", value: Fmt.f(AWG.diameterMillimetres(gage: n), 3),
+                           unit: "mm", identifier: "watch.awgMm")
             Text("Dimension only — never ampacity.")
                 .font(.system(size: 10)).foregroundStyle(SP.textTertiary)
         }

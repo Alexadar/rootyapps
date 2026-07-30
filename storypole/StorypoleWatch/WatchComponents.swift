@@ -11,6 +11,9 @@ struct StackedReadout: View {
     var unit: String = ""
     var accent: Color = SP.textPrimary
     var hero: Bool = false
+    /// Applied AFTER `.combine`. Without it the combined element has no identifier of its own and
+    /// the platform is free to invent one from the children — see uitests.md §3 trap 4.
+    var identifier: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
@@ -36,6 +39,7 @@ struct StackedReadout: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text(label))
         .accessibilityValue(Text(unit.isEmpty ? value : "\(value) \(unit)"))
+        .accessibilityIdentifier(identifier ?? "readout")
     }
 }
 
@@ -56,6 +60,8 @@ struct TapeCrownField: View {
     var range: ClosedRange<Double> = 0...(35 * 12 * 16)      // zero to the longest real tape
     /// How much one crown detent moves, in sixteenths.
     var stepSixteenths: Double = 1
+    /// Applied after the accessibility modifiers so a test can read the crown-driven value.
+    var identifier: String? = nil
 
     private var value: FeetInch {
         FeetInch(inches: Rational(Int64(sixteenths.rounded()), 16))
@@ -105,6 +111,7 @@ struct TapeCrownField: View {
                               isContinuous: false, isHapticFeedbackEnabled: true)
         .accessibilityLabel(Text(label))
         .accessibilityValue(Text(value.formatted(toDenominator: denominator)))
+        .accessibilityIdentifier(identifier ?? "crownField")
         .accessibilityAdjustableAction { direction in
             let step = stepSixteenths
             switch direction {

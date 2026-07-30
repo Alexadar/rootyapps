@@ -131,6 +131,23 @@ targets:
         # "Accent color 'AccentColor' is not present in any asset catalogs" on every build.
         # The watch tints from SP.accent in code, which is where its colour belongs anyway.
 
+  StorypoleWatchUITests:
+    # watchOS UI testing IS supported: `XCUIDevice.shared.rotateDigitalCrown(delta:)` exists in
+    # XCUIAutomation, gated on TARGET_OS_WATCH. It needs its OWN target on `platform: watchOS` with
+    # TEST_TARGET_NAME pointing at the watch app — the phone's UI-test target cannot reach it.
+    type: bundle.ui-testing
+    platform: watchOS
+    sources:
+      - path: StorypoleWatchUITests
+    dependencies:
+      - target: StorypoleWatch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.storypole.watchkitapp.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: StorypoleWatch
+        WATCHOS_DEPLOYMENT_TARGET: "26.0"
+
   storypoleUITests:
     type: bundle.ui-testing
     # macOS too: the app ships on the Mac, so the suite has to be runnable there. Without this
@@ -161,8 +178,13 @@ schemes:
     build:
       targets:
         StorypoleWatch: all
+        StorypoleWatchUITests: [test]
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - StorypoleWatchUITests
 
   storypole:
     build:
