@@ -18,6 +18,10 @@ struct CalcKey: View {
     var sub: String? = nil
     var face: KeyFace = .digit
     var height: CGFloat = 60
+    /// Test handle. Defaults to the label, but every key in `SpecKeypad` passes an explicit
+    /// `key.<name>` — several labels are glyphs a test cannot type reliably (`−` is U+2212 MINUS
+    /// SIGN, not a hyphen; `⁄` is U+2044 FRACTION SLASH; `⌫` is U+232B).
+    var identifier: String? = nil
     let action: () -> Void
 
     private var bg: Color {
@@ -82,6 +86,7 @@ struct CalcKey: View {
             .shadow(color: .black.opacity(face == .digit || face == .equals ? 0.05 : 0), radius: 1, y: 1)
         }
         .buttonStyle(PressStyle())
+        .accessibilityIdentifier(identifier ?? label)
     }
 }
 
@@ -118,36 +123,70 @@ struct SpecKeypad: View {
     var body: some View {
         VStack(spacing: gap) {
             row {
-                CalcKey(label: "Feet", face: .dim) { tap(.feet) }
-                CalcKey(label: "Inch", face: .dim) { tap(.inch) }
-                CalcKey(label: "⁄",    face: .dim) { tap(.frac) }
-                CalcKey(label: "⌫",    face: .edit) { tap(.backspace) }
+                key(.feet, "Feet", face: .dim)
+                key(.inch, "Inch", face: .dim)
+                key(.frac, "⁄",    face: .dim)
+                key(.backspace, "⌫", face: .edit)
             }
             row {
-                CalcKey(label: "Rise",  face: .function, height: funcH) { tap(.rise) }
-                CalcKey(label: "Run",   face: .function, height: funcH) { tap(.run) }
-                CalcKey(label: "Diag",  face: .function, height: funcH) { tap(.diag) }
-                CalcKey(label: "Pitch", face: .function, height: funcH) { tap(.pitch) }
+                key(.rise,  "Rise",  face: .function, height: funcH)
+                key(.run,   "Run",   face: .function, height: funcH)
+                key(.diag,  "Diag",  face: .function, height: funcH)
+                key(.pitch, "Pitch", face: .function, height: funcH)
             }
             row {
-                CalcKey(label: "Rafter", sub: "OPEN ↗", face: .nav, height: funcH) { tap(.rafter) }
-                CalcKey(label: "Stair",  sub: "OPEN ↗", face: .nav, height: funcH) { tap(.stair) }
-                CalcKey(label: "Area",   sub: "OPEN ↗", face: .nav, height: funcH) { tap(.area) }
-                CalcKey(label: "Vol",    sub: "OPEN ↗", face: .nav, height: funcH) { tap(.vol) }
+                key(.rafter, "Rafter", sub: "OPEN ↗", face: .nav, height: funcH)
+                key(.stair,  "Stair",  sub: "OPEN ↗", face: .nav, height: funcH)
+                key(.area,   "Area",   sub: "OPEN ↗", face: .nav, height: funcH)
+                key(.vol,    "Vol",    sub: "OPEN ↗", face: .nav, height: funcH)
             }
-            row { digit(7); digit(8); digit(9); CalcKey(label: "÷", face: .op) { tap(.div) } }
-            row { digit(4); digit(5); digit(6); CalcKey(label: "×", face: .op) { tap(.mul) } }
-            row { digit(1); digit(2); digit(3); CalcKey(label: "−", face: .op) { tap(.sub) } }
+            row { digit(7); digit(8); digit(9); key(.div, "÷", face: .op) }
+            row { digit(4); digit(5); digit(6); key(.mul, "×", face: .op) }
+            row { digit(1); digit(2); digit(3); key(.sub, "−", face: .op) }
             row {
-                CalcKey(label: "C", face: .edit) { tap(.clear) }
+                key(.clear, "C", face: .edit)
                 digit(0)
-                CalcKey(label: "=", face: .equals) { tap(.equals) }
-                CalcKey(label: "+", face: .op) { tap(.add) }
+                key(.equals, "=", face: .equals)
+                key(.add, "+", face: .op)
             }
         }
     }
 
-    private func digit(_ n: Int) -> some View { CalcKey(label: "\(n)", face: .digit) { tap(.digit(n)) } }
+    /// Build a key from its `KeyID`, so the accessibility identifier is derived from the model and
+    /// cannot drift from it: add a key here and it is addressable by a test for free.
+    private func key(_ id: KeyID, _ label: String, sub: String? = nil,
+                     face: KeyFace = .digit, height: CGFloat = 60) -> some View {
+        CalcKey(label: label, sub: sub, face: face, height: height,
+                identifier: "key." + SpecKeypad.name(id)) { tap(id) }
+    }
+
+    /// `KeyID` → identifier suffix. Internal (not private) so a model test can pin the whole table:
+    /// a silently renamed id turns every keypad test into a "missing element" failure at once.
+    static func name(_ id: KeyID) -> String {
+        switch id {
+        case .feet:      return "feet"
+        case .inch:      return "inch"
+        case .frac:      return "fraction"
+        case .backspace: return "backspace"
+        case .rise:      return "rise"
+        case .run:       return "run"
+        case .diag:      return "diag"
+        case .pitch:     return "pitch"
+        case .rafter:    return "rafter"
+        case .stair:     return "stair"
+        case .area:      return "area"
+        case .vol:       return "vol"
+        case .digit(let n): return "digit\(n)"
+        case .div:       return "op.div"
+        case .mul:       return "op.mul"
+        case .sub:       return "op.sub"
+        case .add:       return "op.add"
+        case .clear:     return "clear"
+        case .equals:    return "equals"
+        }
+    }
+
+    private func digit(_ n: Int) -> some View { key(.digit(n), "\(n)", face: .digit) }
     private func row<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         HStack(spacing: gap) { content() }
     }

@@ -141,9 +141,17 @@ private struct ToolTile: View {
                 Button(action: onStar) {
                     Image(systemName: isFav ? "star.fill" : "star")
                         .font(.footnote).foregroundStyle(isFav ? KC.star : KC.textTertiary)
-                }.buttonStyle(.plain)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("fav." + tool.rawValue)
+                .accessibilityLabel(isFav ? "Remove \(tool.title) from favourites"
+                                          : "Add \(tool.title) to favourites")
             }
+            // Both ids sit on LEAVES. An identifier on the enclosing NavigationLink would overwrite
+            // every child's — including the star above — so nothing could address one of them.
+            // Tapping this title activates the link, which is what a test wants anyway.
             Text(tool.title).font(.system(size: 16, weight: .bold)).foregroundStyle(KC.textPrimary)
+                .accessibilityIdentifier("tool." + tool.rawValue)
             Text(tool.subtitle)
                 .font(.caption).foregroundStyle(KC.textSecondary)
                 .lineLimit(2).frame(maxHeight: .infinity, alignment: .top)

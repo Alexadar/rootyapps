@@ -30,5 +30,7 @@ final class Router: ObservableObject {
     }
 }
 
-func launchTab() -> Int { Int(ProcessInfo.processInfo.environment["KERFCALC_TAB"] ?? "0") ?? 0 }
-func launchTool() -> Tool? { ProcessInfo.processInfo.environment["KERFCALC_TOOL"].flatMap(Tool.init(rawValue:)) }
+// DEBUG-only: `LaunchOverride` compiles to nil in Release, so a shipped app cannot have its
+// navigation driven from outside it. See LaunchOverride.swift.
+func launchTab() -> Int { Int(LaunchOverride.value("KERFCALC_TAB") ?? "0") ?? 0 }
+func launchTool() -> Tool? { LaunchOverride.value("KERFCALC_TOOL").flatMap(Tool.init(rawValue:)) }

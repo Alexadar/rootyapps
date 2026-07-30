@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "FramingKit",
-    platforms: [.iOS(.v16), .macOS(.v13)],
+    platforms: [.iOS(.v16), .macOS(.v13), .watchOS(.v9)],
     products: [.library(name: "FramingKit", targets: ["FramingKit"])],
     targets: [
         .target(name: "FramingKit"),

@@ -18,7 +18,7 @@ struct OffsetToolView: View {
             VStack(spacing: 12) {
                 CardHeader(title: "Offset", trailing: "fitting multipliers")
                 FeetInchField(title: "Set (offset)", value: $setIn, unit: .inch, range: 0...1200)
-                SubScreenPicker(titles: PipeFittingChoice.titles, selection: $angleIdx)
+                SubScreenPicker(titles: PipeFittingChoice.titles, selection: $angleIdx, identifier: "offset.angle")
                 if angleIdx == PipeFittingChoice.otherIndex {
                     NumberField(title: "Fitting angle", value: $customAngle, unit: "°", range: 1...90)
                 }
@@ -32,7 +32,7 @@ struct OffsetToolView: View {
                           unit: "°", emphasis: true)
             }.card()
         } outputs: {
-            HeroReadout(label: "Travel", value: f(PipeOffset.travelIn(setIn: setIn, fittingAngleDeg: angle)), unit: "in")
+            HeroReadout(label: "Travel", value: f(PipeOffset.travelIn(setIn: setIn, fittingAngleDeg: angle)), unit: "in", identifier: "offset.hero")
                 .reelDemo("offset", $setIn, [10, 12, 14, 16, 12])
 
             VStack(spacing: 10) {
@@ -61,13 +61,13 @@ struct RollingOffsetToolView: View {
                 CardHeader(title: "Rolling offset")
                 FeetInchField(title: "Set (vertical)", value: $setIn, unit: .inch, range: 0...1200)
                 FeetInchField(title: "Roll (horizontal)", value: $rollIn, unit: .inch, range: 0...1200)
-                SubScreenPicker(titles: PipeFittingChoice.titles, selection: $angleIdx)
+                SubScreenPicker(titles: PipeFittingChoice.titles, selection: $angleIdx, identifier: "rollingOffset.angle")
                 if angleIdx == PipeFittingChoice.otherIndex {
                     NumberField(title: "Fitting angle", value: $customAngle, unit: "°", range: 1...90)
                 }
             }.card()
         } outputs: {
-            HeroReadout(label: "Travel", value: f(r.travelIn), unit: "in")
+            HeroReadout(label: "Travel", value: f(r.travelIn), unit: "in", identifier: "rollingOffset.hero")
                 .reelDemo("rollingOffset", $rollIn, [8, 10, 12, 10])
 
             VStack(spacing: 10) {
@@ -104,7 +104,7 @@ struct CutLengthToolView: View {
                 FeetInchField(title: "Take-out B", value: $takeoutBIn, unit: .inch, range: 0...240)
             }.card()
         } outputs: {
-            HeroReadout(label: "Cut end to end", value: f(endToEnd), unit: "in")
+            HeroReadout(label: "Cut end to end", value: f(endToEnd), unit: "in", identifier: "cutLength.hero")
                 .reelDemo("cutLength", $centerToCenterIn, [24, 30, 36, 30])
 
             VStack(spacing: 10) {
@@ -131,13 +131,13 @@ struct GradeToolView: View {
             VStack(spacing: 12) {
                 CardHeader(title: "Run", trailing: "IPC / UPC")
                 FeetInchField(title: "Horizontal run", value: $runFeet, unit: .foot, range: 0...10000)
-                SubScreenPicker(titles: PipeGradeChoice.titles, selection: $gradeIdx)
+                SubScreenPicker(titles: PipeGradeChoice.titles, selection: $gradeIdx, identifier: "grade.fall")
                 if gradeIdx == PipeGradeChoice.otherIndex {
                     NumberField(title: "Fall per foot", value: $customFall, unit: "in/ft", range: 0...12)
                 }
             }.card()
         } outputs: {
-            HeroReadout(label: "Total fall", value: f(PipeGrade.fallIn(runFeet: runFeet, fallInPerFt: fallPerFt)), unit: "in")
+            HeroReadout(label: "Total fall", value: f(PipeGrade.fallIn(runFeet: runFeet, fallInPerFt: fallPerFt)), unit: "in", identifier: "grade.hero")
                 .reelDemo("grade", $runFeet, [40, 60, 80, 60])
 
             VStack(spacing: 10) {

@@ -4,14 +4,15 @@ options:
   deploymentTarget:
     iOS: "26.0"
     macOS: "26.0"
+    watchOS: "26.0"
   createIntermediateGroups: true
 settings:
   base:
     DEVELOPMENT_TEAM: LSKNNBG94G
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.0.1"
-    CURRENT_PROJECT_VERSION: "2"
+    MARKETING_VERSION: "1.0.2"
+    CURRENT_PROJECT_VERSION: "3"
     ENABLE_PREVIEWS: YES
     GENERATE_INFOPLIST_FILE: YES
 packages:
@@ -44,6 +45,11 @@ targets:
         product: ConcreteKit
       - package: PipeKit
         product: PipeKit
+      # Embed the watchOS companion into the iOS app ("Embed Watch Content"). iOS only —
+      # the Mac build has no watch slot. Same paid app; no separate purchase.
+      - target: KerfCalcWatch
+        embed: true
+        platformFilter: iOS
     sources:
       - path: KerfCalc
       - path: kerfcalc.icon
@@ -71,6 +77,76 @@ targets:
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+  KerfCalcWatch:
+    type: application
+    # `platform: watchOS` (a scalar), NOT `supportedDestinations: [watchOS]` — XcodeGen rejects
+    # watchOS inside a multiplatform supportedDestinations list.
+    platform: watchOS
+    deploymentTarget: "26.0"
+    dependencies:
+      - package: DimensionKit   # Convert
+        product: DimensionKit
+      - package: FramingKit     # Pitch, Stairs
+        product: FramingKit
+      - package: GeometryKit    # Concrete
+        product: GeometryKit
+      - package: ConcreteKit    # Rebar, Footing, Aggregate, Mortar, Grout, Hardscape
+        product: ConcreteKit
+      - package: PipeKit        # Grade, Offset, Rolling Offset, Cut Length
+        product: PipeKit
+      - package: MaterialsKit   # Roofing, Estimate, Miter, Lumber
+        product: MaterialsKit
+    sources:
+      - path: KerfCalcWatch
+      # Share, don't copy — the same tokens + tool catalog the phone compiles.
+      # LaunchOverride gates the KERFCALC_TOOL deep link this target reads; without it the watch
+      # would keep an ungated env back door in Release.
+      - path: KerfCalc/LaunchOverride.swift
+      # The picker index → Kit input mappings and the mode→hero tables. Shared, not re-switched in a
+      # watch view: these are exactly the mappings `kerfcalcTests/ToolOptionsTests` and
+      # `ToolHeroesTests` pin, and a second copy here would drift out from under those tests.
+      - path: KerfCalc/Views/ToolOptions.swift
+      - path: KerfCalc/Views/ToolHeroes.swift
+      - path: KerfCalc/Views/PipeOptions.swift
+      - path: KerfCalc/Views/KCColors.swift
+      - path: KerfCalc/Views/ColorHex.swift
+      - path: KerfCalc/Views/ToolCatalog.swift
+      - path: kerfcalc.icon
+        buildPhase: resources
+    settings:
+      base:
+        # Never ".swift"/"Swift" in the shipped name — Guideline 5.2.5. CFBundleName = $(PRODUCT_NAME).
+        PRODUCT_NAME: "Kerf Calc"
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.kerfcalc.watchkitapp
+        INFOPLIST_KEY_CFBundleDisplayName: Kerf Calc
+        INFOPLIST_KEY_WKApplication: YES
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: oleksandr.aisixteen.kerfcalc
+        # Standalone calculator: no phone data, runs on its own. (Do NOT set WKWatchOnly — it is
+        # mutually exclusive with the companion keys.)
+        INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: YES
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        WATCHOS_DEPLOYMENT_TARGET: "26.0"
+        TARGETED_DEVICE_FAMILY: "4"
+        ASSETCATALOG_COMPILER_APPICON_NAME: kerfcalc
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+  # watchOS UI tests. The Digital Crown IS scriptable — `XCUIDevice.shared.rotateDigitalCrown(delta:)`
+  # lives in XCUIAutomation's XCUIDevice.h gated on TARGET_OS_WATCH — so the crown-focus regression gets
+  # a real test rather than an eyeball pass. `platform: watchOS` (a scalar), not supportedDestinations.
+  KerfCalcWatchUITests:
+    type: bundle.ui-testing
+    platform: watchOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: KerfCalcWatchUITests
+    dependencies:
+      - target: KerfCalcWatch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.kerfcalc.watchkitapp.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: KerfCalcWatch
+        WATCHOS_DEPLOYMENT_TARGET: "26.0"
+        TARGETED_DEVICE_FAMILY: "4"
   kerfcalcTests:
     type: bundle.unit-test
     supportedDestinations: [iOS]
@@ -101,12 +177,31 @@ schemes:
     build:
       targets:
         kerfcalc.swift: all
+        # `[test]` matters: with no test action for this bundle, `build-for-testing` prints
+        # TEST BUILD SUCCEEDED having built nothing, and `-only-testing:kerfcalcUITests` runs zero
+        # tests while reporting success.
+        kerfcalcUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
         - kerfcalcTests
+        - kerfcalcUITests
+  # The watch app also builds inside the `kerfcalc.swift` scheme (as embedded content), but a
+  # bare `xcodebuild -target KerfCalcWatch` cannot resolve the SPM Kits — package resolution is a
+  # scheme-level step. This scheme is what builds, runs and screenshots the watch app on its own.
+  KerfCalcWatch:
+    build:
+      targets:
+        KerfCalcWatch: all
+        KerfCalcWatchUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - KerfCalcWatchUITests
   kerfcalcReel:
     build:
       targets:

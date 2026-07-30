@@ -19,7 +19,7 @@ struct RoofingToolView: View {
                 NumberField(title: "Waste", value: $waste, unit: "%", range: 0...50)
             }.card()
         } outputs: {
-            HeroReadout(label: "Roofing squares", value: f(Roofing.squares(roofAreaFt2: area)), unit: "sq")
+            HeroReadout(label: "Roofing squares", value: f(Roofing.squares(roofAreaFt2: area)), unit: "sq", identifier: "roofing.hero")
                 .reelDemo("roofing", $rise, [6, 8, 10, 12, 9, 6])
 
             VStack(spacing: 10) {
@@ -43,12 +43,12 @@ struct EstimateToolView: View {
         ToolColumns {
             VStack(spacing: 12) {
                 CardHeader(title: "Estimate")
-                SubScreenPicker(titles: ["Drywall", "Paint", "Block"], selection: $mode)
+                SubScreenPicker(titles: ["Drywall", "Paint", "Block"], selection: $mode, identifier: "estimate.mode")
                 NumberField(title: "Wall area", value: $area, unit: "ft²", range: 0...1000000)
                 if mode == 1 { NumberField(title: "Coats", value: $coats, range: 1...5) }
             }.card()
         } outputs: {
-            HeroReadout(label: hero.0, value: hero.1, unit: hero.2)
+            HeroReadout(label: hero.0, value: hero.1, unit: hero.2, identifier: "estimate.hero")
 
             VStack(spacing: 10) {
                 CardHeader(title: "Basis")
@@ -77,7 +77,7 @@ struct MiterToolView: View {
                 NumberField(title: "Sides (corner)", value: $sides, range: 3...24)
             }.card()
         } outputs: {
-            HeroReadout(label: "Miter angle", value: f(result.miter), unit: "°")
+            HeroReadout(label: "Miter angle", value: f(result.miter), unit: "°", identifier: "miter.hero")
 
             VStack(spacing: 10) {
                 CardHeader(title: "Saw settings")
@@ -105,7 +105,7 @@ struct LumberToolView: View {
                 NumberField(title: "Pieces", value: $pieces, range: 1...10000)
             }.card()
         } outputs: {
-            HeroReadout(label: "Total board feet", value: f(bf * pieces, 2), unit: "bf")
+            HeroReadout(label: "Total board feet", value: f(bf * pieces, 2), unit: "bf", identifier: "lumber.hero")
 
             VStack(spacing: 10) {
                 CardHeader(title: "Per piece")

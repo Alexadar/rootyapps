@@ -8,10 +8,19 @@ import Foundation
 ///   linear × linear = square (10' × 8' = 80 sq ft) · square × linear = cubic (× 4" = 26.67 cu ft)
 ///   any × scalar = same dimension (10' × 3 = 30') · linear ÷ linear = scalar ratio · cubic ÷ square = linear
 public struct TapeCalc {
-    public enum Op: String, Sendable { case add = "+", sub = "−", mul = "×", div = "÷" }
-    public enum Dim: Int, Sendable { case scalar = 0, linear = 1, square = 2, cubic = 3 }
+    public enum Op: String, CaseIterable, Sendable { case add = "+", sub = "−", mul = "×", div = "÷" }
+    public enum Dim: Int, CaseIterable, Sendable { case scalar = 0, linear = 1, square = 2, cubic = 3 }
+
+    /// The display precisions the keypad offers. Lives here, beside the rounding it drives, so the
+    /// state-space tests can cover the *product* of display × typed precision rather than a sample.
+    public static let denominators: [Int64] = [8, 16, 32]
 
     public var denominator: Int64 = 16
+
+    /// Whether an operator is waiting for its second operand. `tape` already reveals this (it is
+    /// empty with no pending op), but a test asserting "the operator committed" should not have to
+    /// parse a display string to find out.
+    public var hasPendingOp: Bool { op != nil }
 
     private var feet = "", inch = "", frNum = "", frDen = "", buf = ""
     private var typingDen = false
@@ -146,7 +155,15 @@ public struct TapeCalc {
             let r = combine(o, a.inches, accDim, entryMag, bDim)
             acc = FeetInch(inches: r.0); accDim = r.1; op = nil
         } else {
-            acc = FeetInch(inches: entryMag); accDim = .linear
+            acc = FeetInch(inches: entryMag)
+            // Only a FRESHLY TYPED value is linear. With nothing typed we are carrying a previous
+            // result forward — `10' × 8' =` then `×` — and resetting the dimension here destroyed it,
+            // so the second multiplication computed another AREA instead of a volume: 10' × 8' = read
+            // 80 sq ft, then × 4" read "320 sq ft" where 26.67 cu ft was owed. Wrong number AND wrong
+            // unit, with nothing on screen looking broken. The existing dimension tests all chained
+            // operators without pressing `=` midway, which is exactly why none of them saw it.
+            // Guarded by TapeCalcStateSpaceTests.dimensionLadderUp/Down.
+            if hasEntry { accDim = .linear }
         }
     }
 

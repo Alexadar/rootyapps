@@ -61,6 +61,10 @@ struct HeroReadout: View {
     let label: String
     let value: String
     var unit: String = ""
+    /// Test handle for the answer, e.g. `rafter.hero`. Goes on the value LEAF, never on the card:
+    /// an identifier on a container overwrites its children's, and `.combine` makes macOS synthesise
+    /// a joined identifier so the one you asked for does not exist at all.
+    var identifier: String? = nil
 
     var body: some View {
         HStack(alignment: .lastTextBaseline) {
@@ -75,6 +79,7 @@ struct HeroReadout: View {
                     .monospacedDigit()
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
+                    .accessibilityIdentifier(identifier ?? "hero")
             }
             Spacer(minLength: 8)
             if !unit.isEmpty {
@@ -86,5 +91,10 @@ struct HeroReadout: View {
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(KC.instrument, in: .rect(cornerRadius: KC.rCard))
+        // `.contain`, NOT `.combine`: combining fuses label+value+unit into one element and macOS
+        // then joins their identifiers, so the id above stops existing. `.contain` keeps each line
+        // addressable on both platforms — and a VoiceOver user wants the number, not the tracking-
+        // spaced caption, read first.
+        .accessibilityElement(children: .contain)
     }
 }

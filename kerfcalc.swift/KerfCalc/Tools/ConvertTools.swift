@@ -35,7 +35,7 @@ struct UnitsToolView: View {
                 }.buttonStyle(.plain).foregroundStyle(.tint)
             }.card()
         } outputs: {
-            HeroReadout(label: "\(trim(value)) \(from.symbol) =", value: trim(result), unit: to.symbol)
+            HeroReadout(label: "\(trim(value)) \(from.symbol) =", value: trim(result), unit: to.symbol, identifier: "units.hero")
 
             VStack(spacing: 10) {
                 CardHeader(title: "All units")

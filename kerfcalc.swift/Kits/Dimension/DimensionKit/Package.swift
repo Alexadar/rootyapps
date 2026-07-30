@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "DimensionKit",
-    platforms: [.iOS(.v16), .macOS(.v13)],
+    platforms: [.iOS(.v16), .macOS(.v13), .watchOS(.v9)],
     products: [.library(name: "DimensionKit", targets: ["DimensionKit"])],
     targets: [
         .target(name: "DimensionKit"),

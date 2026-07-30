@@ -8,7 +8,9 @@ struct CalcView: View {
     @StateObject private var engine = CalcEngine()
     @EnvironmentObject private var router: Router
 
-    private let dens: [Int64] = [8, 16, 32]
+    // The precisions the pad offers. Sourced from the Kit that does the rounding, so the chips and
+    // `TapeCalcStateSpaceTests`' cross-product can never disagree about which ones ship.
+    private var dens: [Int64] { TapeCalc.denominators }
 
     var body: some View {
         VStack(spacing: 10) {
@@ -30,7 +32,7 @@ struct CalcView: View {
     /// 11'3¾") on a loop so a screen recording shows the calculator working — the mac reel's Spec scene,
     /// matching the iOS `ReelTour`. No-op otherwise.
     private func reelDemoIfNeeded() async {
-        guard ProcessInfo.processInfo.environment["KERFCALC_DEMO"] == "spec" else { return }
+        guard LaunchOverride.matches("KERFCALC_DEMO", "spec") else { return }
         let seq: [SpecKeypad.KeyID] = [
             .digit(8), .feet, .digit(4), .inch, .digit(1), .frac, .digit(2),
             .mul, .digit(3), .sub, .digit(2), .feet, .digit(6), .inch, .div, .digit(2), .equals
@@ -66,6 +68,7 @@ struct CalcView: View {
                 .font(.system(.footnote, design: .monospaced))
                 .foregroundStyle(KC.instrumentDim)
                 .lineLimit(1).frame(maxWidth: .infinity, alignment: .trailing)
+                .accessibilityIdentifier("calc.tape")
             Text(engine.display)
                 .font(.system(size: 44, weight: .bold, design: .monospaced))
                 .foregroundStyle(KC.onInstrument)
@@ -73,6 +76,7 @@ struct CalcView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .contentTransition(.numericText())
                 .animation(.snappy(duration: 0.18), value: engine.display)
+                .accessibilityIdentifier("calc.readout")
             HStack {
                 HStack(spacing: 6) {
                     if let rise = engine.rise { register("R", rise) }
@@ -90,13 +94,19 @@ struct CalcView: View {
                                 .overlay(RoundedRectangle(cornerRadius: 7)
                                     .strokeBorder(on ? KC.signal : Color.white.opacity(0.14), lineWidth: 1))
                                 .background(on ? KC.signal.opacity(0.12) : .clear, in: .rect(cornerRadius: 7))
-                        }.buttonStyle(.plain)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("denominator.\(d)")
                     }
                 }
             }
         }
         .padding(16)
         .background(KC.instrument, in: .rect(cornerRadius: 22))
+        // `.contain`, never `.combine`: combining fuses tape + readout + chips into one element and
+        // macOS then synthesises its identifier by joining the children's, so `calc.readout` would
+        // not exist at all. iOS happens to keep children addressable, which is what hides it.
+        .accessibilityElement(children: .contain)
     }
 
     private func register(_ tag: String, _ v: String) -> some View {

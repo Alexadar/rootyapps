@@ -22,6 +22,7 @@ struct FormulaCard: View {
             Text(formula)
                 .font(.system(.callout, design: .monospaced))
                 .foregroundStyle(KC.onInstrument)
+                .accessibilityIdentifier("formula.text")
                 .padding(.horizontal, 14).padding(.vertical, 13)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color(rgbHex: 0x0F1013), in: .rect(cornerRadius: 12))
@@ -39,6 +40,10 @@ struct FormulaCard: View {
                     .foregroundStyle(Color(rgbHex: 0x9C9AA2))
                     .lineLimit(2)
             }
+            // The provenance line is the app's central claim ("every number has a source"), so a
+            // test must be able to prove it reached the screen rather than trusting the layout.
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("formula.citation")
 
             if let example {
                 Text(example)
@@ -51,5 +56,8 @@ struct FormulaCard: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(KC.instrument, in: .rect(cornerRadius: KC.rCard))
+        // `.contain` so `formula.text` and `formula.citation` above stay individually addressable.
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("formula.card")
     }
 }

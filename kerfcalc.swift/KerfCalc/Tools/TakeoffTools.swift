@@ -14,7 +14,7 @@ struct AreaToolView: View {
         ToolColumns {
             VStack(spacing: 12) {
                 CardHeader(title: "Shape")
-                SubScreenPicker(titles: ["Rectangle", "Triangle", "Circle"], selection: $shape)
+                SubScreenPicker(titles: AreaShapeChoice.titles, selection: $shape, identifier: "area.shape")
                 switch shape {
                 case 0:
                     FeetInchField(title: "Length", value: $a, unit: .foot, range: 0...100000)
@@ -27,7 +27,7 @@ struct AreaToolView: View {
                 }
             }.card()
         } outputs: {
-            HeroReadout(label: "Area", value: f(area), unit: "ft²")
+            HeroReadout(label: "Area", value: f(area), unit: "ft²", identifier: "area.hero")
 
             VStack(spacing: 10) {
                 CardHeader(title: "Also")
@@ -36,13 +36,7 @@ struct AreaToolView: View {
             }.card()
         }
     }
-    private var area: Double {
-        switch shape {
-        case 0: return Area.rectangle(length: a, width: b)
-        case 1: return Area.triangle(base: a, height: b)
-        default: return Area.circle(radius: a)
-        }
-    }
+    private var area: Double { AreaShapeChoice.areaFt2(index: shape, a: a, b: b) }
 }
 
 // MARK: Volume
@@ -55,7 +49,7 @@ struct VolumeToolView: View {
         ToolColumns {
             VStack(spacing: 12) {
                 CardHeader(title: "Solid")
-                SubScreenPicker(titles: ["Box", "Cylinder"], selection: $shape)
+                SubScreenPicker(titles: VolumeShapeChoice.titles, selection: $shape, identifier: "volume.shape")
                 if shape == 0 {
                     FeetInchField(title: "Length", value: $a, unit: .foot, range: 0...100000)
                     FeetInchField(title: "Width", value: $b, unit: .foot, range: 0...100000)
@@ -66,7 +60,7 @@ struct VolumeToolView: View {
                 }
             }.card()
         } outputs: {
-            HeroReadout(label: "Volume", value: f(vol), unit: "ft³")
+            HeroReadout(label: "Volume", value: f(vol), unit: "ft³", identifier: "volume.hero")
 
             VStack(spacing: 10) {
                 CardHeader(title: "Also")
@@ -74,9 +68,7 @@ struct VolumeToolView: View {
             }.card()
         }
     }
-    private var vol: Double {
-        shape == 0 ? Volume.box(length: a, width: b, height: c) : Volume.cylinder(diameter: a, height: c)
-    }
+    private var vol: Double { VolumeShapeChoice.volumeFt3(index: shape, a: a, b: b, c: c) }
 }
 
 // MARK: Concrete
@@ -89,14 +81,14 @@ struct ConcreteToolView: View {
     @State private var depth = 48.0    // inches
     @State private var bagIdx = 0
     @State private var waste = 10.0
-    private var bagYield: Double { [0.60, 0.45, 0.30][bagIdx] }
+    private var bagYield: Double { ConcreteBagChoice.yieldFt3(index: bagIdx) }
     private var ft3w: Double { Concrete.withWaste(cubicFeet: ft3, wastePct: waste) }
 
     var body: some View {
         ToolColumns {
             VStack(spacing: 12) {
                 CardHeader(title: "Pour")
-                SubScreenPicker(titles: ["Slab / Footing", "Column / Hole"], selection: $form)
+                SubScreenPicker(titles: ConcreteFormChoice.titles, selection: $form, identifier: "concrete.form")
                 if form == 0 {
                     FeetInchField(title: "Length", value: $lenFt, unit: .foot, range: 0...10000)
                     FeetInchField(title: "Width", value: $widFt, unit: .foot, range: 0...10000)
@@ -109,12 +101,12 @@ struct ConcreteToolView: View {
 
             VStack(spacing: 12) {
                 CardHeader(title: "Bag size")
-                SubScreenPicker(titles: ["80 lb", "60 lb", "40 lb"], selection: $bagIdx)
+                SubScreenPicker(titles: ConcreteBagChoice.titles, selection: $bagIdx, identifier: "concrete.bag")
                 NumberField(title: "Waste / over-order", value: $waste, unit: "%", range: 0...30)
             }.card()
         } outputs: {
             HeroReadout(label: "Order + \(f(waste,0))% waste",
-                        value: f(Concrete.cubicYards(cubicFeet: ft3w), 3), unit: "yd³")
+                        value: f(Concrete.cubicYards(cubicFeet: ft3w), 3), unit: "yd³", identifier: "concrete.hero")
                 .reelDemo("concrete", $thick, [4, 5, 6, 8, 6, 5])
 
             VStack(spacing: 10) {
@@ -142,8 +134,8 @@ struct ConcreteToolView: View {
         }
     }
     private var ft3: Double {
-        form == 0 ? Concrete.slabCubicFeet(lengthFt: lenFt, widthFt: widFt, thicknessInches: thick)
-                  : Concrete.columnCubicFeet(diameterInches: dia, heightInches: depth)
+        ConcreteFormChoice.cubicFeet(index: form, lenFt: lenFt, widFt: widFt, thickIn: thick,
+                                     diaIn: dia, depthIn: depth)
     }
     private var yd3: Double { Concrete.cubicYards(cubicFeet: ft3) }
 }

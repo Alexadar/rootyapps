@@ -20,20 +20,18 @@ struct FootingToolView: View {
     @State private var runs = 2.0
 
     private var ft3: Double {
-        switch kind {
-        case 0: return Footing.continuousCubicFeet(lengthFt: lenFt, widthIn: widIn, depthIn: depIn)
-        case 1: return Footing.padCubicFeet(lengthIn: padL, widthIn: padW, depthIn: padD)
-        default: return Footing.wallCubicFeet(lengthFt: wallLen, heightFt: wallH, thicknessIn: wallT)
-        }
+        FootingKindChoice.cubicFeet(index: kind, lenFt: lenFt, widIn: widIn, depIn: depIn,
+                                    padL: padL, padW: padW, padD: padD,
+                                    wallLen: wallLen, wallH: wallH, wallT: wallT)
     }
-    private var runFeet: Double { kind == 0 ? lenFt : (kind == 2 ? wallLen : 0) }
-    private var bar: BarSize { BarSize.allCases[barIdx] }
+    private var runFeet: Double { FootingKindChoice.runFeet(index: kind, lenFt: lenFt, wallLen: wallLen) }
+    private var bar: BarSize { BarSizeChoice.size(index: barIdx) }
 
     var body: some View {
         ToolColumns {
             VStack(spacing: 12) {
                 CardHeader(title: "Footing")
-                SubScreenPicker(titles: ["Strip", "Pad", "Wall"], selection: $kind)
+                SubScreenPicker(titles: FootingKindChoice.titles, selection: $kind, identifier: "footing.kind")
                 switch kind {
                 case 0:
                     FeetInchField(title: "Length", value: $lenFt, unit: .foot, range: 0...100000)
@@ -50,7 +48,7 @@ struct FootingToolView: View {
                 }
             }.card()
         } outputs: {
-            HeroReadout(label: "Concrete", value: f(Footing.cubicYards(ft3), 3), unit: "yd³")
+            HeroReadout(label: "Concrete", value: f(Footing.cubicYards(ft3), 3), unit: "yd³", identifier: "footing.hero")
 
             VStack(spacing: 10) {
                 CardHeader(title: "Order")
@@ -61,7 +59,7 @@ struct FootingToolView: View {
             if kind != 1 {
                 VStack(spacing: 12) {
                     CardHeader(title: "Continuous rebar")
-                    SubScreenPicker(titles: BarSize.allCases.map(\.label), selection: $barIdx)
+                    SubScreenPicker(titles: BarSizeChoice.titles, selection: $barIdx, identifier: "footing.bar")
                     NumberField(title: "Number of runs", value: $runs, range: 0...50)
                     ResultRow(label: "\(bar.label) weight", value: f(bar.weightLbPerFt, 3), unit: "lb/ft")
                     ResultRow(label: "Total steel", value: f(Rebar.weight(bar, lengthFt: runFeet) * runs, 1), unit: "lb")
@@ -78,16 +76,16 @@ struct RebarToolView: View {
     @State private var slabL = 10.0
     @State private var slabW = 10.0
     @State private var spacing = 12.0
-    private var bar: BarSize { BarSize.allCases[barIdx] }
+    private var bar: BarSize { BarSizeChoice.size(index: barIdx) }
 
     var body: some View {
         ToolColumns {
             VStack(spacing: 12) {
                 CardHeader(title: "Bar size", trailing: "ASTM A615")
-                SubScreenPicker(titles: BarSize.allCases.map(\.label), selection: $barIdx)
+                SubScreenPicker(titles: BarSizeChoice.titles, selection: $barIdx, identifier: "rebar.bar")
             }.card()
         } outputs: {
-            HeroReadout(label: "\(bar.label) unit weight", value: f(bar.weightLbPerFt, 3), unit: "lb/ft")
+            HeroReadout(label: "\(bar.label) unit weight", value: f(bar.weightLbPerFt, 3), unit: "lb/ft", identifier: "rebar.hero")
 
             VStack(spacing: 10) {
                 CardHeader(title: bar.label)
@@ -128,7 +126,7 @@ struct AggregateToolView: View {
     @State private var widFt = 10.0
     @State private var depIn = 4.0
     @State private var matIdx = 0
-    private var mat: AggregateMaterial { AggregateMaterial.allCases[matIdx] }
+    private var mat: AggregateMaterial { AggregateMaterialChoice.material(index: matIdx) }
     private var yd3: Double { Aggregate.cubicYards(lengthFt: lenFt, widthFt: widFt, depthIn: depIn) }
 
     var body: some View {
@@ -142,10 +140,10 @@ struct AggregateToolView: View {
 
             VStack(spacing: 12) {
                 CardHeader(title: "Material")
-                SubScreenPicker(titles: AggregateMaterial.allCases.map { $0.rawValue.components(separatedBy: " ").first ?? $0.rawValue }, selection: $matIdx)
+                SubScreenPicker(titles: AggregateMaterialChoice.titles, selection: $matIdx, identifier: "aggregate.material")
             }.card()
         } outputs: {
-            HeroReadout(label: "Tonnage", value: f(Aggregate.tons(cubicYards: yd3, material: mat), 2), unit: "t")
+            HeroReadout(label: "Tonnage", value: f(Aggregate.tons(cubicYards: yd3, material: mat), 2), unit: "t", identifier: "aggregate.hero")
 
             VStack(spacing: 10) {
                 CardHeader(title: "Basis", trailing: "\(f(mat.tonsPerCubicYard, 2)) t/yd³")
@@ -169,7 +167,7 @@ struct MortarToolView: View {
             VStack(spacing: 12) {
                 CardHeader(title: mode == 2 ? "CMU wall" : "Units laid",
                            trailing: mode == 2 ? "NCMA TEK 3-2A" : "Quikrete #1136")
-                SubScreenPicker(titles: ["Block", "Brick", "Grout"], selection: $mode)
+                SubScreenPicker(titles: ["Block", "Brick", "Grout"], selection: $mode, identifier: "mortar.mode")
                 if mode == 2 {
                     NumberField(title: "Wall area (fully grouted 8\")", value: $wallArea, unit: "ft²", range: 0...1000000)
                 } else {
@@ -177,7 +175,7 @@ struct MortarToolView: View {
                 }
             }.card()
         } outputs: {
-            HeroReadout(label: hero.0, value: hero.1, unit: hero.2)
+            HeroReadout(label: hero.0, value: hero.1, unit: hero.2, identifier: "mortar.hero")
 
             VStack(spacing: 10) {
                 CardHeader(title: "Coverage")
@@ -212,7 +210,7 @@ struct PaversToolView: View {
         ToolColumns {
             VStack(spacing: 12) {
                 CardHeader(title: "Hardscape")
-                SubScreenPicker(titles: ["Pavers", "Retaining wall"], selection: $mode)
+                SubScreenPicker(titles: ["Pavers", "Retaining wall"], selection: $mode, identifier: "pavers.mode")
                 if mode == 0 {
                     NumberField(title: "Area", value: $area, unit: "ft²", range: 0...1000000)
                     NumberField(title: "Paver length", value: $pL, unit: "in", range: 1...48)
@@ -226,7 +224,7 @@ struct PaversToolView: View {
                 }
             }.card()
         } outputs: {
-            HeroReadout(label: hero.0, value: hero.1, unit: hero.2)
+            HeroReadout(label: hero.0, value: hero.1, unit: hero.2, identifier: "pavers.hero")
 
             VStack(spacing: 10) {
                 CardHeader(title: "Basis")

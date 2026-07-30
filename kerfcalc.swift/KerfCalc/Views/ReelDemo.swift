@@ -13,7 +13,7 @@ private struct ReelDemoModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content.task {
-            guard ProcessInfo.processInfo.environment["KERFCALC_DEMO"] == key, !values.isEmpty else { return }
+            guard LaunchOverride.matches("KERFCALC_DEMO", key), !values.isEmpty else { return }
             var i = 0
             while !Task.isCancelled {
                 withAnimation(.easeInOut(duration: 0.45)) { binding.wrappedValue = values[i % values.count] }

@@ -134,7 +134,11 @@ private struct CategorySidebar: View {
             }
             .padding(.horizontal, 12).padding(.vertical, 11)
             .background(active ? KC.instrument : .clear, in: .rect(cornerRadius: 12))
-        }.buttonStyle(.plain)
+        }
+        .buttonStyle(.plain)
+        // `category.all` / `category.<section>` — the reel and the iPad tests need to clear the trade
+        // filter, and matching the visible words would break the moment the copy changes.
+        .accessibilityIdentifier("category." + (s?.rawValue ?? "all"))
     }
 }
 
@@ -167,6 +171,10 @@ private struct ReferenceSidebar: View {
             }
             .padding(.horizontal, 12).padding(.vertical, 11)
             .background(active ? KC.instrument : .clear, in: .rect(cornerRadius: 12))
-        }.buttonStyle(.plain)
+        }
+        .buttonStyle(.plain)
+        // `category.all` / `category.<section>` — the reel and the iPad tests need to clear the trade
+        // filter, and matching the visible words would break the moment the copy changes.
+        .accessibilityIdentifier("category." + (s?.rawValue ?? "all"))
     }
 }

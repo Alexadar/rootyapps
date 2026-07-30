@@ -6,6 +6,10 @@ import SwiftUI
 struct SubScreenPicker: View {
     let titles: [String]
     @Binding var selection: Int
+    /// Test handle prefix, e.g. `mode` → `mode.seg.0`. Identifiers go on the leaf segments, never on
+    /// the enclosing HStack: one on the container would overwrite all of the children's, and then no
+    /// individual segment is addressable by a test or by VoiceOver.
+    var identifier: String? = nil
     @Namespace private var ns
 
     var body: some View {
@@ -38,6 +42,10 @@ struct SubScreenPicker: View {
                 .onTapGesture {
                     withAnimation(.snappy(duration: 0.22)) { selection = i }
                 }
+                // These segments are Text + onTapGesture, NOT Buttons, so XCUITest sees static
+                // texts with no traits — an identifier is the only reliable way to tap segment i.
+                .accessibilityIdentifier("\(identifier ?? "seg").seg.\(i)")
+                .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
             }
         }
         .padding(3)

@@ -19,11 +19,14 @@ struct RafterToolView: View {
                 .background(KC.instrument, in: .rect(cornerRadius: KC.rCard))
 
             VStack(spacing: 0) {
-                StepperRow(title: "Pitch (rise per 12)", value: $rise, unit: "/12", step: 1, range: 1...24)
+                StepperRow(title: "Pitch (rise per 12)", value: $rise, unit: "/12", step: 1, range: 1...24,
+                           identifier: "input.rafter.pitch")
                 Divider().overlay(KC.hairline)
-                FeetInchField(title: "Run", value: $runFt, unit: .foot, range: 1...80)
+                FeetInchField(title: "Run", value: $runFt, unit: .foot, range: 1...80,
+                              identifier: "input.rafter.run")
                 Divider().overlay(KC.hairline)
-                StepperRow(title: "Rafter spacing", value: $spacing, unit: "in", step: 2, range: 8...24)
+                StepperRow(title: "Rafter spacing", value: $spacing, unit: "in", step: 2, range: 8...24,
+                           identifier: "input.rafter.spacing")
                 Divider().overlay(KC.hairline)
                 FeetInchField(title: "Ridge thickness", value: $ridge, unit: .inch, range: 0...6)
                 Divider().overlay(KC.hairline)
@@ -32,7 +35,7 @@ struct RafterToolView: View {
         } outputs: {
             HeroReadout(label: "Actual cut length",
                         value: f(Rafter.actualLength(rise: rise, runFeet: runFt, ridgeThicknessIn: ridge, overhangIn: overhang)),
-                        unit: "in")
+                        unit: "in", identifier: "rafter.hero")
                 .reelDemo("rafter", $rise, [6, 7, 8, 9, 10, 9, 8, 7])
 
             VStack(spacing: 10) {
@@ -88,7 +91,7 @@ struct StairsToolView: View {
     @State private var idealRiser = 7.5
     @State private var headroom = 84.0
     @State private var codeIdx = 0
-    private var code: StairCode { codeIdx == 0 ? .irc2021 : .ibc }
+    private var code: StairCode { StairCodeChoice.code(index: codeIdx) }
     private var r: StairResult { Stairs.solve(totalRise: totalRise, treadDepth: tread, idealRiser: idealRiser, code: code, headroomIn: headroom) }
 
     var body: some View {
@@ -99,14 +102,14 @@ struct StairsToolView: View {
 
             VStack(spacing: 12) {
                 CardHeader(title: "Stair", trailing: code.name)
-                SubScreenPicker(titles: ["IRC 2021", "IBC"], selection: $codeIdx)
+                SubScreenPicker(titles: StairCodeChoice.titles, selection: $codeIdx, identifier: "stairs.code")
                 FeetInchField(title: "Total rise (floor-floor)", value: $totalRise, unit: .inch, range: 1...400)
                 NumberField(title: "Tread depth", value: $tread, unit: "in", range: 1...24)
                 NumberField(title: "Target riser", value: $idealRiser, unit: "in", range: 4...12)
                 FeetInchField(title: "Headroom (measured)", value: $headroom, unit: .inch, range: 0...200)
             }.card()
         } outputs: {
-            HeroReadout(label: "Risers", value: "\(r.risers)", unit: "@ \(f(r.riserHeight))\"")
+            HeroReadout(label: "Risers", value: "\(r.risers)", unit: "@ \(f(r.riserHeight))\"", identifier: "stairs.hero")
                 .reelDemo("stairs", $totalRise, [96, 108, 116, 120, 108])
 
             VStack(spacing: 10) {
@@ -168,7 +171,7 @@ struct PitchToolView: View {
                 NumberField(title: "Run", value: $run, range: 0...1000)
             }.card()
         } outputs: {
-            HeroReadout(label: "Diagonal (hypotenuse)", value: f(Pitch.diagonal(rise: rise, run: run), 3))
+            HeroReadout(label: "Diagonal (hypotenuse)", value: f(Pitch.diagonal(rise: rise, run: run), 3), identifier: "pitch.hero")
 
             VStack(spacing: 10) {
                 CardHeader(title: "Solved")

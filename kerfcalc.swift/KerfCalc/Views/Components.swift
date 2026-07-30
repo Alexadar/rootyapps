@@ -9,6 +9,8 @@ struct NumberField: View {
     @Binding var value: Double
     var unit: String = ""
     var range: ClosedRange<Double>? = nil
+    /// Test handle, e.g. `input.pitch.rise`.
+    var identifier: String? = nil
 
     private var bound: Binding<Double> {
         Binding(get: { value },
@@ -30,6 +32,9 @@ struct NumberField: View {
                 .keyboardType(.decimalPad)
                 #endif
                 .textFieldStyle(.plain)
+                // On the TextField itself, not the row: a test types into it, and a container id
+                // would hide the field from the query that needs to tap it.
+                .accessibilityIdentifier(identifier ?? "number")
             if !unit.isEmpty {
                 Text(unit).font(.footnote)
                     .foregroundStyle(KC.textTertiary)
@@ -51,6 +56,14 @@ struct StepperRow: View {
     var format: (Double) -> String = { v in
         v == v.rounded() ? String(Int(v)) : String(format: "%.2f", v)
     }
+    /// Test handle prefix, e.g. `input.rafter.pitch` → `.dec` / `.inc` / `.value`.
+    ///
+    /// The ids used to be the hardcoded constants `stepDec`/`stepInc`, and the Rafter screen has TWO
+    /// StepperRows — so both minus buttons answered to the same id and a test could only reach the
+    /// first via `.firstMatch`. Derive them from the row instead.
+    var identifier: String? = nil
+
+    private var idBase: String { identifier ?? "step" }
 
     private func nudge(_ dir: Double) {
         value = min(range.upperBound, max(range.lowerBound, (value + dir * step)))
@@ -68,19 +81,20 @@ struct StepperRow: View {
                     .foregroundStyle(KC.textPrimary)
                     .background(KC.chipFill, in: .rect(cornerRadius: KC.rInput))
                     .overlay(RoundedRectangle(cornerRadius: KC.rInput).strokeBorder(KC.hairline, lineWidth: 1))
-            }.buttonStyle(.plain).accessibilityIdentifier("stepDec")
+            }.buttonStyle(.plain).accessibilityIdentifier("\(idBase).dec")
 
             Text(format(value))
                 .font(.system(size: 18, weight: .bold, design: .monospaced))
                 .monospacedDigit()
                 .frame(minWidth: 58)
+                .accessibilityIdentifier("\(idBase).value")
 
             Button { nudge(1) } label: {
                 Image(systemName: "plus").font(.title3.weight(.bold))
                     .frame(width: 40, height: 40)
                     .foregroundStyle(KC.onInstrument)
                     .background(KC.instrument, in: .rect(cornerRadius: KC.rInput))
-            }.buttonStyle(.plain).accessibilityIdentifier("stepInc")
+            }.buttonStyle(.plain).accessibilityIdentifier("\(idBase).inc")
 
             if !unit.isEmpty {
                 Text(unit).font(.system(.footnote, design: .monospaced))
@@ -99,6 +113,9 @@ struct ResultRow: View {
     var unit: String = ""
     var emphasis: Bool = false
     var tone: Color? = nil
+    /// Test handle, e.g. `rafter.ridge`. Named explicitly because `.combine` below would otherwise
+    /// leave macOS to synthesise a joined identifier from the children.
+    var identifier: String? = nil
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
@@ -118,6 +135,11 @@ struct ResultRow: View {
             .monospacedDigit()
         }
         .font(.callout)
+        // `.combine` is right HERE (unlike HeroReadout): "Ridge, 14 ft" is one thing a user reads,
+        // and combining also makes `element.text` return the whole row on macOS, where a plain Text
+        // leaf has an EMPTY label and hides its string in `value`.
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(identifier ?? "result")
     }
 }
 
@@ -125,6 +147,10 @@ struct ResultRow: View {
 struct CheckRow: View {
     let label: String
     let passing: Bool
+    /// Test handle, e.g. `stairs.riserCheck`. Without one a test can only look for the literal
+    /// "OK"/"CHECK", and three of these on the Stairs screen are then indistinguishable.
+    var identifier: String? = nil
+
     var body: some View {
         HStack {
             Text(label).font(.callout).foregroundStyle(KC.textSecondary)
@@ -135,8 +161,10 @@ struct CheckRow: View {
                 .padding(.horizontal, 9).padding(.vertical, 3)
                 .background((passing ? KC.ok : KC.warn).opacity(0.12), in: .rect(cornerRadius: KC.rChip))
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(identifier ?? "check")
     }
 }
 
 /// Initial sub-screen from the screenshot env hook.
-func initialScreen() -> Int { Int(ProcessInfo.processInfo.environment["KERFCALC_SCREEN"] ?? "0") ?? 0 }
+func initialScreen() -> Int { Int(LaunchOverride.value("KERFCALC_SCREEN") ?? "0") ?? 0 }

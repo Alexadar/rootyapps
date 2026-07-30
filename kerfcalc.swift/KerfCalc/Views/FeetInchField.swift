@@ -9,6 +9,9 @@ struct FeetInchField: View {
     @Binding var value: Double
     var unit: LengthUnit = .foot
     var range: ClosedRange<Double>? = nil
+    /// Test handle, e.g. `input.rafter.run`. There are up to five of these on one screen and their
+    /// titles repeat across tools ("Run", "Length"), so matching on the title is ambiguous.
+    var identifier: String? = nil
     @State private var editing = false
 
     var body: some View {
@@ -27,6 +30,7 @@ struct FeetInchField: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier ?? "input")
         .sheet(isPresented: $editing) {
             FieldKeypadSheet(title: title,
                              initial: LengthEntry.feetInch(value, unit: unit)) { fi in
@@ -59,11 +63,13 @@ private struct FieldKeypadSheet: View {
                 Spacer()
                 Button("Done") { onDone(engine.currentValue); dismiss() }
                     .font(.headline).foregroundStyle(KC.textPrimary)
+                    .accessibilityIdentifier("field.done")
             }
             Text(engine.display)
                 .font(.system(size: 40, weight: .bold, design: .monospaced))
                 .foregroundStyle(KC.signal)
                 .monospacedDigit().minimumScaleFactor(0.5).lineLimit(1)
+                .accessibilityIdentifier("field.readout")
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(18)
                 .background(KC.instrument, in: .rect(cornerRadius: KC.rCard))
@@ -100,18 +106,39 @@ private struct FieldKeypad: View {
 
     var body: some View {
         VStack(spacing: gap) {
-            row { d(7); d(8); d(9); CalcKey(label: "Feet", face: .dim, height: 56) { tap(.feet) } }
-            row { d(4); d(5); d(6); CalcKey(label: "Inch", face: .dim, height: 56) { tap(.inch) } }
-            row { d(1); d(2); d(3); CalcKey(label: "⁄",    face: .dim, height: 56) { tap(.frac) } }
+            row { d(7); d(8); d(9); k(.feet, "Feet", face: .dim) }
+            row { d(4); d(5); d(6); k(.inch, "Inch", face: .dim) }
+            row { d(1); d(2); d(3); k(.frac, "⁄",    face: .dim) }
             row {
-                CalcKey(label: "C", face: .edit, height: 56) { tap(.clear) }
+                k(.clear, "C", face: .edit)
                 d(0)
-                CalcKey(label: "⌫", face: .edit, height: 56) { tap(.back) }
-                CalcKey(label: "=", face: .equals, height: 56) { tap(.done) }
+                k(.back, "⌫", face: .edit)
+                k(.done, "=", face: .equals)
             }
         }
     }
-    private func d(_ n: Int) -> some View { CalcKey(label: "\(n)", face: .digit, height: 56) { tap(.digit(n)) } }
+
+    /// Prefixed `fkey.` — deliberately NOT `key.`, which the Spec keypad owns. The two pads share
+    /// labels ("Feet", "⁄", "C", digits) and `=` means different things on each: evaluate on Spec,
+    /// commit-and-dismiss here. Distinct namespaces keep a test from tapping the wrong pad's key.
+    private func k(_ id: Key, _ label: String, face: KeyFace) -> some View {
+        CalcKey(label: label, face: face, height: 56,
+                identifier: "fkey." + FieldKeypad.name(id)) { tap(id) }
+    }
+
+    static func name(_ id: Key) -> String {
+        switch id {
+        case .digit(let n): return "digit\(n)"
+        case .feet:  return "feet"
+        case .inch:  return "inch"
+        case .frac:  return "fraction"
+        case .back:  return "backspace"
+        case .clear: return "clear"
+        case .done:  return "done"
+        }
+    }
+
+    private func d(_ n: Int) -> some View { k(.digit(n), "\(n)", face: .digit) }
     private func row<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         HStack(spacing: gap) { content() }
     }

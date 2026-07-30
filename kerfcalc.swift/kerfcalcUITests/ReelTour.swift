@@ -18,41 +18,43 @@ final class ReelTour: XCTestCase {
         // ── Scene 1 · Spec — punch the cut-list FAST (~3× quicker) ──
         mark("Spec"); dwell(0.5)
         let fast: TimeInterval = 0.05, hold: TimeInterval = 0.05
-        for k in ["8", "Feet", "4", "Inch", "1", "⁄", "2"] { press(app, k, gap: fast, hold: hold) }
-        press(app, "×", gap: fast, hold: hold); press(app, "3", gap: fast, hold: hold)
-        press(app, "−", gap: fast, hold: hold); for k in ["2", "Feet", "6", "Inch"] { press(app, k, gap: fast, hold: hold) }
-        press(app, "÷", gap: fast, hold: hold); press(app, "2", gap: fast, hold: hold)
-        press(app, "=", gap: fast, hold: hold); dwell(1.0)                     // = 11'3¾"
+        for k in ["digit8", "feet", "digit4", "inch", "digit1", "fraction", "digit2"] { pressKey(app, k, gap: fast, hold: hold) }
+        pressKey(app, "op.mul", gap: fast, hold: hold); pressKey(app, "digit3", gap: fast, hold: hold)
+        pressKey(app, "op.sub", gap: fast, hold: hold); for k in ["digit2", "feet", "digit6", "inch"] { pressKey(app, k, gap: fast, hold: hold) }
+        pressKey(app, "op.div", gap: fast, hold: hold); pressKey(app, "digit2", gap: fast, hold: hold)
+        pressKey(app, "equals", gap: fast, hold: hold); dwell(1.0)                     // = 11'3¾"
 
         // ── Scene 2 · Rafter — live recompute on the stepper + the cited formula ──
         tabTap(app, "Formulas"); dwell(0.8)
-        openTile(app, "Rafter"); mark("Rafter"); dwell(1.0)
-        for _ in 0..<2 { pressId(app, "stepInc"); dwell(0.5) }                 // pitch 6→8/12, hero updates live
+        openTile(app, "rafter"); mark("Rafter"); dwell(1.0)
+        for _ in 0..<2 { pressId(app, "input.rafter.pitch.inc"); dwell(0.5) }                 // pitch 6→8/12, hero updates live
         dwell(1.0)
 
         // ── Scene 3 · Stairs — the diagram + live IRC code checks ──
         tabTap(app, "Formulas"); dwell(0.6)
-        openTile(app, "Stairs"); mark("Stairs"); dwell(2.6)
+        openTile(app, "stairs"); mark("Stairs"); dwell(2.6)
 
         // ── Scene 4 · Concrete — the takeoff (yards + bags) ──
         tabTap(app, "Formulas"); dwell(0.6)
-        openTile(app, "Concrete"); mark("Concrete"); dwell(2.6)
+        openTile(app, "concrete"); mark("Concrete"); dwell(2.6)
 
         // ── Scene 5 · Roofing — squares, pitch-adjusted ──
         tabTap(app, "Formulas"); dwell(0.6)
-        openTile(app, "Roofing"); mark("Roofing"); dwell(3.4)
+        openTile(app, "roofing"); mark("Roofing"); dwell(3.4)
 
         NSLog("REEL_END %.3f", Date().timeIntervalSince1970)
     }
 
     // MARK: steps
-    private func press(_ app: XCUIApplication, _ label: String, gap: TimeInterval = 0.16, hold: TimeInterval = 0.12) {
-        let b = app.buttons[label].firstMatch
+    /// Press a Spec keypad key by its `key.<name>` identifier — the labels are glyphs (U+2212 MINUS,
+    /// U+2044 FRACTION SLASH) and the ids are derived from `SpecKeypad.KeyID`, so they cannot drift.
+    private func pressKey(_ app: XCUIApplication, _ name: String, gap: TimeInterval = 0.16, hold: TimeInterval = 0.12) {
+        let b = app.descendants(matching: .any).matching(identifier: "key." + name).firstMatch
         if b.waitForExistence(timeout: 2), b.isHittable { b.press(forDuration: hold) }
         dwell(gap)
     }
     private func pressId(_ app: XCUIApplication, _ id: String) {
-        let b = app.buttons[id].firstMatch
+        let b = app.descendants(matching: .any).matching(identifier: id).firstMatch
         if b.waitForExistence(timeout: 2), b.isHittable { b.press(forDuration: 0.12) }
     }
     private func tabTap(_ app: XCUIApplication, _ label: String) {
@@ -64,9 +66,9 @@ final class ReelTour: XCTestCase {
     private func openTile(_ app: XCUIApplication, _ title: String) {
         // Regular layout: opening a tool pins the sidebar to its trade, which filters the grid — clear
         // it back to "All formulas" so a tool in any other section is reachable. No-op on compact.
-        let all = app.staticTexts["All formulas"].firstMatch
+        let all = app.descendants(matching: .any).matching(identifier: "category.all").firstMatch
         if all.exists { all.tap(); dwell(0.3) }
-        let tile = app.staticTexts[title].firstMatch
+        let tile = app.descendants(matching: .any).matching(identifier: "tool." + title).firstMatch
         var tries = 0
         while !tile.isHittable && tries < 8 { app.swipeUp(velocity: .init(rawValue: 480)); dwell(0.25); tries += 1 }
         if tile.exists { tile.tap() }
