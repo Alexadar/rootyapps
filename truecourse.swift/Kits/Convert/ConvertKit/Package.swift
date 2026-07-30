@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "ConvertKit",
-    platforms: [.macOS(.v13), .iOS(.v16)],
+    platforms: [.macOS(.v13), .iOS(.v16), .watchOS(.v10)],
     products: [.library(name: "ConvertKit", targets: ["ConvertKit"])],
     targets: [
         .target(name: "ConvertKit"),

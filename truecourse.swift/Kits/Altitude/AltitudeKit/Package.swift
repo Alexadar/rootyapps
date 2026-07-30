@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "AltitudeKit",
-    platforms: [.macOS(.v13), .iOS(.v16)],
+    platforms: [.macOS(.v13), .iOS(.v16), .watchOS(.v10)],
     products: [.library(name: "AltitudeKit", targets: ["AltitudeKit"])],
     targets: [
         .target(name: "AltitudeKit"),
