@@ -7,7 +7,7 @@ import Combine
 ///
 /// Static launch flags (for App Store screenshots) freeze a single state:
 ///   EARTHAROUND_TAB=dashboard|geomagnetic   EARTHAROUND_THEME=dark|night
-///   EARTHAROUND_MODE=simple|extended
+/// All of them are DEBUG-only — see `LaunchOverride`.
 @MainActor
 final class DemoDriver: ObservableObject {
     @Published var tabIndex: Int = 0
@@ -15,8 +15,10 @@ final class DemoDriver: ObservableObject {
     @Published var scrollTarget: SWPanel? = nil
     @Published var scrollAnchor: UnitPoint = .top
 
-    static var enabled: Bool { env("EARTHAROUND_DEMO") == "1" }
-    static func env(_ k: String) -> String? { ProcessInfo.processInfo.environment[k] }
+    static var enabled: Bool { LaunchOverride.flag("EARTHAROUND_DEMO") }
+    /// Debug-only: `LaunchOverride` compiles to nil in Release, so a shipped app cannot have its
+    /// navigation driven from outside it. See LaunchOverride.swift.
+    static func env(_ k: String) -> String? { LaunchOverride.value(k) }
 
     /// One-shot initial state from static flags (screenshots).
     func applyInitialState(theme: ThemeStore, mode: ModeStore) {
@@ -26,9 +28,9 @@ final class DemoDriver: ObservableObject {
         if let th = Self.env("EARTHAROUND_THEME") {
             theme.selected = (th == "night") ? .night : .dark
         }
-        if let m = Self.env("EARTHAROUND_MODE") {
-            mode.selected = (m == "simple") ? .simple : .extended
-        }
+        // EARTHAROUND_MODE is gone, not merely unused: SpaceWeatherRootView's own `.task`
+        // unconditionally forces `.extended` ("Full view always"), and the two are racing siblings
+        // with no ordering guarantee. The hook could not be relied on, so keeping it was a trap.
     }
 
     /// The walkthrough — six beats, ~27s at natural speed (the preview budget is

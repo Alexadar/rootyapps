@@ -45,7 +45,15 @@ public final class SpaceWeatherStore: ObservableObject {
         await refresh()
     }
 
+    /// Set by the app when `EARTHAROUND_FIXTURE=1`. A fetch would overwrite the seeded snapshot
+    /// mid-test and reintroduce exactly the nondeterminism the fixture exists to remove.
+    public var suppressNetwork = false
+
     public func refresh() async {
+        if suppressNetwork {
+            if let cached = shared.load() { snapshot = cached.snapshot; lastRefresh = cached.at }
+            return
+        }
         isLoading = true
         lastAttempt = Date()
         defer { isLoading = false }

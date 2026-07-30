@@ -41,14 +41,14 @@ struct GeomagView: View {
     @ViewBuilder private var hpoPanel: some View {
         if let h = snapshot.hpo {
             let windowed = windowedReadings(h)
-            Panel(title: "Hp30 · High-Cadence Geomagnetic Index",
+            Panel(id: "hpo", title: "Hp30 · High-Cadence Geomagnetic Index",
                   source: "GFZ Potsdam · Hpo", observedAt: h.observedAt, feed: .hpo, status: status, highlighted: true) {
                 HStack(spacing: 12) {
-                    MetricTile(value: Fmt.num(h.latest, 2), caption: "Hp30 now", color: sw.brand)
-                    MetricTile(value: (h.latestGScale ?? 0) > 0 ? "G\(h.latestGScale!)" : "—",
+                    MetricTile(id: "hpo.now", value: Fmt.num(h.latest, 2), caption: "Hp30 now", color: sw.brand)
+                    MetricTile(id: "hpo.gScale", value: (h.latestGScale ?? 0) > 0 ? "G\(h.latestGScale!)" : "—",
                                caption: "NOAA level")
                     if h.exceedsCeiling {
-                        MetricTile(value: "9+", caption: "exceeds Kp ceiling", color: sw.warning)
+                        MetricTile(id: "hpo.exceedsCeiling", value: "9+", caption: "exceeds Kp ceiling", color: sw.warning)
                     }
                 }
                 SWSegmented(titles: HpoRange.allCases.map(\.label), selection: .index(of: $range))
@@ -81,14 +81,14 @@ struct GeomagView: View {
     @ViewBuilder private var kpPanel: some View {
         if let k = snapshot.kp {
             let ap = dailyAp(k)
-            Panel(title: "Planetary Kp · 3-Day", source: "NOAA SWPC", observedAt: k.observedAt,
+            Panel(id: "kp", title: "Planetary Kp · 3-Day", source: "NOAA SWPC", observedAt: k.observedAt,
                   feed: .kp, status: status) {
                 KpBarChart(series: k.series, showForecast: showForecast)
                 HStack(spacing: 12) {
-                    MetricTile(value: Fmt.num(k.now, 1), caption: SWText.key(k.activity),
+                    MetricTile(id: "geomag.kp.now", value: Fmt.num(k.now, 1), caption: SWText.key(k.activity),
                                color: sw.severity(k.gScale))
-                    MetricTile(value: "\(k.ap)", unit: "ap", caption: "current amplitude")
-                    MetricTile(value: ap.map { "\($0.value)" } ?? "—", unit: "Ap",
+                    MetricTile(id: "geomag.kp.ap", value: "\(k.ap)", unit: "ap", caption: "current amplitude")
+                    MetricTile(id: "geomag.kp.dailyAp", value: ap.map { "\($0.value)" } ?? "—", unit: "Ap",
                                caption: ap?.complete == false ? "daily (so far)" : "daily average")
                 }
                 MeaningLine("The 28-level Kp scale (Bartels) with NOAA G-scale color bands. Ap is the day's mean amplitude.")

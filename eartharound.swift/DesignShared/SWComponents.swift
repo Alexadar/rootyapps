@@ -6,6 +6,10 @@ import SpaceWeatherFeed
 /// A panel container: chamfered HUD card with a ticked header that always cites its
 /// data source and shows how old the underlying observation is.
 struct Panel<Content: View>: View {
+    /// Stable query handle — the `SWPanel` case, so it matches the scroll-target identity already
+    /// used for deep links. Declared FIRST, like `MetricTile.id`, so every call site reads
+    /// `Panel(id: "kp", title: …)`. Defaults to empty for the one panel that is not catalogued.
+    var id: String = ""
     let title: String.LocalizationValue
     let source: String
     var observedAt: Date? = nil
@@ -26,6 +30,12 @@ struct Panel<Content: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .swCard(highlighted: highlighted)
+        // `.contain`, NOT `.combine`: the panel must stay a container so the MetricTiles inside it
+        // remain individually addressable. `.combine` here would fuse a whole card into one blob —
+        // for VoiceOver as well as for tests. An identifier on a bare container with no
+        // accessibilityElement modifier is a silent no-op on macOS, so the modifier is required.
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(id.isEmpty ? "panel" : "panel.\(id)")
     }
 }
 
@@ -89,6 +99,11 @@ struct StaleBadge: View {
 /// `sw.side(…)`, or `sw.brand` — never a per-metric hue.
 struct MetricTile: View {
     @Environment(\.sw) private var sw
+    /// Stable, NEVER-localized query handle, e.g. `kp.now`. Declared FIRST and required, not
+    /// optional: this is the one component that renders every number in the app, and without an
+    /// identifier not a single value is addressable by a test or reachable as a distinct element by
+    /// VoiceOver. The caption is localized and uppercased, so it cannot serve as the handle.
+    let id: String
     let value: String
     var unit: String? = nil
     let caption: String.LocalizationValue
@@ -116,8 +131,12 @@ struct MetricTile: View {
                 .lineLimit(1).minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        // ONE `.combine`, then name the result. The modifier was applied twice — a copy-paste that
+        // combined an already-combined element — and with no identifier `.combine` also means macOS
+        // synthesises a joined identifier from the children, so the value was unaddressable on both
+        // platforms. Combine + an explicit identifier is the sanctioned shape.
         .accessibilityElement(children: .combine)
-        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(id)
     }
 }
 
@@ -158,6 +177,12 @@ struct ScaleChip: View {
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text(SWText.str("\(label) scale, level \(level)")))
+        // The label above is a LOCALIZED sentence and it OVERRIDES the combined children, so the
+        // code itself ("G1") was not exposed programmatically at all — unreadable in 18 of 19
+        // languages by a test and by anything else reading the tree. The value carries the code
+        // verbatim; the identifier is the locale-stable handle (scale.G / scale.R / scale.S).
+        .accessibilityValue(Text(verbatim: level > 0 ? "\(label)\(level)" : "0"))
+        .accessibilityIdentifier("scale.\(label)")
     }
 }
 
@@ -179,6 +204,8 @@ struct MeaningLine: View {
 /// A small coupling/status flag. On-state fills with caution; off-state is outlined.
 struct FlagPill: View {
     @Environment(\.sw) private var sw
+    /// Locale-stable handle; the visible text is localized and uppercased.
+    let id: String
     let text: String.LocalizationValue
     let on: Bool
     var body: some View {
@@ -196,5 +223,6 @@ struct FlagPill: View {
                 }
             }
             .accessibilityValue(Text(on ? "active" : "inactive"))
+            .accessibilityIdentifier(id)
     }
 }

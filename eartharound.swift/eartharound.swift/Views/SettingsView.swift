@@ -63,7 +63,9 @@ struct SettingsView: View {
                     Picker(SWText.str("Auto-refresh"), selection: $refreshMinutes) {
                         ForEach(Prefs.refreshOptions, id: \.0) { Text($0.1).tag($0.0) }
                     }
+                    .accessibilityIdentifier("settings.refreshMinutes")
                     Toggle(SWText.str("Use cellular data"), isOn: $cellularAllowed)
+                    .accessibilityIdentifier("settings.cellular")
                     Text(cellularAllowed
                          ? "Refreshes over Wi-Fi and cellular. A refresh is a few hundred kilobytes."
                          : "Refreshes only on Wi-Fi. On cellular the app pauses and keeps showing the last reading rather than failing silently.")
@@ -73,32 +75,42 @@ struct SettingsView: View {
                     Picker(SWText.str("Hp30 default range"), selection: $hpoRangeHours) {
                         ForEach(Prefs.rangeOptions, id: \.0) { Text($0.1).tag($0.0) }
                     }
+                    .accessibilityIdentifier("settings.hpoRangeHours")
                     Toggle(SWText.str("Show Kp forecast bars"), isOn: $showForecast)
+                    .accessibilityIdentifier("settings.showForecast")
                     Toggle(SWText.str("Night mode (red-shift)"), isOn: nightMode)
+                    .accessibilityIdentifier("settings.nightMode")
                     // Endonyms, never translated: someone who needs this menu may not read the
                     // language the app is currently showing.
                     Picker(SWText.str("Language"), selection: languageChoice) {
                         ForEach(SWLanguage.allCases) { Text(verbatim: $0.endonym).tag($0) }
                     }
+                    .accessibilityIdentifier("settings.language")
                 }
                 Section(SWText.str("Alerts")) {
                     Toggle(SWText.str("Space event alerts"), isOn: $alertsEnabled)
+                    .accessibilityIdentifier("settings.alertsEnabled")
                         .onChange(of: alertsEnabled) { _, on in
                             if on { Task { alertsEnabled = await AlertNotifier.requestAuthorization() } }
                         }
                     if alertsEnabled {
                         Toggle(SWText.str("Geomagnetic storms"), isOn: $alertStorms)
+                        .accessibilityIdentifier("settings.alertStorms")
                         if alertStorms {
                             Picker(SWText.str("Notify from"), selection: $alertStormThreshold) {
                                 ForEach(1...4, id: \.self) { Text(SWText.str("G\($0)+")).tag($0) }
                             }
+                            .accessibilityIdentifier("settings.alertStormThreshold")
                         }
                         Toggle(SWText.str("Solar flares (M-class and up)"), isOn: $alertFlares)
+                        .accessibilityIdentifier("settings.alertFlares")
                         Toggle(SWText.str("Aurora chance"), isOn: $alertAurora)
+                        .accessibilityIdentifier("settings.alertAurora")
                         if alertAurora {
                             Picker(SWText.str("From probability"), selection: $alertAuroraThreshold) {
                                 ForEach([30, 50, 70], id: \.self) { Text(SWText.str("\($0)%")).tag($0) }
                             }
+                            .accessibilityIdentifier("settings.alertAuroraThreshold")
                         }
                     }
                     Text(alertsFootnote)

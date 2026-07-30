@@ -12,6 +12,10 @@ struct SWSegmented: View {
     @Environment(\.sw) private var sw
     let titles: [String]
     @Binding var selection: Int
+    /// Locale-stable per-item handles, e.g. `["tab.dashboard", "tab.geomagnetic"]`. The visible
+    /// titles are localized AND uppercased, so `app.buttons["Dashboard"]` works in exactly one of
+    /// the app's 19 languages. Optional so the Hp30 range control need not supply them.
+    var ids: [String] = []
     @Namespace private var ns
 
     var body: some View {
@@ -39,6 +43,7 @@ struct SWSegmented: View {
                         withAnimation(.snappy(duration: 0.22)) { selection = i }
                     }
                     .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+                    .accessibilityIdentifier(i < ids.count ? ids[i] : "")
             }
         }
         .padding(3)

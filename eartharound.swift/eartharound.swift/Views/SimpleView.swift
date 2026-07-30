@@ -33,14 +33,14 @@ struct SimpleView: View {
             let kp = snapshot.kp
             // NOAA's published G level when we have it; otherwise the Kit derives it from Kp.
             let g = snapshot.scales?.g ?? kp.map { Geomag.gScale(forKp: $0.now) } ?? 0
-            Panel(title: "Storm Right Now", source: "NOAA SWPC",
+            Panel(id: "scales", title: "Storm Right Now", source: "NOAA SWPC",
                   observedAt: kp?.observedAt ?? snapshot.scales?.observedAt,
                   feed: .kp, status: status) {
                 HStack(spacing: 12) {
-                    MetricTile(value: g > 0 ? "G\(g)" : SWText.str("None"), caption: "storm level",
+                    MetricTile(id: "simple.stormLevel", value: g > 0 ? "G\(g)" : SWText.str("None"), caption: "storm level",
                                color: sw.severity(g))
                     if let k = kp {
-                        MetricTile(value: Fmt.num(k.now, 1), caption: SWText.key(k.activity))
+                        MetricTile(id: "simple.kp", value: Fmt.num(k.now, 1), caption: SWText.key(k.activity))
                     }
                 }
                 if let k = kp {
@@ -79,9 +79,9 @@ struct SimpleView: View {
 
     @ViewBuilder private var auroraPanel: some View {
         if let a = snapshot.aurora {
-            Panel(title: "Aurora Tonight", source: "NOAA SWPC · OVATION", observedAt: a.observedAt,
+            Panel(id: "aurora", title: "Aurora Tonight", source: "NOAA SWPC · OVATION", observedAt: a.observedAt,
                   feed: .aurora, status: status) {
-                MetricTile(value: "\(a.maxProbability)", unit: "%", caption: "best chance now",
+                MetricTile(id: "simple.aurora", value: "\(a.maxProbability)", unit: "%", caption: "best chance now",
                            color: sw.side(.terra))
                 // The view line is computed from Kp; with no Kp it silently reads as Kp 0 and
                 // would state a confident, wrong latitude. Say nothing rather than that.
@@ -99,9 +99,9 @@ struct SimpleView: View {
         if let f = snapshot.flare {
             let r = snapshot.scales?.r ?? 0
             let s = snapshot.scales?.s ?? 0
-            Panel(title: "The Sun Today", source: "NOAA SWPC · GOES", observedAt: f.observedAt,
+            Panel(id: "flare", title: "The Sun Today", source: "NOAA SWPC · GOES", observedAt: f.observedAt,
                   feed: .flares, status: status) {
-                MetricTile(value: f.latestFlare?.maxClass ?? f.currentClass, caption: "latest flare",
+                MetricTile(id: "simple.flare", value: f.latestFlare?.maxClass ?? f.currentClass, caption: "latest flare",
                            color: sw.severity(flareClass: f.latestFlare?.maxClass ?? f.currentClass))
                 MeaningLine(SWText.key(f.latestFlare?.meaning ?? Flare.meaning(forClass: f.currentClass)))
                 // Radio blackouts and radiation storms ride on the same solar event but are
@@ -117,7 +117,7 @@ struct SimpleView: View {
     // MARK: - Nothing to show
 
     private var noConditions: some View {
-        Panel(title: "No Current Conditions", source: "NOAA SWPC") {
+        Panel(id: "empty", title: "No Current Conditions", source: "NOAA SWPC") {
             MeaningLine("No live storm, aurora or flare data right now. Pull to refresh — nothing is shown until it's real.")
         }
         .tint(sw.side(.terra))

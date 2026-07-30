@@ -12,8 +12,8 @@ import SpaceWeatherFeed
 /// site and social only. The screenshots it freezes are the uploadable asset.
 @MainActor
 enum WatchDemo {
-    static var enabled: Bool { env("EARTHAROUND_DEMO") == "1" }
-    static func env(_ k: String) -> String? { ProcessInfo.processInfo.environment[k] }
+    static var enabled: Bool { LaunchOverride.flag("EARTHAROUND_DEMO") }
+    static func env(_ k: String) -> String? { LaunchOverride.value(k) }
 
     /// One-shot page + theme freeze for screenshots. The theme has to be pinned because it
     /// persists in the app group — whatever the phone last synced over (or a previous night

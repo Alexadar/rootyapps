@@ -1,0 +1,349 @@
+# eartharound — XcodeGen project definition.
+#
+# Migrated from a hand-authored, git-tracked .xcodeproj on 2026-07-30. eartharound was the only app
+# of eight still on that shape, and every recipe in docs/uitests.md and
+# docs/PROMPT_uitests_rollout.md assumes project.yml — adding a UI-test target by hand-editing an
+# objectVersion-77 pbxproj (with four PBXFileSystemSynchronizedRootGroups and zero membership
+# exceptions) was the more dangerous of the two paths.
+#
+# The generated project is verified against the pre-migration one by diffing
+# `xcodebuild -showBuildSettings` for every target x config. Two things are deliberately preserved
+# rather than "improved":
+#   * PRODUCT_NAME = $(TARGET_NAME) on the three non-app targets. Renaming them would change the
+#     .appex bundle identity, and builds 1.0(2) carrying SpaceWeatherWidget.appex are already
+#     uploaded. Guideline 5.2.5 is about the menu-bar name, which only the app has.
+#   * The App Group stays on the macOS entitlements. storypole scopes it to iOS/watchOS because a
+#     macOS capability demands a Mac profile — but this app already HAS one and archived
+#     successfully on 28 Jul, so removing it would be a change, not a fix.
+name: eartharound.swift
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  createIntermediateGroups: true
+  deploymentTarget:
+    iOS: "26.1"
+    macOS: "26.1"
+    watchOS: "26.0"
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "2"
+    GENERATE_INFOPLIST_FILE: YES
+    # Shared across all four targets in the pre-migration project.
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+    # The 19-locale catalog lives in DesignShared and is compiled by every target. Symbol
+    # generation is off: it collides with SWText's own accessors.
+    STRING_CATALOG_GENERATE_SYMBOLS: NO
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    ENABLE_STRICT_OBJC_MSGSEND: YES
+    # XcodeGen defaults to gnu++14 / gnu11; the pre-migration project was on the current Xcode
+    # template values. No C or C++ is compiled here, but a silent standards downgrade is not the
+    # kind of difference to leave in a migration diff.
+    CLANG_CXX_LANGUAGE_STANDARD: "gnu++20"
+    GCC_C_LANGUAGE_STANDARD: gnu17
+    # This is what makes Xcode register EXPLICIT bundle IDs. Without an app-group capability it
+    # signs everything with the team wildcard and creates no App ID at all.
+    REGISTER_APP_GROUPS: YES
+    CODE_SIGN_ENTITLEMENTS: AppGroup.entitlements
+  configs:
+    Debug:
+      ENABLE_TESTABILITY: YES
+      ONLY_ACTIVE_ARCH: YES
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG $(inherited)"
+      SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+    Release:
+      ENABLE_NS_ASSERTIONS: NO
+      SWIFT_COMPILATION_MODE: wholemodule
+
+packages:
+  SpaceWeatherKit:
+    path: SpaceWeatherKit
+
+
+targets:
+  # ── iOS + macOS app ────────────────────────────────────────────────────────────────────────
+  eartharound.swift:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: SpaceWeatherKit
+        product: SpaceWeatherFeed
+      - package: SpaceWeatherKit
+        product: GeomagKit
+      - package: SpaceWeatherKit
+        product: FlareKit
+      - package: SpaceWeatherKit
+        product: SolarWindKit
+      - package: SpaceWeatherKit
+        product: AuroraKit
+      - package: SpaceWeatherKit
+        product: HpoKit
+      - package: SpaceWeatherKit
+        product: SolarIndexKit
+      - target: SpaceWeatherWidget
+        embed: true                     # Embed App Extensions -> PlugIns
+      - target: SpaceWeatherWatch
+        embed: true                     # Embed Watch Content -> $(CONTENTS_FOLDER_PATH)/Watch
+        platformFilter: iOS             # a Mac app carries no watch app
+    sources:
+      # `type: group` is load-bearing: the folder is NAMED eartharound.swift, so XcodeGen infers a
+      # Swift FILE from the extension and the build fails with
+      # "error opening input file ... (Is a directory)".
+      - path: eartharound.swift
+        type: group
+      - path: DesignShared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.eartharound
+        # Guideline 5.2.5: with GENERATE_INFOPLIST_FILE the generator sets CFBundleName (the macOS
+        # menu-bar title) from PRODUCT_NAME and ignores INFOPLIST_KEY_CFBundleName. Without this the
+        # app would ship as "eartharound.swift". This repo has been caught three times.
+        PRODUCT_NAME: Earth Around
+        # Was Earth_Around pre-migration (derived from PRODUCT_NAME). Pinned to the same value so
+        # the Swift module name does not move; XcodeGen would otherwise derive eartharound_swift.
+        PRODUCT_MODULE_NAME: Earth_Around
+        INFOPLIST_FILE: eartharound-swift-Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Earth Around
+        # Required by the Mac App Store; its absence fails the upload with error 90242 and iOS does
+        # not need it, so it only surfaces on the Mac leg.
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.weather
+        INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        "INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]": YES
+        "INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]": YES
+        "INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]": YES
+        "INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]": YES
+        "INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]": YES
+        "INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]": YES
+        "INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]": UIStatusBarStyleDefault
+        "INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]": UIStatusBarStyleDefault
+        "INFOPLIST_KEY_WKWatchOnly[sdk=watchos*]": YES
+        "INFOPLIST_KEY_WKWatchOnly[sdk=watchsimulator*]": YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ENABLE_PREVIEWS: YES
+        SDKROOT: auto
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator macosx"
+        XROS_DEPLOYMENT_TARGET: "26.1"
+        LD_RUNPATH_SEARCH_PATHS: "@executable_path/Frameworks"
+        "LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]": "@executable_path/../Frameworks"
+        # macOS sandbox: network out only, location for the aurora view line, nothing else.
+        ENABLE_APP_SANDBOX: YES
+        ENABLE_HARDENED_RUNTIME: YES
+        ENABLE_OUTGOING_NETWORK_CONNECTIONS: YES
+        ENABLE_INCOMING_NETWORK_CONNECTIONS: NO
+        ENABLE_RESOURCE_ACCESS_LOCATION: YES
+        ENABLE_RESOURCE_ACCESS_AUDIO_INPUT: NO
+        ENABLE_RESOURCE_ACCESS_BLUETOOTH: NO
+        ENABLE_RESOURCE_ACCESS_CALENDARS: NO
+        ENABLE_RESOURCE_ACCESS_CAMERA: NO
+        ENABLE_RESOURCE_ACCESS_CONTACTS: NO
+        ENABLE_RESOURCE_ACCESS_PRINTING: NO
+        ENABLE_RESOURCE_ACCESS_USB: NO
+        ENABLE_USER_SELECTED_FILES: readonly
+
+  # ── iOS + macOS widget extension ───────────────────────────────────────────────────────────
+  SpaceWeatherWidget:
+    type: app-extension
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: SpaceWeatherKit
+        product: SpaceWeatherFeed
+      - package: SpaceWeatherKit
+        product: GeomagKit
+      - package: SpaceWeatherKit
+        product: FlareKit
+      - package: SpaceWeatherKit
+        product: SolarWindKit
+      - package: SpaceWeatherKit
+        product: AuroraKit
+      - package: SpaceWeatherKit
+        product: HpoKit
+      - package: SpaceWeatherKit
+        product: SolarIndexKit
+    sources:
+      - path: SpaceWeatherWidget
+      - path: DesignShared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.eartharound.widgets
+        PRODUCT_NAME: "$(TARGET_NAME)"
+        # XcodeGen would otherwise generate an Info.plist without NSExtensionPointIdentifier, and
+        # the install then fails with the opaque "AppexBundleMissingNSExtensionDict".
+        INFOPLIST_FILE: SpaceWeatherWidget-Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Earth Around
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.weather
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SDKROOT: auto
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator macosx"
+        SKIP_INSTALL: YES
+        ENABLE_APP_SANDBOX: YES
+        ENABLE_HARDENED_RUNTIME: YES
+        ENABLE_OUTGOING_NETWORK_CONNECTIONS: YES
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/Frameworks"
+          - "@executable_path/../../Frameworks"
+
+  # ── watchOS app ────────────────────────────────────────────────────────────────────────────
+  SpaceWeatherWatch:
+    type: application
+    # `platform:`, NOT `supportedDestinations:` — XcodeGen rejects watchOS in a multiplatform target.
+    platform: watchOS
+    deploymentTarget: "26.0"
+    dependencies:
+      - package: SpaceWeatherKit
+        product: SpaceWeatherFeed
+      - package: SpaceWeatherKit
+        product: GeomagKit
+      - package: SpaceWeatherKit
+        product: FlareKit
+      - package: SpaceWeatherKit
+        product: SolarWindKit
+      - package: SpaceWeatherKit
+        product: AuroraKit
+      - package: SpaceWeatherKit
+        product: HpoKit
+      - package: SpaceWeatherKit
+        product: SolarIndexKit
+      - target: SpaceWeatherWatchWidget
+        embed: true
+    sources:
+      - path: SpaceWeatherWatch
+      - path: DesignShared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.eartharound.watchkitapp
+        PRODUCT_NAME: "$(TARGET_NAME)"
+        INFOPLIST_KEY_CFBundleDisplayName: Earth Around
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.weather
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: oleksandr.aisixteen.eartharound
+        # Standalone: the watch fetches NOAA itself, so it is installable and buyable from the
+        # watch App Store without the phone app.
+        INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "4"
+        SDKROOT: watchos
+        WATCHOS_DEPLOYMENT_TARGET: "26.0"
+        SKIP_INSTALL: YES
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/Frameworks"
+
+  # ── watchOS complication extension ─────────────────────────────────────────────────────────
+  # Compiles the SAME SpaceWeatherWidget/ folder as the phone widget: ComplicationViews.swift is
+  # guarded `#if os(watchOS) || os(iOS)` and the system-sized widget is `#if !os(watchOS)`, so one
+  # source folder serves both and each target gets exactly one @main WidgetBundle.
+  SpaceWeatherWatchWidget:
+    type: app-extension
+    platform: watchOS
+    deploymentTarget: "26.0"
+    dependencies:
+      - package: SpaceWeatherKit
+        product: SpaceWeatherFeed
+      - package: SpaceWeatherKit
+        product: GeomagKit
+      - package: SpaceWeatherKit
+        product: FlareKit
+      - package: SpaceWeatherKit
+        product: SolarWindKit
+      - package: SpaceWeatherKit
+        product: AuroraKit
+      - package: SpaceWeatherKit
+        product: HpoKit
+      - package: SpaceWeatherKit
+        product: SolarIndexKit
+    sources:
+      - path: SpaceWeatherWidget
+      - path: DesignShared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.eartharound.watchkitapp.widgets
+        PRODUCT_NAME: "$(TARGET_NAME)"
+        INFOPLIST_FILE: SpaceWeatherWidget-Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Earth Around
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.weather
+        TARGETED_DEVICE_FAMILY: "4"
+        SDKROOT: watchos
+        WATCHOS_DEPLOYMENT_TARGET: "26.0"
+        SKIP_INSTALL: YES
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/Frameworks"
+          - "@executable_path/../../Frameworks"
+
+  # ── UI tests ───────────────────────────────────────────────────────────────────────────────
+  EarthAroundUITests:
+    type: bundle.ui-testing
+    # macOS too: the app ships on the Mac and the suite has to be runnable there, or xcodebuild
+    # refuses with "does not support My Mac's platform".
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: EarthAroundUITests
+      - path: UITestShared          # .text / textMatches / any(_:) — shared with the watch suite
+    dependencies:
+      - target: eartharound.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.eartharound.uitests
+        TEST_TARGET_NAME: eartharound.swift
+        # A test bundle must not carry the app's entitlements.
+        CODE_SIGN_ENTITLEMENTS: ""
+
+  # watchOS UI testing IS supported: XCUIDevice.shared.rotateDigitalCrown(delta:) lives in
+  # XCUIAutomation gated on TARGET_OS_WATCH. It needs its own target on `platform: watchOS` —
+  # the phone's UI-test target cannot reach the watch app.
+  EarthAroundWatchUITests:
+    type: bundle.ui-testing
+    platform: watchOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: EarthAroundWatchUITests
+      - path: UITestShared          # the SAME file the iOS suite uses, not a copy
+    dependencies:
+      - target: SpaceWeatherWatch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.eartharound.watchkitapp.uitests
+        TEST_TARGET_NAME: SpaceWeatherWatch
+        WATCHOS_DEPLOYMENT_TARGET: "26.0"
+        CODE_SIGN_ENTITLEMENTS: ""
+
+schemes:
+  eartharound.swift:
+    build:
+      targets:
+        eartharound.swift: all
+        EarthAroundUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      # parallelizable stays off: parallel XCUITest clones fight over one pinned simulator, and on
+      # macOS they put several instances of a single-instance app in a focus fight.
+      targets:
+        - EarthAroundUITests
+
+  SpaceWeatherWatch:
+    build:
+      targets:
+        SpaceWeatherWatch: all
+        EarthAroundWatchUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - EarthAroundWatchUITests

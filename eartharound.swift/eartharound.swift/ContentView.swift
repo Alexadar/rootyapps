@@ -18,6 +18,9 @@ struct ContentView: View {
             .environmentObject(demo)
             .swTheme(theme.selected)
             .task {
+                // Seed the deterministic snapshot BEFORE anything reads the store, so the
+                // first paint is already the fixture rather than yesterday's cache.
+                LaunchOverride.installFixtureIfRequested()
                 demo.applyInitialState(theme: theme, mode: mode)   // static flags (screenshots)
                 if DemoDriver.enabled { await demo.run(theme: theme, mode: mode) }
             }

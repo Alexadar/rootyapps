@@ -29,6 +29,8 @@ struct WatchRootView: View {
         .environment(\.sw, palette)
         .environment(\.locale, SWLanguage.sharedLocale)
         .task {
+            LaunchOverride.installFixtureIfRequested()
+            store.suppressNetwork = LaunchOverride.fixtureActive
             WatchSync.shared.start()          // receives the phone's theme/mode choices
             store.afterRefresh = { _ in WidgetCenter.shared.reloadAllTimelines() }
             WatchDemo.applyInitialState(&page)

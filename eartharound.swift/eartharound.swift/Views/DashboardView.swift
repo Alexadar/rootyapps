@@ -43,7 +43,7 @@ struct DashboardView: View {
 
     @ViewBuilder private var scalesPanel: some View {
         if let s = snapshot.scales {
-            Panel(title: "NOAA Space Weather Scales", source: "NOAA SWPC", observedAt: s.observedAt,
+            Panel(id: "scales", title: "NOAA Space Weather Scales", source: "NOAA SWPC", observedAt: s.observedAt,
                   feed: .scales, status: status) {
                 HStack(spacing: 8) {
                     ScaleChip(label: "G", level: s.g, name: scaleName(s.g))
@@ -58,13 +58,13 @@ struct DashboardView: View {
 
     @ViewBuilder private var kpPanel: some View {
         if let k = snapshot.kp {
-            Panel(title: "Planetary Kp", source: "NOAA SWPC", observedAt: k.observedAt,
+            Panel(id: "kp", title: "Planetary Kp", source: "NOAA SWPC", observedAt: k.observedAt,
                   feed: .kp, status: status) {
                 HStack(spacing: 12) {
-                    MetricTile(value: Fmt.num(k.now, 1), caption: "Kp now",
+                    MetricTile(id: "kp.now", value: Fmt.num(k.now, 1), caption: "Kp now",
                                color: sw.severity(k.gScale))
-                    MetricTile(value: k.gScale > 0 ? "G\(k.gScale)" : "—", caption: SWText.key(k.activity))
-                    MetricTile(value: "\(k.ap)", unit: "ap", caption: "amplitude")
+                    MetricTile(id: "kp.gScale", value: k.gScale > 0 ? "G\(k.gScale)" : "—", caption: SWText.key(k.activity))
+                    MetricTile(id: "kp.ap", value: "\(k.ap)", unit: "ap", caption: "amplitude")
                 }
                 KpBarChart(series: k.series, showForecast: showForecast)
                 MeaningLine(SWText.kpMeaning(kp: Fmt.num(k.now, 1), activity: k.activity, forecast: showForecast))
@@ -75,24 +75,24 @@ struct DashboardView: View {
 
     @ViewBuilder private var solarWindPanel: some View {
         if let w = snapshot.wind {
-            Panel(title: "Solar Wind", source: "NOAA SWPC · DSCOVR/ACE", observedAt: w.observedAt,
+            Panel(id: "wind", title: "Solar Wind", source: "NOAA SWPC · DSCOVR/ACE", observedAt: w.observedAt,
                   feed: .wind, status: status) {
                 HStack(spacing: 12) {
-                    MetricTile(value: Fmt.num(w.speed, 0), unit: "km/s",
+                    MetricTile(id: "wind.speed", value: Fmt.num(w.speed, 0), unit: "km/s",
                                caption: SWText.key(w.speedDescription, fallback: "speed"), color: sw.side(.link))
-                    MetricTile(value: Fmt.num(w.density, 1), unit: "p/cm³", caption: "density")
-                    MetricTile(value: Fmt.num(w.bz, 1), unit: "nT", caption: "Bz GSM",
+                    MetricTile(id: "wind.density", value: Fmt.num(w.density, 1), unit: "p/cm³", caption: "density")
+                    MetricTile(id: "wind.bz", value: Fmt.num(w.bz, 1), unit: "nT", caption: "Bz GSM",
                                color: (w.bz ?? 0) < 0 ? sw.warning : nil)
                 }
                 HStack(spacing: 12) {
-                    MetricTile(value: Fmt.num(w.pressure, 1), unit: "nPa", caption: "dyn. pressure")
-                    MetricTile(value: Fmt.num(w.electricField, 1), unit: "mV/m", caption: "E-field (south)")
-                    MetricTile(value: Fmt.num(w.bt, 1), unit: "nT", caption: "Bt")
+                    MetricTile(id: "wind.pressure", value: Fmt.num(w.pressure, 1), unit: "nPa", caption: "dyn. pressure")
+                    MetricTile(id: "wind.efield", value: Fmt.num(w.electricField, 1), unit: "mV/m", caption: "E-field (south)")
+                    MetricTile(id: "wind.bt", value: Fmt.num(w.bt, 1), unit: "nT", caption: "Bt")
                 }
                 HStack(spacing: 8) {
-                    FlagPill(text: "Southward Bz", on: w.coupling.southward)
-                    FlagPill(text: "Fast stream", on: w.coupling.fastStream)
-                    FlagPill(text: "Geoeffective", on: w.coupling.geoeffective)
+                    FlagPill(id: "wind.flag.southward", text: "Southward Bz", on: w.coupling.southward)
+                    FlagPill(id: "wind.flag.fastStream", text: "Fast stream", on: w.coupling.fastStream)
+                    FlagPill(id: "wind.flag.geoeffective", text: "Geoeffective", on: w.coupling.geoeffective)
                 }
                 MeaningLine(windMeaning(w))
             }
@@ -110,20 +110,20 @@ struct DashboardView: View {
 
     @ViewBuilder private var flarePanel: some View {
         if let f = snapshot.flare {
-            Panel(title: "Solar Flares & X-ray Flux", source: "NOAA SWPC · GOES", observedAt: f.observedAt,
+            Panel(id: "flare", title: "Solar Flares & X-ray Flux", source: "NOAA SWPC · GOES", observedAt: f.observedAt,
                   feed: .flares, status: status) {
                 HStack(spacing: 12) {
-                    MetricTile(value: f.currentClass, caption: "current flux",
+                    MetricTile(id: "flare.current", value: f.currentClass, caption: "current flux",
                                color: sw.severity(flareClass: f.currentClass))
-                    MetricTile(value: f.rScale > 0 ? "R\(f.rScale)" : "—", caption: SWText.key(Flare.rLabel(f.rScale)))
+                    MetricTile(id: "flare.rScale", value: f.rScale > 0 ? "R\(f.rScale)" : "—", caption: SWText.key(Flare.rLabel(f.rScale)))
                     if let ev = f.latestFlare {
-                        MetricTile(value: ev.maxClass, caption: "latest flare",
+                        MetricTile(id: "flare.latest", value: ev.maxClass, caption: "latest flare",
                                    color: sw.severity(flareClass: ev.maxClass))
                     }
                     // Strongest event of the last 24 h. Current flux says what the Sun is doing
                     // this minute; this says what kind of day it has been.
                     if let peak = f.peak24h {
-                        MetricTile(value: peak.maxClass, caption: "24h peak",
+                        MetricTile(id: "flare.peak24h", value: peak.maxClass, caption: "24h peak",
                                    color: sw.severity(flareClass: peak.maxClass))
                     }
                 }
@@ -136,12 +136,12 @@ struct DashboardView: View {
 
     @ViewBuilder private var auroraPanel: some View {
         if let a = snapshot.aurora {
-            Panel(title: "Aurora", source: "NOAA SWPC · OVATION", observedAt: a.observedAt,
+            Panel(id: "aurora", title: "Aurora", source: "NOAA SWPC · OVATION", observedAt: a.observedAt,
                   feed: .aurora, status: status) {
                 HStack(spacing: 12) {
-                    MetricTile(value: "\(a.maxProbability)", unit: "%", caption: "peak probability",
+                    MetricTile(id: "aurora.probability", value: "\(a.maxProbability)", unit: "%", caption: "peak probability",
                                color: sw.side(.terra))
-                    MetricTile(value: Fmt.num(a.viewLineLatitude, 0), unit: "°",
+                    MetricTile(id: "aurora.viewLine", value: Fmt.num(a.viewLineLatitude, 0), unit: "°",
                                caption: "view line (geomag lat)")
                 }
                 MeaningLine(SWText.auroraViewLine(kp: a.kp))
@@ -152,14 +152,14 @@ struct DashboardView: View {
 
     @ViewBuilder private var solarPanel: some View {
         if let s = snapshot.solar {
-            Panel(title: "Solar Activity", source: "NOAA SWPC · Wolf R", observedAt: s.observedAt,
+            Panel(id: "solar", title: "Solar Activity", source: "NOAA SWPC · Wolf R", observedAt: s.observedAt,
                   feed: .solar, status: status) {
                 HStack(spacing: 12) {
-                    MetricTile(value: Fmt.int(s.sunspotNumber), caption: SWText.key(s.activity, fallback: "sunspot no."),
+                    MetricTile(id: "solar.sunspots", value: Fmt.int(s.sunspotNumber), caption: SWText.key(s.activity, fallback: "sunspot no."),
                                color: sw.side(.solar))
-                    MetricTile(value: Fmt.num(s.f107, 0), unit: "sfu",
+                    MetricTile(id: "solar.f107", value: Fmt.num(s.f107, 0), unit: "sfu",
                                caption: SWText.f107(s.f107Level))
-                    MetricTile(value: Fmt.int(s.regionCount), caption: "active regions")
+                    MetricTile(id: "solar.regions", value: Fmt.int(s.regionCount), caption: "active regions")
                 }
                 MeaningLine("Sunspot number R = 10·groups + spots (Wolf/SILSO), from NOAA's solar-region report.")
             }

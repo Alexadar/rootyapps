@@ -80,6 +80,7 @@ struct SpaceWeatherRootView: View {
             // Full view always. The Simple/Extended switch is gone from the UI; a "lite" build
             // will flip this same store rather than reintroduce a control here.
             mode.selected = .extended
+            store.suppressNetwork = LaunchOverride.fixtureActive
             store.afterRefresh = { snapshot in
                 WidgetCenter.shared.reloadAllTimelines()
                 AlertNotifier.handle(snapshot)
@@ -177,7 +178,9 @@ struct SpaceWeatherRootView: View {
             header
             if mode.selected == .extended {
                 if !isSnapshotEmpty { matchupStrip }
-                SWSegmented(titles: Tab.allCases.map { SWText.str($0.title) }, selection: .index(of: $tab))
+                SWSegmented(titles: Tab.allCases.map { SWText.str($0.title) },
+                            selection: .index(of: $tab),
+                            ids: Tab.allCases.map { "tab.\($0.rawValue)" })
                     .padding(.horizontal, SWM.screenMargin)
             }
         }
@@ -238,16 +241,23 @@ struct SpaceWeatherRootView: View {
                         .frame(width: 44, height: 44).contentShape(Rectangle())
                 }
                 .accessibilityLabel("Night mode")
+                .accessibilityIdentifier("chrome.nightMode")
                 Button { Task { await store.refresh() } } label: {
                     Image(systemName: "arrow.clockwise")
                         .foregroundStyle(sw.brand).opacity(store.isLoading ? 0.4 : 1)
                         .frame(width: 44, height: 44).contentShape(Rectangle())
                 }
                 .disabled(store.isLoading)
+                .accessibilityLabel("Refresh")
+                .accessibilityIdentifier("chrome.refresh")
+                // This is the button that shipped doing nothing: it had no identifier, no label and
+                // no test, so a dead sheet binding was invisible to everything but a human tapping it.
                 Button { showSettings = true } label: {
                     Image(systemName: "gearshape").foregroundStyle(sw.textSecondary)
                         .frame(width: 44, height: 44).contentShape(Rectangle())
                 }
+                .accessibilityLabel("Settings")
+                .accessibilityIdentifier("chrome.settings")
             }
             .font(.body.weight(.semibold))
             .buttonStyle(.plain)

@@ -51,8 +51,18 @@ final class LanguageStore: ObservableObject {
     @AppStorage(SharedStore.Key.language, store: AppGroup.defaults)
     private var raw: String = ""
 
+    /// A test/capture override, resolved once at init. It has to WIN over the stored value: the
+    /// picker persists into the app group, so a German capture leaves every later run in German —
+    /// and because `Fmt` reads the language from that same group rather than `Locale.current`,
+    /// `-AppleLanguages` cannot correct it.
+    private let override: SWLanguage?
+
+    init() {
+        override = LaunchOverride.value("EARTHAROUND_LANG").flatMap(SWLanguage.init(rawValue:))
+    }
+
     var selected: SWLanguage {
-        get { SWLanguage(rawValue: raw) ?? .system }
+        get { override ?? SWLanguage(rawValue: raw) ?? .system }
         set { objectWillChange.send(); raw = newValue.rawValue }
     }
 
@@ -64,7 +74,14 @@ final class LanguageStore: ObservableObject {
 /// render, the complication, and notification text built in the background task.
 extension SWLanguage {
     nonisolated static var shared: SWLanguage {
-        SharedStore().languageCode.flatMap(SWLanguage.init(rawValue:)) ?? .system
+        // The override has to be honoured HERE too, not just in `LanguageStore`. This is the
+        // nonisolated path `Fmt` and `SWText` use, and it reads the app group directly — so without
+        // this, EARTHAROUND_LANG=en would render the views in English while every number and string
+        // still came out in whatever language a previous capture left stored.
+        if let o = LaunchOverride.value("EARTHAROUND_LANG").flatMap(SWLanguage.init(rawValue:)) {
+            return o
+        }
+        return SharedStore().languageCode.flatMap(SWLanguage.init(rawValue:)) ?? .system
     }
     nonisolated static var sharedLocale: Locale { shared.locale ?? .autoupdatingCurrent }
 
