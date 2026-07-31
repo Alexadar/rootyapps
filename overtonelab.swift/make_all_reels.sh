@@ -14,8 +14,15 @@ mux(){  # $1 = silent framed_preview .mp4 → *_music.mp4
   echo "  ✓ muxed ${V%.mp4}_music.mp4"
 }
 
+# ONLY_TESTING pins the capture to the tour.
+#
+# The reel scheme's test action runs the WHOLE overtonelabUITests bundle, and that bundle now holds
+# a 26-launch value suite — which would record several minutes of tests launching and quitting the
+# app into every reel, and lengthen each capture by the same. make_reel.sh already supports this
+# variable; it was simply never set.
 echo "===== iOS reel ====="
 APP_DIR=$APP PROJECT=$APP/overtonelab.swift.xcodeproj SCHEME=overtonelabReel \
+  ONLY_TESTING=overtonelabUITests/ReelTour \
   APP_BUNDLE=oleksandr.aisixteen.overtonelab SIM_NAME=Calc-iPhone17ProMax \
   SCENES=$ROOT/marketing/reels/overtonelab_scenes.json PLATFORM=ios \
   bash $ROOT/marketing/reels/make_reel.sh
@@ -23,6 +30,7 @@ mux $APP/marketing/aso/ios/video/framed_preview_886x1920.mp4
 
 echo "===== iPad reel ====="
 APP_DIR=$APP PROJECT=$APP/overtonelab.swift.xcodeproj SCHEME=overtonelabReel \
+  ONLY_TESTING=overtonelabUITests/ReelTour \
   APP_BUNDLE=oleksandr.aisixteen.overtonelab SIM_NAME=Calc-iPadPro13 \
   SCENES=$ROOT/marketing/reels/overtonelab_scenes_ipad.json PLATFORM=ipad \
   bash $ROOT/marketing/reels/make_reel.sh
