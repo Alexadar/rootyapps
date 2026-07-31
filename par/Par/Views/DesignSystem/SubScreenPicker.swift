@@ -44,6 +44,13 @@ public struct SubScreenPicker<Value: Hashable>: View {
             }
             .padding(.horizontal, Par.Metrics.gutter)
         }
+        // `.contain`, not bare. An identifier on a container with no `accessibilityElement` is a
+        // silent no-op on macOS, while on iOS it overwrites the identifiers of the segment Buttons
+        // beneath it — so `tool.picker.Bond` and its nine siblings become unaddressable on one
+        // platform and `tool.picker.strip` does not exist on the other. `.contain` publishes the
+        // strip without swallowing its children. Both are needed: the segments for taps, the strip
+        // because ten tools do not fit across a phone and a tour has to scroll it.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("\(identifier).strip")
     }
 }

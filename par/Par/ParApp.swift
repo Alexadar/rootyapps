@@ -86,7 +86,7 @@ enum CaptureMode {
 
     /// True when the capture wants the tape on screen (`PAR_TAPE=1`). On iPhone the tape is a second
     /// surface, so a screenshot has to ask for it; on iPad it is always beside the calculator.
-    static var showsTape: Bool { ProcessInfo.processInfo.environment["PAR_TAPE"] == "1" }
+    static var showsTape: Bool { LaunchOverride.flag("PAR_TAPE") }
 
     /// The work a real user would have on their tape by mid-morning: two refinance scenarios and the
     /// bond they are funding it against. Every row stores inputs only, exactly as a saved tape does,
@@ -94,7 +94,7 @@ enum CaptureMode {
     static var sampleTape: TapeDocument {
         // The reel sets PAR_TAPE_SEED=0: its whole point is watching a solve land on an empty tape,
         // and a pre-filled one would bury the new line below the fold.
-        guard ProcessInfo.processInfo.environment["PAR_TAPE_SEED"] != "0" else {
+        guard LaunchOverride.isNotDisabled("PAR_TAPE_SEED") else {
             return TapeDocument(title: "Refi comparison — Alvarez")
         }
         return TapeDocument(title: "Refi comparison — Alvarez", rows: [

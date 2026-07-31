@@ -156,6 +156,12 @@ public struct TVMScreen: View {
                     Rectangle().fill(Par.Palette.accent).frame(width: 2.5)
                 }
             }
+            // `.contain` keeps BOTH addressable: `NumberField` puts `identifier` on its own leaf,
+            // and this row adds `…​.row` for the tap target. Without it the two fight and the winner
+            // differs by platform — iOS lets the outer id overwrite the leaf, macOS drops the outer
+            // id entirely — so `tvm.input.annualRate` and `tvm.input.annualRate.row` each exist on
+            // exactly one platform. The reel tour taps the row; a numeric check reads the leaf.
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("\(identifier).row")
             .accessibilityAddTraits(showsKeypad ? .isButton : [])
     }

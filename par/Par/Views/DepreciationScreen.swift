@@ -72,7 +72,7 @@ public struct DepreciationScreen: View {
                 // table that does not exist.
                 SettingCard("LIF · recovery period",
                             value: "\(Int(model.recoveryYears))-year",
-                            identifier: "dep.input.recoveryYears",
+                            identifier: "dep.input.recoveryYears.macrs",
                             spoken: "recovery period, \(Int(model.recoveryYears)) year property") {
                     Picker("recovery period", selection: Binding(
                         get: { Int(model.recoveryYears) },
@@ -87,7 +87,7 @@ public struct DepreciationScreen: View {
             } else {
                 NumberField("LIF", caption: "recovery period", unit: "years",
                             value: $model.recoveryYears, range: DepreciationViewModel.recoveryRange,
-                            digits: 0, identifier: "dep.input.recoveryYears")
+                            digits: 0, identifier: "dep.input.recoveryYears.free")
             }
             if model.method == .decliningBalance || model.method == .decliningBalanceWithCrossover {
                 Divider().overlay(Par.Palette.separator)

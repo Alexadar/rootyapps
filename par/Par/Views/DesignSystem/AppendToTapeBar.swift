@@ -17,6 +17,7 @@ public struct AppendToTapeBar: View {
     private let canAppend: Bool
     private let identifier: String
     private let append: () -> Void
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     public init(label: Binding<String>, canAppend: Bool, identifier: String,
                 append: @escaping () -> Void) {
@@ -27,6 +28,26 @@ public struct AppendToTapeBar: View {
     }
 
     public var body: some View {
+        // In a compact width the bar scrolls with the content, which is fine: a phone screen is
+        // short and the bar is never far. A regular width is where this went wrong — on a 1440x900
+        // Mac window the scroll content runs past 2,500pt, so the bar sat below the fold and a click
+        // landed outside the window entirely. Nine of ten screens could not reach their own tape.
+        //
+        // There, `RootView` pins it instead (see `regularLayout`), and this renders nothing but still
+        // publishes the command — so there is exactly one bar on screen either way.
+        if horizontalSizeClass == .compact {
+            content
+        } else {
+            Color.clear
+                .frame(height: 0)
+                .accessibilityHidden(true)
+                .focusedSceneValue(\.appendToTape, command)
+        }
+    }
+
+    /// The bar itself, so the pinned copy and the inline copy cannot drift apart.
+    @ViewBuilder
+    public var content: some View {
         HStack(spacing: 8) {
             TextField("Label this solve", text: $label)
                 .textFieldStyle(.plain)
@@ -51,7 +72,11 @@ public struct AppendToTapeBar: View {
         .padding(.vertical, 10)
         .frame(minHeight: Par.Metrics.minHitTarget)
         .glassCard(radius: 16)
-        .focusedSceneValue(\.appendToTape, canAppend ? AppendCommand(id: identifier, run: append) : nil)
+        .focusedSceneValue(\.appendToTape, command)
+    }
+
+    private var command: AppendCommand? {
+        canAppend ? AppendCommand(id: identifier, label: $label, run: append) : nil
     }
 }
 
@@ -61,6 +86,8 @@ public struct AppendToTapeBar: View {
 /// to know whether the focused value changed. The identifier is stable per screen, so it does.
 public struct AppendCommand: Equatable {
     public let id: String
+    /// The row label, so a pinned bar rendered elsewhere edits the same string the screen owns.
+    public let label: Binding<String>
     public let run: () -> Void
 
     public static func == (lhs: AppendCommand, rhs: AppendCommand) -> Bool { lhs.id == rhs.id }

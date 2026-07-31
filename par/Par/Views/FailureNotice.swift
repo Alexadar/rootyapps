@@ -74,6 +74,9 @@ public struct MultipleIRRNotice: View {
         }
         .padding(16)
         .glassCard()
+        // `.contain` so the root cards below stay individually addressable, and so this identifier
+        // exists on macOS at all — a bare container never gets published there.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("cashflow.hero.multipleIRR")
     }
 
@@ -89,6 +92,10 @@ public struct MultipleIRRNotice: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 14).padding(.vertical, 10)
             .glassCard(radius: 16)
+            // `.combine`, because this card IS the number: combining gives it a label that carries
+            // the formatted rate on both platforms. Bare, the identifier was a no-op on macOS, so
+            // the one figure a multiple-IRR reader needs was not addressable at all.
+            .accessibilityElement(children: .combine)
             .accessibilityIdentifier("cashflow.irr.root.\(index + 1)")
             .accessibilityLabel("Internal rate of return, root \(index + 1), \(Fmt.percent(root * 100))")
         }

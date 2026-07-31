@@ -1,4 +1,3 @@
-import UIKit
 import XCTest
 
 /// The app-preview tour: five scenes, driven by real taps, at human speed.
@@ -25,10 +24,14 @@ final class ReelTour: XCTestCase {
         // Regular width shows the tape beside the calculator, so it is on screen from the first
         // frame — an empty column there is half a preview of nothing. Compact reaches the tape
         // through a sheet, where the beat that sells it is a line *arriving* on an empty tape.
-        let isPad = UIDevice.current.userInterfaceIdiom == .pad
+        // Branch on the LAYOUT, not the device. `UIDevice` does not exist on macOS, and now that
+        // ParUITests declares macOS support an `import UIKit` here fails the whole bundle to compile
+        // — which is how a device check became a portability bug. The sidebar is the honest signal
+        // anyway: a regular width has one and a compact width does not, on any platform.
+        let isRegular = regularWidth(app)
         // Start from an empty tape: the reel's second beat is a solved line appearing on it, and a
         // seeded tape would push the new row below the fold.
-        app.launchEnvironment["PAR_TAPE_SEED"] = isPad ? "1" : "0"
+        app.launchEnvironment["PAR_TAPE_SEED"] = "0"
         // The simulator's own locale renders 6.25 as "6,250" and 420000 as "420 000,00". Correct
         // there, wrong for a US listing — and a recording is much harder to notice it in than a still.
         app.launchArguments += ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
@@ -51,7 +54,7 @@ final class ReelTour: XCTestCase {
 
         // ── Scene 2 · the tape — the line that just landed on it ──
         mark("Tape")
-        if isPad {
+        if isRegular {
             dwell(2.2)                              // the tape is already beside the calculator
         } else {
             tapID(app, "tape.peek")
@@ -67,7 +70,7 @@ final class ReelTour: XCTestCase {
         dwell(0.6)
         keypad(app, "solve")
         dwell(0.5)
-        if isPad {
+        if isRegular {
             dwell(2.0)                              // 30 year and 15 year, side by side
         } else {
             tapID(app, "tape.peek")
@@ -121,7 +124,7 @@ final class ReelTour: XCTestCase {
                 .tap()
             return
         }
-        let element = app.buttons[identifier].firstMatch
+        let element = any(app, identifier)
         guard element.waitForExistence(timeout: 1.5) else {
             NSLog("REEL_MISS %@", identifier)
             return
@@ -137,8 +140,7 @@ final class ReelTour: XCTestCase {
     /// timed out and the tour played 19 s of nothing. Existence, not hittability, is the gate: a
     /// custom container can report itself unhittable and still occupy a frame a finger would hit.
     private func tapID(_ app: XCUIApplication, _ identifier: String) {
-        for query in [app.buttons[identifier], app.descendants(matching: .any)[identifier]] {
-            let element = query.firstMatch
+        for element in [any(app, identifier)] {
             guard element.waitForExistence(timeout: 1.5) else { continue }
             element.tap()
             return
@@ -151,9 +153,8 @@ final class ReelTour: XCTestCase {
     private func open(_ app: XCUIApplication, tool: String) {
         // Compact (iPhone) is the segmented picker, regular (iPad) the sidebar list. Both carry real
         // identifiers — `tool.picker.Bond`, `sidebar.tool.Bond` — so neither depends on visible copy.
-        let routes = UIDevice.current.userInterfaceIdiom == .pad
-            ? ["sidebar.tool.\(tool)", "tool.picker.\(tool)"]
-            : ["tool.picker.\(tool)", "sidebar.tool.\(tool)"]
+        // Try both routes, cheapest-first is not worth guessing: whichever exists answers.
+        let routes = ["sidebar.tool.\(tool)", "tool.picker.\(tool)"]
         for identifier in routes {
             let element = app.descendants(matching: .any)[identifier].firstMatch
             guard element.waitForExistence(timeout: 1.5) else { continue }
@@ -198,6 +199,11 @@ final class ReelTour: XCTestCase {
 
     /// Resolved once. The window does not move, and asking for it costs a snapshot.
     private var windowFrame: CGRect = .null
+
+    /// True when the app is showing its regular-width layout — a sidebar rather than a tool strip.
+    private func regularWidth(_ app: XCUIApplication) -> Bool {
+        any(app, "sidebar.tool.TVM").waitForExistence(timeout: 3)
+    }
 
     private func mark(_ key: String) {
         NSLog("REEL_SCENE %@ %.3f", key, Date().timeIntervalSince1970)

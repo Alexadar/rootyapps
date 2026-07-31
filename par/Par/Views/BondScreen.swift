@@ -104,7 +104,7 @@ public struct BondScreen: View {
                            value: Fmt.price(model.effectivePrice, digits: 6),
                            footnote: "at \(Fmt.percent(yield * 100)) nominal, semiannual",
                            identifier: "bond.hero",
-                           spoken: "price \(Fmt.price(model.effectivePrice, digits: 4)) per 100")
+                           spoken: "price \(Fmt.price(model.effectivePrice, digits: 6)) per 100")
             } else {
                 HeroResult(caption: "YTM · yield to maturity",
                            value: Fmt.percent(yield * 100),
@@ -126,11 +126,11 @@ public struct BondScreen: View {
         VStack(spacing: 0) {
             ResultRow("accrued interest", value: Fmt.price(model.accruedInterest, digits: 6),
                       unit: "per 100", identifier: "bond.accrued",
-                      spoken: "accrued interest \(Fmt.price(model.accruedInterest, digits: 4)) per 100")
+                      spoken: "accrued interest \(Fmt.price(model.accruedInterest, digits: 6)) per 100")
             Divider().overlay(Par.Palette.separator)
             ResultRow("invoice price", value: Fmt.price(model.invoicePrice, digits: 6),
                       unit: "per 100", emphasis: .strong, identifier: "bond.invoice",
-                      spoken: "invoice price \(Fmt.price(model.invoicePrice, digits: 4)) per 100")
+                      spoken: "invoice price \(Fmt.price(model.invoicePrice, digits: 6)) per 100")
             Divider().overlay(Par.Palette.separator)
             ResultRow("current yield", value: Fmt.percent(model.currentYieldPct),
                       identifier: "bond.currentYield",

@@ -78,7 +78,7 @@ public struct RealEstateScreen: View {
                   spoken: Fmt.spokenMoney(model.netOperatingIncome, label: "net operating income"))
         ResultRow("cap rate", value: Fmt.percent(model.capRate * 100, digits: 2),
                   identifier: "realestate.capRate",
-                  spoken: Fmt.spokenPercent(model.capRate * 100, label: "capitalisation rate"))
+                  spoken: Fmt.spokenPercent(model.capRate * 100, label: "capitalisation rate", digits: 2))
     }
 
     @ViewBuilder
@@ -159,12 +159,12 @@ public struct RealEstateScreen: View {
             Divider().overlay(Par.Palette.separator)
             ResultRow("cash on cash", value: Fmt.percent(model.cashOnCash, digits: 2),
                       emphasis: .strong, identifier: "realestate.cashOnCash",
-                      spoken: Fmt.spokenPercent(model.cashOnCash, label: "cash on cash return"))
+                      spoken: Fmt.spokenPercent(model.cashOnCash, label: "cash on cash return", digits: 2))
             Divider().overlay(Par.Palette.separator)
             ResultRow("break-even occupancy", value: Fmt.percent(model.breakEvenOccupancy, digits: 1),
                       identifier: "realestate.breakEven",
                       spoken: Fmt.spokenPercent(model.breakEvenOccupancy,
-                                                label: "break-even occupancy"))
+                                                label: "break-even occupancy", digits: 1))
             Divider().overlay(Par.Palette.separator)
             // The sentence that decides a deal: leverage only helps above the mortgage constant.
             ResultRow("leverage", value: model.leverageIsAccretive ? "accretive" : "dilutive",

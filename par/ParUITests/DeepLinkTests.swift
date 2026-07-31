@@ -25,11 +25,13 @@ final class DeepLinkTests: XCTestCase {
 
     func testEveryDeepLinkOpensItsOwnScreen() {
         for tool in Self.tools {
-            let app = XCUIApplication()
-            app.launchEnvironment["PAR_TOOL"] = tool.slug
-            app.launch()
+            // Through the shared launcher, which pins the locale. This suite was the only one that
+            // did not: on a comma-decimal simulator its markers still resolve, so it would pass while
+            // every numeric check failed — a green deep-link suite next to a red calculation suite is
+            // a confusing way to discover a region setting.
+            let app = launchPar(tool: tool.slug)
 
-            let marker = app.descendants(matching: .any)[tool.marker].firstMatch
+            let marker = any(app, tool.marker)
             XCTAssertTrue(
                 marker.waitForExistence(timeout: 8),
                 "PAR_TOOL=\(tool.slug) did not open the screen carrying \(tool.marker)"
@@ -42,9 +44,8 @@ final class DeepLinkTests: XCTestCase {
     /// arbitrary — a capture script with a typo should produce an obviously wrong folder, not a
     /// subtly wrong one.
     func testUnknownDeepLinkFallsBackToTheDefaultScreen() {
-        let app = XCUIApplication()
-        app.launchEnvironment["PAR_TOOL"] = "not-a-tool"
-        app.launch()
-        XCTAssertTrue(app.descendants(matching: .any)["tvm.hero"].firstMatch.waitForExistence(timeout: 8))
+        let app = launchPar(tool: "not-a-tool")
+        XCTAssertTrue(any(app, "tvm.hero").waitForExistence(timeout: 8),
+                      "an unrecognised PAR_TOOL should land on TVM")
     }
 }

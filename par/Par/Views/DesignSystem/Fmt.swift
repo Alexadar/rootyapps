@@ -43,7 +43,14 @@ public enum Fmt {
         return "\(label), \(sense)\(magnitude) \(currency)"
     }
 
-    public static func spokenPercent(_ value: Double, label: String) -> String {
-        "\(label), \(percent(value)) percent"
+    /// `digits` must match what the screen displays.
+    ///
+    /// A combined accessibility card publishes this string as its `label`, and that label is the only
+    /// readable text a UI test gets for the number inside it — the value `Text` itself has no
+    /// identifier. When the two precisions disagree the test compares "40.00%" against "40.000%" and
+    /// fails on a rounding difference that no user could ever see. Default 3 matches `percent`'s own
+    /// default, so only the screens that display something else need to say so.
+    public static func spokenPercent(_ value: Double, label: String, digits: Int = 3) -> String {
+        "\(label), \(percent(value, digits: digits)) percent"
     }
 }

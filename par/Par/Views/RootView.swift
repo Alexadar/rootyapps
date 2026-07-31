@@ -36,7 +36,7 @@ public struct RootView: View {
         /// The tool named by `PAR_TOOL`, if any. Nil when the variable is unset or unrecognised —
         /// a typo in a capture script must not silently show the wrong screen.
         static var launchTool: Tool? {
-            guard let slug = ProcessInfo.processInfo.environment["PAR_TOOL"] else { return nil }
+            guard let slug = LaunchOverride.value("PAR_TOOL") else { return nil }
             return Tool.allCases.first { $0.slug == slug }
         }
     }
@@ -45,9 +45,10 @@ public struct RootView: View {
     @State private var tool: Tool
     // `PAR_TAPE=1` opens straight onto the tape. On iPhone it is a sheet, so a screenshot of it has
     // to be asked for; on iPad it is already beside the calculator and this changes nothing.
-    @State private var isTapePresented = ProcessInfo.processInfo.environment["PAR_TAPE"] == "1"
+    @State private var isTapePresented = LaunchOverride.flag("PAR_TAPE")
     @State private var isReferencePresented = false
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @FocusedValue(\.appendToTape) private var appendCommand
 
     public init(document: Binding<TapeDocument>) {
         self._document = document
@@ -156,10 +157,33 @@ public struct RootView: View {
             HStack(spacing: 0) {
                 screen
                     .frame(minWidth: 380, maxWidth: .infinity)
+                    // Pinned, not scrolled. At a regular width the calculator column's content can
+                    // run well past the window — measured at ~2,500pt in a 900pt Mac window — and
+                    // the append bar was the last thing in it, so it sat permanently below the fold.
+                    // Nine of the ten screens could not put a row on their own tape on macOS, which
+                    // no amount of scrolling in a test would have made a reasonable user experience
+                    // either. Here it is always the last thing on screen and always reachable.
+                    .safeAreaInset(edge: .bottom) { pinnedAppendBar }
                 Divider().overlay(Par.Palette.separator)
                 TapeView(document: $document)
                     .frame(minWidth: 300, idealWidth: 360, maxWidth: 420)
             }
+        }
+    }
+
+    /// The focused screen's append bar, rendered once, at the foot of the calculator column.
+    ///
+    /// It reads the command the screen publishes rather than owning any state, so the label it edits
+    /// and the action it runs are the screen's own — there is no second source of truth.
+    @ViewBuilder
+    private var pinnedAppendBar: some View {
+        if let command = appendCommand {
+            AppendToTapeBar(label: command.label, canAppend: true,
+                            identifier: command.id) { command.run() }
+                .content
+                .padding(.horizontal, Par.Metrics.gutter)
+                .padding(.bottom, 10)
+                .background(.ultraThinMaterial)
         }
     }
 

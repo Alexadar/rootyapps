@@ -19,8 +19,8 @@ settings:
     DEVELOPMENT_TEAM: LSKNNBG94G
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "4"
+    MARKETING_VERSION: "1.0.1"
+    CURRENT_PROJECT_VERSION: "5"
     ENABLE_PREVIEWS: YES
     GENERATE_INFOPLIST_FILE: YES
 
@@ -143,6 +143,21 @@ targets:
         product: CashFlowKit
       - package: BondKit
         product: BondKit
+      # The state-space tests reach every view model, and six of the ten Kits were unreachable
+      # from this target: a view-model test for Rate, Depreciation, Day Count, Percent, Statistics
+      # or Real Estate could not even name the type it was asserting against.
+      - package: RateKit
+        product: RateKit
+      - package: DepKit
+        product: DepKit
+      - package: DayCountKit
+        product: DayCountKit
+      - package: PercentKit
+        product: PercentKit
+      - package: StatKit
+        product: StatKit
+      - package: RealEstateKit
+        product: RealEstateKit
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.fincalcTests
@@ -150,12 +165,15 @@ targets:
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Par.app/Contents/MacOS/Par"
         BUNDLE_LOADER: "$(TEST_HOST)"
 
-  # UI tests: iOS only (XCUITest cannot drive the Mac app the way the reel needs), and the target
-  # the media pipeline builds. `ReelTour` drives the app-preview recording; `DeepLinkTests` pins the
-  # PAR_TOOL deep links both capture scripts depend on.
+  # UI tests, and the target the media pipeline builds. `ReelTour` drives the app-preview recording;
+  # `DeepLinkTests` pins the PAR_TOOL deep links both capture scripts depend on.
+  #
+  # macOS is declared even though the Mac suite is not part of this pass: without it `xcodebuild`
+  # refuses a Mac destination outright with "does not support My Mac's platform", which is why the
+  # Mac has never been tested at all. Declaring it makes that run one command away.
   ParUITests:
     type: bundle.ui-testing
-    supportedDestinations: [iOS]
+    supportedDestinations: [iOS, macOS]
     sources:
       - path: ParUITests
     dependencies:
@@ -171,12 +189,18 @@ schemes:
     build:
       targets:
         Par: all
+        ParUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
+        # Both suites. ParUITests was missing here, so `xcodebuild test -scheme Par
+        # -only-testing:ParUITests` refused outright — "isn't a member of the specified test plan
+        # or scheme" — and the UI suite could only ever be run through the media scheme, in the
+        # Capture configuration. That is why it had never been run in Debug on either device.
         - ParTests
+        - ParUITests
 
   # The media scheme: builds the UI-test bundle for the `test` action so `build-for-testing` +
   # `test-without-building` can drive a recording. `make_reel.sh` must pass

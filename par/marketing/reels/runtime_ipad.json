@@ -3,7 +3,7 @@
     1200,
     1600
   ],
-  "content_len": 42.877,
+  "content_len": 43.523,
   "preview_maxlen": 28.5,
   "outro_dur": 2.6,
   "style": {
@@ -26,35 +26,35 @@
     {
       "key": "TVM",
       "start": 0.0,
-      "end": 14.187,
+      "end": 14.685,
       "title": "Solve it once",
       "subtitle": "Any of n \u00b7 i \u00b7 PV \u00b7 PMT \u00b7 FV, from the other four"
     },
     {
       "key": "Tape",
-      "start": 14.187,
-      "end": 16.4,
+      "start": 14.685,
+      "end": 16.887,
       "title": "Then keep it",
       "subtitle": "Every solve lands on the tape, labelled"
     },
     {
       "key": "Compare",
-      "start": 16.4,
-      "end": 33.27,
+      "start": 16.887,
+      "end": 34.094,
       "title": "Compare, side by side",
       "subtitle": "30 year against 15 \u2014 both still there tomorrow"
     },
     {
       "key": "Bond",
-      "start": 33.27,
-      "end": 40.271,
+      "start": 34.094,
+      "end": 40.918,
       "title": "Priced the way Treasury prices",
       "subtitle": "31 CFR 356 Appendix B, day counts and all"
     },
     {
       "key": "Dates",
-      "start": 40.271,
-      "end": 42.877,
+      "start": 40.918,
+      "end": 43.523,
       "title": "Six conventions, six answers",
       "subtitle": "30/360 \u00b7 30E/360 \u00b7 ISDA \u00b7 Actual \u2014 they disagree"
     }

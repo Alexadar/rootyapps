@@ -96,7 +96,7 @@ public struct PercentScreen: View {
                 spoken: model.mode == .breakEven
                     ? "\(Fmt.count(value)) units to break even"
                     : Fmt.spokenPercent(value, label: model.mode == .margin
-                                        ? "gross margin" : "percent change")
+                                        ? "gross margin" : "percent change", digits: 2)
             )
         case .failed(let message):
             FailureNotice(
@@ -116,11 +116,11 @@ public struct PercentScreen: View {
                 // Both numbers, always, side by side. A 50% markup is a 33⅓% margin.
                 ResultRow("markup on cost", value: Fmt.percent(model.markup, digits: 2),
                           emphasis: .strong, identifier: "percent.markup",
-                          spoken: Fmt.spokenPercent(model.markup, label: "markup on cost"))
+                          spoken: Fmt.spokenPercent(model.markup, label: "markup on cost", digits: 2))
                 Divider().overlay(Par.Palette.separator)
                 ResultRow("margin on price", value: Fmt.percent(model.margin, digits: 2),
                           identifier: "percent.margin",
-                          spoken: Fmt.spokenPercent(model.margin, label: "margin on price"))
+                          spoken: Fmt.spokenPercent(model.margin, label: "margin on price", digits: 2))
                 Divider().overlay(Par.Palette.separator)
                 ResultRow("gross profit", value: Fmt.money(model.grossProfit), unit: "USD",
                           identifier: "percent.grossProfit",
@@ -128,16 +128,23 @@ public struct PercentScreen: View {
             }
             .glassCard()
         case .change:
-            // The two values are stored in the same scalars the margin mode uses, so a change row
-            // costs the file format nothing. Only the labels differ.
+            // Results, not a second copy of the inputs. This branch previously repeated the FRM/TO
+            // fields from `inputs` verbatim — same bindings, same identifiers — so the screen showed
+            // the pair twice and `percent.input.from` matched two elements.
             VStack(spacing: 0) {
-                NumberField("FRM", caption: "from", unit: "value",
-                            value: $model.cost, range: -1_000_000_000...1_000_000_000, digits: 2,
-                            identifier: "percent.input.from")
+                ResultRow("absolute change", value: Fmt.money(model.absoluteChange), unit: "value",
+                          emphasis: .strong, identifier: "percent.absoluteChange",
+                          spoken: Fmt.spokenMoney(model.absoluteChange, label: "absolute change",
+                                                  currency: "units"))
                 Divider().overlay(Par.Palette.separator)
-                NumberField("TO", caption: "to", unit: "value",
-                            value: $model.price, range: -1_000_000_000...1_000_000_000, digits: 2,
-                            identifier: "percent.input.to")
+                // The question anyone asks next: if it moves again by the same percentage, where
+                // does it land? A fall and the rise back are not equal, and this row is where that
+                // becomes visible rather than assumed.
+                ResultRow("again at the same rate", value: Fmt.money(model.compoundedOnce),
+                          unit: "value", identifier: "percent.compoundedOnce",
+                          spoken: Fmt.spokenMoney(model.compoundedOnce,
+                                                  label: "the same change applied again",
+                                                  currency: "units"))
             }
             .glassCard()
         case .breakEven:
@@ -150,7 +157,7 @@ public struct PercentScreen: View {
                 ResultRow("contribution margin", value: Fmt.percent(model.contributionMarginPct, digits: 2),
                           identifier: "percent.contributionPct",
                           spoken: Fmt.spokenPercent(model.contributionMarginPct,
-                                                    label: "contribution margin"))
+                                                    label: "contribution margin", digits: 2))
                 Divider().overlay(Par.Palette.separator)
                 ResultRow("revenue at break-even", value: Fmt.money(model.breakEvenRevenue),
                           unit: "USD", identifier: "percent.breakEvenRevenue",
