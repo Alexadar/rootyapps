@@ -12,11 +12,13 @@ private struct MacTab: Identifiable {
 struct MacOSContentView: View {
     /// Read straight from the environment, not via ReelDriver: that type is @MainActor, and
     /// referencing its static from the App's Scene builder stopped the window being created.
-    static let isReelRun = ProcessInfo.processInfo.environment["EPHEMERIS_REEL"] == "1"
+    static let isReelRun = LaunchOverride.flag("EPHEMERIS_REEL")
 
     @StateObject private var vm = ChartViewModel()
-    // Lets screenshot tooling open a specific section via EPHEMERIS_TAB.
-    @State private var selection = Int(ProcessInfo.processInfo.environment["EPHEMERIS_TAB"] ?? "0") ?? 0
+    // Lets screenshot tooling open a specific section via EPHEMERIS_TAB. This is a SEPARATE deep-link
+    // path from the iOS TabView's, so a tab deep link has to be asserted on the Mac as well —
+    // passing on iPhone proves nothing here.
+    @State private var selection = LaunchOverride.int("EPHEMERIS_TAB") ?? 0
 
     private let tabs: [MacTab] = [
         .init(id: 0, title: "Chart",     icon: "circle.hexagongrid"),

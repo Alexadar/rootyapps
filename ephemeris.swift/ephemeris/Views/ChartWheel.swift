@@ -103,6 +103,12 @@ struct ChartWheel: View {
         }
         .aspectRatio(1, contentMode: .fit)
         .nebulaCard()
+        // A `Canvas` publishes nothing at all, so the wheel was invisible both to VoiceOver and to
+        // any test asking "did the Chart tab actually render?". `.accessibilityElement()` first —
+        // an identifier on a bare container is a silent no-op on macOS (trap 5).
+        .accessibilityElement()
+        .accessibilityIdentifier("chart.wheel")
+        .accessibilityLabel(Text(L.loc("Chart wheel")))
     }
 
     /// 0° Aries at left, counterclockwise. Shared with the watch via `ChartGeometry` — this was

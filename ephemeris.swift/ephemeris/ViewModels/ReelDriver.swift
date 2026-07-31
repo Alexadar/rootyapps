@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import EphemerisKit   // LaunchOverride — DEBUG-gated EPHEMERIS_* reads
 
 /// Drives the App Store preview tour from *inside* the app, and publishes the markers the
 /// compositor times its captions against.
@@ -33,11 +34,11 @@ final class ReelDriver: ObservableObject {
     private var task: Task<Void, Never>?
 
     init() {
-        tab = Int(ProcessInfo.processInfo.environment["EPHEMERIS_TAB"] ?? "0") ?? 0
+        tab = LaunchOverride.int("EPHEMERIS_TAB") ?? 0
     }
 
     /// Static so the App scene can size its macOS window before any instance exists.
-    static var isReelRun: Bool { ProcessInfo.processInfo.environment["EPHEMERIS_REEL"] == "1" }
+    static var isReelRun: Bool { LaunchOverride.flag("EPHEMERIS_REEL") }
     var isReelRun: Bool { Self.isReelRun }
 
     /// Walks every tab once, emitting the markers `align_scenes.py` reads. Runs only under

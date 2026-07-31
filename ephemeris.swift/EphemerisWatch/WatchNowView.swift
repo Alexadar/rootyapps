@@ -76,6 +76,8 @@ struct WatchNowView: View {
         // Without this the List paints its own dark background and the sky is only visible in
         // the margins. Row backgrounds go too, so the cards read as glass over the stars.
         .scrollContentBackground(.hidden)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("watch.now")
     }
 }
 

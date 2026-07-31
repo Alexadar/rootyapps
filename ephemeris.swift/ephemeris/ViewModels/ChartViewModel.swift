@@ -40,18 +40,22 @@ final class ChartViewModel: ObservableObject {
     @Published private(set) var houseFallback: HouseSystem?
 
     init() {
-        date = Date()
+        // EPHEMERIS_DATE pins the instant so a UI test can assert a known position. Every screen
+        // here renders the live sky, so without it there is no stable expected value to assert
+        // against. Unset or unparseable falls back to the real clock.
+        date = LaunchOverride.pinnedDate() ?? Date()
         // EPHEMERIS_TZ overrides the persisted/device zone (used by preview reels); doesn't persist.
-        let env = ProcessInfo.processInfo.environment
         let savedID = UserDefaults.standard.string(forKey: Self.tzKey) ?? TimeZone.current.identifier
-        timeZone = TimeZone(identifier: env["EPHEMERIS_TZ"] ?? savedID) ?? .current
+        timeZone = TimeZone(identifier: LaunchOverride.value("EPHEMERIS_TZ") ?? savedID) ?? .current
 
         let d = UserDefaults.standard
         houseSystem = HouseSystem(rawValue: d.string(forKey: Self.houseSystemKey) ?? "") ?? .placidus
         // EPHEMERIS_LAT / EPHEMERIS_LON mirror the EPHEMERIS_TZ convention so reels are
         // reproducible; they override the saved place without persisting.
-        if let lat = Double(env["EPHEMERIS_LAT"] ?? ""), let lon = Double(env["EPHEMERIS_LON"] ?? "") {
-            location = GeoLocation(latitude: lat, longitude: lon, name: env["EPHEMERIS_PLACE"])
+        if let lat = LaunchOverride.double("EPHEMERIS_LAT"),
+           let lon = LaunchOverride.double("EPHEMERIS_LON") {
+            location = GeoLocation(latitude: lat, longitude: lon,
+                                   name: LaunchOverride.value("EPHEMERIS_PLACE"))
         } else if d.object(forKey: Self.latKey) != nil, d.object(forKey: Self.lonKey) != nil {
             location = GeoLocation(latitude: d.double(forKey: Self.latKey),
                                    longitude: d.double(forKey: Self.lonKey),
@@ -155,7 +159,7 @@ final class ChartViewModel: ObservableObject {
 
     private let demoStart = Date()
     func startChartDemo() {
-        guard ProcessInfo.processInfo.environment["EPHEMERIS_DEMO"] == "1" else { return }
+        guard LaunchOverride.flag("EPHEMERIS_DEMO") else { return }
         demoTimer?.invalidate()                    // (re)start cleanly from the first action
         demoActive = true
         demoHighlight = nil
@@ -165,7 +169,7 @@ final class ChartViewModel: ObservableObject {
         // from its minimum up to ~75%. Each action lights the control it touches.
         //   iPhone/iPad: played ONCE (the reel tour restarts it inside the recorded window).
         //   mac (EPHEMERIS_DEMO_LOOP=1): loops, since the window-capture can't re-trigger it.
-        let loop = ProcessInfo.processInfo.environment["EPHEMERIS_DEMO_LOOP"] == "1"
+        let loop = LaunchOverride.flag("EPHEMERIS_DEMO_LOOP")
         var i = 0
         // Timer hands its block back on a non-isolated context, so every touch of this
         // @MainActor model is hopped explicitly rather than mutated from the Sendable closure.

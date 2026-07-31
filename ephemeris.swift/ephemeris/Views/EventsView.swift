@@ -35,6 +35,9 @@ struct EventsView: View {
                             .font(.caption).monospacedDigit()
                             .foregroundStyle(Calendar.current.isDate(e.date, inSameDayAs: now)
                                              ? NebulaPalette.textPrimary : NebulaPalette.textSecondary)
+                            // `code` is the Kit's stable event code, so this key does not move when
+                            // the window shifts or the label is translated.
+                            .accessibilityIdentifier("event.\(e.code).date")
                     }
                 }
             }
@@ -42,5 +45,9 @@ struct EventsView: View {
         // Nebula dense glass card (material stack, not .glassEffect) — backs this long
         // overflowing list reliably.
         .nebulaCard(dense: true)
+        // This list overflows the screen, and neither platform publishes content that has never
+        // been on screen — so `.contain` here is what keeps the visible rows addressable at all.
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("card.events")
     }
 }

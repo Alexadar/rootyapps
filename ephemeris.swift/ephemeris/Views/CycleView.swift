@@ -30,8 +30,11 @@ struct CycleView: View {
             }
             .pickerStyle(.menu)
             .labelsHidden()
+                .accessibilityIdentifier("input.cycleBody")
         }
         .glassCard()
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("card.cyclePicker")
     }
 
     /// The Kit composes `phase.title`/`phase.detail` in English at runtime, so neither can be a
@@ -62,10 +65,13 @@ struct CycleView: View {
                     .foregroundStyle(NebulaPalette.glyph).nebulaGlow()
                 VStack(alignment: .leading, spacing: 3) {
                     Self.phaseTitle(phase, locale).font(.headline)
+                        .accessibilityIdentifier("cycle.phaseTitle")
                     Self.phaseDetail(phase, locale).font(.subheadline)
                         .foregroundStyle(NebulaPalette.textSecondary)
+                        .accessibilityIdentifier("cycle.phaseDetail")
                     if let day = phase.dayInPhase, let len = phase.phaseLengthDays {
                         Text("Day \(day) of \(len)").font(.caption).foregroundStyle(NebulaPalette.textFaint)
+                            .accessibilityIdentifier("cycle.dayInPhase")
                     }
                 }
                 Spacer()
@@ -75,6 +81,8 @@ struct CycleView: View {
             }
         }
         .glassCard()
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("card.currentPhase")
     }
 
     private var eventsCard: some View {

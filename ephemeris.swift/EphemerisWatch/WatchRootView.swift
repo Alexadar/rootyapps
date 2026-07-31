@@ -32,7 +32,12 @@ struct WatchRootView: View {
     @State private var storeVersion = 0
 
     private var dayOffset: Double { smoothed * step.daysPerDetent }
-    private var now: Date { Date.now.addingTimeInterval(dayOffset * 86_400) }
+    /// EPHEMERIS_DATE pins the base instant so a watch test can assert a known position; without it
+    /// every number here moves with the real clock and nothing is assertable. DEBUG-only, so a
+    /// shipping build always reads the live sky.
+    private var now: Date {
+        (LaunchOverride.pinnedDate() ?? .now).addingTimeInterval(dayOffset * 86_400)
+    }
     private var location: GeoLocation? { _ = storeVersion; return SharedStore().location }
     private var hasPlace: Bool { location != nil }
 
@@ -76,7 +81,7 @@ struct WatchRootView: View {
             if screen == nil {
                 // EPHEMERIS_SCREEN pins the opening screen for screenshot tooling, mirroring the
                 // phone's EPHEMERIS_TAB. Without it a capture run would need one build per screen.
-                let forced = ProcessInfo.processInfo.environment["EPHEMERIS_SCREEN"]
+                let forced = LaunchOverride.value("EPHEMERIS_SCREEN")
                 screen = forced.flatMap(WatchScreen.init(rawValue:))
                        ?? WatchScreen(rawValue: lastScreenID) ?? .wheel
             }
@@ -132,8 +137,13 @@ struct WatchRootView: View {
     ///
     /// It fails silently in the worst way: nothing crashes, the chart still renders, and the grain
     /// button still visibly changes 6h→1d. Only the scrubbing stops, which reads as "the button
-    /// does nothing." It also cannot be caught here — no iOS or macOS build compiles this target's
-    /// focus behaviour, so the build stays green. It needs a wrist.
+    /// does nothing" — and no iOS or macOS build compiles this target's focus behaviour, so those
+    /// builds stay green regardless.
+    ///
+    /// It is nevertheless a **testable** regression, not a manual check: the Crown is scriptable via
+    /// `XCUIDevice.shared.rotateDigitalCrown(delta:)`. See `EphemerisWatchUITests/CrownFocusChecks`,
+    /// which scrubs, taps each button here, and scrubs again — the second rotation is the assertion.
+    /// Only *rendering* (a complication on a real face) still needs eyes.
     private var wheelScreen: some View {
         NavigationStack {
             WatchWheel(positions: positions,
@@ -163,18 +173,25 @@ struct WatchRootView: View {
                                     .font(.system(size: 12)).monospacedDigit()
                             }
                             .buttonStyle(.plain)
+                            .accessibilityIdentifier("watch.grain")
 
                             // Only while scrubbed. A chart showing next month must never be
                             // mistakable for now, so the date appears in amber the moment the
                             // Crown moves — and disappears again to keep the bar clean at rest.
+                            //
+                            // Its presence-then-value is also what the crown regression test reads:
+                            // it appears only once the Crown has moved, so it doubles as proof the
+                            // Crown is alive.
                             if detents != 0 {
                                 Text(now, format: .dateTime.day().month(.abbreviated))
                                     .font(.system(size: 12)).foregroundStyle(.orange)
+                                    .accessibilityIdentifier("watch.scrubDate")
                                 Button { detents = 0; crownFocused = true } label: {
                                     Image(systemName: "arrow.uturn.backward")
                                         .font(.system(size: 11))
                                 }
                                 .buttonStyle(.plain).foregroundStyle(.orange)
+                                .accessibilityIdentifier("watch.reset")
                             }
                         }
                     }
@@ -192,5 +209,7 @@ struct WatchRootView: View {
             }
         }
         .scrollContentBackground(.hidden)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("watch.positions")
     }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import EphemerisKit   // LaunchOverride — the DEBUG-gated home of every EPHEMERIS_* read
 
 /// The languages the app ships. `es` serves both the Spain and Mexico storefronts — the UI
 /// wording is the same; only App Store metadata is split per region.
@@ -59,7 +60,7 @@ final class LanguageStore: ObservableObject {
     init() {
         // EPHEMERIS_LANG pins the language for screenshots/reels without persisting —
         // matching the EPHEMERIS_TZ / EPHEMERIS_LAT / EPHEMERIS_PLACE convention.
-        let env = ProcessInfo.processInfo.environment["EPHEMERIS_LANG"]
+        let env = LaunchOverride.value("EPHEMERIS_LANG")
         let saved = UserDefaults.standard.string(forKey: Self.key)
         selected = AppLanguage(rawValue: env ?? saved ?? "") ?? .system
     }

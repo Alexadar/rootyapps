@@ -135,6 +135,11 @@ struct WatchWheel: View {
                 }
             }
         }
+        // The Canvas publishes nothing on its own, so without this the crown tests have no element
+        // to wait on before starting to scrub. `.accessibilityElement()` before the identifier —
+        // a bare container is a silent no-op on macOS and unreliable here too (trap 5).
+        .accessibilityElement()
+        .accessibilityIdentifier("watch.wheel")
     }
 
     /// Nudges glyphs apart until neighbours are at least `minSeparation` degrees away.

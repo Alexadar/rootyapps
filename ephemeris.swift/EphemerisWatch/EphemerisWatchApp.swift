@@ -26,8 +26,7 @@ struct EphemerisWatchApp: App {
     }
 
     static func resolveLocale() -> Locale {
-        let env = ProcessInfo.processInfo.environment["EPHEMERIS_LANG"]
-        let code = env ?? SharedStore().languageCode ?? ""
+        let code = LaunchOverride.value("EPHEMERIS_LANG") ?? SharedStore().languageCode ?? ""
         return code.isEmpty ? .autoupdatingCurrent : Locale(identifier: code)
     }
 }

@@ -19,16 +19,25 @@ struct PositionsTable: View {
                     SignChip(glyph: p.sign.glyph)
                     Text(p.degMinString).monospacedDigit()
                         .frame(width: 70, alignment: .leading)
+                        // Keyed on rawValue, not the displayed name: the name is localized, so
+                        // "pos.sun.degrees" keeps working in all 17 languages.
+                        .accessibilityIdentifier("pos.\(p.body.rawValue).degrees")
                     Spacer()
                     Text(motion(p))
                         .font(.callout).monospacedDigit()
                         .foregroundStyle(p.retrograde ? NebulaPalette.retrograde : NebulaPalette.textSecondary)
+                        .accessibilityIdentifier("pos.\(p.body.rawValue).motion")
                 }
                 .font(.callout)
                 if p.id != positions.last?.id { NebulaPalette.divider.frame(height: 0.75) }
             }
         }
         .glassCard()
+        // `.contain` keeps the per-row identifiers addressable. `.combine` would fuse them into one
+        // element and macOS would synthesise a joined identifier
+        // ("pos.sun.degrees-pos.sun.motion-…"), so none of the leaves would exist to query.
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("card.positions")
     }
 
     /// "℞ 0,52°/d" — the separator follows the chosen language; most of Europe writes a comma.

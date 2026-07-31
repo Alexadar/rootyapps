@@ -33,11 +33,17 @@ struct AspectsList: View {
                         // "orb %@°" rather than a numeric specifier that varies by platform.
                         Text("orb \(a.orb.formatted(.number.precision(.fractionLength(2)).locale(locale)))°")
                             .font(.caption).monospacedDigit().foregroundStyle(NebulaPalette.textSecondary)
+                            // Body rawValues, so the key survives localization and reordering.
+                            .accessibilityIdentifier("aspect.\(a.a.rawValue).\(a.b.rawValue).orb")
                     }
                     .font(.callout)
                 }
             }
         }
         .glassCard()
+        // `.contain`, not `.combine`: combining fuses every row into one element and macOS then
+        // publishes a single joined identifier, leaving no leaf to query (trap 4).
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("card.aspects")
     }
 }

@@ -13,7 +13,7 @@ settings:
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0.5"
-    CURRENT_PROJECT_VERSION: "7"
+    CURRENT_PROJECT_VERSION: "8"
     ENABLE_PREVIEWS: YES
     GENERATE_INFOPLIST_FILE: YES
     SWIFT_EMIT_LOC_STRINGS: YES
@@ -141,7 +141,10 @@ targets:
         BUNDLE_LOADER: "$(TEST_HOST)"
   ephemerisUITests:
     type: bundle.ui-testing
-    supportedDestinations: [iOS]
+    # macOS too: the app ships on the Mac, so the suite has to be runnable there. Without this
+    # xcodebuild refuses with "does not support My Mac's platform" and the macOS-only accessibility
+    # traps can never fire.
+    supportedDestinations: [iOS, macOS]
     sources:
       - path: ephemerisUITests
     dependencies:
@@ -151,22 +154,52 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.ephemerisUITests
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: ephemeris.swift
+
+  EphemerisWatchUITests:
+    # watchOS UI testing IS supported: `XCUIDevice.shared.rotateDigitalCrown(delta:)` lives in
+    # XCUIAutomation's XCUIDevice.h, gated on TARGET_OS_WATCH, since Xcode 13. It needs its OWN
+    # target on `platform: watchOS` with TEST_TARGET_NAME pointing at the watch app — the phone's
+    # UI-test target cannot reach it.
+    type: bundle.ui-testing
+    platform: watchOS
+    sources:
+      - path: EphemerisWatchUITests
+      # The support helpers, shared rather than copied — see UITestSupport.swift's header.
+      - path: ephemerisUITests/UITestSupport.swift
+    dependencies:
+      - target: EphemerisWatch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.ephemeris.watchkitapp.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: EphemerisWatch
 schemes:
   EphemerisWatch:
     build:
       targets:
         EphemerisWatch: all
+        EphemerisWatchUITests: [test]
     run:
       config: Debug
+    # Without a test action the watch suite silently runs nothing: `build-for-testing` prints
+    # success while building no test bundle, and the run reports "Executed 0 tests".
+    test:
+      config: Debug
+      targets:
+        - EphemerisWatchUITests
   ephemeris.swift:
     build:
       targets:
         ephemeris.swift: all
+        ephemerisUITests: [test]
     run:
       config: Debug
     test:
       targets:
+        # ephemerisUITests was missing here, so `-only-testing:ephemerisUITests` would have
+        # matched nothing and reported success against zero tests.
         - ephemerisTests
+        - ephemerisUITests
   ephemerisReel:
     build:
       targets:

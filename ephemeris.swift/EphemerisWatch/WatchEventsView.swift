@@ -39,6 +39,8 @@ struct WatchEventsView: View {
                 }
         }
         .scrollContentBackground(.hidden)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("watch.events")
     }
 }
 

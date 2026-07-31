@@ -28,6 +28,8 @@ struct HousesCard: View {
             }
         }
         .glassCard()
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("card.houses")
     }
 
     private var systemPicker: some View {
@@ -36,6 +38,9 @@ struct HousesCard: View {
         }
         .pickerStyle(.menu)
         .labelsHidden()
+        // The one control whose binding a model test cannot prove: switching the system has to
+        // actually redraw the cusps, not just relabel the menu.
+        .accessibilityIdentifier("input.houseSystem")
     }
 
     /// Placidus/Koch are undefined beyond the polar circle — say so instead of showing nothing.
@@ -61,6 +66,8 @@ struct HousesCard: View {
                 .foregroundStyle(NebulaPalette.accent)
             SignChip(glyph: ZodiacSign.from(longitude: lon).glyph, size: 18)
             Text(Self.degMin(lon)).monospacedDigit().font(.callout)
+                // "AC"/"MC" are already invariant labels, so they make good keys.
+                .accessibilityIdentifier("angle.\(label.lowercased()).degrees")
         }
     }
 
@@ -73,6 +80,7 @@ struct HousesCard: View {
                 .frame(width: 22, alignment: .trailing)
             SignChip(glyph: ZodiacSign.from(longitude: lon).glyph)
             Text(Self.degMin(lon)).monospacedDigit()
+                .accessibilityIdentifier("cusp.\(n).degrees")
             Spacer()
             Text(L.loc(ZodiacSign.from(longitude: lon).name))
                 .foregroundStyle(NebulaPalette.textSecondary)
