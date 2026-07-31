@@ -249,6 +249,27 @@ xcodebuild test -scheme <scheme> -destination 'platform=iOS Simulator,name=<APP>
 xcodebuild test -scheme <scheme> -destination 'platform=macOS' -only-testing:<app>UITests
 ```
 
+**Run the simulator destinations in parallel — but build once first.** Each owns its own sim, so the
+runs are independent; what is *not* independent is compiling. Two plain `xcodebuild test` invocations
+each build, against the same derived data, and that is the combination that has wedged simulators:
+
+```bash
+xcodebuild build-for-testing -scheme <scheme> -destination "id=$IPHONE" -derivedDataPath build/dd-ios
+xcodebuild test-without-building -scheme <scheme> -derivedDataPath build/dd-ios \
+  -destination "id=$IPHONE" -resultBundlePath build/iphone.xcresult &
+xcodebuild test-without-building -scheme <scheme> -derivedDataPath build/dd-ios \
+  -destination "id=$IPAD"   -resultBundlePath build/ipad.xcresult &
+xcodebuild test-without-building -scheme <watchScheme> -derivedDataPath build/dd-watch \
+  -destination "id=$WATCH"  -resultBundlePath build/watch.xcresult &
+wait
+```
+
+Separate `-derivedDataPath` per platform family, a distinct `-resultBundlePath` per run (or the last
+writer wins and a failure vanishes), and destinations **by UDID** — with three runs live, a name
+landing on another session's sim stops being theoretical. Measured on a 26-tool suite: 262 s wall
+instead of 733 s serial. `uitests.md` §2a has the detail. **macOS is never in the fan-out** — it is
+single-instance and seizes the screen, so it runs alone, after.
+
 Plus every Kit: `for k in Kits/*/*/; do (cd "$k" && swift test); done`. That is still the real gate.
 
 **Expect macOS to fail where iOS passed.** That is not a macOS bug in the app — it is §H traps 2–5.
@@ -419,8 +440,14 @@ func spProse(_ identifier: String) -> some View {
 - Changing view identity mid-gesture cancels the gesture. An `if isScrubbing { A } else { B }` swap
   killed a drag after one step; render one view and change only what it draws.
 - watchOS: focusable `Button`s steal Digital Crown focus, leaving the crown dead and actions applying a
-  stale value. Fix with `@FocusState` and hand focus back — and **write the regression test**, because
-  the crown IS scriptable: `XCUIDevice.shared.rotateDigitalCrown(delta:)`, in `XCUIAutomation`'s
-  `XCUIDevice.h` gated on `TARGET_OS_WATCH`, since Xcode 13. Scrub → tap the button → scrub again;
-  before the fix the second rotation changes nothing. Only *rendering* still needs eyes (a
-  complication on a real face), so "install and look" applies to appearance, **not** to interaction.
+  stale value. **Write the regression test**, because the crown IS scriptable:
+  `XCUIDevice.shared.rotateDigitalCrown(delta:)`, in `XCUIAutomation`'s `XCUIDevice.h` gated on
+  `TARGET_OS_WATCH`, since Xcode 13. Scrub → tap the button → scrub again; before the fix the second
+  rotation changes nothing. Only *rendering* still needs eyes (a complication on a real face), so
+  "install and look" applies to appearance, **not** to interaction.
+  - ⚠ **"Hand focus back" does not actually work** — measured, Overtone Lab 2026-07-30. A `Button`'s
+    action runs *before* SwiftUI moves focus to that button, so `@FocusState` set inside the action
+    (or from a signal it fires) is immediately overwritten. Bouncing through `false`, and deferring
+    with `DispatchQueue.main.asyncAfter`, both still failed the regression test. What works is
+    **`.focusable(false)` on every button on a crown-driven screen** — focus is then never taken.
+    A fix of the first kind shipped in a real build looking entirely correct.

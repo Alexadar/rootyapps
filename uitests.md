@@ -116,6 +116,51 @@ Not cosmetic. These are US-market apps; a screenshot reading `152,11` is a wrong
 
 ---
 
+## 2a. Running destinations in parallel — it works, but only one way
+
+Because every destination owns its own simulator, the runs are independent. Build once, then fan out.
+
+```bash
+# ONE compile, shared read-only by every iOS-sim run
+xcodebuild build-for-testing -scheme <scheme> -destination "id=$IPHONE" -derivedDataPath build/dd-ios
+
+# then fan out — distinct sims, distinct result bundles, no shared writes
+xcodebuild test-without-building -scheme <scheme> -derivedDataPath build/dd-ios \
+  -destination "id=$IPHONE" -resultBundlePath build/iphone.xcresult &
+xcodebuild test-without-building -scheme <scheme> -derivedDataPath build/dd-ios \
+  -destination "id=$IPAD"   -resultBundlePath build/ipad.xcresult &
+xcodebuild test-without-building -scheme <watchScheme> -derivedDataPath build/dd-watch \
+  -destination "id=$WATCH"  -resultBundlePath build/watch.xcresult &
+wait
+```
+
+Four rules make it safe, and the first is the one that matters:
+
+1. **`build-for-testing` once, then `test-without-building` per sim.** Two concurrent plain
+   `xcodebuild test` invocations each *build*, against the same `-derivedDataPath`, and fight over
+   the same products. That is a different activity from what the snippet above does.
+2. A **separate `-derivedDataPath` per platform family** — iOS sims share one, watchOS gets its own.
+3. A **distinct `-resultBundlePath` per run**, or the last writer wins and a failure disappears.
+4. **Destinations by UDID.** With three runs live, a name lookup landing on another session's sim
+   stops being theoretical.
+
+**Measured** (Overtone Lab, 2026-07-30, 26-tool suites): iPhone 262 s, iPad 254 s, watch 217 s. Run
+serially that is 733 s of testing; run this way the test phase is the longest single run, 262 s —
+**~2.8×**, on a 680 s total that includes both compiles. A second, smaller delta run behaved the
+same. No black screens, no unresponsive sims, correct results on all three.
+
+> ⚠ **This contradicts an earlier negative result in §12** ("two simultaneously-booted sims went
+> black — run destinations serially"). Both observations are real; the difference is almost certainly
+> rule 1. Two full `xcodebuild test` runs compile *and* drive two sims at once; the recipe above
+> compiles first and then only drives them. If a fan-out does go bad, fall back to serial and say so
+> here — but check which of the two you were actually running before concluding that parallel is
+> broken.
+
+**macOS is never part of the fan-out.** It is single-instance, it seizes the screen, and several
+copies fight over focus. It runs alone, after.
+
+---
+
 ## 3. Accessibility identifiers — five traps, each of which cost a full debugging round
 
 Traps 3–5 are **macOS-only**. They are the reason a suite can be 100% green on iPhone and iPad and
@@ -734,4 +779,9 @@ Everything below is real, from one app in one pass. Use it as the checklist.
 | Test bug | `build-for-testing` "succeeding" against a scheme with no test action. |
 | Test bug | `UDID=$(… | grep …)` under `set -euo pipefail` aborting the script when the sim does not exist yet — exactly the first-run path. |
 | macOS run | A `.primaryAction` **toolbar toggle collapses into the "more toolbar items" overflow** on a non-key macOS test window (the toolbar itself reports `Disabled`), so it is unreachable by identifier — *neither* `buttons["id"]` *nor* `any(app,"id")` finds it. `app.debugDescription` showed only "Hide Sidebar" + the overflow `PopUpButton`. Skip the toggle-drive on macOS (the @AppStorage persistence is platform-independent and proven on iOS), or click the overflow first. Confirms Trap 2 too: it is not a `Button` on macOS. (TrueCourse `nightToggle`, 2026-07-30) |
-| Parallel sims (negative — do not repeat) | Two `xcodebuild test` UI runs against two **simultaneously-booted** simulators turned both sims **black/unresponsive** mid-run. `-parallel-testing-enabled` shards ONE run by class within ONE sim; two full sims driven at once contend badly (and macOS can't parallelize at all — single-instance focus fight). **Run destinations serially** — boot one sim, run to completion, shut it down, boot the next. Kits (`swift test`, host) *can* run alongside one sim run. (TrueCourse, 2026-07-30) |
+| Parallel sims (negative — do not repeat) | Two `xcodebuild test` UI runs against two **simultaneously-booted** simulators turned both sims **black/unresponsive** mid-run. `-parallel-testing-enabled` shards ONE run by class within ONE sim; two full sims driven at once contend badly (and macOS can't parallelize at all — single-instance focus fight). **Run destinations serially** — boot one sim, run to completion, shut it down, boot the next. Kits (`swift test`, host) *can* run alongside one sim run. (TrueCourse, 2026-07-30) **⚠ Partly superseded — see §2a:** three destinations (iPhone + iPad + watch) ran concurrently without trouble when built ONCE with `build-for-testing` and then fanned out with `test-without-building`. The failure above was two runs that each *build*. (Overtone Lab, 2026-07-30) |
+| **watchOS regression** | The published crown-focus fix (`@FocusState` + reclaim in the button's action) **did not work** — a Button's action runs *before* SwiftUI hands focus to that button, so the reclaim is immediately overwritten. Shipped in a build looking correct. The cure is `.focusable(false)` on the button so focus is never taken; the regression test is what caught it. (Overtone Lab, 2026-07-30) |
+| Test bug | `any(app, "id").isHittable` **raises** "Failed to get matching snapshot" when nothing matches, where the typed `app.buttons["id"]` subscript resolves lazily and returns `false`. A scroll-until-hittable loop written against the subscript form breaks the moment it is made cross-platform. Guard with `.exists` first. |
+| Test bug | A favourites/persistence test asserting the **default** starting state passes once and fails on every rerun against a kept simulator. Assert the *transition* relative to whatever state is there, and flip back at the end. |
+| macOS run | macOS has **no `NavigationBar` element at all**, so `app.navigationBars["Title"].waitForExistence` times out and the message ("catalog missing") reads like the app never launched. Judge readiness by something the screen actually publishes. |
+| Media pipeline | The reel scheme's test action ran the **whole** UI bundle, so every capture recorded the entire value suite launching and quitting the app. `make_reel.sh` already supported `ONLY_TESTING`; it was simply never set. Pin captures to the tour class. |
