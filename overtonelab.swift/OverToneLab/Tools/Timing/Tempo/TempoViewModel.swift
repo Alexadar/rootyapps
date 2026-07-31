@@ -15,7 +15,7 @@ final class TempoViewModel: ObservableObject {
     private var demoTimer: Timer?
     private var demoPhase = 0.0
     init() {
-        guard ProcessInfo.processInfo.environment["OVERTONELAB_DEMO"] != nil else { return }
+        guard LaunchOverride.isSet("OVERTONELAB_DEMO") else { return }
         demoTimer = Timer.scheduledTimer(withTimeInterval: 0.06, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }

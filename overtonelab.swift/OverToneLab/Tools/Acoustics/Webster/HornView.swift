@@ -9,7 +9,7 @@ struct HornView: View {
                 NumberField(title: "Throat diameter", value: $vm.throatDiaCm, unit: "cm", range: 0.1...200)
                 NumberField(title: "Mouth diameter", value: $vm.mouthDiaCm, unit: "cm", range: 0.1...1000)
                 NumberField(title: "Axial length", value: $vm.lengthCm, unit: "cm", range: 1...1000)
-                ResultRow(label: "Cutoff frequency", value: "\(Fmt.f(vm.cutoffHz, 1)) Hz", emphasis: true)
+                ResultRow(label: "Cutoff frequency", value: "\(Fmt.f(vm.cutoffHz, 1)) Hz", emphasis: true, id: "result.webster")
                 ResultRow(label: "Flare constant m", value: "\(Fmt.f(vm.flareM, 3)) /m")
             }.glassCard()
             VStack(alignment: .leading, spacing: 8) {

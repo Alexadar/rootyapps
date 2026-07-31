@@ -14,7 +14,7 @@ struct SRAArrayView: View {
                 NumberField(title: "Mic angle", value: $vm.micAngle, unit: "°", range: 0...180)
                 NumberField(title: "Capsule spacing", value: $vm.spacing, unit: "cm", range: 0...50)
                 NumberField(title: "Speed of sound", value: $vm.speed, unit: "m/s", range: 330...350)
-                ResultRow(label: "Recording angle", value: "\(Fmt.f(vm.sra, 0))°", emphasis: true)
+                ResultRow(label: "Recording angle", value: "\(Fmt.f(vm.sra, 0))°", emphasis: true, id: "result.sra")
                 ResultRow(label: "Half angle", value: "±\(Fmt.f(vm.sra / 2, 0))°")
                 ResultRow(label: "Nearest technique", value: vm.nearest.name)
             }.glassCard()

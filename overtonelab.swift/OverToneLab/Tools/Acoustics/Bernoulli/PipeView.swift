@@ -9,7 +9,7 @@ struct PipeView: View {
                 Picker("Ends", selection: $vm.isOpen) { Text("Open–open").tag(true); Text("Closed–open").tag(false) }
                     .pickerStyle(.segmented)
                 NumberField(title: "Length", value: $vm.lengthM, unit: "m", range: 0.01...100)
-                ResultRow(label: "Fundamental", value: "\(Fmt.f(vm.fundamental, 1)) Hz", emphasis: true)
+                ResultRow(label: "Fundamental", value: "\(Fmt.f(vm.fundamental, 1)) Hz", emphasis: true, id: "result.bernoulli")
             }.glassCard()
             VStack(alignment: .leading, spacing: 8) {
                 CardHeader(title: "Resonances (Hz)")

@@ -14,6 +14,11 @@ struct StackedReadout: View {
     var unit: String = ""
     var accent: Color = OTL.textPrimary
     var hero: Bool = false
+    /// Names the combined element. `.combine` normally destroys the children's identifiers and
+    /// macOS synthesises a joined one, so the result has to be named explicitly — which is exactly
+    /// the second correct shape from the accessibility traps, and what makes this readout
+    /// addressable from a test instead of anonymous.
+    var id: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
@@ -37,6 +42,7 @@ struct StackedReadout: View {
             .monospacedDigit()
         }
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(id ?? "")
         .accessibilityLabel(Text(label))
         .accessibilityValue(Text(unit.isEmpty ? value : "\(value) \(unit)"))
     }
@@ -47,8 +53,18 @@ struct StackedReadout: View {
 /// On watchOS `.digitalCrownRotation` only receives events while its view holds focus, and every
 /// Button and Toggle is focusable by default. So tapping "Tap tempo" — or any control beside a
 /// field — silently moves focus off the field and the crown goes dead: nothing crashes, no layout
-/// changes, the number just stops responding. Nothing in a build or a unit test can see this; it
-/// needs a wrist. Every button on a crown-driven screen calls `reclaim()` in its action.
+/// changes, the number just stops responding.
+///
+/// **The primary cure is `.focusable(false)` on the buttons**, not this. Handing focus back was
+/// tried first and measurably does not work: a Button's action runs *before* SwiftUI moves focus to
+/// it, so the reclaim is overwritten — bouncing through `false` and deferring a tenth of a second
+/// both still failed. This stays as a second line for controls that must remain focusable (the
+/// Bernoulli toggle keeps working through it), and because it costs nothing.
+///
+/// The regression lives in `overtonelabWatchUITests/CrownFocusChecks.swift`, not in a comment asking
+/// someone to remember: `XCUIDevice.rotateDigitalCrown(delta:)` drives the crown from a test, so
+/// scrub → tap the thief → scrub again is scriptable. Before this class existed the second scrub
+/// changed nothing.
 @MainActor
 final class CrownFocus: ObservableObject {
     @Published private(set) var token = 0
@@ -114,7 +130,17 @@ struct CrownField: View {
         // after any sibling control took it.
         .onAppear { focused = targeted }
         .onChange(of: targeted) { _, isTarget in focused = isTarget }
-        .onChange(of: crownFocus.token) { _, _ in if targeted { focused = true } }
+        // Reclaiming has to happen AFTER the tap's own focus move, not during it. A button's action
+        // runs *before* SwiftUI hands focus to that button, so assigning `focused = true` inside the
+        // action is immediately overwritten — which is why the first version of this fix looked
+        // right, compiled, shipped, and left the crown just as dead. The regression test
+        // (CrownFocusChecks) is what caught it. Bouncing through false forces a real state
+        // transition, since assigning the value it already holds is a no-op.
+        .onChange(of: crownFocus.token) { _, _ in
+            guard targeted else { return }
+            focused = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { focused = true }
+        }
         .accessibilityLabel(Text(label))
         .accessibilityValue(Text(unit.isEmpty ? Fmt.f(value, fraction) : "\(Fmt.f(value, fraction)) \(unit)"))
         .accessibilityAdjustableAction { direction in

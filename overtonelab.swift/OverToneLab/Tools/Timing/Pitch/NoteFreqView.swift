@@ -7,7 +7,7 @@ struct NoteFreqView: View {
             VStack(alignment: .leading, spacing: 12) {
                 CardHeader(title: "Note → frequency")
                 Stepper("MIDI \(vm.midi)  ·  \(vm.noteName)", value: $vm.midi, in: 0...127)
-                ResultRow(label: "Frequency", value: "\(Fmt.f(vm.noteHz, 2)) Hz", emphasis: true)
+                ResultRow(label: "Frequency", value: "\(Fmt.f(vm.noteHz, 2)) Hz", emphasis: true, id: "result.pitch")
                 ResultRow(label: "Wavelength", value: "\(Fmt.f(vm.wavelengthM, 3)) m")
             }.glassCard()
             VStack(alignment: .leading, spacing: 12) {

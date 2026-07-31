@@ -68,7 +68,7 @@ final class LanguageStore: ObservableObject {
     init() {
         // OVERTONELAB_LANG pins the language for screenshots and reels without persisting it,
         // matching the OVERTONELAB_TOOL / OVERTONELAB_SCREEN capture convention.
-        let env = ProcessInfo.processInfo.environment["OVERTONELAB_LANG"]
+        let env = LaunchOverride.value("OVERTONELAB_LANG")
         let saved = UserDefaults.standard.string(forKey: Self.key)
         selected = AppLanguage(rawValue: env ?? saved ?? "") ?? .system
         Fmt.locale = selected.locale ?? .autoupdatingCurrent

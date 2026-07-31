@@ -9,7 +9,7 @@ struct InterferenceBoundaryView: View {
                 NumberField(title: "Distance to boundary", value: $vm.distance, unit: "m", range: 0.05...10)
                 NumberField(title: "Speed of sound", value: $vm.speed, unit: "m/s", range: 330...350)
                 NumberField(title: "Reflection gain", value: $vm.reflectionGain, unit: "dB", range: -20...0)
-                ResultRow(label: "First notch", value: "\(Fmt.f(vm.firstNotch, 0)) Hz", emphasis: true)
+                ResultRow(label: "First notch", value: "\(Fmt.f(vm.firstNotch, 0)) Hz", emphasis: true, id: "result.sbir")
                 ResultRow(label: "First reinforcement", value: "\(Fmt.f(vm.firstPeak, 0)) Hz")
                 ResultRow(label: "Notch depth",
                           value: vm.nullDepth.isInfinite ? "−∞ dB" : "\(Fmt.signed(vm.nullDepth, 1)) dB")

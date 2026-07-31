@@ -9,7 +9,7 @@ struct AirAbsorptionView: View {
                 NumberField(title: "Temperature", value: $vm.temp, unit: "°C", range: -20...50)
                 NumberField(title: "Humidity", value: $vm.humidity, unit: "%", range: 0...100)
                 NumberField(title: "Pressure", value: $vm.pressure, unit: "kPa", range: 80...110)
-                ResultRow(label: "Speed of sound", value: "\(Fmt.f(vm.speed, 1)) m/s", emphasis: true)
+                ResultRow(label: "Speed of sound", value: "\(Fmt.f(vm.speed, 1)) m/s", emphasis: true, id: "result.air")
             }.glassCard()
 
             VStack(alignment: .leading, spacing: 12) {

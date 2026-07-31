@@ -17,7 +17,7 @@ struct BiquadDesignView: View {
                 if vm.kind.usesGain {
                     NumberField(title: "Gain", value: $vm.gainDB, unit: "dB", range: -24...24)
                 }
-                ResultRow(label: "Magnitude @ f₀", value: "\(Fmt.signed(vm.magAtF0, 2)) dB", emphasis: true)
+                ResultRow(label: "Magnitude @ f₀", value: "\(Fmt.signed(vm.magAtF0, 2)) dB", emphasis: true, id: "result.biquad")
             }.glassCard()
 
             VStack(alignment: .leading, spacing: 12) {

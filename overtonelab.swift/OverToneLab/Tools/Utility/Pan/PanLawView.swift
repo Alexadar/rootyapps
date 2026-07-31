@@ -14,7 +14,7 @@ struct PanLawView: View {
                     Slider(value: $vm.position, in: -1...1)
                     Text("R").foregroundStyle(.secondary)
                 }
-                ResultRow(label: "Left gain", value: "\(Fmt.f(vm.leftDB, 2)) dB", emphasis: true)
+                ResultRow(label: "Left gain", value: "\(Fmt.f(vm.leftDB, 2)) dB", emphasis: true, id: "result.pan")
                 ResultRow(label: "Right gain", value: "\(Fmt.f(vm.rightDB, 2)) dB", emphasis: true)
                 ResultRow(label: "Centre drop", value: "\(Fmt.f(vm.centerDrop, 2)) dB")
                 Text("Equal-power (−3 dB) keeps loudness constant across the stereo field; linear (−6 dB) keeps summed level constant in mono.")

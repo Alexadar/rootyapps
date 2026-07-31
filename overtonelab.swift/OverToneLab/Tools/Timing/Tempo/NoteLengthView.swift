@@ -13,7 +13,7 @@ struct NoteLengthView: View {
                 }.pickerStyle(.segmented)
                 Toggle("Dotted", isOn: $vm.dotted)
                 Toggle("Triplet", isOn: $vm.triplet)
-                ResultRow(label: "Duration", value: "\(Fmt.f(vm.noteMs, 2)) ms", emphasis: true)
+                ResultRow(label: "Duration", value: "\(Fmt.f(vm.noteMs, 2)) ms", emphasis: true, id: "result.tempo")
                 ResultRow(label: "Rate", value: "\(Fmt.f(vm.noteHz, 3)) Hz")
             }.glassCard()
             VStack(alignment: .leading, spacing: 8) {

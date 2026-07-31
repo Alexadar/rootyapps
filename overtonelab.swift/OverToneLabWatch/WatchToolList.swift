@@ -32,6 +32,9 @@ struct WatchToolList: View {
                             .padding(.vertical, 1)
                         }
                         .buttonStyle(.plain)
+                        // On the row's Button, not on the Section: an identifier on the container
+                        // would overwrite every child's and leave no row addressable.
+                        .accessibilityIdentifier("tool.\(tool.rawValue)")
                         .listRowBackground(
                             RoundedRectangle(cornerRadius: 10).fill(OTL.surface)
                         )

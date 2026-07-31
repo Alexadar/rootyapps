@@ -43,11 +43,16 @@ struct NumberField: View {
 }
 
 /// Read-only result row: label left, monospaced value right. `emphasis` = the one hero readout.
+///
+/// `id` names the VALUE leaf, never this row: an identifier on a container overwrites its children's,
+/// so putting it here would make the label and the value both answer to the same name and neither
+/// addressable — for a test or for VoiceOver. Purely additive; nothing about it is visible.
 struct ResultRow: View {
     let label: LocalizedStringKey
     let value: String
     var unit: String = ""
     var emphasis: Bool = false
+    var id: String? = nil
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(label).foregroundStyle(OTL.textSecondary)
@@ -59,6 +64,7 @@ struct ResultRow: View {
                           : .system(.callout, design: .monospaced).weight(.medium))
                     .foregroundStyle(emphasis ? AnyShapeStyle(.tint)
                                               : AnyShapeStyle(OTL.textPrimary))
+                    .accessibilityIdentifier(id ?? "")
                 if !unit.isEmpty {
                     Text(unit).font(.footnote).foregroundStyle(OTL.textTertiary)
                 }

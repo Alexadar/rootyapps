@@ -75,7 +75,7 @@ struct RootView: View {
 }
 
 private func deepLinkTool() -> Tool? {
-    ProcessInfo.processInfo.environment["OVERTONELAB_TOOL"].flatMap(Tool.init(rawValue:))
+    LaunchOverride.value("OVERTONELAB_TOOL").flatMap(Tool.init(rawValue:))
 }
 
 /// One sidebar section: a coloured label + tappable rows with a favourite swipe action.

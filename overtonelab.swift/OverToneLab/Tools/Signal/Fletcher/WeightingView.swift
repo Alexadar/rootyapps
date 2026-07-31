@@ -7,7 +7,7 @@ struct WeightingView: View {
             VStack(alignment: .leading, spacing: 12) {
                 CardHeader(title: "Frequency")
                 NumberField(title: "Frequency", value: $vm.freq, unit: "Hz", range: 1...20000)
-                ResultRow(label: "A-weighting", value: "\(Fmt.f(vm.aWeight, 2)) dB", emphasis: true)
+                ResultRow(label: "A-weighting", value: "\(Fmt.f(vm.aWeight, 2)) dB", emphasis: true, id: "result.fletcher")
                 ResultRow(label: "C-weighting", value: "\(Fmt.f(vm.cWeight, 2)) dB")
                 ResultRow(label: "Z-weighting", value: "\(Fmt.f(vm.zWeight, 1)) dB")
             }.glassCard()

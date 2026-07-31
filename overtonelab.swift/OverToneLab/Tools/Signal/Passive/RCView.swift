@@ -8,7 +8,7 @@ struct RCView: View {
                 CardHeader(title: "RC filter")
                 NumberField(title: "Resistance", value: $vm.rcR, unit: "kΩ", range: 0.001...100000)
                 NumberField(title: "Capacitance", value: $vm.rcC, unit: "µF", range: 0.0001...100000)
-                ResultRow(label: "Corner (−3 dB)", value: "\(Fmt.f(vm.rcHz, 2)) Hz", emphasis: true)
+                ResultRow(label: "Corner (−3 dB)", value: "\(Fmt.f(vm.rcHz, 2)) Hz", emphasis: true, id: "result.passive")
                 Text("f = 1/(2π·R·C). 1 kΩ + 1 µF ≈ 159 Hz.")
                     .font(.caption).foregroundStyle(.secondary)
             }.glassCard()

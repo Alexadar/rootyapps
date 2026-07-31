@@ -12,7 +12,7 @@ struct TensionView: View {
             }.glassCard()
             VStack(alignment: .leading, spacing: 12) {
                 CardHeader(title: "Tension (Mersenne's law)")
-                ResultRow(label: "Tension", value: "\(Fmt.f(vm.tensionN, 2)) N", emphasis: true)
+                ResultRow(label: "Tension", value: "\(Fmt.f(vm.tensionN, 2)) N", emphasis: true, id: "result.mersenne")
                 ResultRow(label: "Tension", value: "\(Fmt.f(vm.tensionLbf, 2)) lbf")
             }.glassCard()
         }

@@ -9,8 +9,11 @@ struct RoomModesModesView: View {
             VStack(alignment: .leading, spacing: 12) {
                 CardHeader(title: "Analysis")
                 NumberField(title: "Max frequency", value: $vm.maxFreq, unit: "Hz", range: 50...500)
-                ResultRow(label: "Smallest spacing", value: "\(Fmt.f(vm.smallestSpacing, 1)) Hz", emphasis: true)
-                ResultRow(label: "Mode count", value: "\(vm.modeCount)")
+                ResultRow(label: "Smallest spacing", value: "\(Fmt.f(vm.smallestSpacing, 1)) Hz", emphasis: true, id: "result.roommodes")
+                // Also named: in the default 5 × 4 × 2.8 m room two modes are exactly degenerate, so
+                // the hero legitimately reads 0.0 Hz — which is indistinguishable from a function
+                // that returned nothing. The count is the anchor a test can actually trust.
+                ResultRow(label: "Mode count", value: "\(vm.modeCount)", id: "result.roommodes.count")
             }.glassCard()
             VStack(alignment: .leading, spacing: 10) {
                 CardHeader(title: "Modes (Hz)", trailing: "≤ \(Fmt.f(vm.maxFreq, 0)) Hz")

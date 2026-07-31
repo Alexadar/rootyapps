@@ -9,7 +9,7 @@ struct PartchIntervalView: View {
                 NumberField(title: "Lower pitch", value: $vm.freqLow, unit: "Hz", range: 1...20000)
                 NumberField(title: "Upper pitch", value: $vm.freqHigh, unit: "Hz", range: 1...20000)
                 ResultRow(label: "Ratio", value: Fmt.f(vm.ratio, 4))
-                ResultRow(label: "Interval", value: "\(Fmt.f(vm.cents, 1)) ¢", emphasis: true)
+                ResultRow(label: "Interval", value: "\(Fmt.f(vm.cents, 1)) ¢", emphasis: true, id: "result.partch")
             }.glassCard()
             VStack(alignment: .leading, spacing: 10) {
                 CardHeader(title: "Nearest just ratio")

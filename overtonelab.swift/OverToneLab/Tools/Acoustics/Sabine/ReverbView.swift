@@ -8,7 +8,7 @@ struct ReverbView: View {
                 CardHeader(title: "Room")
                 NumberField(title: "Volume", value: $vm.volume, unit: "m³", range: 0.1...1000000)
                 NumberField(title: "Absorption ΣSα", value: $vm.absorption, unit: "sabins", range: 0.01...1000000)
-                ResultRow(label: "RT60 (Sabine)", value: "\(Fmt.f(vm.sabineRT60, 2)) s", emphasis: true)
+                ResultRow(label: "RT60 (Sabine)", value: "\(Fmt.f(vm.sabineRT60, 2)) s", emphasis: true, id: "result.sabine")
                 ResultRow(label: "Schroeder freq", value: "\(Fmt.f(vm.schroeder, 0)) Hz")
             }.glassCard()
             VStack(alignment: .leading, spacing: 12) {

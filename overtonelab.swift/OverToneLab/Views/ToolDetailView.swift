@@ -52,4 +52,4 @@ struct ToolDetailView: View {
 // `SubScreenPicker` now lives in OTLSegmented.swift (pill style).
 
 /// Initial sub-screen from the screenshot env hook (shared across tools; one launch at a time).
-func initialScreen() -> Int { Int(ProcessInfo.processInfo.environment["OVERTONELAB_SCREEN"] ?? "0") ?? 0 }
+func initialScreen() -> Int { Int(LaunchOverride.value("OVERTONELAB_SCREEN") ?? "0") ?? 0 }

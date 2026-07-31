@@ -13,9 +13,16 @@ final class LevelsViewModel: ObservableObject {
     @Published var valA = 1.0
     @Published var valB = 2.0
     @Published var powerMode = false
+    /// The guard has to cover the LOGARITHM, not just the division.
+    ///
+    /// The old form guarded `valA != 0` and then handed the resulting `0` to `log10`, which is −∞ —
+    /// so a zero reference produced a literal "−∞ dB" rather than a refusal. Unreachable through the
+    /// UI today only by luck: `NumberField` clamps this field to 0.0001…1000000, so nothing on screen
+    /// changes and no screenshot is invalidated. That clamp is a display-layer accident, though, and
+    /// the model should not depend on it.
     var diffDB: Double {
-        let r = valA != 0 ? valB / valA : 0
-        return powerMode ? Levels.powerDB(ratio: r) : Levels.voltageDB(ratio: r)
+        guard valA > 0, valB > 0 else { return 0 }
+        return powerMode ? Levels.powerDB(ratio: valB / valA) : Levels.voltageDB(ratio: valB / valA)
     }
 
     // Dynamic range

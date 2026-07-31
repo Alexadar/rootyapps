@@ -12,7 +12,7 @@ struct TempoDelayView: View {
                 }.pickerStyle(.segmented)
                 Toggle("Dotted", isOn: $vm.dotted)
                 Toggle("Triplet", isOn: $vm.triplet)
-                ResultRow(label: "Delay time", value: "\(Fmt.f(vm.delayMs, 2)) ms", emphasis: true)
+                ResultRow(label: "Delay time", value: "\(Fmt.f(vm.delayMs, 2)) ms", emphasis: true, id: "result.delay")
                 ResultRow(label: "Modulation rate", value: "\(Fmt.f(vm.delayHz, 3)) Hz")
             }.glassCard()
             VStack(alignment: .leading, spacing: 8) {

@@ -8,7 +8,7 @@ struct FramesView: View {
                 CardHeader(title: "Frames → timecode")
                 RateControls(vm: vm)
                 NumberField(title: "Frame count", value: $vm.frameCount, unit: "fr", range: 0...100_000_000)
-                ResultRow(label: "Timecode", value: vm.timecodeLabel, emphasis: true)
+                ResultRow(label: "Timecode", value: vm.timecodeLabel, emphasis: true, id: "result.timecode")
                 ResultRow(label: "Duration", value: Fmt.secs(vm.frameSeconds))
             }.glassCard()
         }

@@ -7,7 +7,7 @@ struct EDOView: View {
             VStack(alignment: .leading, spacing: 12) {
                 CardHeader(title: "Equal division of the octave")
                 NumberField(title: "Divisions (EDO)", value: $vm.edoN, range: 1...240)
-                ResultRow(label: "Step size", value: "\(Fmt.f(vm.edoStepSize, 3)) ¢", emphasis: true)
+                ResultRow(label: "Step size", value: "\(Fmt.f(vm.edoStepSize, 3)) ¢", emphasis: true, id: "result.comma")
             }.glassCard()
 
             VStack(alignment: .leading, spacing: 8) {

@@ -9,7 +9,7 @@ struct FilterView: View {
                 Stepper("Order  \(vm.order)  (\(Int(vm.slopeDbOct)) dB/oct)", value: $vm.order, in: 1...8)
                 NumberField(title: "Cutoff fc", value: $vm.fcHz, unit: "Hz", range: 1...100000)
                 NumberField(title: "Test frequency", value: $vm.testHz, unit: "Hz", range: 1...100000)
-                ResultRow(label: "Magnitude", value: "\(Fmt.f(vm.magDB, 2)) dB", emphasis: true)
+                ResultRow(label: "Magnitude", value: "\(Fmt.f(vm.magDB, 2)) dB", emphasis: true, id: "result.butterworth")
             }.glassCard()
             VStack(alignment: .leading, spacing: 8) {
                 CardHeader(title: "Response vs cutoff")
