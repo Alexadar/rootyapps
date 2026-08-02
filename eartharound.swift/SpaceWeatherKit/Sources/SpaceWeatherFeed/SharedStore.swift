@@ -11,8 +11,19 @@ public enum AppGroup {
 /// choice, alert preferences, and the alert-dedupe state. Every process writes
 /// through here; nobody re-fetches what another process already has.
 public struct SharedStore {
+    /// Bump whenever a stored snapshot's MEANING changes, not merely its shape.
+    ///
+    /// `KpSample.predicted` is persisted, so every install already holds rows where NOAA's
+    /// `estimated` forecast is recorded as measurement. The store paints cache-first, so without
+    /// this the corrected build still opens on the wrong Kp until a refetch lands — the fix would
+    /// be invisible exactly when a user checks whether it worked.
+    ///
+    /// 2 — Kp `estimated` rows reclassified as forecast (2026-08-02).
+    static let schemaVersion = 2
+
     public enum Key {
         public static let snapshot = "shared.snapshot"
+        public static let schema = "shared.schema"
         public static let lastRefresh = "shared.lastRefresh"
         public static let theme = "sw.theme"
         public static let mode = "sw.mode"
@@ -36,11 +47,16 @@ public struct SharedStore {
     public func save(_ snapshot: SpaceWeatherSnapshot, at date: Date) {
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         defaults.set(data, forKey: Key.snapshot)
+        defaults.set(Self.schemaVersion, forKey: Key.schema)
         defaults.set(date, forKey: Key.lastRefresh)
     }
 
+    /// Returns nil for a snapshot written by an older schema, so the app starts empty and refetches
+    /// rather than painting numbers whose meaning has since changed. An absent key reads as 0,
+    /// which correctly rejects every pre-versioning snapshot.
     public func load() -> (snapshot: SpaceWeatherSnapshot, at: Date)? {
-        guard let data = defaults.data(forKey: Key.snapshot),
+        guard defaults.integer(forKey: Key.schema) == Self.schemaVersion,
+              let data = defaults.data(forKey: Key.snapshot),
               let snapshot = try? JSONDecoder().decode(SpaceWeatherSnapshot.self, from: data),
               let at = defaults.object(forKey: Key.lastRefresh) as? Date else { return nil }
         return (snapshot, at)

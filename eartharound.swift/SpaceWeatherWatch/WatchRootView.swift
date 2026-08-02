@@ -138,7 +138,7 @@ struct WatchReadoutPage: View {
             HStack(spacing: 12) {
                 // Highest Kp that actually occurred in the window — forecast rows excluded.
                 watchStat(label: SWText.str("24H PEAK"),
-                          value: snapshot.kp?.peak24h.map { Fmt.num($0, 1) } ?? "—")
+                          value: snapshot.kp?.peak24h().map { Fmt.num($0, 1) } ?? "—")
                 watchStat(label: "WIND",
                           value: snapshot.wind?.speed.map { Fmt.num($0, 0) } ?? "—", unit: "KM/S")
             }

@@ -109,8 +109,13 @@ struct KpBarChart: View {
         .accessibilityLabel(a11y)
     }
 
+    /// Goes through `KpPanel.nowSample` rather than re-deriving "the current bar" here, so the
+    /// spoken value cannot drift from the tile beside it. This copy had the same defect the tile
+    /// did — no clock bound — and would announce a forecast as the current reading.
     private var a11y: String {
-        guard let now = series.last(where: { !$0.predicted }) else { return "Kp chart, no data" }
+        guard let now = KpPanel(series: series, observedAt: nil).nowSample() else {
+            return "Kp chart, no data"
+        }
         return "Kp bar chart, current \(Fmt.num(now.kp, 1))"
     }
 }

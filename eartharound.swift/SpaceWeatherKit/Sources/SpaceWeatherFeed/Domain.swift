@@ -18,41 +18,48 @@ import SolarIndexKit
 public struct KpSample: Identifiable, Equatable, Codable {
     public let time: Date
     public let kp: Double
+    /// False only for NOAA's `observed` rows — the definitive measured index. Everything else,
+    /// including the rows NOAA labels `estimated`, is a forecast. See `NOAAService.parseKp`.
     public let predicted: Bool
-    /// NOAA's `estimated` nowcast — derived from real magnetometer data, not a forecast, but not
-    /// yet the definitive Bartels value. Counts as current; flagged so the UI can say so.
-    public var provisional: Bool = false
     public var id: Date { time }
     public var gScale: Int { Geomag.gScale(forKp: kp) }
     public var symbol: String { Geomag.step(forKp: kp).symbol }
-    public init(time: Date, kp: Double, predicted: Bool, provisional: Bool = false) {
-        self.time = time; self.kp = kp; self.predicted = predicted; self.provisional = provisional
+    public init(time: Date, kp: Double, predicted: Bool) {
+        self.time = time; self.kp = kp; self.predicted = predicted
     }
 }
 
 public struct KpPanel: Equatable, Codable {
     public let series: [KpSample]
     public let observedAt: Date?
-    /// Newest non-forecast value. Definitive rows run 3–5h behind, so this deliberately includes
-    /// the estimated nowcast — otherwise the headline number sits frozen next to minute-cadence
-    /// panels and looks broken.
-    public var now: Double { series.last(where: { !$0.predicted })?.kp ?? series.first?.kp ?? 0 }
-    /// True when the current value is NOAA's estimate rather than the definitive index.
-    public var nowIsProvisional: Bool { series.last(where: { !$0.predicted })?.provisional ?? false }
+    /// The newest MEASURED sample: never a forecast, and never future-dated.
+    ///
+    /// The time bound is not redundant with the `predicted` check. NOAA shipped forecast rows
+    /// labelled in a way this code read as measurement, and with no clock comparison the app
+    /// happily presented a 21:00 number at 10:35 as the current reading. The flag now maps
+    /// correctly (`NOAAService.parseKp`), and this bound means the next source to blur that
+    /// vocabulary still cannot put a future value under "now".
+    public func nowSample(asOf date: Date = Date()) -> KpSample? {
+        series.last { !$0.predicted && $0.time <= date }
+    }
+    /// Deliberately has no "else show a forecast" fallback: with no measurement there is no
+    /// current value, and substituting a prediction is the very bug above in miniature.
+    public var now: Double { nowSample()?.kp ?? 0 }
     public var gScale: Int { Geomag.gScale(forKp: now) }
     public var activity: String { Geomag.activity(forKp: now) }
     public var ap: Int { Geomag.ap(forKp: now) }
 
-    /// Highest OBSERVED Kp of the last 24 h — forecast rows are excluded, or the "peak" would be
-    /// a prediction rather than something that happened.
+    /// Highest MEASURED Kp of the 24 h ending at the newest measurement — a peak is something
+    /// that happened, so both ends of the window are bounded. Only the lower end used to be,
+    /// which is how this reported 5.67 from a row that had not occurred yet.
     ///
-    /// The window is anchored to the newest observed sample rather than to `Date()`, so the value
-    /// is deterministic: the same series always yields the same peak, which is what makes it
-    /// testable and keeps the widget from flickering between timeline renders.
-    public var peak24h: Double? {
-        guard let end = series.last(where: { !$0.predicted })?.time else { return nil }
+    /// Anchored to the newest measured sample rather than to `date` itself, so the same series
+    /// always yields the same peak — that determinism is what keeps the widget from flickering
+    /// between timeline renders.
+    public func peak24h(asOf date: Date = Date()) -> Double? {
+        guard let end = nowSample(asOf: date)?.time else { return nil }
         let cutoff = end.addingTimeInterval(-24 * 3600)
-        return series.filter { !$0.predicted && $0.time >= cutoff }.map(\.kp).max()
+        return series.filter { !$0.predicted && $0.time >= cutoff && $0.time <= end }.map(\.kp).max()
     }
     public init(series: [KpSample], observedAt: Date?) {
         self.series = series; self.observedAt = observedAt

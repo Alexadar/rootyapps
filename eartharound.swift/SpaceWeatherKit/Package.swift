@@ -43,6 +43,7 @@ let package = Package(
         // classification still happens only through the Kits.
         .target(name: "SpaceWeatherFeed",
                 dependencies: ["GeomagKit", "FlareKit", "SolarWindKit", "AuroraKit", "HpoKit", "SolarIndexKit"]),
-        .testTarget(name: "SpaceWeatherFeedTests", dependencies: ["SpaceWeatherFeed"]),
+        .testTarget(name: "SpaceWeatherFeedTests", dependencies: ["SpaceWeatherFeed"],
+                    resources: [.process("Fixtures")]),
     ]
 )

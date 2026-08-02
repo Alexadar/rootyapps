@@ -7,25 +7,42 @@ public enum NOAAService {
 
     // MARK: Planetary Kp (observed + 3-day forecast)
 
-    private struct KpRow: Decodable {
+    /// Internal, not private, so `parseKp` can be exercised against a captured payload.
+    struct KpRow: Decodable {
         let time_tag: String
         let kp: Double
         let observed: String?
     }
-    public static func kp() async throws -> KpPanel {
-        let rows = try await Net.json(API.kpForecast, as: [KpRow].self)
-        // NOAA marks each row observed / estimated / predicted. "estimated" is a nowcast from real
-        // magnetometer data — it is current, unlike "observed" which lags 3–5h — so treat it as a
-        // live value flagged provisional, and keep only "predicted" as forecast.
+
+    /// Turn the raw forecast feed into a panel. Pure — no network — because the bug this guards
+    /// against is a misreading of the feed's vocabulary, which only a test over real bytes catches.
+    ///
+    /// NOAA labels every row `observed`, `estimated`, or `predicted`. **Only `observed` is a
+    /// measurement.** This code previously treated `estimated` as a live nowcast, and the app
+    /// consequently reported a storm on a quiet day. Measured 2026-08-02T10:35Z:
+    ///
+    /// | kind | span | rows |
+    /// |---|---|---|
+    /// | observed | 07-26T00:00 → 08-02T06:00 | 59 (177 h), last four all Kp 1.0 |
+    /// | estimated | 08-02T09:00 → 08-02T21:00 | 5 — the rest of the UTC day, four in the FUTURE |
+    /// | predicted | 08-03T00:00 → 08-05T00:00 | 17 |
+    ///
+    /// The `estimated` rows read 4.33/4.67/5.67/3.33/4.00 while GFZ measured **0.333** for that
+    /// same 09:00 bin — off by 4 Kp. They are SWPC's same-day forecast, not a magnetometer
+    /// nowcast. Excluding them costs nothing: the same payload carries 177 h of real history.
+    ///
+    /// The price is that `now` runs 3–5 h behind, because that is how long the definitive index
+    /// takes. That lag is real and `StaleBadge` reports it; inventing a fresher number does not.
+    static func parseKp(_ rows: [KpRow]) -> KpPanel {
         let samples: [KpSample] = rows.compactMap { r in
             guard let t = DateFmt.parseUTC(r.time_tag) else { return nil }
-            let kind = (r.observed ?? "").lowercased()
-            return KpSample(time: t, kp: r.kp,
-                            predicted: kind != "observed" && kind != "estimated",
-                            provisional: kind == "estimated")
+            return KpSample(time: t, kp: r.kp, predicted: r.observed?.lowercased() != "observed")
         }
-        let lastObserved = samples.last(where: { !$0.predicted })?.time
-        return KpPanel(series: samples, observedAt: lastObserved)
+        return KpPanel(series: samples, observedAt: samples.last(where: { !$0.predicted })?.time)
+    }
+
+    public static func kp() async throws -> KpPanel {
+        parseKp(try await Net.json(API.kpForecast, as: [KpRow].self))
     }
 
     // MARK: X-ray flux + latest flare

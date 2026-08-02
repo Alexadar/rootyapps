@@ -114,16 +114,17 @@ struct FeedStatusTests {
         #expect(!store.cellularAllowed)
     }
 
-    @Test func kpAcceptsTheEstimatedNowcastButNotTheForecast() {
-        // NOAA marks rows observed / estimated / predicted in one file. "estimated" is a nowcast
-        // from real magnetometer data; excluding it left the headline number 3-5h behind.
+    /// This test used to assert the opposite — that NOAA's `estimated` rows were a nowcast worth
+    /// showing as current — and it passed, because it was handed a `predicted: false` flag rather
+    /// than deriving one from a payload. It encoded the bug as the requirement. Measurement won:
+    /// see `NOAAKpFeedTests`.
+    @Test func kpHeadlineIsMeasuredNotForecast() {
         let series = [
             KpSample(time: Self.t0, kp: 2.0, predicted: false),
-            KpSample(time: Self.t0.addingTimeInterval(3 * 3600), kp: 5.0, predicted: false, provisional: true),
+            KpSample(time: Self.t0.addingTimeInterval(3 * 3600), kp: 5.0, predicted: true),
             KpSample(time: Self.t0.addingTimeInterval(6 * 3600), kp: 7.0, predicted: true),
         ]
-        let panel = KpPanel(series: series, observedAt: Self.t0.addingTimeInterval(3 * 3600))
-        #expect(panel.now == 5.0)            // the nowcast, not the 2.0 definitive or the 7.0 forecast
-        #expect(panel.nowIsProvisional)
+        let panel = KpPanel(series: series, observedAt: Self.t0)
+        #expect(panel.now == 2.0)   // the measurement, not the 5.0 same-day forecast or the 7.0
     }
 }

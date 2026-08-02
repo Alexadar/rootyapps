@@ -253,7 +253,7 @@ struct SpaceWeatherWidgetView: View {
             HStack(spacing: 12) {
                 // Highest Kp that actually occurred in the window — forecast rows excluded.
                 stat(label: SWText.str("24H PEAK"),
-                     value: entry.snapshot.kp?.peak24h.map { Fmt.num($0, 1) } ?? "—")
+                     value: entry.snapshot.kp?.peak24h().map { Fmt.num($0, 1) } ?? "—")
                 stat(label: "WIND", value: windKms.map { Fmt.num($0, 0) } ?? "—", unit: "KM/S")
             }
         }

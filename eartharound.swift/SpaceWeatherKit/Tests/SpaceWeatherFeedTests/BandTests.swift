@@ -118,9 +118,12 @@ struct BandTests {
 
 @Suite("Kp 24-hour peak")
 struct KpPeakTests {
+    /// `t0` is the reference "now" every case is measured against, and it is passed explicitly to
+    /// `peak24h(asOf:)` — these cases place samples on both sides of it, so leaving the ambient
+    /// clock in play would make the results depend on the day the suite runs.
+    private static let t0 = Date(timeIntervalSince1970: 1_750_000_000)
     private func sample(_ hoursAgo: Double, _ kp: Double, predicted: Bool = false) -> KpSample {
-        KpSample(time: Date(timeIntervalSince1970: 1_750_000_000 - hoursAgo * 3600),
-                 kp: kp, predicted: predicted)
+        KpSample(time: Self.t0.addingTimeInterval(-hoursAgo * 3600), kp: kp, predicted: predicted)
     }
 
     @Test("takes the highest observed value inside the window")
@@ -128,7 +131,7 @@ struct KpPeakTests {
         let p = KpPanel(series: [sample(30, 8.0), sample(20, 5.3), sample(2, 3.0), sample(0, 1.7)],
                         observedAt: nil)
         // 8.0 is 30 h old — outside the 24 h window, so the peak is 5.3.
-        #expect(p.peak24h == 5.3)
+        #expect(p.peak24h(asOf: Self.t0) == 5.3)
     }
 
     @Test("ignores forecast rows")
@@ -136,12 +139,21 @@ struct KpPeakTests {
         let p = KpPanel(series: [sample(1, 2.0), sample(0, 1.7), sample(-6, 7.0, predicted: true)],
                         observedAt: nil)
         // A predicted 7.0 must not be reported as a peak that occurred.
-        #expect(p.peak24h == 2.0)
+        #expect(p.peak24h(asOf: Self.t0) == 2.0)
+    }
+
+    @Test("a future row cannot be the peak, however it is flagged")
+    func ignoresFutureRow() {
+        // The forecast flag and the clock are independent guards; this drops the flag to prove the
+        // clock alone still holds. Reporting a peak that has not happened is the defect this
+        // suite missed for the whole of the app's life.
+        let p = KpPanel(series: [sample(1, 2.0), sample(-6, 7.0)], observedAt: nil)
+        #expect(p.peak24h(asOf: Self.t0) == 2.0)
     }
 
     @Test("nil when nothing has been observed")
     func noObservations() {
         let p = KpPanel(series: [sample(-3, 5.0, predicted: true)], observedAt: nil)
-        #expect(p.peak24h == nil)
+        #expect(p.peak24h(asOf: Self.t0) == nil)
     }
 }

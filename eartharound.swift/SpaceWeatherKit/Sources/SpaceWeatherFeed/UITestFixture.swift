@@ -40,10 +40,17 @@ public extension SpaceWeatherSnapshot {
         let now = Date(timeIntervalSince1970: 1_785_000_000)   // 2026-07-25 UTC, fixed
         var s = SpaceWeatherSnapshot()
 
+        // Three measured rows then two forecast rows. The forecast rows are the point: every
+        // sample here used to be `predicted: false`, which meant the UI suite could not tell a
+        // measurement from a prediction either — the chart's ghosting and the "hide forecast"
+        // toggle both had nothing to act on. `kp.now` stays 5.3, the newest MEASURED value, so
+        // a forecast row leaking into the headline shows up as 7.0 rather than as a silent pass.
         s.kp = KpPanel(series: [
             KpSample(time: now.addingTimeInterval(-6 * 3600), kp: 6.0, predicted: false),
             KpSample(time: now.addingTimeInterval(-3 * 3600), kp: 4.0, predicted: false),
             KpSample(time: now,                               kp: 5.3, predicted: false),
+            KpSample(time: now.addingTimeInterval(3 * 3600),  kp: 7.0, predicted: true),
+            KpSample(time: now.addingTimeInterval(6 * 3600),  kp: 6.7, predicted: true),
         ], observedAt: now)
 
         s.scales = ScalesPanel(g: 1, r: 1, s: 0, observedAt: now)

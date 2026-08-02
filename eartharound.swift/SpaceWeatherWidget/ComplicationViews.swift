@@ -67,7 +67,7 @@ enum ComplicationTopic {
             // "OK" is a claim that we measured a quiet field. Without a panel we measured nothing,
             // and saying OK there is the same lie as showing a zero-length bar.
             code: g > 0 ? "G\(g)" : (p != nil ? "OK" : "—"),
-            peak: p?.peak24h.map { Fmt.num($0, 1) },
+            peak: p?.peak24h().map { Fmt.num($0, 1) },
             hasData: p != nil,
             // Kp is naturally bounded 0…9, so this is the one honest raw-value bar here.
             value: p.map { min(max($0.now, 0), 9) },
