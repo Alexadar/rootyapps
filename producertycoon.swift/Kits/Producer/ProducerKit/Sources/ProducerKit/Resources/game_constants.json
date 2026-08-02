@@ -1,0 +1,1527 @@
+{
+ "_meta": {
+  "source": "The-Producer-Game @ Phase-1 export (post-STEP-0 balance patch)",
+  "transcribed": [
+   "scoreFormula/tiers  <- src/lib/calculateRelease.ts",
+   "tour                <- src/lib/calculateRelease.ts:calculateTour",
+   "genreBias/artistGen <- src/lib/generateArtist.ts",
+   "artistEvents        <- src/data/artistEvents.ts (getEffects ranges)",
+   "genreAffinity/drift <- src/data/trends.ts",
+   "weekly/winLose      <- src/store/useGameStore.ts:endWeek",
+   "staffEffects        <- src/store/useGameStore.ts:release"
+  ]
+ },
+ "start": {
+  "money": 20000,
+  "fans": 0,
+  "tokens": 3,
+  "reputation": 50,
+  "studioLevel": 1,
+  "labelSlotIndex": 0
+ },
+ "scoreFormula": {
+  "weights": {
+   "talent": 0.35,
+   "charisma": 0.2,
+   "popularity": 0.1,
+   "discipline": 0.1,
+   "reputation": 0.05,
+   "selfConfidence": 0.02,
+   "addiction": -0.15
+  },
+  "techEquipStaffProducerMult": 0.4,
+  "studioMult": 0.3,
+  "studioLevelCoef": 2,
+  "managerMult": 0.4,
+  "prMult": 0.3,
+  "securityEffectMult": -0.15,
+  "trendMult": 0.4,
+  "trendClamp": 8,
+  "freakMult": 0.3,
+  "freakClamp": 9,
+  "chaosMult": 0.3,
+  "luck": [
+   -8,
+   8
+  ],
+  "scoreClamp": [
+   0,
+   160
+  ],
+  "tierThresholds": [
+   25,
+   50,
+   75,
+   100
+  ],
+  "popBoost": {
+   "div": 5,
+   "sub": 40,
+   "clamp": [
+    -3,
+    10
+   ]
+  },
+  "expGain": [
+   5,
+   10,
+   20,
+   40,
+   80
+  ],
+  "repChange": [
+   -2,
+   0,
+   0,
+   1,
+   3
+  ],
+  "expToNextMult": 1.5,
+  "expToNextBase": 100
+ },
+ "tiers": [
+  {
+   "name": "Провал",
+   "listeners": [
+    50,
+    3000
+   ],
+   "fanRate": [
+    -0.01,
+    0.01
+   ],
+   "payRate": [
+    0.001,
+    0.003
+   ],
+   "cost": [
+    3000,
+    12000
+   ],
+   "tokenReward": [
+    0,
+    1
+   ]
+  },
+  {
+   "name": "Локальний мем",
+   "listeners": [
+    3000,
+    60000
+   ],
+   "fanRate": [
+    0.01,
+    0.05
+   ],
+   "payRate": [
+    0.06,
+    0.12
+   ],
+   "cost": [
+    2000,
+    8000
+   ],
+   "tokenReward": [
+    1,
+    2
+   ]
+  },
+  {
+   "name": "Нормальний реліз",
+   "listeners": [
+    60000,
+    400000
+   ],
+   "fanRate": [
+    0.02,
+    0.06
+   ],
+   "payRate": [
+    0.04,
+    0.07
+   ],
+   "cost": [
+    3000,
+    10000
+   ],
+   "tokenReward": [
+    2,
+    3
+   ]
+  },
+  {
+   "name": "Хіт",
+   "listeners": [
+    400000,
+    4000000
+   ],
+   "fanRate": [
+    0.03,
+    0.08
+   ],
+   "payRate": [
+    0.015,
+    0.028
+   ],
+   "cost": [
+    5000,
+    20000
+   ],
+   "tokenReward": [
+    3,
+    5
+   ]
+  },
+  {
+   "name": "Культовий шедевр",
+   "listeners": [
+    4000000,
+    40000000
+   ],
+   "fanRate": [
+    0.04,
+    0.1
+   ],
+   "payRate": [
+    0.008,
+    0.012
+   ],
+   "cost": [
+    8000,
+    30000
+   ],
+   "tokenReward": [
+    5,
+    8
+   ]
+  }
+ ],
+ "tour": {
+  "costBase": 15000,
+  "costPerPop": 500,
+  "weights": {
+   "popularity": 0.3,
+   "charisma": 0.15,
+   "reputation": 0.1,
+   "trend": 0.15,
+   "manager": 0.25
+  },
+  "healthPenaltyBelow": 40,
+  "healthPenaltyMult": 0.25,
+  "luck": [
+   -12,
+   12
+  ],
+  "successThreshold": 40,
+  "fail": {
+   "revPerPop": 300,
+   "revNoise": [
+    -5000,
+    5000
+   ],
+   "revClamp": [
+    0,
+    50000
+   ],
+   "fansMin": 50,
+   "fansPerPopMax": 50
+  },
+  "success": {
+   "revPerPop": 3000,
+   "revPerTotal": 4000,
+   "revNoise": [
+    -10000,
+    10000
+   ],
+   "revClamp": [
+    20000,
+    500000
+   ],
+   "fansPerPop": 300,
+   "fansPerTotal": 200,
+   "fansClamp": [
+    1000,
+    100000
+   ]
+  },
+  "onSuccess": {
+   "popGain": [
+    2,
+    5
+   ],
+   "happinessGain": 5
+  },
+  "onFail": {
+   "popLoss": [
+    1,
+    3
+   ],
+   "happinessLoss": 8,
+   "healthLoss": 5
+  },
+  "cooldownWeeks": 4
+ },
+ "rehab": {
+  "cost": 20000,
+  "weeks": 4,
+  "addictionDrop": 30,
+  "weeklyHealthGain": 5,
+  "weeklyAddictionDrop": 5
+ },
+ "artistGen": {
+  "statNorm": {
+   "talent": [
+    50,
+    12
+   ],
+   "charisma": [
+    50,
+    12
+   ],
+   "discipline": [
+    50,
+    12
+   ],
+   "health": [
+    55,
+    12
+   ],
+   "happiness": [
+    50,
+    12
+   ],
+   "popularity": [
+    40,
+    10
+   ],
+   "addiction": [
+    30,
+    15
+   ],
+   "reputation": [
+    45,
+    12
+   ],
+   "selfConfidence": [
+    50,
+    15
+   ]
+  },
+  "clamp": [
+   10,
+   90
+  ],
+  "genreBias": {
+   "punk": {
+    "charisma": 6,
+    "discipline": -6,
+    "popularity": -3,
+    "selfConfidence": 8
+   },
+   "rap": {
+    "charisma": 5,
+    "talent": 2,
+    "popularity": 3,
+    "selfConfidence": 7
+   },
+   "pop": {
+    "charisma": 7,
+    "talent": -2,
+    "discipline": 3,
+    "popularity": 5,
+    "selfConfidence": 5
+   },
+   "folk": {
+    "talent": 5,
+    "discipline": 5,
+    "charisma": -2,
+    "selfConfidence": -3
+   },
+   "bard": {
+    "talent": 3,
+    "charisma": -3,
+    "discipline": 2,
+    "selfConfidence": -2
+   },
+   "electro": {
+    "discipline": 5,
+    "talent": 2,
+    "charisma": -2,
+    "selfConfidence": 1
+   }
+  },
+  "traitsCount": [
+   1,
+   3
+  ]
+ },
+ "weekly": {
+  "weeksPerMonth": 4,
+  "monthsPerYear": 12,
+  "startYear": 2024,
+  "jitter": {
+   "health": [
+    -2,
+    2
+   ],
+   "happiness": [
+    -2,
+    2
+   ],
+   "popularity": [
+    -1,
+    1
+   ],
+   "addiction": [
+    -1,
+    1
+   ],
+   "selfConfidence": [
+    -1,
+    2
+   ]
+  },
+  "lowHappiness": {
+   "below": 30,
+   "discipline": -2
+  },
+  "lowHealth": {
+   "below": 25,
+   "happiness": -3,
+   "discipline": -2
+  },
+  "highAddiction": {
+   "above": 70,
+   "health": -3,
+   "happiness": -2
+  },
+  "pregnantHealth": -2,
+  "freakEmergence": {
+   "selfConfidenceAbove": 70,
+   "talentBelow": 35,
+   "chance": 0.1,
+   "trashPopGain": [
+    2,
+    5
+   ],
+   "trashPopClamp": [
+    0,
+    30
+   ],
+   "popGain": [
+    1,
+    3
+   ]
+  },
+  "freakStatus": {
+   "isFreak": {
+    "scAbove": 70,
+    "talBelow": 35
+   },
+   "isTrashStar": {
+    "scAbove": 80,
+    "talBelow": 30
+   }
+  },
+  "needChance": 0.3,
+  "needInnerChance": 0.3,
+  "needWeeks": 2,
+  "artistEventChance": 0.45,
+  "weekEventChance": 0.35,
+  "tokenStipendMin": 1,
+  "statClamp": [
+   10,
+   90
+  ]
+ },
+ "winLose": {
+  "bankruptcyBelow": -50000,
+  "rejectsForGameOver": 6,
+  "repGameOverAt": 0,
+  "fansForVictory": 100000000,
+  "yearsForVictory": 10
+ },
+ "staffEffects": {
+  "soundEngineer": {
+   "as": "staffBonus",
+   "mult": 1
+  },
+  "pr": {
+   "as": "prBonus",
+   "mult": 1
+  },
+  "lawyer": {
+   "as": "profitMultAdd",
+   "mult": 0.01
+  },
+  "accountant": {
+   "as": "costDiscount",
+   "mult": 0.01
+  },
+  "manager": {
+   "as": "managerBonus",
+   "mult": 0.5
+  },
+  "security": {
+   "as": "securityBonus",
+   "mult": 0.3
+  }
+ },
+ "specializations": {
+  "talented": {
+   "effect": "qualityBonus",
+   "base": 5,
+   "perLevelMult": 0.1
+  },
+  "shark": {
+   "effect": "profitBonus",
+   "base": 0.05,
+   "perLevelMult": 0.1
+  },
+  "maestro": {
+   "effect": "scandalReduction",
+   "base": 0.1,
+   "perLevel": 0.02
+  },
+  "psychologist": {
+   "effect": "happinessBonus",
+   "base": 0.1,
+   "perLevel": 0.02
+  },
+  "scammer": {
+   "effect": "riskProfitBonus",
+   "profitMult": 1.15
+  }
+ },
+ "trends": {
+  "topics": [
+   "protest",
+   "absurd_humor",
+   "nostalgia",
+   "pathos",
+   "romance",
+   "politics",
+   "party",
+   "depression",
+   "nature",
+   "space"
+  ],
+  "genreAffinity": {
+   "punk": [
+    "protest",
+    "absurd_humor",
+    "politics",
+    "party"
+   ],
+   "rap": [
+    "protest",
+    "politics",
+    "party",
+    "depression"
+   ],
+   "pop": [
+    "romance",
+    "pathos",
+    "party",
+    "absurd_humor"
+   ],
+   "folk": [
+    "nature",
+    "nostalgia",
+    "protest",
+    "depression"
+   ],
+   "bard": [
+    "nostalgia",
+    "romance",
+    "depression",
+    "nature"
+   ],
+   "electro": [
+    "space",
+    "party",
+    "absurd_humor",
+    "depression"
+   ]
+  },
+  "genreDrift": {
+   "punk": 3,
+   "rap": 2,
+   "pop": 1,
+   "folk": -1,
+   "bard": -2,
+   "electro": 4
+  },
+  "topicDrift": [
+   -5,
+   5
+  ],
+  "topicClamp": [
+   5,
+   95
+  ],
+  "genreStep": [
+   -3,
+   3
+  ],
+  "genreDriftMult": 0.3,
+  "genreJumpChance": 0.08,
+  "genreJump": [
+   -8,
+   8
+  ],
+  "genreMaxChange": 5,
+  "genreClamp": [
+   5,
+   100
+  ],
+  "modMult": 1.5,
+  "modNoise": [
+   -5,
+   5
+  ],
+  "modClamp": [
+   -20,
+   20
+  ],
+  "initTopicPop": [
+   20,
+   80
+  ]
+ },
+ "artistEvents": [
+  {
+   "w": 8,
+   "add": [
+    0,
+    100
+   ],
+   "hap": [
+    0,
+    100
+   ],
+   "fx": {
+    "health": [
+     -15,
+     -8
+    ],
+    "happiness": [
+     -8,
+     -3
+    ]
+   }
+  },
+  {
+   "w": 4,
+   "add": [
+    0,
+    100
+   ],
+   "hap": [
+    0,
+    100
+   ],
+   "fx": {
+    "health": [
+     -20,
+     -12
+    ],
+    "happiness": [
+     -10,
+     -5
+    ],
+    "discipline": [
+     -2,
+     -2
+    ]
+   }
+  },
+  {
+   "w": 5,
+   "add": [
+    0,
+    50
+   ],
+   "hap": [
+    0,
+    100
+   ],
+   "fx": {
+    "health": [
+     5,
+     10
+    ],
+    "discipline": [
+     2,
+     5
+    ]
+   }
+  },
+  {
+   "w": 6,
+   "add": [
+    0,
+    60
+   ],
+   "hap": [
+    20,
+    90
+   ],
+   "fx": {
+    "happiness": [
+     8,
+     15
+    ],
+    "discipline": [
+     -7,
+     -3
+    ],
+    "charisma": [
+     2,
+     4
+    ]
+   }
+  },
+  {
+   "w": 5,
+   "add": [
+    0,
+    70
+   ],
+   "hap": [
+    0,
+    100
+   ],
+   "fx": {
+    "happiness": [
+     -18,
+     -10
+    ],
+    "charisma": [
+     -4,
+     -2
+    ],
+    "talent": [
+     2,
+     5
+    ]
+   }
+  },
+  {
+   "w": 4,
+   "add": [
+    0,
+    100
+   ],
+   "hap": [
+    0,
+    100
+   ],
+   "fx": {
+    "happiness": [
+     5,
+     10
+    ],
+    "popularity": [
+     1,
+     3
+    ],
+    "discipline": [
+     -2,
+     -2
+    ]
+   }
+  },
+  {
+   "w": 7,
+   "add": [
+    0,
+    60
+   ],
+   "hap": [
+    10,
+    100
+   ],
+   "fx": {
+    "addiction": [
+     8,
+     15
+    ],
+    "health": [
+     -8,
+     -3
+    ],
+    "happiness": [
+     3,
+     6
+    ]
+   }
+  },
+  {
+   "w": 6,
+   "add": [
+    30,
+    100
+   ],
+   "hap": [
+    0,
+    100
+   ],
+   "fx": {
+    "addiction": [
+     -20,
+     -10
+    ],
+    "health": [
+     3,
+     7
+    ],
+    "discipline": [
+     3,
+     6
+    ]
+   }
+  },
+  {
+   "w": 4,
+   "add": [
+    0,
+    50
+   ],
+   "hap": [
+    20,
+    100
+   ],
+   "fx": {
+    "addiction": [
+     12,
+     20
+    ],
+    "health": [
+     -10,
+     -5
+    ],
+    "discipline": [
+     -6,
+     -3
+    ]
+   }
+  },
+  {
+   "w": 3,
+   "add": [
+    50,
+    100
+   ],
+   "hap": [
+    0,
+    100
+   ],
+   "fx": {
+    "addiction": [
+     -12,
+     -5
+    ],
+    "health": [
+     2,
+     5
+    ],
+    "discipline": [
+     2,
+     4
+    ]
+   }
+  },
+  {
+   "w": 8,
+   "add": [
+    0,
+    80
+   ],
+   "hap": [
+    0,
+    100
+   ],
+   "fx": {
+    "discipline": [
+     -10,
+     -5
+    ],
+    "happiness": [
+     -6,
+     -3
+    ],
+    "health": [
+     -4,
+     -2
+    ]
+   }
+  },
+  {
+   "w": 6,
+   "add": [
+    0,
+    100
+   ],
+   "hap": [
+    0,
+    100
+   ],
+   "fx": {
+    "discipline": [
+     -7,
+     -3
+    ],
+    "happiness": [
+     -5,
+     -2
+    ]
+   }
+  },
+  {
+   "w": 4,
+   "add": [
+    0,
+    70
+   ],
+   "hap": [
+    0,
+    100
+   ],
+   "fx": {
+    "talent": [
+     3,
+     7
+    ],
+    "popularity": [
+     2,
+     4
+    ],
+    "happiness": [
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "w": 5,
+   "add": [
+    0,
+    70
+   ],
+   "hap": [
+    0,
+    100
+   ],
+   "fx": {
+    "happiness": [
+     -10,
+     -5
+    ],
+    "discipline": [
+     -5,
+     -2
+    ],
+    "charisma": [
+     -3,
+     -1
+    ]
+   }
+  },
+  {
+   "w": 3,
+   "add": [
+    0,
+    80
+   ],
+   "hap": [
+    0,
+    100
+   ],
+   "fx": {
+    "discipline": [
+     -10,
+     -5
+    ],
+    "talent": [
+     2,
+     4
+    ],
+    "popularity": [
+     1,
+     3
+    ]
+   }
+  },
+  {
+   "w": 5,
+   "add": [
+    0,
+    100
+   ],
+   "hap": [
+    0,
+    100
+   ],
+   "fx": {
+    "popularity": [
+     4,
+     8
+    ]
+   }
+  },
+  {
+   "w": 5,
+   "add": [
+    0,
+    100
+   ],
+   "hap": [
+    0,
+    100
+   ],
+   "fx": {
+    "popularity": [
+     3,
+     6
+    ],
+    "happiness": [
+     2,
+     4
+    ]
+   }
+  }
+ ],
+ "studioUpgrades": [
+  {
+   "level": 1,
+   "qualityBonus": 0,
+   "cost": 0
+  },
+  {
+   "level": 2,
+   "qualityBonus": 3,
+   "cost": 15000
+  },
+  {
+   "level": 3,
+   "qualityBonus": 7,
+   "cost": 50000
+  },
+  {
+   "level": 4,
+   "qualityBonus": 12,
+   "cost": 200000
+  },
+  {
+   "level": 5,
+   "qualityBonus": 18,
+   "cost": 800000
+  },
+  {
+   "level": 6,
+   "qualityBonus": 25,
+   "cost": 3000000
+  }
+ ],
+ "labelSlots": [
+  {
+   "slots": 2,
+   "cost": 0
+  },
+  {
+   "slots": 4,
+   "cost": 30000
+  },
+  {
+   "slots": 6,
+   "cost": 120000
+  },
+  {
+   "slots": 8,
+   "cost": 400000
+  },
+  {
+   "slots": 10,
+   "cost": 1000000
+  },
+  {
+   "slots": 12,
+   "cost": 2500000
+  }
+ ],
+ "equipment": [
+  {
+   "id": "mic-1",
+   "cost": 2000,
+   "bonus": 2
+  },
+  {
+   "id": "mic-2",
+   "cost": 15000,
+   "bonus": 5
+  },
+  {
+   "id": "mic-3",
+   "cost": 80000,
+   "bonus": 10
+  },
+  {
+   "id": "mon-1",
+   "cost": 3000,
+   "bonus": 2
+  },
+  {
+   "id": "mon-2",
+   "cost": 25000,
+   "bonus": 5
+  },
+  {
+   "id": "mon-3",
+   "cost": 150000,
+   "bonus": 10
+  },
+  {
+   "id": "comp-1",
+   "cost": 8000,
+   "bonus": 3
+  },
+  {
+   "id": "comp-2",
+   "cost": 60000,
+   "bonus": 7
+  },
+  {
+   "id": "synth-1",
+   "cost": 5000,
+   "bonus": 2
+  },
+  {
+   "id": "synth-2",
+   "cost": 100000,
+   "bonus": 8
+  },
+  {
+   "id": "synth-3",
+   "cost": 150000,
+   "bonus": 10
+  },
+  {
+   "id": "acou-1",
+   "cost": 5000,
+   "bonus": 2
+  },
+  {
+   "id": "acou-2",
+   "cost": 30000,
+   "bonus": 5
+  },
+  {
+   "id": "acou-3",
+   "cost": 120000,
+   "bonus": 9
+  },
+  {
+   "id": "light-1",
+   "cost": 500,
+   "bonus": 1
+  },
+  {
+   "id": "light-2",
+   "cost": 20000,
+   "bonus": 4
+  },
+  {
+   "id": "light-3",
+   "cost": 100000,
+   "bonus": 7
+  }
+ ],
+ "needs": [
+  {
+   "id": "vacation",
+   "cost": 10000,
+   "happinessPenalty": 15
+  },
+  {
+   "id": "raise",
+   "cost": 20000,
+   "happinessPenalty": 12
+  },
+  {
+   "id": "costume",
+   "cost": 15000,
+   "happinessPenalty": 10
+  },
+  {
+   "id": "date",
+   "cost": 8000,
+   "happinessPenalty": 14
+  },
+  {
+   "id": "psychologist",
+   "cost": 12000,
+   "happinessPenalty": 18
+  },
+  {
+   "id": "new_instrument",
+   "cost": 25000,
+   "happinessPenalty": 10
+  },
+  {
+   "id": "pet",
+   "cost": 5000,
+   "happinessPenalty": 8
+  },
+  {
+   "id": "tattoo",
+   "cost": 10000,
+   "happinessPenalty": 6
+  }
+ ],
+ "needFulfillHappiness": 10,
+ "weekEvents": [
+  {
+   "money": 2000,
+   "fans": 5000,
+   "rep": 0,
+   "tokens": 0
+  },
+  {
+   "money": 10000,
+   "fans": 20000,
+   "rep": 0,
+   "tokens": 0
+  },
+  {
+   "money": 1500,
+   "fans": 3000,
+   "rep": 0,
+   "tokens": 0
+  },
+  {
+   "money": 0,
+   "fans": 1000,
+   "rep": 3,
+   "tokens": 0
+  },
+  {
+   "money": 15000,
+   "fans": 0,
+   "rep": 0,
+   "tokens": 0
+  },
+  {
+   "money": 5000,
+   "fans": 8000,
+   "rep": 0,
+   "tokens": 0
+  },
+  {
+   "money": 0,
+   "fans": 2000,
+   "rep": 5,
+   "tokens": 0
+  },
+  {
+   "money": 0,
+   "fans": -5000,
+   "rep": -8,
+   "tokens": 0
+  },
+  {
+   "money": -20000,
+   "fans": 0,
+   "rep": 0,
+   "tokens": 0
+  },
+  {
+   "money": -10000,
+   "fans": 0,
+   "rep": -3,
+   "tokens": 0
+  },
+  {
+   "money": -15000,
+   "fans": 0,
+   "rep": 0,
+   "tokens": 0
+  },
+  {
+   "money": 0,
+   "fans": -3000,
+   "rep": -4,
+   "tokens": 0
+  },
+  {
+   "money": -30000,
+   "fans": 0,
+   "rep": 0,
+   "tokens": 0
+  },
+  {
+   "money": -25000,
+   "fans": 0,
+   "rep": 0,
+   "tokens": 0
+  },
+  {
+   "money": 0,
+   "fans": 500,
+   "rep": 0,
+   "tokens": 0
+  },
+  {
+   "money": -5000,
+   "fans": 0,
+   "rep": 0,
+   "tokens": 0
+  },
+  {
+   "money": 0,
+   "fans": 0,
+   "rep": 0,
+   "tokens": 2
+  },
+  {
+   "money": 0,
+   "fans": 1000,
+   "rep": 0,
+   "tokens": 0
+  },
+  {
+   "money": 0,
+   "fans": 2000,
+   "rep": 0,
+   "tokens": 0
+  },
+  {
+   "money": 0,
+   "fans": 0,
+   "rep": 0,
+   "tokens": 1
+  }
+ ],
+ "traits": [
+  {
+   "score": -2,
+   "chaos": 0
+  },
+  {
+   "score": 5,
+   "chaos": 3
+  },
+  {
+   "score": 2,
+   "chaos": 4
+  },
+  {
+   "score": 3,
+   "chaos": 0
+  },
+  {
+   "score": -5,
+   "chaos": 0
+  },
+  {
+   "score": -2,
+   "chaos": 2
+  },
+  {
+   "score": 8,
+   "chaos": 0
+  },
+  {
+   "score": 7,
+   "chaos": 0
+  },
+  {
+   "score": -3,
+   "chaos": 0
+  },
+  {
+   "score": 0,
+   "chaos": 2
+  },
+  {
+   "score": 1,
+   "chaos": 0
+  },
+  {
+   "score": 0,
+   "chaos": 1
+  },
+  {
+   "score": 4,
+   "chaos": 3
+  },
+  {
+   "score": 0,
+   "chaos": 2
+  },
+  {
+   "score": 2,
+   "chaos": 0
+  },
+  {
+   "score": -4,
+   "chaos": 0
+  },
+  {
+   "score": -3,
+   "chaos": 0
+  },
+  {
+   "score": 3,
+   "chaos": 0
+  },
+  {
+   "score": 4,
+   "chaos": 1
+  },
+  {
+   "score": 0,
+   "chaos": 2
+  },
+  {
+   "score": 1,
+   "chaos": 0
+  },
+  {
+   "score": -6,
+   "chaos": 0
+  },
+  {
+   "score": 3,
+   "chaos": 3
+  },
+  {
+   "score": 0,
+   "chaos": 2
+  },
+  {
+   "score": 5,
+   "chaos": 0
+  },
+  {
+   "score": 2,
+   "chaos": 1
+  },
+  {
+   "score": 0,
+   "chaos": 2
+  },
+  {
+   "score": 0,
+   "chaos": 1
+  },
+  {
+   "score": 6,
+   "chaos": 0
+  },
+  {
+   "score": 0,
+   "chaos": 3
+  }
+ ],
+ "archetypes": {
+  "punk": {
+   "charisma": 5,
+   "health": -3,
+   "discipline": -2,
+   "happiness": 1
+  },
+  "workaholic": {
+   "discipline": 5,
+   "talent": 2,
+   "happiness": -2,
+   "health": -2
+  },
+  "alcoholic": {
+   "health": -5,
+   "discipline": -3,
+   "charisma": 2,
+   "happiness": -1
+  },
+  "romantic": {
+   "charisma": 3,
+   "happiness": 2,
+   "discipline": -1,
+   "health": 1
+  },
+  "lazy": {
+   "discipline": -5,
+   "happiness": 3,
+   "talent": -1,
+   "health": 2
+  },
+  "genius": {
+   "talent": 4,
+   "charisma": -2,
+   "happiness": -1,
+   "discipline": 1
+  },
+  "diva": {
+   "charisma": 4,
+   "discipline": -3,
+   "happiness": -1,
+   "health": 1
+  },
+  "street": {
+   "charisma": 2,
+   "health": 2,
+   "discipline": -2,
+   "talent": 1
+  }
+ },
+ "genres": [
+  "punk",
+  "rap",
+  "pop",
+  "folk",
+  "bard",
+  "electro"
+ ],
+ "staff": {
+  "roles": [
+   "manager",
+   "soundEngineer",
+   "pr",
+   "lawyer",
+   "accountant",
+   "security"
+  ],
+  "salaries": {
+   "manager": 4000,
+   "soundEngineer": 6000,
+   "pr": 3500,
+   "lawyer": 5000,
+   "accountant": 3000,
+   "security": 2500
+  },
+  "bonuses": {
+   "manager": 5,
+   "soundEngineer": 8,
+   "pr": 7,
+   "lawyer": 6,
+   "accountant": 5,
+   "security": 4
+  }
+ },
+ "specializationKeys": [
+  "talented",
+  "shark",
+  "maestro",
+  "psychologist",
+  "scammer"
+ ],
+ "textLayer": {
+  "fitRange": [
+   -10,
+   -6
+  ],
+  "fitMean": -7.58,
+  "cringe": 0,
+  "scandal": 0
+ }
+}
