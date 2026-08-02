@@ -102,6 +102,46 @@ The single most useful ToS-clean signal for **"is this app dead, and *why*"** is
 
 **Honesty caveats:** recent-only (current mood, not a trend line — **forward-poll** weekly for real velocity); still no sales/downloads (reviews are the proxy, never the number); read enough recent reviews to judge the *dominant* sentiment, never one outlier.
 
+## 2.10 [AUTO] Apple autocomplete — the demand detector (and its trap)
+
+The single cheapest demand test available. **Empty autocomplete on the core term is close to fatal.**
+
+```
+https://search.itunes.apple.com/WebObjects/MZSearchHints.woa/wa/hints?clientApplication=Software&term=X
+```
+
+**Two operational facts that cost a day to learn:**
+
+1. **It REQUIRES the header `X-Apple-Store-Front: 143441-1,29`** (US). Without it the endpoint returns an
+   **empty array** and looks like "no demand" for everything you test.
+2. **The response is an XML plist, not JSON.** Parse `<string>` elements; filter out anything starting
+   with `http` and the literal `Suggestions`.
+
+### ⚠ THE TRAP: autocomplete can measure SUPPLY, not demand
+
+If every hint returned is an existing **app title**, the term is crowded with shovelware — it does not
+prove query volume. **Check each hint against the actual catalogue before calling it demand.**
+
+Worked failure: `gear ratio` returned six rich hints — `bicycle gear ratio app`, `gear ratio calculator
+lite`, `gear ratio calculator 2`, `gear ratio speed calc`, `cog: gear ratio calculator`,
+`moto gear ratio calculator rpm`. Read as demand, it looked excellent. Every one was the **name of an
+app**, and nine of those apps had shipped in seven months, all at **0–1 ratings**. Rich autocomplete
+meant the term was saturated, not wanted.
+
+A *generic* completion (the bare term, or term + free/games/no ads/offline/for adults) is demand.
+A completion that is somebody's product name is supply.
+
+### WEB DEMAND IS NOT APP STORE DEMAND
+
+**25 of 30 exotic calculator domains returned completely empty autocomplete** — VPD, saponification,
+K-factor, rolling offset, birdsmouth, compression ratio, turbo sizing, mesh-to-micron, PCR annealing,
+Shannon index, Altman Z-score, hydroponics, beekeeping, cheese making, pottery glaze, sourdough
+hydration. Omni Calculator hosts ~3,900 calculators because that demand lives on the **web**: someone
+needs it once, Googles it, uses a page, leaves. **That is SEO, not ASO** — a different channel a paid
+offline app cannot enter. Never infer App Store demand from web popularity.
+
+---
+
 ## 3. The keyword seed list (enumerate the demand side)
 
 Run Search for each. These are **trades/professions with public, testable math** (the buildable universe). Expand as needed.
@@ -160,6 +200,33 @@ For each app, compute a candidate score. The magic quadrant is **big × good-lif
 8. **Apply build gates** (§6) to the top ~15 candidates.
 9. **Output** the ranked table (§7).
 
+### 5.1 THE INVERTED CENSUS — prefer this to keyword sweeping
+
+Keyword-first sweeping costs days and, per §2.10, mostly measures supply. **Invert it:**
+
+> Census the catalogue directly for **paid apps above ~200 ratings** in the target space, then work
+> backwards to the job.
+
+**Payable niches cannot hide — they show up as paid rating mass.** This is cheap (hours, not days) and
+**terminal**: when it returns the same names it returned last time, the space is exhausted and further
+sweeping is waste.
+
+Run against the whole trade-calculator space it surfaced exactly two payable niches — conduit bending
+(~5,552 combined paid ratings) and duct sizing (~731) — both held by healthy, actively-maintained
+4.5★+ incumbents. That is close to a terminal finding for the paid-trade-calculator thesis, reached in
+hours after weeks of keyword work had not reached it.
+
+**Use paid rating mass as the single discriminator.** It separates real from imaginary cleanly:
+
+| Field | Combined **paid** ratings | Verdict |
+|---|---|---|
+| conduit bending | ~5,552 | payable, defended |
+| duct sizing | ~731 | payable, defended |
+| crown molding | 115 | marginal |
+| locksmith SFIC | 9 | not payable |
+| sheet metal layout | 6 | not payable |
+| ag/horticulture, all paid calcs 2020–2026 | **0** | not payable |
+
 ---
 
 ## 6. Build gates (a candidate must survive these to be a real target)
@@ -172,7 +239,68 @@ These are the *strategy* gates (not Apple rules). N3 finds candidates; these dec
 4. **Liability class:** is a wrong answer self-revealing and harmless (framing: board doesn't fit) or silent and catastrophic (electrical wiring: fire; medical dosage: death)? Low/self-revealing = fine. Fire/death class = heavy liability, flag or avoid.
 5. **Grievance is real:** confirm (via live reviews, manual) that there's actual "buy once" / "used to own it" backlash or a genuine quality gap — not just a price you personally dislike.
 
-A candidate that clears all five **and** scores high on §4 is a genuine build target.
+### Gates 6–10 — added 2026-08-02, each one learned by getting it wrong first
+
+6. **FREQUENCY BEATS AUDIENCE SIZE.** Is the job done **daily or weekly by the same person**, or once a
+   year? Apps that own a *trade* succeed; apps that do a *calculation* fail.
+   Measured: conduit bending = 3 paid apps, **~5,552 combined paid ratings**, because an electrician
+   bends conduit all day. Gear ratio = **15 apps, ~15 combined ratings**, because you compute it once
+   when you lift the truck. Same math quality, same licensing, opposite outcomes.
+   **A once-a-year job cannot sustain an app no matter how well built.**
+
+7. **OUTPUT TYPE PREDICTS CAPTURE.** *A manufacturer gives the calculation away when the output is a
+   **purchase quantity**. Nobody captures a calculation whose output is a **machine setting**.*
+   Quantity-output → captured, every time: paint gallons (Sherwin-Williams 13,625 r), fabric yards
+   (Robert Kaufman), fertiliser/tank mix (Bayer, Corteva), irrigation runtime (Orbit 317,643 r,
+   Rachio 154,085 r, Hunter 58,778 r), steel weight, tile/drywall takeoff. **The calculation is the
+   order form** — the vendor outspends you and prices at zero, permanently.
+   Setting-output → uncaptured: conduit bend marks, crown miter angle, press-brake deduction, SFIC
+   pinning. Nobody sells anything by the degree.
+   **Use as a pre-filter: any calculation whose answer is "how much to buy" is dead before you measure it.**
+
+8. **POINT OF WORK.** Does the tradesperson compute this **standing up holding the workpiece**, or
+   **sitting at a desk inside vendor software**? Desk-bound is invisible on the App Store even at daily
+   frequency — stone fabricators nest in Slabsmith, opticians transpose in VisionWeb, dental labs in CAD,
+   locksmiths in InstaCode. All pass gate 6 and all return **empty autocomplete**.
+   **Empty autocomplete on a high-frequency trade usually means "they already do it on a bigger screen,"
+   not "they don't need it"** — and that is unrecoverable by building a better phone app.
+
+9. **SURFACE AREA DEFENDS PRICE.** One formula = a shovelware farm. Sheet-metal flat pattern is
+   essentially one equation: result is a seven-seller farm, nine new entrants in a month, and **the
+   best-selling paid app in the field has 6 ratings**. Conduit bending has offsets, saddles, three- and
+   four-point, segmented, rolling, shrink, gain, multi-shot — result: $6.99 × 3,852 r and $7.99 × 1,700 r.
+
+10. **PAYMENT PROOF — THE CORRECTED RULE.** A hard "no payment proof → skip" gate is **wrong**: it
+    excludes every unexploited market by definition and steers you only into contested ones. What payment
+    proof actually tests is *does this audience buy at all*, and that is only decisive when they've
+    demonstrably refused.
+
+    | Situation | Read |
+    |---|---|
+    | No payment proof **+ thriving free incumbent** | Audience was offered paid and chose free. **Dead.** |
+    | No payment proof **+ nobody tried properly** | Open market. **This is the opportunity.** |
+    | Payment proof exists | De-risked, but you're entering a fight |
+
+    The decisive column is **"is there a free giant?"**, not "is anyone making money."
+    Unit converters are row one: free app **190,098 r** vs its own paid twin **8,408 r** — 22:1.
+
+**A candidate must clear all ten.** Gates 6–8 kill most things before you spend a day measuring.
+
+### The free-giant roster (verified 2026-07-29, US)
+
+A free incumbent funded by an equipment maker, retailer or industry platform **cannot be beaten by a
+paid app**. Recognise the pattern on sight:
+
+irrigation = **Hunter Industries 58,778 r** · HVAC = **Copeland 17,072 r** + Bluon 4,451 · pool =
+**Clorox 29,019 r** + Pentair 22,993 · plumbing = **Calculated Industries "Pipe Trades Pro" 4,202 r** ·
+welding = Miller / Hobart / Lincoln Electric / Fronius · paving = Caterpillar · ag spray = Bayer ·
+trucking = **Trucker Path 147,201 r** · landscaping/asphalt/concrete = Calc Hub LLC ·
+window coverings = Hunter Douglas 2,379 r.
+
+⚠ **Check the price is real.** Calculated Industries' *Construction Master Pro Calc* lists as "Free" but
+its description says *"FREE Try Before You Buy 14 Day Trial."* That is a **paid product with a trial** —
+39,096 r at 4.84★ and 1.12M downloads — which makes it *payment proof*, not a giveaway. Read the
+description before classifying anything as a manufacturer freebie.
 
 ---
 

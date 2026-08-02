@@ -208,6 +208,27 @@ WORKED EXAMPLE OF GETTING THIS WRONG (2026‑07‑29): unit conversion was first
 WHY THIS MATTERS MORE THAN IT LOOKS: an Apple first‑party app is free, preinstalled, never uninstalled, and updated forever. It does not appear in iTunes Search API keyword results the way a competitor does, so it is invisible to every scan we run. It must be checked deliberately or it will not be checked at all.
 
 
+6.45 THE AUTOCOMPLETE ENDPOINT — operational facts (added 2026‑08‑02)
+
+Autocomplete is referenced throughout this file as the seed‑expansion tool. Two facts about actually calling it, each of which cost a working day:
+
+ENDPOINT: https://search.itunes.apple.com/WebObjects/MZSearchHints.woa/wa/hints?clientApplication=Software&term=X
+1. It REQUIRES the header `X-Apple-Store-Front: 143441-1,29` (US). Without it the endpoint returns an EMPTY ARRAY — which reads as "no demand" for every term you test, and silently invalidates a whole research pass.
+2. The response is an XML PLIST, not JSON. Parse `<string>` elements; discard anything starting with `http` and the literal `Suggestions`.
+3. Shopping‑intent forms ("best X apps", "apps for X") return ZERO hints when queried directly in the tools category — but they DO appear as suggestions when you query the bare term. Query bare terms and read the suggestions; do not query the shopping form.
+
+THE SUPPLY/DEMAND TRAP: if every hint returned is an existing APP TITLE, the term is crowded with shovelware — that is supply, not demand. Check each hint against the catalogue before calling it demand. Worked failure: `gear ratio` returned six rich hints, all of them app names, in a niche where nine apps had shipped in seven months at 0–1 ratings each. A GENERIC completion (bare term, or term + free/games/no ads/offline/for adults) is demand; a completion that is somebody's product name is supply.
+
+6.47 IMPRESSIONS ARE THE CONSTRAINT — measured on our own apps (added 2026‑07‑29)
+
+Pulled from App Store Connect Analytics (App Store Discovery and Engagement, r14):
+• Kerf Calc, 12 days: 34 impressions worldwide, 4 US, 2 product‑page views from search, 0 downloads, 0 purchases. Most recorded page views were the developer's own (territory UA, one day, desktop + iPhone, including a Share tap).
+• Ephemeris, 28 days: 1,382 impressions → 68 product‑page views (4.9 %) → 8 downloads (11.8 %) → 1 real sale, $7.21 proceeds, to a stranger in Indonesia via App Store search.
+
+THE RULE: the funnel BELOW the impression converts at ordinary paid‑app rates. There simply are almost no impressions. Do not evaluate a candidate on math quality, oracle depth or feature set — none of those has ever been the constraint. Fix the indexed fields first (name 30 / subtitle 30 / keywords 100 / category) against REAL autocomplete phrases, re‑snapshot in ~30 days, and treat impression count as the metric that decides whether anything else matters.
+
+Corollary for games: utilities are found by SEARCH, games are found by FEATURING and word of mouth. There is no `top-down shooter` query the way there is a `feet and inches calculator` query. Four games shipped in this portfolio sit at zero ratings, two of them free — so ASO cannot rescue a game the way it can a utility. For games the levers are Apple editorial featuring (nominable via App Store Connect, awarded on visual craft) and a mechanic whose NAME people already type (`block puzzle`, `sudoku`, `minesweeper`, `water sort`); genre labels are never searched.
+
 6.5 HARD‑WON RULES (added 2026‑07‑26 after a live diagnosis — do not relearn these)
 
 THE ABBREVIATION TRAP — the most expensive mistake found so far.
