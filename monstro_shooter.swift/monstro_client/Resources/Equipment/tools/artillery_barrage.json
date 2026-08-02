@@ -1,0 +1,27 @@
+{
+  "id": 203,
+  "name": "Carpet Bombing",
+  "nameLocalizations": {
+    "en-us": "Carpet Bombing",
+    "ru-ru": "Ковровая бомбардировка"
+  },
+  "description": "Devastating bombardment. 10 explosions over 6 seconds. Clear entire areas.",
+  "toolType": "Artillery",
+  "explosionToolType": 3,
+  "explosionRadius": 200,
+  "explosionPower": 150,
+  "kickOffRadius": 320,
+  "kickOffTime": 1000,
+  "shotDelay": 400,
+  "count": 10,
+  "delay": 3000,
+  "maxStackSize": 2,
+  "usageLimit": 1,
+  "levelRequirement": 18,
+  "buyPriceSoft": 4000,
+  "buyPriceHard": 90,
+  "sellPriceSoft": 2000,
+  "sellPriceHard": 45,
+  "marketAvailability": true,
+  "orderId": 203
+}

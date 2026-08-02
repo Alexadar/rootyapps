@@ -1,0 +1,30 @@
+platform: watch
+size: [416, 496]              # Apple Watch Series 10/11 46mm (APP_WATCH_SERIES_10 slot)
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/truecourse.swift/marketing/raw/watch
+  output_folder: /Users/oleksandr/Projects/rootyapps/truecourse.swift/marketing/aso/watch
+style:
+  bg_gradient: true
+  bg_color_top: '#0E141B'
+  bg_color_bottom: '#05070A'
+  title_color: '#EAEFF4'
+  subtitle_color: '#35C4DE'
+  screenshot_zoom: 0.92
+  text_row_percent: 20
+  screenshot_row_percent: 80
+  border_width: 6
+  border_radius: 44
+  text_padding: 24
+  screenshot_padding: 26
+# One entry per captured screen, in the order make_watch_shots.sh takes them.
+texts:
+  - title: "E6B on your wrist"
+    subtitle: "Wind, heading & GS"
+  - title: "Density altitude"
+    subtitle: "Turn the Crown"
+  - title: "Fuel & endurance"
+    subtitle: "Burn · range · reserve"
+  - title: "Weight & balance"
+    subtitle: "CG at a glance"
+  - title: "Every aviation unit"
+    subtitle: "kt · nm · ft · °C · gal"

@@ -1,0 +1,4 @@
+bed_aviation_calm.wav
+prompt: relaxing ambient aviation, soft warm pads, slow gentle felt piano, airy and peaceful, spacious, unhurried and soothing, no tension, no drums, no vocals
+dit: sm-music  decoder: same-s  seconds: 30  steps: 8
+seed: 522774597

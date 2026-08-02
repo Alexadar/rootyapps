@@ -1,0 +1,70 @@
+{
+  "canvas": [
+    1200,
+    1600
+  ],
+  "content_len": 26,
+  "preview_maxlen": 28.5,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0C111B",
+    "bg_color_bottom": "#080B14",
+    "title_color": "#E8EEF6",
+    "subtitle_color": "#4DF0A0",
+    "caption_band_percent": 20,
+    "side_padding": 150,
+    "border_width": 9,
+    "border_color": "#17202F",
+    "border_radius": 34
+  },
+  "app": {
+    "name": "Earth Around",
+    "tagline": "Watch the Sun.",
+    "icon": "eartharound.swift/Assets.xcassets/AppIcon.appiconset/icon_1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Now",
+      "start": 0,
+      "end": 5,
+      "title": "Storm right now?",
+      "subtitle": "NOAA G · R · S, live"
+    },
+    {
+      "key": "Wind",
+      "start": 5,
+      "end": 10,
+      "title": "What's driving it",
+      "subtitle": "Solar wind speed and Bz"
+    },
+    {
+      "key": "Flare",
+      "start": 10,
+      "end": 14,
+      "title": "Flares, live",
+      "subtitle": "GOES X-ray flux"
+    },
+    {
+      "key": "Aurora",
+      "start": 14,
+      "end": 18,
+      "title": "Aurora tonight?",
+      "subtitle": "Chance and view line"
+    },
+    {
+      "key": "Hpo",
+      "start": 18,
+      "end": 23,
+      "title": "Hp30 detail",
+      "subtitle": "30-minute storm resolution"
+    },
+    {
+      "key": "Night",
+      "start": 23,
+      "end": 27,
+      "title": "Night mode",
+      "subtitle": "Red-shift for the field"
+    }
+  ],
+  "_note": "iPad App Store preview: 1200x1600 portrait. Same tour and timing as the iPhone reel — only the canvas and framing differ, so captions stay in sync with the DemoDriver markers."
+}

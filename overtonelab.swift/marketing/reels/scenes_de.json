@@ -1,0 +1,61 @@
+{
+  "canvas": [
+    886,
+    1920
+  ],
+  "content_len": 38,
+  "preview_maxlen": 28,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0C0A18",
+    "bg_color_bottom": "#08080B",
+    "title_color": "#ffffff",
+    "subtitle_color": "#B79FEA",
+    "caption_band_percent": 22,
+    "side_padding": 46,
+    "border_width": 7,
+    "border_color": "#1E1B30",
+    "border_radius": 30
+  },
+  "app": {
+    "name": "Overtone Lab",
+    "tagline": "Sound & acoustics tools",
+    "icon": "overtonelab.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Tempo",
+      "start": 0,
+      "end": 15,
+      "src": [
+        9,
+        20
+      ],
+      "title": "Tippen — alles rechnet mit",
+      "subtitle": "Jeder Wert aktualisiert sich live"
+    },
+    {
+      "key": "Sabine",
+      "start": 15,
+      "end": 25,
+      "src": [
+        33,
+        44
+      ],
+      "title": "Echte Raumakustik",
+      "subtitle": "RT60, Raummoden & Schroeder"
+    },
+    {
+      "key": "Benchmark",
+      "start": 25,
+      "end": 38,
+      "src": [
+        56,
+        67
+      ],
+      "title": "26 Werkzeuge, eine App",
+      "subtitle": "Partch · Sabine · Fletcher · Butterworth · Thiele +21"
+    }
+  ],
+  "_generated": "gen_scenes.py from scenes.json — edit reel_captions.json, not this"
+}

@@ -1,0 +1,27 @@
+{
+  "id": 202,
+  "name": "Artillery Strike",
+  "nameLocalizations": {
+    "en-us": "Artillery Strike",
+    "ru-ru": "Артиллерийский удар"
+  },
+  "description": "Call in artillery bombardment on target area. 5 explosions over 3 seconds.",
+  "toolType": "Artillery",
+  "explosionToolType": 3,
+  "explosionRadius": 180,
+  "explosionPower": 120,
+  "kickOffRadius": 280,
+  "kickOffTime": 800,
+  "shotDelay": 600,
+  "count": 5,
+  "delay": 2000,
+  "maxStackSize": 3,
+  "usageLimit": 1,
+  "levelRequirement": 10,
+  "buyPriceSoft": 2000,
+  "buyPriceHard": 50,
+  "sellPriceSoft": 1000,
+  "sellPriceHard": 25,
+  "marketAvailability": true,
+  "orderId": 202
+}

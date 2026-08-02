@@ -1,0 +1,2 @@
+bed30.wav — Stable Audio 3 (sm-music/same-s, 30s, steps 8), seed not captured (2026-07-09)
+prompt: warm 1980 yacht-rock instrumental, mellow Rhodes electric piano, smooth clean electric guitar, soft alto saxophone, laid-back bassline, gentle brushed groove, sunlit breezy Florida coast, no vocals

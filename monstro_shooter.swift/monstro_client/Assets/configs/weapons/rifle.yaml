@@ -1,0 +1,21 @@
+id: 3
+name: "Rifle"
+type: 3
+nameLocalizations:
+  en-us: "Rifle"
+  ru-ru: "Винтовка"
+damage: 12.0
+shotRange: 600.0
+shotDelay: 0.15
+magazineSize: 30
+reloadTime: 3.0
+bulletsPerShot: 1
+bulletSpeed: 900.0
+bulletDeviation: 10.0
+maxDeviation: 20.0
+penetrationPower: 2
+bulletStartScale: 0.3
+bulletMaxScale: 1.0
+bulletScaleGrowth: 0.05
+bulletTextureName: "bullet_rifle"
+weaponSoundName: "weapon_rifle"

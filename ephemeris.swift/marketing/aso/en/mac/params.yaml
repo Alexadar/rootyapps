@@ -1,0 +1,31 @@
+platform: mac
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/ephemeris.swift/marketing/raw/en/mac
+  output_folder: /Users/oleksandr/Projects/rootyapps/ephemeris.swift/marketing/aso/en/mac
+
+style:
+  bg_gradient: true
+  bg_color_top: '#0B1020'
+  bg_color_bottom: '#1A1330'
+  title_color: '#ffffff'
+  subtitle_color: '#9FB4FF'
+  screenshot_zoom: 1.0
+  screenshot_move_down: 0
+  border_width: 10
+  border_radius: 36
+  text_padding: 60
+
+texts:
+  - title: "Ephemeris Sky"
+    subtitle: "Positions, aspects & the synodic cycle"
+  - title: "Every Position"
+    subtitle: "Tropical, geocentric, of date"
+  - title: "Aspects"
+    subtitle: "Computed, not guessed"
+  - title: "Mercury's Phases"
+    subtitle: "Conjunctions, retrogrades & stations"
+  # Was missing: five raw Mac captures but only four captions, so the Events shot rendered with
+  # an empty text column. Keep this list the same length as raw/<locale>/mac.
+  - title: "Event Timeline"
+    subtitle: "Ingresses, lunations & aspects"

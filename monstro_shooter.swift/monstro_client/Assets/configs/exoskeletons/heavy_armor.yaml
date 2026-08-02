@@ -1,0 +1,17 @@
+id: 4
+name: "Heavy Armor"
+defence: 3.5
+speed: 0.85
+gameResourceSprite: "exoskeleton_heavy"
+lobbyResourceSprite: "exoskeleton_heavy_preview"
+levelRequirement: 12
+rankRequirement: 0
+buyPriceSoft: 18000
+buyPriceHard: 350
+sellPriceSoft: 9000
+sellPriceHard: 175
+marketAvailability: true
+orderId: 4
+nameLocalizations:
+  en-us: "Heavy Armor"
+  ru-ru: "Тяжёлая броня"

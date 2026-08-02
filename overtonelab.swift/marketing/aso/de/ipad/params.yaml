@@ -1,0 +1,26 @@
+platform: ipad
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/raw/de/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/aso/de/ipad
+style:
+  bg_gradient: true
+  bg_color_top: '#0C0A18'
+  bg_color_bottom: '#08080B'
+  title_color: '#ffffff'
+  subtitle_color: '#B79FEA'
+  screenshot_zoom: 0.9
+  text_row_percent: 16
+  screenshot_row_percent: 84
+  border_width: 8
+  border_radius: 26
+  text_padding: 40
+  screenshot_padding: 40
+texts:
+  - title: "Ein Studio, 26 Werkzeuge"
+    subtitle: "Nach Bereich stöbern, im Detail arbeiten"
+  - title: "Raumakustik"
+    subtitle: "RT60, Moden & Schroeder-Frequenz"
+  - title: "Lautsprecher entwerfen"
+    subtitle: "Thiele-Small: geschlossen & Bassreflex"
+  - title: "Reine Stimmung"
+    subtitle: "Cent, nächstes Verhältnis & Tenney-Höhe"

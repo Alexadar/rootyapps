@@ -1,0 +1,27 @@
+platform: ios
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/storypole/marketing/raw/en/ios
+  output_folder: /Users/oleksandr/Projects/rootyapps/storypole/marketing/aso/en/ios
+style:
+  bg_gradient: true
+  bg_color_top: '#2A251D'
+  bg_color_bottom: '#12100D'
+  title_color: '#F5F2EA'
+  subtitle_color: '#F2C94C'
+  screenshot_zoom: 0.94
+  border_width: 8
+  border_radius: 34
+  text_padding: 70
+texts:
+  - title: "Feet, inches, fractions"
+    subtitle: "Add and subtract the way a tape reads — never decimals"
+  - title: "Sixteen calculators"
+    subtitle: "Layout, takeoff, roof, lumber — every number cited"
+  - title: "Every mark, not just the spacing"
+    subtitle: "Divide a span and get the list you pencil on the board"
+  - title: "16\", 19.2\", 24\" on center"
+    subtitle: "Including the odd last bay, reported not hidden"
+  - title: "Why a 2×4 is 1½\" × 3½\""
+    subtitle: "The nominal-vs-dressed table, straight from NIST PS 20-20"
+  - title: "Every number has a source"
+    subtitle: "NIST, the Federal Register, USDA — named and quoted"

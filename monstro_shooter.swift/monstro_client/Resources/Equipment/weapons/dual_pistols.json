@@ -1,0 +1,33 @@
+{
+  "id": 2,
+  "name": "Dual Pistols",
+  "nameLocalizations": {
+    "en-us": "Dual Pistols",
+    "ru-ru": "Два пистолета"
+  },
+  "description": "Two pistols for double the firepower. Slightly less accurate than single pistol.",
+  "type": 2,
+  "levelRequirement": 5,
+  "rankRequirement": 0,
+  "damage": 8,
+  "shotRange": 750,
+  "shotDelay": 400,
+  "cageSize": 24,
+  "rechargeDelay": 2500,
+  "bulletsCount": 2,
+  "bulletSpeed": 750,
+  "bulletDeviation": 3,
+  "bulletMaxDeviation": 3,
+  "penetrationPower": 1,
+  "bulletStartScale": 0.3,
+  "bulletMaxScale": 1.0,
+  "bulletScaleFactor": 0.05,
+  "bulletType": 1,
+  "weaponSound": "weapon_pistol",
+  "buyPriceSoft": 5000,
+  "buyPriceHard": 100,
+  "sellPriceSoft": 2500,
+  "sellPriceHard": 50,
+  "marketAvailability": true,
+  "orderId": 2
+}

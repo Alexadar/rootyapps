@@ -1,0 +1,123 @@
+- guidelines:
+    - Search for resonant waveforms to amplify the signal
+    - Cat invites astronaut to walk a bit throughout the world
+    - Astronaut agrrees, why not. While they walk he asked why stone looks like a stone, but wen he go closer, it changes its shape and size
+    - Cat says tha he see that, and it shows for you like a stone, because it wants to
+    - Astronaut says - stone thing wants things, okay good, and shapes?
+    - Cat says - it have shape which between your 3 and 4 dimention, some in detween, it just want to show you that
+    - Astornaut says great, why so? Stone-ish things stands calm in my , em, spacetime..?,.. but here it want ands shows it dimention
+    - Cat says - Dimention(s), it varies it dimentionality to play with you
+    - Astronaut says - Maybe thats our wayform?
+    - Cat says - oh very good, good guess, you know how rare it is to see assumptions this quality from your kind?
+    - Thats flattering, but my kind? You saw my kind?
+    - Cat says - Saw or will see, not sure which spacetime it is and how it flows but this smells familiar to me, okay stone actually likes you and did a present, he gave you a waveform, what a triple coincedenc
+    - Astronaut says - Great, say thank you
+    - Cat says - oh no, thats an offence in this interactional comunication
+    - Cat continues, but it smell your gratitude, okay it gives some options to you, choose one
+    - Options of phase_2_option_2:
+      - Stone gives waveform but asks to tell a story
+      - Stone wants to have that shiny small thing from astronaut, then it gaves a waveform
+      - Stone goes with a waveform further, to see how it goes next
+      - Stone does not gives a waveform, but tells where is a next one
+- story_dialogs:
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Let's walk. Resonant waveforms leave traces—we'll find one if we move through enough space.
+    id: 0
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Walk through an impossible dimension hunting for invisible signals. Sure. Why not.
+    id: 1
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: That's the spirit.
+    id: 2
+  - character_id: 1
+    character_name: Astronaut
+    character_text: That formation ahead—it looks like a stone. But as I get closer... it's changing. The shape, the size, everything shifts.
+    id: 3
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: It shows you a stone because it wants to. Your brain needed a reference point. It obliged.
+    id: 4
+  - character_id: 1
+    character_name: Astronaut
+    character_text: The stone has wants. Naturally. And the shifting shapes?
+    id: 5
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: It exists between your third and fourth dimensions. Somewhere in between. It's choosing to show you that now.
+    id: 6
+  - character_id: 1
+    character_name: Astronaut
+    character_text: In my spacetime, stones just sit there. They don't choose anything. They don't show off their dimensionality.
+    id: 7
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Dimensionalities, plural. It's varying them. Playing with you. It finds you interesting.
+    id: 8
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Wait—if it's responding to me specifically... could this be the waveform we're looking for?
+    id: 9
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Oh. Very good. You know how rare it is to see intuitive leaps of this quality from your kind?
+    id: 10
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Flattering. But "my kind"? You've encountered humans before?
+    id: 11
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Encountered, or will encounter. Temporal direction is unclear here. But the smell is familiar. Anyway—the stone likes you. It's offering a waveform freely. Triple coincidence.
+    id: 12
+  - character_id: 1
+    character_name: Astronaut
+    character_text: That's generous. Tell it thank you.
+    id: 13
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Absolutely not. Verbal gratitude is offensive in this form of exchange.
+    id: 14
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Of course it is.
+    id: 15
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Unfortunately, it smelled your gratitude anyway. The intent was enough. It's... mildly offended now.
+    id: 16
+  - character_id: 1
+    character_name: Astronaut
+    character_text: I offended a stone by feeling thankful. This day keeps getting better.
+    id: 17
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Don't worry. It's proposing ways to restore balance. Minor reparations. Choose one and the waveform is still yours.
+    id: 18
+  - character_id: 1
+    character_name: Astronaut
+    character_text: What are the options?
+    id: 19
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: It can give the waveform in exchange for a story from your continuum. Or it wants that small shiny object you carry—I believe you call it a watch. Or it will accompany you further, to observe what happens next. Or it won't give the waveform at all, but will tell you where to find a stronger one.
+    id: 20
+  - character_id: 1
+    character_name: Astronaut
+    character_text: A stone that wants stories and watches. This place has a strange economy.
+    id: 21
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Economy implies scarcity. This is more like... curiosity barter. Choose how you want to proceed.
+    id: 22
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Let me think.
+    id: 23
+    options:
+    - option_text: Tell the stone a story in exchange for the waveform
+    - option_text: Give the stone my watch for the waveform
+    - option_text: Let the stone accompany us further
+    - option_text: Ask where to find a stronger waveform instead

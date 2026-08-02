@@ -1,0 +1,57 @@
+{
+  "canvas": [
+    1920,
+    1080
+  ],
+  "scene_dur": 6.0,
+  "xfade": 0.5,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0B1020",
+    "bg_color_bottom": "#1A1330",
+    "title_color": "#ffffff",
+    "subtitle_color": "#9FB4FF",
+    "text_col_percent": 40,
+    "side_padding": 70,
+    "border_width": 6,
+    "border_color": "#2A2E52",
+    "border_radius": 26
+  },
+  "app": {
+    "name": "Ephemeris",
+    "tagline": "Deine Himmelsalmanach für unterwegs",
+    "icon": "liquid_icon.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "chart",
+      "clip": "macclip_chart.mov",
+      "title": "Häuser, Achsen, Aspekte",
+      "subtitle": "Ein volles Horoskop für jeden Moment"
+    },
+    {
+      "key": "positions",
+      "clip": "macclip_positions.mov",
+      "title": "Jeder Körper, verortet",
+      "subtitle": "Zeichen, Grad & Tagesbewegung"
+    },
+    {
+      "key": "aspects",
+      "clip": "macclip_aspects.mov",
+      "title": "Aspekte auf einen Blick",
+      "subtitle": "Farbcodiert und orbisgenau"
+    },
+    {
+      "key": "cycle",
+      "clip": "macclip_cycle.mov",
+      "title": "Dem synodischen Zyklus folgen",
+      "subtitle": "Phasen, Elongationen, Stationen"
+    },
+    {
+      "key": "events",
+      "clip": "macclip_events.mov",
+      "title": "Nichts mehr verpassen",
+      "subtitle": "Eintritte, Lunationen, Rückläufe"
+    }
+  ]
+}

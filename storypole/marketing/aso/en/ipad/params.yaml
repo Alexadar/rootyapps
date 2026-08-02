@@ -1,0 +1,23 @@
+platform: ipad
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/storypole/marketing/raw/en/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/storypole/marketing/aso/en/ipad
+style:
+  bg_gradient: true
+  bg_color_top: '#2A251D'
+  bg_color_bottom: '#12100D'
+  title_color: '#F5F2EA'
+  subtitle_color: '#F2C94C'
+  screenshot_zoom: 0.94
+  border_width: 8
+  border_radius: 26
+  text_padding: 80
+texts:
+  - title: "The same app on iPad"
+    subtitle: "Every tool in the sidebar, the tape always in reach"
+  - title: "Every mark, not just the spacing"
+    subtitle: "Divide a span and get the list you pencil on the board"
+  - title: "Board feet, nominal by definition"
+    subtitle: "And the caution nobody else prints"
+  - title: "Every number has a source"
+    subtitle: "NIST, the Federal Register, USDA — named and quoted"

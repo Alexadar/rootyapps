@@ -1,0 +1,26 @@
+platform: ipad
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/raw/en/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/aso/en/ipad
+style:
+  bg_gradient: true
+  bg_color_top: '#0C0A18'
+  bg_color_bottom: '#08080B'
+  title_color: '#ffffff'
+  subtitle_color: '#B79FEA'
+  screenshot_zoom: 0.9
+  text_row_percent: 16
+  screenshot_row_percent: 84
+  border_width: 8
+  border_radius: 26
+  text_padding: 40
+  screenshot_padding: 40
+texts:
+  - title: "One studio, twenty-six tools"
+    subtitle: "Browse by section, work in the detail"
+  - title: "Room acoustics"
+    subtitle: "RT60, modes & Schroeder frequency"
+  - title: "Loudspeaker design"
+    subtitle: "Thiele-Small sealed & ported boxes"
+  - title: "Just intonation"
+    subtitle: "Cents, nearest ratio & Tenney height"

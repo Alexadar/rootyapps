@@ -1,0 +1,90 @@
+name: producertycoon.swift
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+packages:
+  ProducerKit:
+    path: Kits/Producer/ProducerKit
+targets:
+  producertycoon.swift:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: ProducerKit
+        product: ProducerKit
+    sources:
+      - path: ProducerTycoon
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.producertycoon
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": producertycoon-macOS.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        # Guideline 5.2.5: without this, PRODUCT_NAME falls back to the target name and
+        # ships "Swift" in the app/binary name (CFBundleName drives the macOS menu bar).
+        PRODUCT_NAME: "Producer Tycoon"
+        INFOPLIST_KEY_CFBundleDisplayName: Producer Tycoon
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.simulation-games
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+  producertycoonTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS]
+    sources:
+      - path: producertycoonTests
+    dependencies:
+      - target: producertycoon.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.producertycoonTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/producertycoon.swift.app/producertycoon.swift"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+  producertycoonUITests:
+    type: bundle.ui-testing
+    supportedDestinations: [iOS]
+    sources:
+      - path: producertycoonUITests
+    dependencies:
+      - target: producertycoon.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.producertycoonUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: producertycoon.swift
+schemes:
+  producertycoon.swift:
+    build:
+      targets:
+        producertycoon.swift: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - producertycoonTests
+  producertycoonReel:
+    build:
+      targets:
+        producertycoon.swift: all
+        producertycoonUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - producertycoonUITests

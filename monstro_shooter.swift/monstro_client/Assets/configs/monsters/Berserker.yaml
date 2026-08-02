@@ -1,0 +1,17 @@
+monsterTypeID: 2
+speed: 94.0
+boxWidth: 60
+boxHeight: 60
+damage: 4.0
+health: 10.0
+hitCooldown: 0.5
+rotationOffset: 0
+useDirectSteering: true
+walkAnimationDirectory: "monsters/berserker/walk"
+dyingAnimationDirectory: "monsters/berserker/dying"
+walkFrameRate: 0.08
+dyingFrameRate: 0.06
+deathSounds:
+  - "monster_walker_1.wav"
+  - "monster_walker_2.wav"
+mass: 2.5

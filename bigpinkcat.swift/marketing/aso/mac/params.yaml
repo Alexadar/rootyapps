@@ -1,0 +1,35 @@
+# Screenshot generation parameters for Big Pink Cat macOS App Store screenshots
+
+style:
+  text_col_percent: 42
+  screenshot_col_percent: 38
+  screenshot_zoom: 1.1
+  screenshot_move_down: 0
+  screenshot_move_left: 0
+
+  # Visual styling - vibrant pink/purple to match game art
+  bg_gradient: true
+  bg_color_top: '#FF69B4'
+  bg_color_bottom: '#8B008B'
+  title_color: '#ffffff'
+  subtitle_color: '#FFE4F0'
+  text_padding: 80
+  screenshot_padding: 80
+  border_width: 28
+  border_color: '#ffffff'
+  border_radius: 100
+  shadow: true
+
+texts:
+  - title: "Big Pink Cat"
+    subtitle: "A Cosmic\nVisual Adventure"
+  - title: "Big Pink Cat"
+    subtitle: "Meet the Mysterious\nPink Cat"
+  - title: "Big Pink Cat"
+    subtitle: "Choose Your Path\nShape Your Destiny"
+  - title: "Big Pink Cat"
+    subtitle: "Uncover Secrets\nof the Universe"
+
+paths:
+  raw_folder: "/Users/oleksandr/Projects/rootyapps/bigpinkcat.swift/marketing/raw/mac"
+  output_folder: "/Users/oleksandr/Projects/rootyapps/bigpinkcat.swift/marketing/aso/mac"

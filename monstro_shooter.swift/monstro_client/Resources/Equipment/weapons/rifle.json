@@ -1,0 +1,33 @@
+{
+  "id": 3,
+  "name": "Rifle",
+  "nameLocalizations": {
+    "en-us": "Rifle",
+    "ru-ru": "Винтовка"
+  },
+  "description": "High precision automatic rifle. Fast fire rate, excellent for long range engagements.",
+  "type": 3,
+  "levelRequirement": 10,
+  "rankRequirement": 0,
+  "damage": 15,
+  "shotRange": 1000,
+  "shotDelay": 150,
+  "cageSize": 30,
+  "rechargeDelay": 3000,
+  "bulletsCount": 1,
+  "bulletSpeed": 1000,
+  "bulletDeviation": 1,
+  "bulletMaxDeviation": 1,
+  "penetrationPower": 2,
+  "bulletStartScale": 0.3,
+  "bulletMaxScale": 1.0,
+  "bulletScaleFactor": 0.05,
+  "bulletType": 2,
+  "weaponSound": "weapon_rifle",
+  "buyPriceSoft": 15000,
+  "buyPriceHard": 250,
+  "sellPriceSoft": 7500,
+  "sellPriceHard": 125,
+  "marketAvailability": true,
+  "orderId": 3
+}

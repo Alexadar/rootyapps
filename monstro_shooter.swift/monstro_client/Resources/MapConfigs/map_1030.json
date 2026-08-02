@@ -1,0 +1,99 @@
+{
+  "id": 1030,
+  "ownerName": null,
+  "dropPointId": 7,
+  "ownerId": null,
+  "energyCost": 10000,
+  "landingDuration": 50,
+  "gameResource": "map_2",
+  "country": null,
+  "lastRenameDate": "2014-09-02 09:59:35.000",
+  "renameCost": 1,
+  "renameCostMult": 1,
+  "removed": false,
+  "orderNumber": 0,
+  "defaultNameLocalizations": {
+    "ru-ru": "К1 Десант 002",
+    "en-us": "First map!"
+  },
+  "descriptionLocalizations": {
+    "ru-ru": "odin raz monstri pojavlaiutsya",
+    "en-us": ""
+  },
+  "monsterSpawnWaves": [
+    {
+      "startTime": 1,
+      "count": 25
+    },
+    {
+      "startTime": 2,
+      "count": 50
+    },
+    {
+      "startTime": 3,
+      "count": 75
+    },
+    {
+      "startTime": 4,
+      "count": 0
+    },
+    {
+      "startTime": 20,
+      "count": 25
+    },
+    {
+      "startTime": 21,
+      "count": 50
+    },
+    {
+      "startTime": 22,
+      "count": 75
+    },
+    {
+      "startTime": 23,
+      "count": 0
+    },
+    {
+      "startTime": 34,
+      "count": 60
+    },
+    {
+      "startTime": 35,
+      "count": 85
+    },
+    {
+      "startTime": 36,
+      "count": 0
+    }
+  ],
+  "monsterTypes": [
+    {
+      "startTime": 20,
+      "monsterTypeIds": [
+        1,
+        2,
+        3
+      ]
+    }
+  ],
+  "maximumVictims": {
+    "1": 5000,
+    "2": 5000,
+    "3": 5000,
+    "4": 5000,
+    "5": 5000,
+    "6": 5000,
+    "7": 5000,
+    "8": 5000,
+    "9": 5000,
+    "10": 5000,
+    "11": 5000,
+    "12": 5000,
+    "13": 5000,
+    "14": 5000,
+    "15": 5000,
+    "16": 5000,
+    "17": 5000,
+    "18": 5000
+  }
+}

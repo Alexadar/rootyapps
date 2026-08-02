@@ -1,0 +1,345 @@
+{
+  "_readme": [
+    "Screenshot caption copy per locale, used to stamp out marketing/aso/<locale>/<platform>/params.yaml.",
+    "",
+    "These are MARKETING lines, not translations. Each is rewritten to be short and idiomatic in its",
+    "own language, because the title renders as large display text: a literal German rendering of",
+    "'Twenty-six audio tools, one app' runs off the canvas, so the German line counts differently.",
+    "Meaning is preserved; wording is not.",
+    "",
+    "NEVER translated, in any locale: Overtone Lab, and the tool surnames and standards that are the",
+    "product's credibility — Sabine, Partch, Thiele, Thiele-Small, Butterworth, Fletcher, Blumlein,",
+    "ORTF, NOS, RT60, LUFS, ITU-R BS.1770, Schroeder, Tenney. Units stay symbols: Hz, dB, m³.",
+    "",
+    "Media locales are the 5 the store gets images for. Every other shipped language inherits the",
+    "primary language's screenshots by Apple's own default, so shooting all 17 would only buy a",
+    "maintenance tax on every future UI change.",
+    "",
+    "ios has 6 captions, ipad and mac have 4 — matching the raw capture sets.",
+    "",
+    "Japanese titles must be SHORT: with no spaces, wrap_text cannot break them, so a long line renders as one line and runs off the canvas instead of wrapping. Measure the rendered PNG (bright-pixel column span vs canvas width), do not trust the caption's character count."
+  ],
+  "media_locales": [
+    "en",
+    "de",
+    "fr",
+    "es",
+    "ja"
+  ],
+  "captions": {
+    "en": [
+      [
+        "Twenty-six audio tools, one app",
+        "Tuning · Acoustics · Signal · Stereo"
+      ],
+      [
+        "Timing, locked",
+        "Note length, delay & samples"
+      ],
+      [
+        "Pitch & frequency",
+        "Notes, harmonics, wavelength"
+      ],
+      [
+        "Room acoustics",
+        "RT60, modes & Schroeder frequency"
+      ],
+      [
+        "Mastering loudness",
+        "Real ITU-R BS.1770 LUFS"
+      ],
+      [
+        "Stereo imaging, solved",
+        "Recording angle: ORTF, NOS, Blumlein"
+      ]
+    ],
+    "de": [
+      [
+        "26 Audio-Werkzeuge, eine App",
+        "Stimmung · Akustik · Signal · Stereo"
+      ],
+      [
+        "Timing sitzt",
+        "Notenlänge, Delay & Samples"
+      ],
+      [
+        "Tonhöhe & Frequenz",
+        "Noten, Obertöne, Wellenlänge"
+      ],
+      [
+        "Raumakustik",
+        "RT60, Moden & Schroeder-Frequenz"
+      ],
+      [
+        "Lautheit fürs Mastering",
+        "Echte LUFS nach ITU-R BS.1770"
+      ],
+      [
+        "Stereobild gelöst",
+        "Aufnahmewinkel: ORTF, NOS, Blumlein"
+      ]
+    ],
+    "fr": [
+      [
+        "26 outils audio, une app",
+        "Accord · Acoustique · Signal · Stéréo"
+      ],
+      [
+        "Le tempo au cordeau",
+        "Durée de note, retard & échantillons"
+      ],
+      [
+        "Hauteur & fréquence",
+        "Notes, harmoniques, longueur d'onde"
+      ],
+      [
+        "Acoustique des salles",
+        "RT60, modes & fréquence de Schroeder"
+      ],
+      [
+        "Sonie de mastering",
+        "Vrais LUFS ITU-R BS.1770"
+      ],
+      [
+        "L'image stéréo, résolue",
+        "Angle de prise de son : ORTF, NOS, Blumlein"
+      ]
+    ],
+    "es": [
+      [
+        "26 herramientas de audio",
+        "Afinación · Acústica · Señal · Estéreo"
+      ],
+      [
+        "El tempo, clavado",
+        "Duración de nota, retardo y muestras"
+      ],
+      [
+        "Altura y frecuencia",
+        "Notas, armónicos, longitud de onda"
+      ],
+      [
+        "Acústica de sala",
+        "RT60, modos y frecuencia de Schroeder"
+      ],
+      [
+        "Sonoridad de masterización",
+        "LUFS reales según ITU-R BS.1770"
+      ],
+      [
+        "La imagen estéreo, resuelta",
+        "Ángulo de grabación: ORTF, NOS, Blumlein"
+      ]
+    ],
+    "ja": [
+      [
+        "26のツールを1つに",
+        "調律・音響・信号・ステレオ"
+      ],
+      [
+        "テンポは正確に",
+        "音価、ディレイ、サンプル数"
+      ],
+      [
+        "音高と周波数",
+        "音名・倍音・波長"
+      ],
+      [
+        "部屋の音響",
+        "RT60・モード・シュレーダー周波数"
+      ],
+      [
+        "マスタリングのラウドネス",
+        "ITU-R BS.1770 準拠の LUFS"
+      ],
+      [
+        "ステレオの定位を解く",
+        "録音角度：ORTF・NOS・ブルームライン"
+      ]
+    ]
+  },
+  "ipad_captions": {
+    "en": [
+      [
+        "One studio, twenty-six tools",
+        "Browse by section, work in the detail"
+      ],
+      [
+        "Room acoustics",
+        "RT60, modes & Schroeder frequency"
+      ],
+      [
+        "Loudspeaker design",
+        "Thiele-Small sealed & ported boxes"
+      ],
+      [
+        "Just intonation",
+        "Cents, nearest ratio & Tenney height"
+      ]
+    ],
+    "de": [
+      [
+        "Ein Studio, 26 Werkzeuge",
+        "Nach Bereich stöbern, im Detail arbeiten"
+      ],
+      [
+        "Raumakustik",
+        "RT60, Moden & Schroeder-Frequenz"
+      ],
+      [
+        "Lautsprecher entwerfen",
+        "Thiele-Small: geschlossen & Bassreflex"
+      ],
+      [
+        "Reine Stimmung",
+        "Cent, nächstes Verhältnis & Tenney-Höhe"
+      ]
+    ],
+    "fr": [
+      [
+        "Un studio, 26 outils",
+        "Parcourez par section, travaillez dans le détail"
+      ],
+      [
+        "Acoustique des salles",
+        "RT60, modes & fréquence de Schroeder"
+      ],
+      [
+        "Concevoir une enceinte",
+        "Thiele-Small : clos & bass-reflex"
+      ],
+      [
+        "Intonation juste",
+        "Cents, rapport le plus proche & hauteur de Tenney"
+      ]
+    ],
+    "es": [
+      [
+        "Un estudio, 26 herramientas",
+        "Explora por sección, trabaja en el detalle"
+      ],
+      [
+        "Acústica de sala",
+        "RT60, modos y frecuencia de Schroeder"
+      ],
+      [
+        "Diseño de altavoces",
+        "Thiele-Small: selladas y bass-reflex"
+      ],
+      [
+        "Entonación justa",
+        "Cents, razón más cercana y altura de Tenney"
+      ]
+    ],
+    "ja": [
+      [
+        "1つのスタジオに26のツール",
+        "セクションで探し、詳細で作業"
+      ],
+      [
+        "部屋の音響",
+        "RT60・モード・シュレーダー周波数"
+      ],
+      [
+        "スピーカー設計",
+        "Thiele-Small：密閉とバスレフ"
+      ],
+      [
+        "純正律",
+        "セント・最近似比・テニー高"
+      ]
+    ]
+  },
+  "mac_captions": {
+    "en": [
+      [
+        "Overtone Lab on Mac",
+        "Sidebar of every tool, work in the detail pane"
+      ],
+      [
+        "Room acoustics",
+        "RT60, room modes & Schroeder frequency"
+      ],
+      [
+        "Loudspeaker design",
+        "Thiele-Small sealed & ported enclosures"
+      ],
+      [
+        "Mastering loudness",
+        "Real ITU-R BS.1770 integrated LUFS"
+      ]
+    ],
+    "de": [
+      [
+        "Overtone Lab auf dem Mac",
+        "Alle Werkzeuge links, Arbeit im Detailbereich"
+      ],
+      [
+        "Raumakustik",
+        "RT60, Raummoden & Schroeder-Frequenz"
+      ],
+      [
+        "Lautsprecher entwerfen",
+        "Thiele-Small: geschlossen & Bassreflex"
+      ],
+      [
+        "Lautheit fürs Mastering",
+        "Echte integrierte LUFS nach ITU-R BS.1770"
+      ]
+    ],
+    "fr": [
+      [
+        "Overtone Lab sur Mac",
+        "Tous les outils à gauche, le travail à droite"
+      ],
+      [
+        "Acoustique des salles",
+        "RT60, modes propres & fréquence de Schroeder"
+      ],
+      [
+        "Concevoir une enceinte",
+        "Thiele-Small : clos & bass-reflex"
+      ],
+      [
+        "Sonie de mastering",
+        "Vrais LUFS intégrés ITU-R BS.1770"
+      ]
+    ],
+    "es": [
+      [
+        "Overtone Lab en el Mac",
+        "Todas las herramientas a un lado, el trabajo al otro"
+      ],
+      [
+        "Acústica de sala",
+        "RT60, modos propios y frecuencia de Schroeder"
+      ],
+      [
+        "Diseño de altavoces",
+        "Thiele-Small: selladas y bass-reflex"
+      ],
+      [
+        "Sonoridad de masterización",
+        "LUFS integrados reales ITU-R BS.1770"
+      ]
+    ],
+    "ja": [
+      [
+        "Mac でも Overtone Lab",
+        "全ツールをサイドバーに、作業は詳細ペインで"
+      ],
+      [
+        "部屋の音響",
+        "RT60・固有モード・シュレーダー周波数"
+      ],
+      [
+        "スピーカー設計",
+        "Thiele-Small：密閉とバスレフ"
+      ],
+      [
+        "マスタリングのラウドネス",
+        "ITU-R BS.1770 の統合 LUFS"
+      ]
+    ]
+  }
+}

@@ -1,0 +1,309 @@
+name: overtonelab.swift
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.2"
+    CURRENT_PROJECT_VERSION: "10"
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+packages:
+  PartchKit:
+    path: Kits/Tuning/PartchKit
+  CommaKit:
+    path: Kits/Tuning/CommaKit
+  MersenneKit:
+    path: Kits/Tuning/MersenneKit
+  SabineKit:
+    path: Kits/Acoustics/SabineKit
+  WebsterKit:
+    path: Kits/Acoustics/WebsterKit
+  BernoulliKit:
+    path: Kits/Acoustics/BernoulliKit
+  ButterworthKit:
+    path: Kits/Signal/ButterworthKit
+  FletcherKit:
+    path: Kits/Signal/FletcherKit
+  BenchmarkKit:
+    path: Kits/Signal/BenchmarkKit
+  ThieleKit:
+    path: Kits/Design/ThieleKit
+  TimingKit:
+    path: Kits/Timing/TimingKit
+  PitchKit:
+    path: Kits/Timing/PitchKit
+  AudioUtilKit:
+    path: Kits/Utility/AudioUtilKit
+  FormantKit:
+    path: Kits/Acoustics/FormantKit
+  SPLKit:
+    path: Kits/Acoustics/SPLKit
+  PassiveKit:
+    path: Kits/Signal/PassiveKit
+  BiquadKit:
+    path: Kits/Signal/BiquadKit
+  DynamicsKit:
+    path: Kits/Signal/DynamicsKit
+  RoomModesKit:
+    path: Kits/Acoustics/RoomModesKit
+  AirAbsorptionKit:
+    path: Kits/Acoustics/AirAbsorptionKit
+  InterferenceKit:
+    path: Kits/Acoustics/InterferenceKit
+  StereoKit:
+    path: Kits/Stereo/StereoKit
+targets:
+  overtonelab.swift:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: SabineKit
+        product: SabineKit
+      - package: BernoulliKit
+        product: BernoulliKit
+      - package: ButterworthKit
+        product: ButterworthKit
+      - package: WebsterKit
+        product: WebsterKit
+      - package: PartchKit
+        product: PartchKit
+      - package: CommaKit
+        product: CommaKit
+      - package: MersenneKit
+        product: MersenneKit
+      - package: FletcherKit
+        product: FletcherKit
+      - package: BenchmarkKit
+        product: BenchmarkKit
+      - package: ThieleKit
+        product: ThieleKit
+      - package: TimingKit
+        product: TimingKit
+      - package: PitchKit
+        product: PitchKit
+      - package: AudioUtilKit
+        product: AudioUtilKit
+      - package: FormantKit
+        product: FormantKit
+      - package: SPLKit
+        product: SPLKit
+      - package: PassiveKit
+        product: PassiveKit
+      - package: BiquadKit
+        product: BiquadKit
+      - package: DynamicsKit
+        product: DynamicsKit
+      - package: RoomModesKit
+        product: RoomModesKit
+      - package: AirAbsorptionKit
+        product: AirAbsorptionKit
+      - package: InterferenceKit
+        product: InterferenceKit
+      - package: StereoKit
+        product: StereoKit
+      - target: OverToneLabWatch
+        embed: true                 # "Embed Watch Content" — iOS only
+        platformFilter: iOS
+    sources:
+      - path: OverToneLab
+      - path: DesignShared          # tokens, Fmt, LanguageStore, ToolCatalog + the string catalog
+      - path: overtonelab.icon
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.overtonelab
+        # Guideline 5.2.5 (Apple trademarks): without this the target name leaks into the
+        # product — binary `overtonelab.swift` and a macOS menu bar reading "overtonelab.swift".
+        # It must be PRODUCT_NAME: with GENERATE_INFOPLIST_FILE the generator always sets
+        # CFBundleName (= the macOS menu-bar title) from PRODUCT_NAME and silently ignores
+        # INFOPLIST_KEY_CFBundleName. CFBundleDisplayName only covers Finder/Dock/Home screen.
+        PRODUCT_NAME: Overtone Lab
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": overtonelab-macOS.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: overtonelab
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_CFBundleDisplayName: Overtone Lab
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.music
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+  OverToneLabWatch:
+    type: application
+    # `platform:`, not `supportedDestinations:` — XcodeGen rejects watchOS in a multiplatform
+    # target ("cannot contain watchOS in supportedDestinations").
+    platform: watchOS
+    deploymentTarget: "26.0"
+    # Every Kit: all 26 tools ship on the wrist, so the watch links what the phone links.
+    dependencies:
+      - package: PartchKit
+        product: PartchKit
+      - package: CommaKit
+        product: CommaKit
+      - package: MersenneKit
+        product: MersenneKit
+      - package: SabineKit
+        product: SabineKit
+      - package: WebsterKit
+        product: WebsterKit
+      - package: BernoulliKit
+        product: BernoulliKit
+      - package: ButterworthKit
+        product: ButterworthKit
+      - package: FletcherKit
+        product: FletcherKit
+      - package: BenchmarkKit
+        product: BenchmarkKit
+      - package: ThieleKit
+        product: ThieleKit
+      - package: TimingKit
+        product: TimingKit
+      - package: PitchKit
+        product: PitchKit
+      - package: AudioUtilKit
+        product: AudioUtilKit
+      - package: FormantKit
+        product: FormantKit
+      - package: SPLKit
+        product: SPLKit
+      - package: PassiveKit
+        product: PassiveKit
+      - package: BiquadKit
+        product: BiquadKit
+      - package: DynamicsKit
+        product: DynamicsKit
+      - package: RoomModesKit
+        product: RoomModesKit
+      - package: AirAbsorptionKit
+        product: AirAbsorptionKit
+      - package: InterferenceKit
+        product: InterferenceKit
+      - package: StereoKit
+        product: StereoKit
+    sources:
+      - path: OverToneLabWatch
+      - path: DesignShared          # same tokens and the SAME Localizable.xcstrings as phone
+      - path: overtonelab.icon      # the Icon Composer source, shared with phone/Mac
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.overtonelab.watchkitapp
+        PRODUCT_NAME: Overtone Lab
+        INFOPLIST_KEY_CFBundleDisplayName: Overtone Lab
+        INFOPLIST_KEY_WKApplication: YES
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: oleksandr.aisixteen.overtonelab
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        WATCHOS_DEPLOYMENT_TARGET: "26.0"
+        TARGETED_DEVICE_FAMILY: "4"
+        ASSETCATALOG_COMPILER_APPICON_NAME: overtonelab
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+
+  overtonelabUITests:
+    type: bundle.ui-testing
+    # macOS too: the app ships on the Mac, and with [iOS] alone `xcodebuild` refuses the macOS
+    # destination outright ("does not support My Mac's platform") — which left every macOS-only
+    # accessibility trap untested on the one platform where it bites.
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: overtonelabUITests
+    dependencies:
+      - target: overtonelab.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.overtonelabUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: overtonelab.swift
+
+  # The phone's UI-test target cannot reach the watch app, so the wrist needs its own.
+  # And it IS scriptable: XCUIDevice.rotateDigitalCrown(delta:) has existed since Xcode 13
+  # (XCUIDevice.h, gated on TARGET_OS_WATCH, mapped by apinotes from rotateDigitalCrownByDelta:),
+  # which makes the crown-focus defect a regression test rather than a manual check.
+  overtonelabWatchUITests:
+    type: bundle.ui-testing
+    platform: watchOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: overtonelabWatchUITests
+      # Reused in place, NOT copied: the same text / textMatches / any helpers the phone suite
+      # uses, so one cross-platform attribute fix reaches both suites.
+      - path: overtonelabUITests/UITestSupport.swift
+    dependencies:
+      - target: OverToneLabWatch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.overtonelabWatchUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: OverToneLabWatch
+
+  # The phone/Mac state space: 26 ViewModels, their toggles and the unit conversions the Kits
+  # never see (the Kits take SI; the ViewModels do the converting).
+  overtonelabUnitTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: overtonelabUnitTests
+    dependencies:
+      - target: overtonelab.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.overtonelabUnitTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: overtonelab.swift
+        # Spelled out because PRODUCT_NAME ("Overtone Lab") differs from the target name
+        # ("overtonelab.swift" — which would put "Swift" in the shipped app name and fail review
+        # 5.2.5). XcodeGen derives TEST_HOST from the TARGET name, so it points at a binary that was
+        # never built and the build fails with "Could not find test host".
+        # BUNDLE_EXECUTABLE_FOLDER_PATH keeps it correct on both platforms: empty on iOS,
+        # "Contents/MacOS" on macOS.
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Overtone Lab.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Overtone Lab
+        BUNDLE_LOADER: $(TEST_HOST)
+schemes:
+  # The obvious `xcodebuild test -scheme overtonelab.swift` used to test nothing: only the reel
+  # scheme had a test action, so build-for-testing reported success having built no test bundle.
+  overtonelab.swift:
+    build:
+      targets:
+        overtonelab.swift: all
+        overtonelabUITests: [test]
+        overtonelabUnitTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - overtonelabUnitTests
+        # ReelTour is the app-preview capture driver, not a test: 40 s of scripted tapping that
+        # asserts against an iOS-shaped UI, so it fails on macOS by construction (there is no
+        # NavigationBar to tap). It belongs to the overtonelabReel scheme and runs only there.
+        - name: overtonelabUITests
+          skippedTests:
+            - ReelTour
+
+  OverToneLabWatch:
+    build:
+      targets:
+        OverToneLabWatch: all
+        overtonelabWatchUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - overtonelabWatchUITests
+  overtonelabReel:
+    build:
+      targets:
+        overtonelab.swift: all
+        overtonelabUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - overtonelabUITests

@@ -1,0 +1,61 @@
+{
+  "_readme": [
+    "Per-locale reel captions + tagline. gen_scenes.py stamps these into scenes_<locale>.json,",
+    "reusing the English scenes.json for timing, canvas and style — only the words change.",
+    "",
+    "Reel captions are even tighter than screenshot captions: they sit in a 22% caption band over",
+    "a moving frame and are on screen for 4-5 seconds. A line that wraps to three lines is unreadable",
+    "at that speed, so these are rewritten per language rather than translated.",
+    "",
+    "The tagline is the outro card under the app icon. 'Earth Around' itself is never translated.",
+    "",
+    "Audio beds are language-agnostic and are NOT regenerated per locale — the same scored bed is",
+    "muxed into every locale's preview, so no existing bed is ever overwritten."
+  ],
+  "locales": {
+    "de": {
+      "tagline": "Die Sonne im Blick.",
+      "scenes": [
+        ["Sturm gerade jetzt?", "NOAA G · R · S, live"],
+        ["Was ihn antreibt", "Sonnenwind-Tempo und Bz"],
+        ["Eruptionen, live", "GOES-Röntgenfluss"],
+        ["Polarlicht heute?", "Chance und Sichtlinie"],
+        ["Hp30-Detail", "30-Minuten-Takt"],
+        ["Nachtmodus", "Rotverschiebung fürs Feld"]
+      ]
+    },
+    "ja": {
+      "tagline": "太陽を見張る。",
+      "scenes": [
+        ["いま嵐は？", "NOAA G・R・S をライブで"],
+        ["原因はこれ", "太陽風の速度と Bz"],
+        ["フレアをライブで", "GOES X線フラックス"],
+        ["今夜オーロラは？", "確率と可視限界"],
+        ["Hp30 の細かさ", "30分きざみ"],
+        ["ナイトモード", "暗順応を守る赤方偏移"]
+      ]
+    },
+    "fr": {
+      "tagline": "Gardez un œil sur le Soleil.",
+      "scenes": [
+        ["Une tempête là ?", "NOAA G · R · S, en direct"],
+        ["Ce qui la nourrit", "Vitesse du vent solaire et Bz"],
+        ["Éruptions, en direct", "Flux de rayons X GOES"],
+        ["Aurore ce soir ?", "Chance et ligne de visibilité"],
+        ["Le détail Hp30", "Pas de 30 minutes"],
+        ["Mode nuit", "Décalage rouge pour le terrain"]
+      ]
+    },
+    "es": {
+      "tagline": "No pierdas de vista al Sol.",
+      "scenes": [
+        ["¿Tormenta ahora?", "NOAA G · R · S, en vivo"],
+        ["Qué la impulsa", "Velocidad del viento solar y Bz"],
+        ["Llamaradas, en vivo", "Flujo de rayos X de GOES"],
+        ["¿Aurora esta noche?", "Probabilidad y línea de visión"],
+        ["Detalle Hp30", "Cada 30 minutos"],
+        ["Modo noche", "Desplazamiento al rojo"]
+      ]
+    }
+  }
+}

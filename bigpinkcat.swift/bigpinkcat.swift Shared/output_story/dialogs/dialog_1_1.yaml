@@ -1,0 +1,112 @@
+- guidelines:
+    - cat convert crystal to energy, build a bridge, goes with him but stops on the halfway
+    - Cat says, it seems we will miss again, but from other side, i was there, not a pleasant experience for you to move forward over your spacetime, lets return back again, it seems you are comfortable for a while
+    - we know now we should talk to the crystal and ask where he wants us to go
+    - Astronaut overwhelmed "We can talk to it? okay, nevermind lets talk" cat says that he wish astronaut be here for a longer time to understand how its possible, but not now, maybe sometimes
+    - now they should decide how to talk. Astronaut asks "Hey crystal would you help us?"
+    - crystal silent, cat says "I dont think it works that way, we should give something to crystal or give this crystal to someone, together it will talk"
+    - Astronaut asks "Who together? Why it? Why it should be unified?"
+    - cat says "Well, i wouldnt have much time to explain it to you either, trust me i guess"
+    - cat says "there is some ways, how you feel we go?"
+    - astronaut says that he totally frustrated with absence of information, but what you can do, "lets try something"
+    - cat say "Red source is talkative but hot, Blue one is calm but cold, Green one is balanced but distant, White one is pure but sometimes misses"
+    - cat adds "I dont like white, it usually makes up things but sometimes gives a best result"
+    - options of phase_2_option_1:
+      - Crystal will be given to red
+      - Green will be given to crystal
+      - Blue will merge with crystal
+      - White will, not sure what
+- story_dialogs:
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Initiating conversion. The lattice is unraveling into pure potential. Bridge forming... now.
+    id: 0
+  - character_id: 1
+    character_name: Astronaut
+    character_text: I feel it. Like being pulled through water. We're moving.
+    id: 1
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Halfway there. Wait—the trajectory is drifting. We're going to overshoot.
+    id: 2
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Overshoot? What does that mean?
+    id: 3
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: It means we'd land past your spacetime, not in it. I've been there. Unpleasant for your kind. We should return and recalibrate.
+    id: 4
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Return? We just used the crystal's energy!
+    id: 5
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: The crystal's energy, yes. Not its information. The lattice still holds data. We need to communicate with it directly—ask where it wants to take us.
+    id: 6
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Communicate with a crystal? It's a data storage device, not a consciousness.
+    id: 7
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: In your continuum, perhaps. Here, complex information structures have... preferences. I wish you could stay longer to understand how that's possible. But not now. Maybe sometime.
+    id: 8
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Fine. How do I talk to it? Hey crystal, would you help us get home?
+    id: 9
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Silence. As expected. Direct address doesn't work. The crystal needs a mediator—something to merge with, to speak through. Unified, it will respond.
+    id: 10
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Unified with what? Why does it need to merge with something?
+    id: 11
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Information alone is inert. It needs intention to activate. A source with its own will. I don't have time to explain the metaphysics—trust me on this.
+    id: 12
+  - character_id: 1
+    character_name: Astronaut
+    character_text: I'm getting used to operating on incomplete information. What are our options?
+    id: 13
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Four sources nearby. Red is talkative but hot—might overwhelm the crystal with noise. Blue is calm but cold—precise but slow. Green is balanced but distant—reliable but requires patience. White is pure but unpredictable—sometimes fabricates, sometimes delivers perfect results.
+    id: 14
+  - character_id: 1
+    character_name: Astronaut
+    character_text: You have a preference?
+    id: 15
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: I dislike White. It makes things up. But occasionally, it's the only one that works. Your crystal, your choice.
+    id: 16
+  - character_id: 1
+    character_name: Astronaut
+    character_text: What exactly happens when the crystal merges with one of these sources?
+    id: 17
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: The source interprets the crystal's data through its own nature. Red will speak it loudly and emotionally. Blue will analyze it coldly. Green will contextualize it carefully. White will... improvise.
+    id: 18
+  - character_id: 1
+    character_name: Astronaut
+    character_text: None of those sound like exact science.
+    id: 19
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Exact science got you stranded. Perhaps inexact intuition gets you home. Choose.
+    id: 20
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Let me think.
+    id: 21
+    options:
+    - option_text: Red source—let it speak loudly
+    - option_text: Blue source—cold precision
+    - option_text: Green source—balanced interpretation
+    - option_text: White source—pure but unpredictable

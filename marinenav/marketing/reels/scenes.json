@@ -1,0 +1,86 @@
+{
+  "canvas": [
+    886,
+    1920
+  ],
+  "content_len": 25.2,
+  "preview_maxlen": 30,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0B1A2B",
+    "bg_color_bottom": "#06101C",
+    "title_color": "#FFFFFF",
+    "subtitle_color": "#D5E3EE",
+    "caption_band_percent": 22,
+    "side_padding": 46,
+    "border_width": 7,
+    "border_color": "#1B334A",
+    "border_radius": 30,
+    "caption_ribbon": true,
+    "ribbon_opacity": 0.82,
+    "ribbon_pad_percent": 0.042,
+    "ribbon_feather": 26
+  },
+  "app": {
+    "name": "Marine Nav",
+    "tagline": "Tides and navigation that work offline",
+    "icon": "marinenav.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Tides",
+      "start": 0.0,
+      "end": 7.0,
+      "title": "Tides with no signal",
+      "subtitle": "NOAA constants, computed on device",
+      "src": [
+        1.5,
+        8.5
+      ]
+    },
+    {
+      "key": "Currents",
+      "start": 7.0,
+      "end": 13.0,
+      "title": "Slack, flood and ebb",
+      "subtitle": "Know when the gate turns",
+      "src": [
+        22.4,
+        28.4
+      ]
+    },
+    {
+      "key": "Declination",
+      "start": 13.0,
+      "end": 16.1,
+      "title": "True to magnetic",
+      "subtitle": "World Magnetic Model 2025, built in",
+      "src": [
+        35.2,
+        38.3
+      ]
+    },
+    {
+      "key": "Distance",
+      "start": 16.1,
+      "end": 19.2,
+      "title": "Great-circle passage",
+      "subtitle": "Vincenty on WGS-84",
+      "src": [
+        43.2,
+        46.3
+      ]
+    },
+    {
+      "key": "Sight",
+      "start": 19.2,
+      "end": 25.2,
+      "title": "Sight reduction",
+      "subtitle": "Bowditch's worked example, exactly",
+      "src": [
+        51.4,
+        57.4
+      ]
+    }
+  ]
+}

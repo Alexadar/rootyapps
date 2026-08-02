@@ -1,0 +1,88 @@
+- guidelines:
+    - astronaut was on usual spacetime folding transportation routine, 
+    - he expected to transfer itself from europa to earth, with scientific package
+    - visual novel starts with astronauts frame where he overwhelmed with the area where he appeared - colofrul eerie lanscape, and a Big Pink Cat next to him
+    - cat begin to comunicate, asks why he feels so bad, but astronaut shockingly answer with a question how can he talk and where is he
+    - cat tells him that he talks because astronaut understand language, and he is behind his spacetime by a few steps
+    - astronaut shocked that it is possible, humans theored that it can be possible but noome moved avay from spacetime continium even with an extreeme spacetime folding travels
+    - astronaut asked cat how to get back, cat say that it will help gladly, but where his "bak" is. Cat sure astronaut behind his continium by few steps because he smells that but behind which one? cat want to help but want to do it preciselly
+    - astronaut asked why he is a cat, cat answers because astronaut likes cats, maybe thats why, cat not sure because thats a usual things in his spacetime so cat suggested to not waste time because astronaut waveform kinda alien here and might be affected
+    - cat acts swiftky and suggested few options to help
+    - particular interest gained scintific package, "what that" asked cat
+    - astronaut says "that is a time crystal, we hold scientifical data from europa with information on safe spacetime folding for food transfer"
+    - cat says "not sure what food is but this crystal is exactly what we need to plot a bridge, but we should choose on of the options, you choose it, because it s your bridge"
+    - options of phase_1, cat offers:
+      - convert a crystal to the energy directly to build a bridge
+      - walk around and find some similar waveforms to amplify a signal
+      - ask astronaut more about time crystal and its properties
+      - tell astronaut more about this spacetime 
+- story_dialogs:
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Chromatic aberration in the visual cortex... no. The spectrometer reads real photons. This is actually happening.
+    id: 0
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: You're hyperventilating. Inefficient use of oxygen in a suit with limited reserves, wouldn't you say?
+    id: 1
+  - character_id: 1
+    character_name: Astronaut
+    character_text: A talking cat. Of course. Because why not add hallucinations to navigational failure.
+    id: 2
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Not a hallucination. Not a cat either, technically. Your visual cortex is doing its best with limited reference points. I'm flattered it chose something you find comforting.
+    id: 3
+  - character_id: 1
+    character_name: Astronaut
+    character_text: The fold signature was clean. Europa to Earth, standard Alcubierre compression. I've done this route eight hundred times.
+    id: 4
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Eight hundred and one proved interesting. You didn't fold through spacetime. You folded past it.
+    id: 5
+  - character_id: 1
+    character_name: Astronaut
+    character_text: That's not possible. The mathematics don't allow—
+    id: 6
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Your mathematics. Written for your continuum. You're not in it anymore.
+    id: 7
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Then where am I?
+    id: 8
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Between. Think of spacetime as fabric. You found a thread loose and slipped behind the weave. I can smell at least four continuum signatures on you—which one is home?
+    id: 9
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Earth. 2067. Sol system, Orion Arm.
+    id: 10
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Poetic coordinates. Useless here. What's that crystalline structure in your cargo hold? It's resonating with something I recognize.
+    id: 11
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Temporal lattice array. Stores quantum states of verified fold routes. Why?
+    id: 12
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Because it remembers where you came from, even if you don't know how to read it here. We can use it to build a bridge back. But the method matters—different approaches, different costs.
+    id: 13
+  - character_id: 1
+    character_name: Astronaut
+    character_text: What kind of costs?
+    id: 14
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Time. Information. Certainty. Possibly identity. Choose how we proceed.
+    id: 15
+    options:
+    - option_text: Convert the crystal's energy directly into a bridge
+    - option_text: Search for resonant waveforms to amplify the signal
+    - option_text: Analyze the crystal's data layers for precise coordinates
+    - option_text: Map this spacetime's topology first

@@ -1,0 +1,73 @@
+{
+  "canvas": [
+    1920,
+    1080
+  ],
+  "content_len": 26,
+  "preview_maxlen": 28.5,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0C111B",
+    "bg_color_bottom": "#080B14",
+    "title_color": "#E8EEF6",
+    "subtitle_color": "#4DF0A0",
+    "caption_band_percent": 24,
+    "side_padding": 660,
+    "border_width": 8,
+    "border_color": "#17202F",
+    "border_radius": 26,
+    "caption_scale": 0.5,
+    "title_scale": 0.03,
+    "subtitle_scale": 0.02
+  },
+  "app": {
+    "name": "Earth Around",
+    "tagline": "Die Sonne im Blick.",
+    "icon": "eartharound.swift/Assets.xcassets/AppIcon.appiconset/icon_1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Now",
+      "start": 0,
+      "end": 5,
+      "title": "Sturm gerade jetzt?",
+      "subtitle": "NOAA G · R · S, live"
+    },
+    {
+      "key": "Wind",
+      "start": 5,
+      "end": 10,
+      "title": "Was ihn antreibt",
+      "subtitle": "Sonnenwind-Tempo und Bz"
+    },
+    {
+      "key": "Flare",
+      "start": 10,
+      "end": 14,
+      "title": "Eruptionen, live",
+      "subtitle": "GOES-Röntgenfluss"
+    },
+    {
+      "key": "Aurora",
+      "start": 14,
+      "end": 18,
+      "title": "Polarlicht heute?",
+      "subtitle": "Chance und Sichtlinie"
+    },
+    {
+      "key": "Hpo",
+      "start": 18,
+      "end": 23,
+      "title": "Hp30-Detail",
+      "subtitle": "30-Minuten-Takt"
+    },
+    {
+      "key": "Night",
+      "start": 23,
+      "end": 27,
+      "title": "Nachtmodus",
+      "subtitle": "Rotverschiebung fürs Feld"
+    }
+  ],
+  "_note": "macOS App Store preview: 1920x1080 (16:9 is the only accepted Mac shape). The app window is portrait, so it is centred with generous side padding rather than stretched."
+}

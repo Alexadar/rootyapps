@@ -1,0 +1,21 @@
+{
+  "id": 1,
+  "name": "Standard Suit",
+  "nameLocalizations": {
+    "en-us": "Standard Suit",
+    "ru-ru": "Стандартный костюм"
+  },
+  "description": "Basic combat suit. No bonuses or penalties. Good starting point.",
+  "levelRequirement": 0,
+  "rankRequirement": 0,
+  "defence": 0.0,
+  "speed": 1.0,
+  "gameResourceSprite": "exoskeleton_standard",
+  "lobbyResourceSprite": "exoskeleton_standard_preview",
+  "buyPriceSoft": 0,
+  "buyPriceHard": 0,
+  "sellPriceSoft": 0,
+  "sellPriceHard": 0,
+  "marketAvailability": true,
+  "orderId": 1
+}

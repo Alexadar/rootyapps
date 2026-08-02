@@ -1,0 +1,31 @@
+platform: ipad
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/bigpinkcat.swift/marketing/raw/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/bigpinkcat.swift/marketing/aso/ipad
+
+style:
+  bg_gradient: true
+  bg_color_top: '#FF69B4'
+  bg_color_bottom: '#8B008B'
+  title_color: '#ffffff'
+  subtitle_color: '#FFD700'
+  screenshot_zoom: 0.85
+  text_row_percent: 18
+  screenshot_row_percent: 82
+  border_width: 8
+  border_radius: 30
+  text_padding: 40
+  screenshot_padding: 40
+
+texts:
+  - title: Big Pink Cat
+    subtitle: A Cosmic Visual Adventure
+  - title: Meet the Astronaut
+    subtitle: Explore the Unknown
+  - title: The Mysterious Cat
+    subtitle: Secrets of the Universe
+  - title: Choose Your Path
+    subtitle: Shape Your Destiny
+  - title: Discover the Truth
+    subtitle: Interactive Story

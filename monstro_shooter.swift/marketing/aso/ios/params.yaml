@@ -1,0 +1,39 @@
+# Monstro Shooter - iOS App Store Screenshots (Landscape)
+
+platform: ios-landscape
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/monstro_shooter.swift/marketing/raw/ios
+  output_folder: /Users/oleksandr/Projects/rootyapps/monstro_shooter.swift/marketing/aso/ios
+
+style:
+  # Layout
+  text_col_percent: 35
+  screenshot_col_percent: 65
+  screenshot_zoom: 1.2
+  screenshot_move_down: 0
+
+  # Dark sci-fi Mars theme
+  bg_gradient: true
+  bg_color_top: '#1a0a00'
+  bg_color_bottom: '#000000'
+  title_color: '#ff6b35'
+  subtitle_color: '#d4a574'
+
+  # Screenshot frame
+  text_padding: 50
+  screenshot_padding: 40
+  border_width: 8
+  border_color: '#ff6b35'
+  border_radius: 30
+  shadow: true
+
+texts:
+  - title: "Monstro Shooter"
+    subtitle: "Survive the\nAlien Invasion"
+  - title: "Monstro Shooter"
+    subtitle: "Battle Alien\nCreatures"
+  - title: "Monstro Shooter"
+    subtitle: "Fight Endless\nWaves"
+  - title: "Monstro Shooter"
+    subtitle: "Beat Your\nHigh Score"

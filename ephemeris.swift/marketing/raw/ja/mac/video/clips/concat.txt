@@ -1,0 +1,5 @@
+file '/Users/oleksandr/Projects/rootyapps/ephemeris.swift/marketing/raw/ja/mac/video/clips/macclip_chart.mov'
+file '/Users/oleksandr/Projects/rootyapps/ephemeris.swift/marketing/raw/ja/mac/video/clips/macclip_positions.mov'
+file '/Users/oleksandr/Projects/rootyapps/ephemeris.swift/marketing/raw/ja/mac/video/clips/macclip_aspects.mov'
+file '/Users/oleksandr/Projects/rootyapps/ephemeris.swift/marketing/raw/ja/mac/video/clips/macclip_cycle.mov'
+file '/Users/oleksandr/Projects/rootyapps/ephemeris.swift/marketing/raw/ja/mac/video/clips/macclip_events.mov'

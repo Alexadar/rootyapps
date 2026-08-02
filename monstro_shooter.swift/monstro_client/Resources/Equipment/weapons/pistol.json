@@ -1,0 +1,33 @@
+{
+  "id": 1,
+  "name": "Pistol",
+  "nameLocalizations": {
+    "en-us": "Pistol",
+    "ru-ru": "Пистолет"
+  },
+  "description": "Standard issue sidearm. Balanced damage and fire rate. Good for beginners.",
+  "type": 1,
+  "levelRequirement": 0,
+  "rankRequirement": 0,
+  "damage": 10,
+  "shotRange": 800,
+  "shotDelay": 500,
+  "cageSize": 12,
+  "rechargeDelay": 2000,
+  "bulletsCount": 1,
+  "bulletSpeed": 800,
+  "bulletDeviation": 2,
+  "bulletMaxDeviation": 2,
+  "penetrationPower": 1,
+  "bulletStartScale": 0.3,
+  "bulletMaxScale": 1.0,
+  "bulletScaleFactor": 0.05,
+  "bulletType": 1,
+  "weaponSound": "weapon_pistol",
+  "buyPriceSoft": 0,
+  "buyPriceHard": 0,
+  "sellPriceSoft": 0,
+  "sellPriceHard": 0,
+  "marketAvailability": true,
+  "orderId": 1
+}

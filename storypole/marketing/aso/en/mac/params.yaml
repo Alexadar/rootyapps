@@ -1,0 +1,27 @@
+platform: mac
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/storypole/marketing/raw/en/mac
+  output_folder: /Users/oleksandr/Projects/rootyapps/storypole/marketing/aso/en/mac
+style:
+  bg_gradient: true
+  bg_color_top: '#2A251D'
+  bg_color_bottom: '#12100D'
+  title_color: '#F5F2EA'
+  subtitle_color: '#F2C94C'
+  text_col_percent: 40
+  screenshot_col_percent: 60
+  screenshot_zoom: 0.92
+  border_width: 8
+  border_radius: 22
+  text_padding: 80
+texts:
+  - title: "Storypole on the Mac"
+    subtitle: "The tape on one side, every tool on the other"
+  - title: "Every mark, not just a spacing"
+    subtitle: "Divide a span and get the list you take to the saw"
+  - title: "16\", 19.2\", 24\" on center"
+    subtitle: "Including the odd last bay — reported, never hidden"
+  - title: "Why a 2×4 is 1½\" × 3½\""
+    subtitle: "Nominal vs dressed, straight from NIST PS 20-20"
+  - title: "Every number has a source"
+    subtitle: "NIST · Federal Register · USDA — named and quoted"

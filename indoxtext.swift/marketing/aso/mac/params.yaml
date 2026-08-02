@@ -1,0 +1,40 @@
+# Screenshot generation parameters for Indox Text macOS App Store screenshots
+
+style:
+  text_col_percent: 42
+  screenshot_col_percent: 38
+  screenshot_zoom: 1.4
+  screenshot_move_down: -60
+
+  # Visual styling - matching app's light gray/blue theme
+  bg_gradient: true
+  bg_color_top: '#1D1D1F'
+  bg_color_bottom: '#000000'
+  title_color: '#ffffff'
+  subtitle_color: '#F5F5F7'
+  text_padding: 80
+  screenshot_padding: 80
+  border_width: 28
+  border_color: '#ffffff'
+  border_radius: 100
+  shadow: true
+
+texts:
+  - title: "Indox Text"
+    subtitle: "AI-Powered\nText Summarization"
+  - title: "Indox Text"
+    subtitle: "Summarize content\nOn device\nWith AI"
+  - title: "Indox Text"
+    subtitle: "Get Instant AI Summaries"
+  - title: "Indox Text"
+    subtitle: "Summarize PDF Files\nWith AI"
+  - title: "Indox Text"
+    subtitle: "AI PDF Summarization\nOffline\nOn Device"
+  - title: "Indox Text"
+    subtitle: "Summarize Web Pages\nwith AI Safari Extension"
+  - title: "Indox Text"
+    subtitle: "AI Summarization\nin Your Browser"
+
+paths:
+  raw_folder: "/Users/oleksandr/Projects/rootyapps/indoxtext.swift/marketing/raw/mac"
+  output_folder: "/Users/oleksandr/Projects/rootyapps/indoxtext.swift/marketing/aso/mac"

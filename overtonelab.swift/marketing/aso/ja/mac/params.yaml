@@ -1,0 +1,25 @@
+platform: mac
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/raw/ja/mac
+  output_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/aso/ja/mac
+style:
+  bg_gradient: true
+  bg_color_top: '#0C0A18'
+  bg_color_bottom: '#08080B'
+  title_color: '#ffffff'
+  subtitle_color: '#B79FEA'
+  text_col_percent: 40
+  screenshot_col_percent: 60
+  screenshot_zoom: 0.92
+  border_width: 8
+  border_radius: 22
+  text_padding: 80
+texts:
+  - title: "Mac でも Overtone Lab"
+    subtitle: "全ツールをサイドバーに、作業は詳細ペインで"
+  - title: "部屋の音響"
+    subtitle: "RT60・固有モード・シュレーダー周波数"
+  - title: "スピーカー設計"
+    subtitle: "Thiele-Small：密閉とバスレフ"
+  - title: "マスタリングのラウドネス"
+    subtitle: "ITU-R BS.1770 の統合 LUFS"

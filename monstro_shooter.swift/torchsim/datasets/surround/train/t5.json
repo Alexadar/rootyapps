@@ -1,0 +1,88 @@
+{
+  "id": 20005,
+  "landingDuration": 20,
+  "arenaHalf": 280,
+  "spawnRadius": 190,
+  "defaultNameLocalizations": {
+    "en-us": "surround-t5-fastest-relentless"
+  },
+  "monsterTypes": [
+    {
+      "startTime": 0,
+      "monsterTypeIds": [
+        3,
+        5,
+        6
+      ]
+    }
+  ],
+  "monsterSpawnWaves": [
+    {
+      "startTime": 1,
+      "count": 3
+    },
+    {
+      "startTime": 2,
+      "count": 3
+    },
+    {
+      "startTime": 3,
+      "count": 3
+    },
+    {
+      "startTime": 4,
+      "count": 3
+    },
+    {
+      "startTime": 5,
+      "count": 3
+    },
+    {
+      "startTime": 6,
+      "count": 3
+    },
+    {
+      "startTime": 7,
+      "count": 3
+    },
+    {
+      "startTime": 8,
+      "count": 3
+    },
+    {
+      "startTime": 9,
+      "count": 3
+    },
+    {
+      "startTime": 10,
+      "count": 3
+    }
+  ],
+  "rocks": [
+    [
+      249.82,
+      178.8,
+      21.53
+    ],
+    [
+      -40.33,
+      78.13,
+      19.71
+    ],
+    [
+      61.83,
+      -119.8,
+      31.94
+    ],
+    [
+      147.03,
+      261.46,
+      15.88
+    ],
+    [
+      47.76,
+      107.06,
+      24.79
+    ]
+  ]
+}

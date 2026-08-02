@@ -1,0 +1,57 @@
+{
+  "_readme": [
+    "Reel caption copy per locale. gen_scenes.py stamps scenes_<loc>.json / scenes_ipad_<loc>.json /",
+    "scenes_mac_store_<loc>.json from the English base files: timing, canvas, style, `src` windows and",
+    "the scene KEYS all come from English and must not drift per language — they align to the tour.",
+    "Only the words change.",
+    "",
+    "Reel captions are SHORTER than the screenshot ones: they are burned over live UI for a few",
+    "seconds, and the reader is watching a value change, not reading a headline.",
+    "",
+    "Never translated: Overtone Lab, Sabine, Partch, Thiele, RT60, LUFS, ITU-R BS.1770, Schroeder."
+  ],
+  "locales": {
+    "de": {
+      "Tempo":     ["Tippen — alles rechnet mit", "Jeder Wert aktualisiert sich live"],
+      "Sabine":    ["Echte Raumakustik", "RT60, Raummoden & Schroeder"],
+      "Benchmark": ["26 Werkzeuge, eine App", "Partch · Sabine · Fletcher · Butterworth · Thiele +21"]
+    },
+    "fr": {
+      "Tempo":     ["Tapez — tout se recalcule", "Chaque valeur se met à jour en direct"],
+      "Sabine":    ["Vraie acoustique de salle", "RT60, modes propres & Schroeder"],
+      "Benchmark": ["26 outils, une app", "Partch · Sabine · Fletcher · Butterworth · Thiele +21"]
+    },
+    "es": {
+      "Tempo":     ["Escribe: todo se recalcula", "Cada valor se actualiza al instante"],
+      "Sabine":    ["Acústica de sala real", "RT60, modos propios y Schroeder"],
+      "Benchmark": ["26 herramientas, una app", "Partch · Sabine · Fletcher · Butterworth · Thiele +21"]
+    },
+    "ja": {
+      "Tempo":     ["入力すれば即再計算", "すべての値がその場で更新"],
+      "Sabine":    ["本物の室内音響", "RT60・固有モード・シュレーダー"],
+      "Benchmark": ["26のツールを1つに", "Partch・Sabine・Fletcher・Butterworth・Thiele +21"]
+    }
+  },
+  "mac_locales": {
+    "de": {
+      "tempo":     ["Timing sitzt", "Notenlänge, Delay & Samples"],
+      "sabine":    ["Echte Raumakustik", "RT60, Raummoden & Schroeder"],
+      "benchmark": ["26 Werkzeuge, eine App", "Partch · Sabine · Fletcher · Butterworth · Thiele +21"]
+    },
+    "fr": {
+      "tempo":     ["Le tempo au cordeau", "Durée de note, retard & échantillons"],
+      "sabine":    ["Vraie acoustique de salle", "RT60, modes propres & Schroeder"],
+      "benchmark": ["26 outils, une app", "Partch · Sabine · Fletcher · Butterworth · Thiele +21"]
+    },
+    "es": {
+      "tempo":     ["El tempo, clavado", "Duración de nota, retardo y muestras"],
+      "sabine":    ["Acústica de sala real", "RT60, modos propios y Schroeder"],
+      "benchmark": ["26 herramientas, una app", "Partch · Sabine · Fletcher · Butterworth · Thiele +21"]
+    },
+    "ja": {
+      "tempo":     ["テンポは正確に", "音価、ディレイ、サンプル数"],
+      "sabine":    ["本物の室内音響", "RT60・固有モード・シュレーダー"],
+      "benchmark": ["26のツールを1つに", "Partch・Sabine・Fletcher・Butterworth・Thiele +21"]
+    }
+  }
+}

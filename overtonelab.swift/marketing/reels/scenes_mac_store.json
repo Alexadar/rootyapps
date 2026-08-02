@@ -1,0 +1,25 @@
+{
+  "_note": "App Store macOS preview (Guideline 2.3.4 compliant): full-bleed window capture, captions overlaid ON the app, no bezel/background/outro. Recorded by marketing/reels/mac_store_rec.sh (which scales each window clip to 1920x1080 and crops from the top), rendered by marketing/reels/store_preview.py. `src` windows index into mac_walkthrough.mp4. scenes_mac.json remains the framed site/social cut — do not upload that one.",
+  "canvas": [1920, 1080],
+  "content_len": 18.6,
+  "preview_maxlen": 30,
+  "style": {
+    "title_color": "#FFFFFF",
+    "subtitle_color": "#B79FEA",
+    "side_padding": 90,
+    "title_scale": 0.030,
+    "subtitle_scale": 0.020,
+    "scrim_height_percent": 0.26,
+    "scrim_opacity": 200,
+    "scrim_gamma": 1.7
+  },
+  "app": {
+    "name": "Overtone Lab",
+    "tagline": "Sound & acoustics tools"
+  },
+  "scenes": [
+    { "key": "tempo",     "src": [0.4, 5.8],   "title": "Timing, locked",      "subtitle": "Note length, delay & samples" },
+    { "key": "sabine",    "src": [6.4, 11.8],  "title": "Real room acoustics", "subtitle": "RT60, room modes & Schroeder" },
+    { "key": "benchmark", "src": [12.4, 17.8], "title": "26 tools, one app",   "subtitle": "Partch · Sabine · Fletcher · Butterworth · Thiele +21" }
+  ]
+}

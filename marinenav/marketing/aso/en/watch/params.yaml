@@ -1,0 +1,44 @@
+platform: watch
+size: [416, 496]          # Apple Watch Series 10/11 46mm — APP_WATCH_SERIES_10
+
+# Watch captions must be far shorter than the phone's: the whole canvas is 416px wide and every
+# font is scaled by canvas_width/1242, so a long title wraps to three lines and eats the
+# screenshot. Two or three words each. (Same rule eartharound's watch params records.)
+#
+# Colours are Marine Nav's own: the deep-navy ground the iPhone/iPad/Mac sets already use, so
+# the four listings read as one product, with the design system's `water` cyan as the accent.
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/marinenav/marketing/raw/en/watch
+  output_folder: /Users/oleksandr/Projects/rootyapps/marinenav/marketing/aso/en/watch
+
+style:
+  bg_gradient: true
+  bg_color_top: '#0B1A2B'
+  bg_color_bottom: '#06101C'
+  title_color: '#FFFFFF'
+  subtitle_color: '#4AD8FB'
+  screenshot_zoom: 1.0
+  text_row_percent: 18
+  screenshot_row_percent: 82
+  border_width: 4
+  border_color: '#1B334A'
+  border_radius: 34
+  text_padding: 60
+  screenshot_padding: 34
+
+# The differentiator has to be visible in the listing, not merely true in the code
+# (App Review 4.3(b)) — so "offline", "NOAA" and the on-device claim all appear.
+texts:
+  - title: Tides on your wrist
+    subtitle: Offline, NOAA-validated
+  - title: Slack and set
+    subtitle: Flood, ebb, to the minute
+  - title: Mark the instant
+    subtitle: Millisecond resolution
+  - title: True to magnetic
+    subtitle: WMM2025 on device
+  # Scene 5 is the Tides screen captured IN red mode, not the appearance list: a caption
+  # reading "Night and red" over a screenshot that is not red is a claim the image does not
+  # support. Red mode is also the better differentiator shot.
+  - title: Night and red
+    subtitle: Dark-adapted at the helm

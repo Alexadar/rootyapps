@@ -1,0 +1,280 @@
+name: marinenav
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+    watchOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    # Build 4: watchOS crown focus fix — `.digitalCrownRotation` only reaches the view holding
+    # focus, and Button is focusable by default, so tapping NOW (or the station picker, or the
+    # location opt-in) silently killed the crown. Build 3 shipped that defect.
+    # Build 3 added the Apple Watch app + complications; build 2 was the day-window fix alone.
+    # MARKETING_VERSION deliberately stays 1.0.0 — this version has never been public, so it
+    # must still debut as 1.0. See docs/new_app_blueprint.md P8, and truecourse commit eb59379f.
+    CURRENT_PROJECT_VERSION: "4"
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+packages:
+  TidesKit:
+    path: Kits/Tides/TidesKit
+  GeomagKit:
+    path: Kits/Geomag/GeomagKit
+  GeodesyKit:
+    path: Kits/Geodesy/GeodesyKit
+  CelestialNavKit:
+    path: Kits/Celestial/CelestialNavKit
+targets:
+  marinenav:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: TidesKit
+        product: TidesKit
+      - package: GeomagKit
+        product: GeomagKit
+      - package: GeodesyKit
+        product: GeodesyKit
+      - package: CelestialNavKit
+        product: CelestialNavKit
+      # The watch app ships INSIDE the iOS app (one purchase covers it) and also declares
+      # WKRunsIndependentlyOfCompanionApp, so it installs and runs standalone too.
+      # destinationFilters pins the embed to iOS — a macOS build must not carry a watch app.
+      - target: marinenavWatch
+        embed: true
+        destinationFilters: [iOS]
+        copy:
+          destination: wrapper
+          subpath: Watch
+    sources:
+      - path: MarineNav
+      - path: marinenav.icon
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.marinenav
+        # "Swift" is an Apple trademark — App Review 5.2.5 rejects it in the shipped app
+        # name or binary. This target is deliberately named `marinenav` (no ".swift"), and
+        # PRODUCT_NAME is set explicitly because CFBundleName is always $(PRODUCT_NAME) and
+        # drives the macOS menu-bar title. Bundle identifier must NOT change later.
+        PRODUCT_NAME: "Marine Nav"
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": marinenav-macOS.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: marinenav
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_CFBundleDisplayName: Marine Nav
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.navigation
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+  marinenavWatch:
+    type: application
+    # `platform:`, NOT `supportedDestinations:` — XcodeGen rejects watchOS in a multiplatform
+    # target ("Create a separate target using platform for watchOS apps"). The phone/Mac target
+    # stays multiplatform; only this one is single-platform.
+    platform: watchOS
+    deploymentTarget: "26.0"
+    dependencies:
+      - package: TidesKit
+        product: TidesKit
+      # F5 declination reads WMM at the current position; F2 "nearest station" uses
+      # Vincenty.inverse for distance/bearing rather than a haversine in a view.
+      - package: GeomagKit
+        product: GeomagKit
+      - package: GeodesyKit
+        product: GeodesyKit
+      - target: marinenavWatchWidget
+        embed: true
+    sources:
+      - path: MarineNavWatch
+        excludes:
+          # Belongs to the widget extension only — it carries its own @main WidgetBundle,
+          # and a module may have exactly one.
+          - MarineNavComplications.swift
+      # The offline station catalogue lives in the app layer, not in the Kits (the Kits are
+      # deliberately data-free). The watch app is standalone, so it needs its own copy of the
+      # constants compiled in — referenced in place rather than duplicated.
+      - path: MarineNav/StationCatalog.swift
+      # The one gated door for launch overrides, shared with the phone/Mac target.
+      - path: MarineNav/LaunchOverride.swift
+      # The SAME Icon Composer bundle the phone and Mac use. `.icon` is universal — its
+      # icon.json already declares `supported-platforms: { circles: [watchOS], squares: shared }`,
+      # so the watchOS circular variant comes out of this one source. No separate asset catalog.
+      - path: marinenav.icon
+        buildPhase: resources
+    # XcodeGen GENERATES this file from `properties` — it does not read an existing one, so the
+    # group must be declared here or the file is rewritten to an empty dict.
+    #
+    # Required for complications: the timeline provider runs in the widget extension, a separate
+    # process with its own container, so without the group it cannot see the station chosen in
+    # the app and every family shows "no station chosen" forever.
+    #
+    # Both watch bundle IDs are registered with the APP_GROUPS capability via the ASC API
+    # (POST /v1/bundleIds + /v1/bundleIdCapabilities), mirroring eartharound's
+    # `...watchkitapp` / `...watchkitapp.widgets` pair.
+    entitlements:
+      path: marinenav-watch.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.oleksandr.aisixteen.marinenav
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.marinenav.watchkitapp
+        ASSETCATALOG_COMPILER_APPICON_NAME: marinenav
+        # A wrist has no keypad worth typing coordinates on, so F2/F5 offer location — and
+        # the string has to say plainly that it never leaves the device, because that is the
+        # whole product promise.
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Marine Nav uses your location only on this device, to find the nearest tide stations and compute magnetic variation. It is never sent anywhere — the app has no network access at all."
+        # Same 5.2.5 reasoning as the phone target: CFBundleName follows PRODUCT_NAME, and
+        # a target named `marinenavWatch` would otherwise surface as the app's name.
+        PRODUCT_NAME: "Marine Nav"
+        TARGETED_DEVICE_FAMILY: "4"
+        INFOPLIST_KEY_CFBundleDisplayName: Marine Nav
+        INFOPLIST_KEY_WKApplication: YES
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: oleksandr.aisixteen.marinenav
+        INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: YES
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+
+  # Complications / Smart Stack. A widget extension is its OWN process with its OWN container,
+  # which is why it and the watch app share the App Group entitlement — see WatchStationStore.
+  marinenavWatchWidget:
+    type: app-extension
+    platform: watchOS
+    deploymentTarget: "26.0"
+    dependencies:
+      - package: TidesKit
+        product: TidesKit
+    sources:
+      # Only what the extension actually needs. WatchStationStore was extracted out of
+      # WatchStationPickerView for this: compiling the picker here dragged CoreLocation and
+      # GeodesyKit into the extension and failed to link (Vincenty.inverse undefined).
+      - path: MarineNavWatch/MarineNavComplications.swift
+      - path: MarineNavWatch/WatchStationStore.swift
+      - path: MarineNavWatch/WatchDesign.swift
+      - path: MarineNav/StationCatalog.swift
+    # XcodeGen GENERATES this file from `properties` — it does not read an existing one, so the
+    # group must be declared here or the file is rewritten to an empty dict.
+    #
+    # Required for complications: the timeline provider runs in the widget extension, a separate
+    # process with its own container, so without the group it cannot see the station chosen in
+    # the app and every family shows "no station chosen" forever.
+    #
+    # Both watch bundle IDs are registered with the APP_GROUPS capability via the ASC API
+    # (POST /v1/bundleIds + /v1/bundleIdCapabilities), mirroring eartharound's
+    # `...watchkitapp` / `...watchkitapp.widgets` pair.
+    entitlements:
+      path: marinenav-watch.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.oleksandr.aisixteen.marinenav
+    # An explicit Info.plist, exactly as eartharound ships SpaceWeatherWidget-Info.plist.
+    # `NSExtension` is a NESTED dictionary and the INFOPLIST_KEY_ mechanism cannot express one:
+    # INFOPLIST_KEY_NSExtensionPointIdentifier produced a plist with no NSExtension dict at all,
+    # which built and signed fine and then failed at INSTALL with
+    # "AppexBundleMissingNSExtensionDict".
+    info:
+      path: marinenav-watchwidget-Info.plist
+      properties:
+        CFBundleDisplayName: Marine Nav
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.marinenav.watchkitapp.widgets
+        PRODUCT_NAME: "Marine Nav Complications"
+        GENERATE_INFOPLIST_FILE: NO
+
+  # §C.2 — the state space, off the UI. Combinatorial coverage through a real screen is ~1.1 s
+  # per interaction and never gets run; against the view models it is microseconds.
+  marinenavTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: marinenavTests
+    dependencies:
+      - target: marinenav
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.marinenavTests
+        GENERATE_INFOPLIST_FILE: YES
+        # TEST_HOST must be set BY HAND. XcodeGen derives it from the TARGET name (`marinenav`),
+        # but this app sets PRODUCT_NAME to "Marine Nav" for Guideline 5.2.5 — so the derived
+        # path `marinenav.app/marinenav` does not exist and the build fails with "Could not find
+        # test host". The bundle layout also differs per platform.
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Marine Nav.app/Marine Nav"
+        "TEST_HOST[sdk=macosx*]": "$(BUILT_PRODUCTS_DIR)/Marine Nav.app/Contents/MacOS/Marine Nav"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+  # watchOS UI tests. The crown IS scriptable: XCUIDevice.rotateDigitalCrown(delta:) exists
+  # (XCUIDevice.h, gated on TARGET_OS_WATCH, mapped by apinotes from
+  # rotateDigitalCrownByDelta:). So the focus-theft bug is a regression test, not a manual check.
+  marinenavWatchUITests:
+    type: bundle.ui-testing
+    platform: watchOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: marinenavWatchUITests
+      # Reused in place, NOT copied: same `text` / `textMatches` / `any` helpers the phone suite
+      # uses, so a macOS-vs-iOS attribute fix reaches both.
+      - path: marinenavUITests/UITestSupport.swift
+    dependencies:
+      - target: marinenavWatch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.marinenavWatchUITests
+        TEST_TARGET_NAME: marinenavWatch
+
+  marinenavUITests:
+    type: bundle.ui-testing
+    # macOS too: the app ships on the Mac, and with [iOS] alone `xcodebuild` refuses the macOS
+    # destination outright ("does not support My Mac's platform") — so every hard-coded element
+    # type in the suite was untested on the one platform where that trap actually bites.
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: marinenavUITests
+    dependencies:
+      - target: marinenav
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.marinenavUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: marinenav
+schemes:
+  marinenavWatch:
+    build:
+      targets:
+        marinenavWatch: all
+        marinenavWatchUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - marinenavWatchUITests
+  marinenav:
+    build:
+      targets:
+        marinenav: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+  marinenavReel:
+    build:
+      targets:
+        marinenav: all
+        marinenavUITests: [test]
+        marinenavTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - marinenavUITests
+        - marinenavTests

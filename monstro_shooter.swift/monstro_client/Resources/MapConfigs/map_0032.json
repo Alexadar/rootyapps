@@ -1,0 +1,88 @@
+{
+  "id": 32,
+  "ownerName": null,
+  "dropPointId": 4,
+  "ownerId": null,
+  "energyCost": 10000,
+  "landingDuration": 60,
+  "gameResource": "map_1",
+  "country": null,
+  "lastRenameDate": "2014-08-28 21:21:08.000",
+  "renameCost": 1,
+  "renameCostMult": 1,
+  "removed": false,
+  "orderNumber": 0,
+  "defaultNameLocalizations": {
+    "ru-ru": "Карта 16"
+  },
+  "descriptionLocalizations": {
+    "ru-ru": "Карта 16"
+  },
+  "monsterSpawnWaves": [
+    {
+      "startTime": 5,
+      "count": 17
+    },
+    {
+      "startTime": 10,
+      "count": 23
+    },
+    {
+      "startTime": 15,
+      "count": 35
+    },
+    {
+      "startTime": 20,
+      "count": 41
+    },
+    {
+      "startTime": 25,
+      "count": 47
+    },
+    {
+      "startTime": 30,
+      "count": 52
+    },
+    {
+      "startTime": 35,
+      "count": 57
+    },
+    {
+      "startTime": 45,
+      "count": 61
+    },
+    {
+      "startTime": 50,
+      "count": 64
+    }
+  ],
+  "monsterTypes": [
+    {
+      "startTime": 40,
+      "monsterTypeIds": [
+        2,
+        1
+      ]
+    }
+  ],
+  "maximumVictims": {
+    "1": 5000,
+    "2": 5000,
+    "3": 5000,
+    "4": 5000,
+    "5": 5000,
+    "6": 5000,
+    "7": 5000,
+    "8": 5000,
+    "9": 5000,
+    "10": 5000,
+    "11": 5000,
+    "12": 5000,
+    "13": 5000,
+    "14": 5000,
+    "15": 5000,
+    "16": 5000,
+    "17": 5000,
+    "18": 5000
+  }
+}

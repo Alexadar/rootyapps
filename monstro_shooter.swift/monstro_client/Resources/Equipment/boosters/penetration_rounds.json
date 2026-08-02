@@ -1,0 +1,25 @@
+{
+  "id": 105,
+  "name": "Armor Piercing Rounds",
+  "nameLocalizations": {
+    "en-us": "Armor Piercing Rounds",
+    "ru-ru": "Бронебойные патроны"
+  },
+  "description": "Bullets pierce through 3 additional enemies for 5 minutes.",
+  "duration": 300000,
+  "effects": [
+    {
+      "effectType": 9,
+      "effectName": "WeaponPenetrationPower",
+      "valueType": "Addition",
+      "value": 3
+    }
+  ],
+  "levelRequirement": 12,
+  "buyPriceSoft": 3500,
+  "buyPriceHard": 75,
+  "sellPriceSoft": 1750,
+  "sellPriceHard": 37,
+  "marketAvailability": true,
+  "orderId": 105
+}

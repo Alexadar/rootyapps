@@ -1,0 +1,101 @@
+{
+  "_readme": [
+    "Screenshot caption copy per locale, used to stamp out marketing/aso/<locale>/<platform>/params.yaml.",
+    "",
+    "These are MARKETING lines, not translations. Each is rewritten to be short and idiomatic in its",
+    "own language, because the title renders as large display text: a literal 'Computed, not guessed'",
+    "runs to twice the width in German and wraps into the screenshot. Meaning is preserved, wording",
+    "is not, and length is the binding constraint.",
+    "",
+    "Never translated: Ephemeris Sky, NASA/JPL Horizons, Placidus, Koch, Campanus, Regiomontanus.",
+    "",
+    "iOS ships 4 shots, iPad and Mac ship 5 — the counts must match the raw captures, so the ios",
+    "lists are 4 long and the others 5."
+  ],
+  "ios": {
+    "en": [
+      ["Ephemeris", "Real planetary positions"],
+      ["Every Position", "Tropical, geocentric, of date"],
+      ["Aspects", "Computed, not guessed"],
+      ["Mercury's Phases", "Conjunctions, retrogrades & stations"]
+    ],
+    "de": [
+      ["Ephemeriden", "Echte Planetenpositionen"],
+      ["Jede Position", "Tropisch, geozentrisch, zum Datum"],
+      ["Aspekte", "Berechnet, nicht geraten"],
+      ["Merkurs Phasen", "Konjunktionen, Rückläufe, Stationen"]
+    ],
+    "fr": [
+      ["Éphémérides", "De vraies positions planétaires"],
+      ["Chaque position", "Tropique, géocentrique, de la date"],
+      ["Aspects", "Calculés, pas devinés"],
+      ["Les phases de Mercure", "Conjonctions, rétrogradations, stations"]
+    ],
+    "ja": [
+      ["天体暦", "本物の天体位置"],
+      ["すべての位置", "トロピカル・地心・その日の分点"],
+      ["アスペクト", "推測ではなく計算"],
+      ["水星の周期", "合・逆行・留"]
+    ]
+  },
+  "ipad": {
+    "en": [
+      ["Ephemeris Sky", "Real planetary positions"],
+      ["Every Position", "Tropical, geocentric, of date"],
+      ["Aspects", "Computed, not guessed"],
+      ["Mercury's Phases", "Conjunctions, retrogrades & stations"],
+      ["Event Timeline", "Ingresses, lunations & aspects"]
+    ],
+    "de": [
+      ["Ephemeris Sky", "Echte Planetenpositionen"],
+      ["Jede Position", "Tropisch, geozentrisch, zum Datum"],
+      ["Aspekte", "Berechnet, nicht geraten"],
+      ["Merkurs Phasen", "Konjunktionen, Rückläufe, Stationen"],
+      ["Ereignis-Zeitleiste", "Eintritte, Lunationen & Aspekte"]
+    ],
+    "fr": [
+      ["Ephemeris Sky", "De vraies positions planétaires"],
+      ["Chaque position", "Tropique, géocentrique, de la date"],
+      ["Aspects", "Calculés, pas devinés"],
+      ["Les phases de Mercure", "Conjonctions, rétrogradations, stations"],
+      ["Fil des événements", "Ingrès, lunaisons & aspects"]
+    ],
+    "ja": [
+      ["Ephemeris Sky", "本物の天体位置"],
+      ["すべての位置", "トロピカル・地心・その日の分点"],
+      ["アスペクト", "推測ではなく計算"],
+      ["水星の周期", "合・逆行・留"],
+      ["イベント年表", "入宮・朔望・アスペクト"]
+    ]
+  },
+  "mac": {
+    "en": [
+      ["Ephemeris Sky", "Positions, aspects & the synodic cycle"],
+      ["Every Position", "Tropical, geocentric, of date"],
+      ["Aspects", "Computed, not guessed"],
+      ["Mercury's Phases", "Conjunctions, retrogrades & stations"],
+      ["Event Timeline", "Ingresses, lunations & aspects"]
+    ],
+    "de": [
+      ["Ephemeris Sky", "Positionen, Aspekte & synodischer Zyklus"],
+      ["Jede Position", "Tropisch, geozentrisch, zum Datum"],
+      ["Aspekte", "Berechnet, nicht geraten"],
+      ["Merkurs Phasen", "Konjunktionen, Rückläufe, Stationen"],
+      ["Ereignis-Zeitleiste", "Eintritte, Lunationen & Aspekte"]
+    ],
+    "fr": [
+      ["Ephemeris Sky", "Positions, aspects & cycle synodique"],
+      ["Chaque position", "Tropique, géocentrique, de la date"],
+      ["Aspects", "Calculés, pas devinés"],
+      ["Les phases de Mercure", "Conjonctions, rétrogradations, stations"],
+      ["Fil des événements", "Ingrès, lunaisons & aspects"]
+    ],
+    "ja": [
+      ["Ephemeris Sky", "位置・アスペクト・会合周期"],
+      ["すべての位置", "トロピカル・地心・その日の分点"],
+      ["アスペクト", "推測ではなく計算"],
+      ["水星の周期", "合・逆行・留"],
+      ["イベント年表", "入宮・朔望・アスペクト"]
+    ]
+  }
+}

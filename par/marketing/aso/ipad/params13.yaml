@@ -1,0 +1,40 @@
+platform: ipad
+size: [2064, 2752]        # iPad 13" — APP_IPAD_PRO_129
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/par/marketing/raw/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/par/marketing/aso/ipad
+
+# Par is dark-only, so the frame is too: a light band around a graphite app reads as a mistake.
+# Amber is the app's single accent and is spent here the same way — on one word per screen, never
+# on decoration.
+style:
+  bg_gradient: true
+  bg_color_top: '#14161C'
+  bg_color_bottom: '#0B0C10'
+  title_color: '#F4F1EA'
+  subtitle_color: '#FF9F0A'
+  screenshot_zoom: 0.9
+  text_row_percent: 17
+  screenshot_row_percent: 83
+  border_width: 7
+  border_color: '#23262E'
+  border_radius: 30
+  text_padding: 40
+  screenshot_padding: 40
+
+# Order follows make_sim_shots.sh. The first frame has to answer "why this one and not the free
+# one" — so it leads with the tape, which no incumbent has, not with a keypad everybody has.
+texts:
+  - title: The tape, beside the maths
+    subtitle: Split View, every width — where the others fail
+  - title: The whole schedule
+    subtitle: A real table you can scroll, print and export
+  - title: NPV and IRR, honestly
+    subtitle: Grouped flows — and it says so when no rate balances them
+  - title: Priced like Treasury prices
+    subtitle: 31 CFR 356 Appendix B — all five formulas
+  - title: Conventions that disagree
+    subtitle: 30/360, 30E/360, ISDA, Actual — see the gap
+  - title: Which test binds
+    subtitle: DSCR or LTV, and the loan you actually get

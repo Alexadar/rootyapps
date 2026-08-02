@@ -1,0 +1,62 @@
+{
+  "canvas": [
+    1200,
+    1600
+  ],
+  "content_len": 46.9,
+  "preview_maxlen": 28.5,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#14161C",
+    "bg_color_bottom": "#0B0C10",
+    "title_color": "#F4F1EA",
+    "subtitle_color": "#A9A7A1",
+    "caption_band_percent": 20,
+    "side_padding": 64,
+    "border_width": 7,
+    "border_color": "#23262E",
+    "border_radius": 30
+  },
+  "app": {
+    "name": "Par",
+    "tagline": "The financial calculator that keeps the tape",
+    "icon": "Par/Assets.xcassets/AppIcon.appiconset/icon_1024.png"
+  },
+  "scenes": [
+    {
+      "key": "TVM",
+      "start": 0.0,
+      "end": 15.28,
+      "title": "Solve it once",
+      "subtitle": "Any of n · i · PV · PMT · FV, from the other four"
+    },
+    {
+      "key": "Tape",
+      "start": 15.28,
+      "end": 17.48,
+      "title": "Then keep it",
+      "subtitle": "Every solve lands on the tape, labelled"
+    },
+    {
+      "key": "Compare",
+      "start": 17.48,
+      "end": 36.86,
+      "title": "Compare, side by side",
+      "subtitle": "30 year against 15 — both still there tomorrow"
+    },
+    {
+      "key": "Bond",
+      "start": 36.86,
+      "end": 44.3,
+      "title": "Priced the way Treasury prices",
+      "subtitle": "31 CFR 356 Appendix B, day counts and all"
+    },
+    {
+      "key": "Dates",
+      "start": 44.3,
+      "end": 46.9,
+      "title": "Six conventions, six answers",
+      "subtitle": "30/360 · 30E/360 · ISDA · Actual — they disagree"
+    }
+  ]
+}

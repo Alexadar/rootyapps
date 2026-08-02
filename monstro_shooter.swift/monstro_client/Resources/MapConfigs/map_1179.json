@@ -1,0 +1,83 @@
+{
+  "id": 1179,
+  "ownerName": null,
+  "dropPointId": 10,
+  "ownerId": null,
+  "energyCost": 10000,
+  "landingDuration": 90,
+  "gameResource": "map_4",
+  "country": null,
+  "lastRenameDate": null,
+  "renameCost": 1,
+  "renameCostMult": 1,
+  "removed": false,
+  "orderNumber": 1200,
+  "defaultNameLocalizations": {
+    "ru-ru": "Карта 12 2 ступени",
+    "en-us": "First map!"
+  },
+  "descriptionLocalizations": {
+    "ru-ru": "хз",
+    "en-us": ""
+  },
+  "monsterSpawnWaves": [
+    {
+      "startTime": 5,
+      "count": 15
+    },
+    {
+      "startTime": 10,
+      "count": 30
+    },
+    {
+      "startTime": 15,
+      "count": 45
+    },
+    {
+      "startTime": 20,
+      "count": 55
+    },
+    {
+      "startTime": 55,
+      "count": 65
+    },
+    {
+      "startTime": 60,
+      "count": 80
+    },
+    {
+      "startTime": 90,
+      "count": 95
+    }
+  ],
+  "monsterTypes": [
+    {
+      "startTime": 100,
+      "monsterTypeIds": [
+        9,
+        10,
+        11
+      ]
+    }
+  ],
+  "maximumVictims": {
+    "1": 5000,
+    "2": 5000,
+    "3": 5000,
+    "4": 5000,
+    "5": 5000,
+    "6": 5000,
+    "7": 5000,
+    "8": 5000,
+    "9": 5000,
+    "10": 5000,
+    "11": 5000,
+    "12": 5000,
+    "13": 5000,
+    "14": 5000,
+    "15": 5000,
+    "16": 5000,
+    "17": 5000,
+    "18": 5000
+  }
+}

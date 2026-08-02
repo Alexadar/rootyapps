@@ -1,0 +1,26 @@
+platform: ipad
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/raw/es/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/aso/es/ipad
+style:
+  bg_gradient: true
+  bg_color_top: '#0C0A18'
+  bg_color_bottom: '#08080B'
+  title_color: '#ffffff'
+  subtitle_color: '#B79FEA'
+  screenshot_zoom: 0.9
+  text_row_percent: 16
+  screenshot_row_percent: 84
+  border_width: 8
+  border_radius: 26
+  text_padding: 40
+  screenshot_padding: 40
+texts:
+  - title: "Un estudio, 26 herramientas"
+    subtitle: "Explora por sección, trabaja en el detalle"
+  - title: "Acústica de sala"
+    subtitle: "RT60, modos y frecuencia de Schroeder"
+  - title: "Diseño de altavoces"
+    subtitle: "Thiele-Small: selladas y bass-reflex"
+  - title: "Entonación justa"
+    subtitle: "Cents, razón más cercana y altura de Tenney"

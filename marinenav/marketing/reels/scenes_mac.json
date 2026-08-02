@@ -1,0 +1,81 @@
+{
+  "canvas": [
+    1920,
+    1080
+  ],
+  "content_len": 25.0,
+  "preview_maxlen": 30,
+  "outro_dur": 0,
+  "style": {
+    "title_color": "#FFFFFF",
+    "subtitle_color": "#D5E3EE",
+    "side_padding": 84,
+    "title_scale": 0.030,
+    "subtitle_scale": 0.020,
+    "caption_ribbon": true,
+    "ribbon_opacity": 0.82,
+    "ribbon_pad_percent": 0.038
+  },
+  "app": {
+    "name": "Marine Nav",
+    "tagline": "Tides and navigation that work offline",
+    "icon": "marinenav.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Tides",
+      "start": 0.0,
+      "end": 5.0,
+      "title": "Tides with no signal",
+      "subtitle": "NOAA harmonic constants, computed on your Mac",
+      "src": [
+        0.9,
+        5.9
+      ]
+    },
+    {
+      "key": "Currents",
+      "start": 5.0,
+      "end": 10.0,
+      "title": "Slack, flood and ebb",
+      "subtitle": "Know when the gate turns — to the minute, offline",
+      "src": [
+        7.4,
+        12.4
+      ]
+    },
+    {
+      "key": "Declination",
+      "start": 10.0,
+      "end": 15.0,
+      "title": "True to magnetic",
+      "subtitle": "World Magnetic Model 2025, built in",
+      "src": [
+        13.8,
+        18.8
+      ]
+    },
+    {
+      "key": "Distance",
+      "start": 15.0,
+      "end": 20.0,
+      "title": "Great-circle passage",
+      "subtitle": "Vincenty on WGS-84 — distance, course, arrival",
+      "src": [
+        20.1,
+        25.1
+      ]
+    },
+    {
+      "key": "Sight",
+      "start": 20.0,
+      "end": 25.0,
+      "title": "Sight reduction",
+      "subtitle": "Reproduces Bowditch's worked example exactly",
+      "src": [
+        26.4,
+        31.4
+      ]
+    }
+  ]
+}

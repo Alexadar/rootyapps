@@ -1,0 +1,123 @@
+{
+  "id": 1217,
+  "ownerName": null,
+  "dropPointId": 13,
+  "ownerId": null,
+  "energyCost": 10000,
+  "landingDuration": 110,
+  "gameResource": "map_7",
+  "country": null,
+  "lastRenameDate": null,
+  "renameCost": 1,
+  "renameCostMult": 1,
+  "removed": false,
+  "orderNumber": 900,
+  "defaultNameLocalizations": {
+    "ru-ru": "Карта 9 4  волны 90/150/90/50",
+    "en-us": "First map!"
+  },
+  "descriptionLocalizations": {
+    "ru-ru": "хз",
+    "en-us": ""
+  },
+  "monsterSpawnWaves": [
+    {
+      "startTime": 1,
+      "count": 51
+    },
+    {
+      "startTime": 2,
+      "count": 77
+    },
+    {
+      "startTime": 3,
+      "count": 90
+    },
+    {
+      "startTime": 25,
+      "count": 0
+    },
+    {
+      "startTime": 26,
+      "count": 51
+    },
+    {
+      "startTime": 27,
+      "count": 77
+    },
+    {
+      "startTime": 28,
+      "count": 90
+    },
+    {
+      "startTime": 29,
+      "count": 150
+    },
+    {
+      "startTime": 68,
+      "count": 0
+    },
+    {
+      "startTime": 69,
+      "count": 51
+    },
+    {
+      "startTime": 70,
+      "count": 77
+    },
+    {
+      "startTime": 71,
+      "count": 90
+    },
+    {
+      "startTime": 92,
+      "count": 0
+    },
+    {
+      "startTime": 93,
+      "count": 51
+    },
+    {
+      "startTime": 94,
+      "count": 77
+    },
+    {
+      "startTime": 95,
+      "count": 50
+    },
+    {
+      "startTime": 110,
+      "count": 0
+    }
+  ],
+  "monsterTypes": [
+    {
+      "startTime": 1,
+      "monsterTypeIds": [
+        13,
+        15,
+        16
+      ]
+    }
+  ],
+  "maximumVictims": {
+    "1": 5000,
+    "2": 5000,
+    "3": 5000,
+    "4": 5000,
+    "5": 5000,
+    "6": 5000,
+    "7": 5000,
+    "8": 5000,
+    "9": 5000,
+    "10": 5000,
+    "11": 5000,
+    "12": 5000,
+    "13": 5000,
+    "14": 5000,
+    "15": 5000,
+    "16": 5000,
+    "17": 5000,
+    "18": 5000
+  }
+}

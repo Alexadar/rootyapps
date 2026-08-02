@@ -1,0 +1,20 @@
+Storypole app-preview music bed
+===============================
+file      bed30.wav        (loudnorm I=-16 TP=-1.5 LRA=11, from bed30_raw source)
+seconds   30
+model     Stable Audio 3 — dit sm-music, decoder same-s (MLX, Apple Silicon)
+steps     100
+seed      20260729
+prompt
+  warm workshop ambient, soft wooden marimba and muted felt piano, gentle analog pad,
+  unhurried, honest craftsmanship, spacious, no drums
+negative prompt
+  drums, percussion, beat, vocals, harsh, distorted, noisy
+
+Regenerate with the seed above; without it you cannot reproduce this bed, only make a
+different one — and a reel scored with a different bed is a different reel.
+
+NO fades are baked in. store_preview.py applies fade-in 0.6s, fade-out 1.5s and volume 0.85
+at mux time; baking them here double-fades every reel.
+
+Never overwrite this file. Add a new bed beside it.

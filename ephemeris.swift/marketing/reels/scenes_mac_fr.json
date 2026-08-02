@@ -1,0 +1,57 @@
+{
+  "canvas": [
+    1920,
+    1080
+  ],
+  "scene_dur": 6.0,
+  "xfade": 0.5,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0B1020",
+    "bg_color_bottom": "#1A1330",
+    "title_color": "#ffffff",
+    "subtitle_color": "#9FB4FF",
+    "text_col_percent": 40,
+    "side_padding": 70,
+    "border_width": 6,
+    "border_color": "#2A2E52",
+    "border_radius": 26
+  },
+  "app": {
+    "name": "Ephemeris",
+    "tagline": "Votre almanach du ciel de poche",
+    "icon": "liquid_icon.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "chart",
+      "clip": "macclip_chart.mov",
+      "title": "Maisons, angles, aspects",
+      "subtitle": "Un thème complet, à tout instant"
+    },
+    {
+      "key": "positions",
+      "clip": "macclip_positions.mov",
+      "title": "Chaque astre, situé",
+      "subtitle": "Signe, degré & mouvement diurne"
+    },
+    {
+      "key": "aspects",
+      "clip": "macclip_aspects.mov",
+      "title": "Les aspects d'un coup d'œil",
+      "subtitle": "Couleurs et orbes maîtrisés"
+    },
+    {
+      "key": "cycle",
+      "clip": "macclip_cycle.mov",
+      "title": "Suivre le cycle synodique",
+      "subtitle": "Phases, élongations, stations"
+    },
+    {
+      "key": "events",
+      "clip": "macclip_events.mov",
+      "title": "Ne rien manquer",
+      "subtitle": "Ingrès, lunaisons, rétrogradations"
+    }
+  ]
+}

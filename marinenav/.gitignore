@@ -1,0 +1,24 @@
+# Swift Package Manager build products
+.build/
+.swiftpm/
+*.xcodeproj/xcuserdata/
+
+# XcodeGen output — regenerate with `xcodegen generate`
+marinenav.xcodeproj/
+
+# Research DATA is cache, not deliverable: every figure that matters is written
+# into the committed reports (research/SOURCES.md, marketing/metadata.md) and the
+# scripts beside them regenerate the rest. Nothing here is an input to a build.
+#   scratch/.cache/    NOAA CO-OPS API responses (tide/current research)
+#   marketing/.cache/  iTunes Search API responses + aso_research.json
+scratch/.cache/
+scratch/__pycache__/
+marketing/.cache/
+marketing/__pycache__/
+
+# Reel/screenshot capture intermediates. The repo-root .gitignore already ignores
+# generated marketing media everywhere (**/marketing/**/video/* :46,
+# **/marketing/aso/**/*.png :54) — these two only add the raw captures, which are
+# large and fully regenerable from marketing/make_shots.py + reels/make_reel.sh.
+marketing/raw/
+.build/reel-dd/

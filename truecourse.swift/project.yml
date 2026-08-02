@@ -1,0 +1,202 @@
+name: truecourse.swift
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+    watchOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "3"
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+packages:
+  WindKit:
+    path: Kits/Wind/WindKit
+  AirspeedKit:
+    path: Kits/Airspeed/AirspeedKit
+  AltitudeKit:
+    path: Kits/Altitude/AltitudeKit
+  NavKit:
+    path: Kits/Nav/NavKit
+  FuelKit:
+    path: Kits/Fuel/FuelKit
+  ClimbDescentKit:
+    path: Kits/ClimbDescent/ClimbDescentKit
+  WeightBalanceKit:
+    path: Kits/WeightBalance/WeightBalanceKit
+  ConvertKit:
+    path: Kits/Convert/ConvertKit
+  TimeKit:
+    path: Kits/Time/TimeKit
+targets:
+  truecourse.swift:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: WindKit
+        product: WindKit
+      - package: AirspeedKit
+        product: AirspeedKit
+      - package: AltitudeKit
+        product: AltitudeKit
+      - package: NavKit
+        product: NavKit
+      - package: FuelKit
+        product: FuelKit
+      - package: ClimbDescentKit
+        product: ClimbDescentKit
+      - package: WeightBalanceKit
+        product: WeightBalanceKit
+      - package: ConvertKit
+        product: ConvertKit
+      - package: TimeKit
+        product: TimeKit
+      # Embed the watchOS companion ("Embed Watch Content"). iOS only — the Mac build has no
+      # watch slot. Same paid app; no separate purchase.
+      - target: TrueCourseWatch
+        embed: true
+        platformFilter: iOS
+    sources:
+      - path: TrueCourse
+    settings:
+      base:
+        PRODUCT_NAME: TrueCourse
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.truecourse
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": truecourse-macOS.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_CFBundleDisplayName: TrueCourse
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+  TrueCourseWatch:
+    type: application
+    # `platform: watchOS` (a scalar), NOT `supportedDestinations: [watchOS]` — XcodeGen rejects
+    # watchOS inside a multiplatform supportedDestinations list.
+    platform: watchOS
+    deploymentTarget: "26.0"
+    dependencies:
+      - package: WindKit
+        product: WindKit
+      - package: AirspeedKit
+        product: AirspeedKit
+      - package: AltitudeKit
+        product: AltitudeKit
+      - package: NavKit
+        product: NavKit
+      - package: FuelKit
+        product: FuelKit
+      - package: ClimbDescentKit
+        product: ClimbDescentKit
+      - package: WeightBalanceKit
+        product: WeightBalanceKit
+      - package: ConvertKit
+        product: ConvertKit
+      - package: TimeKit
+        product: TimeKit
+    sources:
+      - path: TrueCourseWatch
+      # Share, don't copy — the same tokens/catalog/bounds/deep-link gate the phone compiles.
+      - path: TrueCourse/Views/ToolCatalog.swift
+      - path: TrueCourse/Views/TCColors.swift
+      - path: TrueCourse/Views/InputBounds.swift
+      - path: TrueCourse/Views/Format.swift
+      - path: TrueCourse/LaunchOverride.swift
+      # Watch has its OWN asset catalog (TrueCourseWatch/Assets.xcassets, included via the folder
+      # above) with a watchOS single-size AppIcon — the phone's AppIcon has no watchOS content.
+    settings:
+      base:
+        PRODUCT_NAME: TrueCourse
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.truecourse.watchkitapp
+        INFOPLIST_KEY_CFBundleDisplayName: TrueCourse
+        INFOPLIST_KEY_WKApplication: YES
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: oleksandr.aisixteen.truecourse
+        # Standalone calculator: runs on its own, no phone data. (Do NOT set WKWatchOnly — mutually
+        # exclusive with the companion keys.)
+        INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: YES
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        WATCHOS_DEPLOYMENT_TARGET: "26.0"
+        TARGETED_DEVICE_FAMILY: "4"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+  truecourseUITests:
+    type: bundle.ui-testing
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: truecourseUITests
+    dependencies:
+      - target: truecourse.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.truecourseUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: truecourse.swift
+  # App-target state-space coverage (§C.2): fast hosted unit tests that @testable-import the app
+  # module to drive the view-models (ConvertViewModel etc.) directly — combinatorics belong here,
+  # never in XCUITest. iOS-only: the logic is platform-independent, so one sim run proves it.
+  truecourseModelTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS]
+    sources:
+      - path: truecourseModelTests
+    dependencies:
+      - target: truecourse.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.truecourseModelTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/TrueCourse.app/TrueCourse"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+schemes:
+  truecourse.swift:
+    build:
+      targets:
+        truecourse.swift: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - truecourseUITests
+  # The watch app builds inside the phone scheme as embedded content, but a bare
+  # `xcodebuild -target TrueCourseWatch` can't resolve the SPM Kits (package resolution is a
+  # scheme-level step). This scheme builds/runs/screenshots the watch standalone. Keep it OUT of the
+  # `truecourse.swift` scheme's build targets — a watchOS-only target collapses that scheme's
+  # platform set and breaks the iOS/macOS destinations.
+  TrueCourseWatch:
+    build:
+      targets:
+        TrueCourseWatch: all
+    run:
+      config: Debug
+  # Fast app-target state-space tests, iOS-only, kept in their own scheme so a macOS run of the
+  # `truecourse.swift` scheme is never blocked by an iOS-only test target.
+  truecourseModelTests:
+    build:
+      targets:
+        truecourseModelTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - truecourseModelTests
+  truecourseReel:
+    build:
+      targets:
+        truecourse.swift: all
+        truecourseUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - truecourseUITests

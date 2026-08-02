@@ -1,0 +1,25 @@
+{
+  "id": 201,
+  "name": "Cluster Mine",
+  "nameLocalizations": {
+    "en-us": "Cluster Mine",
+    "ru-ru": "Кассетная мина"
+  },
+  "description": "Advanced mine that splits into 5 smaller explosions. Massive area coverage.",
+  "toolType": "Mine",
+  "explosionToolType": 2,
+  "explosionRadius": 200,
+  "explosionPower": 80,
+  "kickOffRadius": 300,
+  "kickOffTime": 600,
+  "delay": 800,
+  "maxStackSize": 3,
+  "usageLimit": 2,
+  "levelRequirement": 15,
+  "buyPriceSoft": 1500,
+  "buyPriceHard": 35,
+  "sellPriceSoft": 750,
+  "sellPriceHard": 17,
+  "marketAvailability": true,
+  "orderId": 201
+}

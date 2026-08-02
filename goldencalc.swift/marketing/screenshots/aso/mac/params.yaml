@@ -1,0 +1,32 @@
+# Screenshot generation parameters for goldencalc macOS App Store screenshots
+
+style:
+  text_col_percent: 42
+  screenshot_col_percent: 58
+  screenshot_zoom: 1.7
+  screenshot_move_down: -60
+
+  # Inherited defaults
+  bg_gradient: true
+  bg_color_top: '#1D1D1F'
+  bg_color_bottom: '#000000'
+  title_color: '#ffffff'
+  subtitle_color: '#F5F5F7'
+  text_padding: 80
+  screenshot_padding: 80
+  border_width: 12
+  border_color: '#ffffff'
+  border_radius: 40
+  shadow: true
+
+texts:
+  - title: "Golden Ratio\nCalculator"
+    subtitle: "Calculate Any Part Instantly"
+  - title: "Golden Ratio\nCalculator"
+    subtitle: "Calculate\nLesser, Greater & Whole Parts"
+  - title: "Golden Ratio\nCalculator"
+    subtitle: "Perfect for Design & Math"
+
+paths:
+  raw_folder: "/Users/oleksandr/Projects/rootyapps/goldencalc.swift/marketing/screenshots/raw/mac"
+  output_folder: "/Users/oleksandr/Projects/rootyapps/goldencalc.swift/marketing/screenshots/aso/mac"

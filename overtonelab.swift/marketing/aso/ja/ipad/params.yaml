@@ -1,0 +1,26 @@
+platform: ipad
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/raw/ja/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/aso/ja/ipad
+style:
+  bg_gradient: true
+  bg_color_top: '#0C0A18'
+  bg_color_bottom: '#08080B'
+  title_color: '#ffffff'
+  subtitle_color: '#B79FEA'
+  screenshot_zoom: 0.9
+  text_row_percent: 16
+  screenshot_row_percent: 84
+  border_width: 8
+  border_radius: 26
+  text_padding: 40
+  screenshot_padding: 40
+texts:
+  - title: "1つのスタジオに26のツール"
+    subtitle: "セクションで探し、詳細で作業"
+  - title: "部屋の音響"
+    subtitle: "RT60・モード・シュレーダー周波数"
+  - title: "スピーカー設計"
+    subtitle: "Thiele-Small：密閉とバスレフ"
+  - title: "純正律"
+    subtitle: "セント・最近似比・テニー高"

@@ -1,0 +1,126 @@
+- guidelines:
+  - Analyze the crystal's data layers for precise coordinates
+  - Cat says thats its a very interesting choice he didt expect that
+  - Astronaut asked why but cat says nevermind, its better this way
+  - Astronaut asked how we will analyze it
+  - Cat says - give it to me closer i will sniff it
+  - Astronaut says - how what its not a cat but it sniffs how?
+  - Cat says that sometimes it wants to snif things, now its a right time
+  - After cat sniffed, it says there is rotten tomatoes, meant it is became very old very fast
+  - Astronaut asked how, its a stable time crystaline struct
+  - Cat says - it seems not, okay, we have 4 options now
+  - Options of phase_3_option_2:
+    - Give cat to eat it, maybe it will be beneficial
+    - Throw it in a pond with a glowing waters
+    - Ask crystal how it feels
+    - Charge crystal with a magic tomatoes
+- story_dialogs:
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Interesting. Very interesting. I didn't expect you to choose that.
+    id: 0
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Why? Is it dangerous?
+    id: 1
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: No. Nevermind. It's better this way. Forget I mentioned it.
+    id: 2
+  - character_id: 1
+    character_name: Astronaut
+    character_text: That's not ominous at all. How do we analyze the crystal's data layers?
+    id: 3
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Bring it closer. I need to sniff it.
+    id: 4
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Sniff it? You keep insisting you're not actually a cat.
+    id: 5
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: I'm not. But sometimes I want to sniff things. This is one of those times. Don't question it.
+    id: 6
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Fine. Here.
+    id: 7
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Hmm. Hmmmm. Oh. That's not good.
+    id: 8
+  - character_id: 1
+    character_name: Astronaut
+    character_text: What?
+    id: 9
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Rotten tomatoes. Very strongly. Your crystal has aged significantly. Decades, maybe centuries of decay compressed into your transit here.
+    id: 10
+  - character_id: 1
+    character_name: Astronaut
+    character_text: That's impossible. It's a stable temporal crystalline structure. The lattice is self-correcting. It can't decay.
+    id: 11
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: In your continuum, perhaps. Here, different rules. Time crystals aren't stable when time itself isn't stable.
+    id: 12
+  - character_id: 1
+    character_name: Astronaut
+    character_text: So my navigation data is corrupted?
+    id: 13
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Corrupted, aged, partially fermented. The tomato smell is quite literal in a metaphysical sense. But we have options.
+    id: 14
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Please tell me they're better options than "your crystal rotted."
+    id: 15
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Debatable. I could eat it. Sometimes digestion clarifies things—information passes through me and emerges... refined.
+    id: 16
+  - character_id: 1
+    character_name: Astronaut
+    character_text: You want to eat my navigation crystal.
+    id: 17
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Option one. Option two - there's a pond nearby with luminescent waters. Submersion might reset the decay. Option three - we ask the crystal directly how it feels about its situation. Option four - we charge it using the local equivalent of what your crystal would recognize as compatible energy.
+    id: 18
+  - character_id: 1
+    character_name: Astronaut
+    character_text: And what's the local equivalent?
+    id: 19
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: Difficult to translate. The closest concept in your language would be... magic tomatoes.
+    id: 20
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Magic tomatoes.
+    id: 21
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: I told you it was difficult to translate. The point is - we have options. None are guaranteed. All are strange. Welcome to problem-solving outside your continuum.
+    id: 22
+  - character_id: 1
+    character_name: Astronaut
+    character_text: My training did not prepare me for any of this.
+    id: 23
+  - character_id: 2
+    character_name: Big Pink Cat
+    character_text: No training could. Choose.
+    id: 24
+  - character_id: 1
+    character_name: Astronaut
+    character_text: Let me think about which absurd option is least likely to make things worse.
+    id: 25
+    options:
+    - option_text: Let the cat eat the crystal
+    - option_text: Submerge the crystal in the glowing pond
+    - option_text: Ask the crystal how it feels
+    - option_text: Charge it with magic tomatoes

@@ -1,0 +1,52 @@
+{
+  "canvas": [886, 1920],
+  "content_len": 40,
+  "preview_maxlen": 28,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#160A26",
+    "bg_color_bottom": "#3D1145",
+    "title_color": "#ffffff",
+    "subtitle_color": "#E7A7FF",
+    "caption_band_percent": 22,
+    "side_padding": 46,
+    "border_width": 7,
+    "border_color": "#4A2260",
+    "border_radius": 30
+  },
+  "app": {
+    "name": "Producer Tycoon",
+    "tagline": "Run the label. Survive the fame.",
+    "icon": "marketing/icon_1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Студія",
+      "start": 0,
+      "end": 16,
+      "title": "Sign the weird ones",
+      "subtitle": "Every artist is a gamble"
+    },
+    {
+      "key": "Лейбл",
+      "start": 16,
+      "end": 25,
+      "title": "Build your empire",
+      "subtitle": "Staff, gear & studio upgrades"
+    },
+    {
+      "key": "Тренди",
+      "start": 25,
+      "end": 31,
+      "title": "Ride the trends",
+      "subtitle": "Genres rise and crash weekly"
+    },
+    {
+      "key": "Фінал",
+      "start": 31,
+      "end": 40,
+      "title": "Drop the hit",
+      "subtitle": "100M fans or bankruptcy"
+    }
+  ]
+}

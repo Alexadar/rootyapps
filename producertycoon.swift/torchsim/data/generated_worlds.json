@@ -1,0 +1,75 @@
+{
+ "policy": "runs/v1/best.json",
+ "eval_weeks": 208,
+ "ladder": [
+  {
+   "target_win": 0.85,
+   "score": 0.001,
+   "knobs": {
+    "pay_mult_meme": 3.0948,
+    "pay_mult_normal": 1.3096,
+    "pay_mult_hit": 2.4997,
+    "pay_mult_cult": 1.539,
+    "release_cost_mult": 0.7762,
+    "tour_rev_mult": 0.9012,
+    "tour_cost_mult": 0.6024,
+    "salary_mult": 1.3232,
+    "upgrade_cost_mult": 0.9536,
+    "equip_cost_mult": 0.5734,
+    "start_money_mult": 0.9554,
+    "week_event_chance": 0.3801,
+    "artist_event_chance": 0.2668,
+    "need_chance": 0.4033,
+    "luck_spread_mult": 1.0366,
+    "bankruptcy_floor": -22115.1719,
+    "token_reward_mult": 0.4345
+   }
+  },
+  {
+   "target_win": 0.6,
+   "score": 0.001,
+   "knobs": {
+    "pay_mult_meme": 4.245,
+    "pay_mult_normal": 1.2901,
+    "pay_mult_hit": 1.8255,
+    "pay_mult_cult": 1.7791,
+    "release_cost_mult": 0.5307,
+    "tour_rev_mult": 1.1015,
+    "tour_cost_mult": 0.9037,
+    "salary_mult": 1.185,
+    "upgrade_cost_mult": 0.7163,
+    "equip_cost_mult": 0.5497,
+    "start_money_mult": 0.9261,
+    "week_event_chance": 0.4265,
+    "artist_event_chance": 0.3271,
+    "need_chance": 0.4304,
+    "luck_spread_mult": 1.248,
+    "bankruptcy_floor": -19252.0938,
+    "token_reward_mult": 0.2206
+   }
+  },
+  {
+   "target_win": 0.35,
+   "score": 0.0265,
+   "knobs": {
+    "pay_mult_meme": 4.6682,
+    "pay_mult_normal": 0.7183,
+    "pay_mult_hit": 0.2201,
+    "pay_mult_cult": 1.7842,
+    "release_cost_mult": 0.3849,
+    "tour_rev_mult": 1.0701,
+    "tour_cost_mult": 0.83,
+    "salary_mult": 0.7482,
+    "upgrade_cost_mult": 1.6547,
+    "equip_cost_mult": 0.6408,
+    "start_money_mult": 1.0588,
+    "week_event_chance": 0.382,
+    "artist_event_chance": 0.5082,
+    "need_chance": 0.3591,
+    "luck_spread_mult": 1.1498,
+    "bankruptcy_floor": -48804.1406,
+    "token_reward_mult": 0.2671
+   }
+  }
+ ]
+}

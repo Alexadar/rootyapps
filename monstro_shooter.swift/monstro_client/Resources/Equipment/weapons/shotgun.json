@@ -1,0 +1,33 @@
+{
+  "id": 5,
+  "name": "Shotgun",
+  "nameLocalizations": {
+    "en-us": "Shotgun",
+    "ru-ru": "Дробовик"
+  },
+  "description": "Close range devastation. Fires multiple pellets per shot. Deadly at close range.",
+  "type": 5,
+  "levelRequirement": 8,
+  "rankRequirement": 0,
+  "damage": 7,
+  "shotRange": 400,
+  "shotDelay": 800,
+  "cageSize": 8,
+  "rechargeDelay": 3500,
+  "bulletsCount": 7,
+  "bulletSpeed": 700,
+  "bulletDeviation": 8,
+  "bulletMaxDeviation": 15,
+  "penetrationPower": 1,
+  "bulletStartScale": 0.25,
+  "bulletMaxScale": 0.7,
+  "bulletScaleFactor": 0.04,
+  "bulletType": 4,
+  "weaponSound": "weapon_shotgun",
+  "buyPriceSoft": 10000,
+  "buyPriceHard": 200,
+  "sellPriceSoft": 5000,
+  "sellPriceHard": 100,
+  "marketAvailability": true,
+  "orderId": 5
+}

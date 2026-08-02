@@ -1,0 +1,26 @@
+{
+  "_note": "App Store macOS preview (Guideline 2.3.4 compliant): full-bleed window capture, captions overlaid ON the app, no bezel/background/outro. Recorded by marketing/reels/mac_store_rec.sh, which scales each window clip to 1920x1080 and crops from the top; rendered by marketing/reels/store_preview.py. `src` windows index into mac_walkthrough.mp4 and come from the boundaries that recorder prints — 6s per scene, trimmed at both ends so no launch flash or teardown lands in the cut.",
+  "canvas": [1920, 1080],
+  "content_len": 21.2,
+  "preview_maxlen": 30,
+  "style": {
+    "title_color": "#F4F1EA",
+    "subtitle_color": "#FF9F0A",
+    "side_padding": 90,
+    "title_scale": 0.030,
+    "subtitle_scale": 0.020,
+    "scrim_height_percent": 0.26,
+    "scrim_opacity": 200,
+    "scrim_gamma": 1.7
+  },
+  "app": {
+    "name": "Par",
+    "tagline": "The financial calculator that keeps the tape"
+  },
+  "scenes": [
+    { "key": "tvm",          "src": [0.4, 5.7],   "title": "Solve for any of the five", "subtitle": "n · i · PV · PMT · FV — from the other four" },
+    { "key": "amortization", "src": [6.4, 11.7],  "title": "The whole schedule",        "subtitle": "A real table you can scroll, print and export" },
+    { "key": "bond",         "src": [12.4, 17.7], "title": "Priced like Treasury prices", "subtitle": "31 CFR 356 Appendix B — day counts and all" },
+    { "key": "dates",        "src": [18.4, 23.7], "title": "Conventions that disagree", "subtitle": "30/360 · 30E/360 · ISDA · Actual — see the gap" }
+  ]
+}

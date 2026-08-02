@@ -1,0 +1,21 @@
+id: 5
+name: "Shotgun"
+type: 5
+nameLocalizations:
+  en-us: "Shotgun"
+  ru-ru: "Дробовик"
+damage: 8.0
+shotRange: 350.0
+shotDelay: 0.7
+magazineSize: 8
+reloadTime: 3.5
+bulletsPerShot: 6
+bulletSpeed: 700.0
+bulletDeviation: 80.0
+maxDeviation: 100.0
+penetrationPower: 1
+bulletStartScale: 0.25
+bulletMaxScale: 0.7
+bulletScaleGrowth: 0.04
+bulletTextureName: "bullet_shotgun"
+weaponSoundName: "weapon_machinegun"

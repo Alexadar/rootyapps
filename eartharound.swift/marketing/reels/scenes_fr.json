@@ -1,0 +1,69 @@
+{
+  "canvas": [
+    886,
+    1920
+  ],
+  "content_len": 26,
+  "preview_maxlen": 28.5,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0C111B",
+    "bg_color_bottom": "#080B14",
+    "title_color": "#E8EEF6",
+    "subtitle_color": "#4DF0A0",
+    "caption_band_percent": 22,
+    "side_padding": 46,
+    "border_width": 7,
+    "border_color": "#17202F",
+    "border_radius": 30
+  },
+  "app": {
+    "name": "Earth Around",
+    "tagline": "Gardez un œil sur le Soleil.",
+    "icon": "eartharound.swift/Assets.xcassets/AppIcon.appiconset/icon_1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Now",
+      "start": 0,
+      "end": 5,
+      "title": "Une tempête là ?",
+      "subtitle": "NOAA G · R · S, en direct"
+    },
+    {
+      "key": "Wind",
+      "start": 5,
+      "end": 10,
+      "title": "Ce qui la nourrit",
+      "subtitle": "Vitesse du vent solaire et Bz"
+    },
+    {
+      "key": "Flare",
+      "start": 10,
+      "end": 14,
+      "title": "Éruptions, en direct",
+      "subtitle": "Flux de rayons X GOES"
+    },
+    {
+      "key": "Aurora",
+      "start": 14,
+      "end": 18,
+      "title": "Aurore ce soir ?",
+      "subtitle": "Chance et ligne de visibilité"
+    },
+    {
+      "key": "Hpo",
+      "start": 18,
+      "end": 23,
+      "title": "Le détail Hp30",
+      "subtitle": "Pas de 30 minutes"
+    },
+    {
+      "key": "Night",
+      "start": 23,
+      "end": 27,
+      "title": "Mode nuit",
+      "subtitle": "Décalage rouge pour le terrain"
+    }
+  ]
+}

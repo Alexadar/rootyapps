@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- A DocumentGroup app that SAVES needs read-write, not the read-only the sibling apps
+	     grant: a tape the user cannot save is the incumbent's data-loss bug by another route. -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	<!-- Without this a sandboxed app cannot open a print panel at all, and the Print button just
+	     does nothing. Print is the headline feature: the category's most-repeated complaint is
+	     "I would give much to have a calculator from which I could print the tape." -->
+	<key>com.apple.security.print</key>
+	<true/>
+</dict>
+</plist>

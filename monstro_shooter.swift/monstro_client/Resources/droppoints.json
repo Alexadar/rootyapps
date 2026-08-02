@@ -1,0 +1,87 @@
+[
+  {
+    "id": 3,
+    "name": "Тренировочная база",
+    "nameEn": "Training Base"
+  },
+  {
+    "id": 4,
+    "name": "Испытательный полигон",
+    "nameEn": "Test Range"
+  },
+  {
+    "id": 7,
+    "name": "Десант",
+    "nameEn": "Landing"
+  },
+  {
+    "id": 8,
+    "name": "Вторая зона",
+    "nameEn": "Second Zone"
+  },
+  {
+    "id": 9,
+    "name": "Третья зона",
+    "nameEn": "Third Zone"
+  },
+  {
+    "id": 10,
+    "name": "Четвёртая зона",
+    "nameEn": "Fourth Zone"
+  },
+  {
+    "id": 11,
+    "name": "Пятая зона",
+    "nameEn": "Fifth Zone"
+  },
+  {
+    "id": 12,
+    "name": "Шестая зона",
+    "nameEn": "Sixth Zone"
+  },
+  {
+    "id": 13,
+    "name": "Седьмая зона",
+    "nameEn": "Seventh Zone"
+  },
+  {
+    "id": 14,
+    "name": "Спецоперация Alpha",
+    "nameEn": "Special Operation Alpha"
+  },
+  {
+    "id": 15,
+    "name": "Спецоперация Beta",
+    "nameEn": "Special Operation Beta"
+  },
+  {
+    "id": 17,
+    "name": "Элитная миссия",
+    "nameEn": "Elite Mission"
+  },
+  {
+    "id": 18,
+    "name": "Секретный объект",
+    "nameEn": "Secret Facility"
+  },
+  {
+    "id": 25,
+    "name": "Боевая зона Omega",
+    "nameEn": "Combat Zone Omega"
+  },
+  {
+    "id": 26,
+    "name": "Передовая",
+    "nameEn": "Front Line"
+  },
+  {
+    "id": 27,
+    "name": "Штурмовая операция",
+    "nameEn": "Assault Operation"
+  },
+  {
+    "id": 28,
+    "name": "Последний рубеж",
+    "nameEn": "Last Stand"
+  }
+]

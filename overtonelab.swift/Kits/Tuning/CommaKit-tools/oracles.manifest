@@ -1,0 +1,3 @@
+# Comma — oracle datasets (gitignored; fetch with tools/fetch-oracles.sh; 1 GB/app cap)
+# id            url                                             approx_size  license / note
+scala_archive   https://www.huygens-fokker.org/docs/scales.zip  ~5 MB        Huygens-Fokker Scala archive; free for personal/research use; NOT redistributed (gitignored). Independent reference tunings (cents).

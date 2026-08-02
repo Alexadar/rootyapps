@@ -1,0 +1,40 @@
+platform: ios
+size: [1320, 2868]        # iPhone 6.9" — APP_IPHONE_67
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/par/marketing/raw/ios
+  output_folder: /Users/oleksandr/Projects/rootyapps/par/marketing/aso/ios
+
+# Par is dark-only, so the frame is too: a light band around a graphite app reads as a mistake.
+# Amber is the app's single accent and is spent here the same way — on one word per screen, never
+# on decoration.
+style:
+  bg_gradient: true
+  bg_color_top: '#14161C'
+  bg_color_bottom: '#0B0C10'
+  title_color: '#F4F1EA'
+  subtitle_color: '#FF9F0A'
+  screenshot_zoom: 0.86
+  text_row_percent: 19
+  screenshot_row_percent: 81
+  border_width: 7
+  border_color: '#23262E'
+  border_radius: 30
+  text_padding: 40
+  screenshot_padding: 40
+
+# Order follows make_sim_shots.sh. The first frame has to answer "why this one and not the free
+# one" — so it leads with the tape, which no incumbent has, not with a keypad everybody has.
+texts:
+  - title: Every solve, kept
+    subtitle: A tape of solved problems — label it, print it, hand it over
+  - title: Solve for any of the five
+    subtitle: n · i · PV · PMT · FV — from the other four
+  - title: The whole schedule
+    subtitle: A real table you can scroll, print and export
+  - title: Priced like Treasury prices
+    subtitle: 31 CFR 356 Appendix B — all five formulas
+  - title: Conventions that disagree
+    subtitle: 30/360, 30E/360, ISDA, Actual — see the gap
+  - title: Which test binds
+    subtitle: DSCR or LTV, and the loan you actually get

@@ -1,0 +1,140 @@
+{
+  "id": 37,
+  "ownerName": null,
+  "dropPointId": 4,
+  "ownerId": null,
+  "energyCost": 10000,
+  "landingDuration": 95,
+  "gameResource": "map_1",
+  "country": null,
+  "lastRenameDate": "2014-09-02 09:59:35.000",
+  "renameCost": 1,
+  "renameCostMult": 1,
+  "removed": false,
+  "orderNumber": 0,
+  "defaultNameLocalizations": {
+    "ru-ru": "Карта 21"
+  },
+  "descriptionLocalizations": {
+    "ru-ru": "Карта 21 3 волны"
+  },
+  "monsterSpawnWaves": [
+    {
+      "startTime": 3,
+      "count": 20
+    },
+    {
+      "startTime": 6,
+      "count": 34
+    },
+    {
+      "startTime": 11,
+      "count": 47
+    },
+    {
+      "startTime": 15,
+      "count": 55
+    },
+    {
+      "startTime": 20,
+      "count": 60
+    },
+    {
+      "startTime": 23,
+      "count": 5
+    },
+    {
+      "startTime": 27,
+      "count": 10
+    },
+    {
+      "startTime": 32,
+      "count": 25
+    },
+    {
+      "startTime": 37,
+      "count": 44
+    },
+    {
+      "startTime": 40,
+      "count": 57
+    },
+    {
+      "startTime": 44,
+      "count": 70
+    },
+    {
+      "startTime": 47,
+      "count": 75
+    },
+    {
+      "startTime": 50,
+      "count": 5
+    },
+    {
+      "startTime": 60,
+      "count": 30
+    },
+    {
+      "startTime": 64,
+      "count": 40
+    },
+    {
+      "startTime": 70,
+      "count": 55
+    },
+    {
+      "startTime": 75,
+      "count": 65
+    },
+    {
+      "startTime": 78,
+      "count": 73
+    },
+    {
+      "startTime": 83,
+      "count": 85
+    },
+    {
+      "startTime": 89,
+      "count": 90
+    }
+  ],
+  "monsterTypes": [
+    {
+      "startTime": 40,
+      "monsterTypeIds": [
+        2,
+        1
+      ]
+    },
+    {
+      "startTime": 55,
+      "monsterTypeIds": [
+        3,
+        2,
+        1
+      ]
+    }
+  ],
+  "maximumVictims": {
+    "1": 5000,
+    "2": 5000,
+    "3": 5000,
+    "4": 5000,
+    "5": 5000,
+    "6": 5000,
+    "7": 5000,
+    "8": 5000,
+    "9": 5000,
+    "10": 5000,
+    "11": 5000,
+    "12": 5000,
+    "13": 5000,
+    "14": 5000,
+    "15": 5000,
+    "16": 5000,
+    "17": 5000,
+    "18": 5000
+  }
+}

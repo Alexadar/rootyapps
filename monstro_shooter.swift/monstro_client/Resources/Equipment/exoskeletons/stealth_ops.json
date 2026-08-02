@@ -1,0 +1,21 @@
+{
+  "id": 7,
+  "name": "Stealth Ops Suit",
+  "nameLocalizations": {
+    "en-us": "Stealth Ops Suit",
+    "ru-ru": "Скрытный оперативный костюм"
+  },
+  "description": "Covert operations suit. Ultra-light with enhanced mobility. For expert players.",
+  "levelRequirement": 18,
+  "rankRequirement": 4,
+  "defence": 0.08,
+  "speed": 1.35,
+  "gameResourceSprite": "exoskeleton_stealth",
+  "lobbyResourceSprite": "exoskeleton_stealth_preview",
+  "buyPriceSoft": 35000,
+  "buyPriceHard": 700,
+  "sellPriceSoft": 17500,
+  "sellPriceHard": 350,
+  "marketAvailability": true,
+  "orderId": 7
+}

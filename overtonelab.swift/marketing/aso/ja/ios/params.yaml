@@ -1,0 +1,30 @@
+platform: ios
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/raw/ja/ios
+  output_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/aso/ja/ios
+style:
+  bg_gradient: true
+  bg_color_top: '#0C0A18'
+  bg_color_bottom: '#08080B'
+  title_color: '#ffffff'
+  subtitle_color: '#B79FEA'
+  screenshot_zoom: 0.85
+  text_row_percent: 18
+  screenshot_row_percent: 82
+  border_width: 8
+  border_radius: 30
+  text_padding: 40
+  screenshot_padding: 40
+texts:
+  - title: "26のツールを1つに"
+    subtitle: "調律・音響・信号・ステレオ"
+  - title: "テンポは正確に"
+    subtitle: "音価、ディレイ、サンプル数"
+  - title: "音高と周波数"
+    subtitle: "音名・倍音・波長"
+  - title: "部屋の音響"
+    subtitle: "RT60・モード・シュレーダー周波数"
+  - title: "マスタリングのラウドネス"
+    subtitle: "ITU-R BS.1770 準拠の LUFS"
+  - title: "ステレオの定位を解く"
+    subtitle: "録音角度：ORTF・NOS・ブルームライン"

@@ -1,0 +1,62 @@
+{
+  "canvas": [
+    886,
+    1920
+  ],
+  "content_len": 30,
+  "preview_maxlen": 30,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0B1020",
+    "bg_color_bottom": "#1A1330",
+    "title_color": "#ffffff",
+    "subtitle_color": "#9FB4FF",
+    "caption_band_percent": 22,
+    "side_padding": 46,
+    "border_width": 7,
+    "border_color": "#2A2E52",
+    "border_radius": 30
+  },
+  "app": {
+    "name": "Ephemeris",
+    "tagline": "Deine Himmelsalmanach für unterwegs",
+    "icon": "liquid_icon.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Chart",
+      "start": 0,
+      "end": 9,
+      "title": "Häuser, Achsen, Aspekte",
+      "subtitle": "Ein volles Horoskop für jeden Moment"
+    },
+    {
+      "key": "Positions",
+      "start": 9,
+      "end": 15,
+      "title": "Jeder Körper, verortet",
+      "subtitle": "Zeichen, Grad & Tagesbewegung"
+    },
+    {
+      "key": "Aspects",
+      "start": 15,
+      "end": 21,
+      "title": "Aspekte auf einen Blick",
+      "subtitle": "Farbcodiert und orbisgenau"
+    },
+    {
+      "key": "Cycle",
+      "start": 21,
+      "end": 26,
+      "title": "Dem synodischen Zyklus folgen",
+      "subtitle": "Phasen, Elongationen, Stationen"
+    },
+    {
+      "key": "Events",
+      "start": 26,
+      "end": 34,
+      "title": "Nichts mehr verpassen",
+      "subtitle": "Eintritte, Lunationen, Rückläufe"
+    }
+  ]
+}

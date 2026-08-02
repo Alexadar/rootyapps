@@ -1,0 +1,2 @@
+bed30.wav — Stable Audio 3 (sm-music/same-s, 30s, steps 8), seed not captured (2026-07-09)
+prompt: noir late-night AM-radio instrumental, open-road Americana theme: twangy baritone guitar, upright bass, brushed drums, slow steady groove, night highway atmosphere, warm analog tape, cinematic, no vocals

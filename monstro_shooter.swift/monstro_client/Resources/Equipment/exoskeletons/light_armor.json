@@ -1,0 +1,21 @@
+{
+  "id": 2,
+  "name": "Light Armor",
+  "nameLocalizations": {
+    "en-us": "Light Armor",
+    "ru-ru": "Лёгкая броня"
+  },
+  "description": "Lightweight armor plating. Small damage reduction with slightly increased movement speed.",
+  "levelRequirement": 3,
+  "rankRequirement": 0,
+  "defence": 0.1,
+  "speed": 1.05,
+  "gameResourceSprite": "exoskeleton_light",
+  "lobbyResourceSprite": "exoskeleton_light_preview",
+  "buyPriceSoft": 3000,
+  "buyPriceHard": 75,
+  "sellPriceSoft": 1500,
+  "sellPriceHard": 37,
+  "marketAvailability": true,
+  "orderId": 2
+}

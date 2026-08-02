@@ -1,0 +1,90 @@
+{
+  "id": 1165,
+  "ownerName": null,
+  "dropPointId": 8,
+  "ownerId": null,
+  "energyCost": 10000,
+  "landingDuration": 80,
+  "gameResource": "map_2",
+  "country": null,
+  "lastRenameDate": null,
+  "renameCost": 1,
+  "renameCostMult": 1,
+  "removed": false,
+  "orderNumber": 1900,
+  "defaultNameLocalizations": {
+    "ru-ru": "Птицы (3,5) 21/39/55 (1/21/45)",
+    "en-us": "First map!"
+  },
+  "descriptionLocalizations": {
+    "ru-ru": "хз",
+    "en-us": ""
+  },
+  "monsterSpawnWaves": [
+    {
+      "startTime": 1,
+      "count": 10
+    },
+    {
+      "startTime": 2,
+      "count": 21
+    },
+    {
+      "startTime": 20,
+      "count": 0
+    },
+    {
+      "startTime": 21,
+      "count": 20
+    },
+    {
+      "startTime": 22,
+      "count": 39
+    },
+    {
+      "startTime": 44,
+      "count": 0
+    },
+    {
+      "startTime": 45,
+      "count": 25
+    },
+    {
+      "startTime": 46,
+      "count": 55
+    },
+    {
+      "startTime": 80,
+      "count": 0
+    }
+  ],
+  "monsterTypes": [
+    {
+      "startTime": 1,
+      "monsterTypeIds": [
+        3,
+        5
+      ]
+    }
+  ],
+  "maximumVictims": {
+    "1": 5000,
+    "2": 5000,
+    "3": 5000,
+    "4": 5000,
+    "5": 5000,
+    "6": 5000,
+    "7": 5000,
+    "8": 5000,
+    "9": 5000,
+    "10": 5000,
+    "11": 5000,
+    "12": 5000,
+    "13": 5000,
+    "14": 5000,
+    "15": 5000,
+    "16": 5000,
+    "17": 5000,
+    "18": 5000
+  }
+}

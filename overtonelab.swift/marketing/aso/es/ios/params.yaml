@@ -1,0 +1,30 @@
+platform: ios
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/raw/es/ios
+  output_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/aso/es/ios
+style:
+  bg_gradient: true
+  bg_color_top: '#0C0A18'
+  bg_color_bottom: '#08080B'
+  title_color: '#ffffff'
+  subtitle_color: '#B79FEA'
+  screenshot_zoom: 0.85
+  text_row_percent: 18
+  screenshot_row_percent: 82
+  border_width: 8
+  border_radius: 30
+  text_padding: 40
+  screenshot_padding: 40
+texts:
+  - title: "26 herramientas de audio"
+    subtitle: "Afinación · Acústica · Señal · Estéreo"
+  - title: "El tempo, clavado"
+    subtitle: "Duración de nota, retardo y muestras"
+  - title: "Altura y frecuencia"
+    subtitle: "Notas, armónicos, longitud de onda"
+  - title: "Acústica de sala"
+    subtitle: "RT60, modos y frecuencia de Schroeder"
+  - title: "Sonoridad de masterización"
+    subtitle: "LUFS reales según ITU-R BS.1770"
+  - title: "La imagen estéreo, resuelta"
+    subtitle: "Ángulo de grabación: ORTF, NOS, Blumlein"

@@ -1,0 +1,37 @@
+# Screenshot generation parameters for Skyscraper Frog macOS App Store screenshots
+
+style:
+  text_col_percent: 42
+  screenshot_col_percent: 38
+  screenshot_zoom: 1.1
+  screenshot_move_down: 0
+  screenshot_move_left: 0
+
+  # Visual styling - bright blue to match game
+  bg_gradient: true
+  bg_color_top: '#0088DD'
+  bg_color_bottom: '#005599'
+  title_color: '#ffffff'
+  subtitle_color: '#E0F0FF'
+  text_padding: 80
+  screenshot_padding: 80
+  border_width: 28
+  border_color: '#ffffff'
+  border_radius: 100
+  shadow: true
+
+texts:
+  - title: "Skyscraper Frog"
+    subtitle: "8-Bit Pixel\nPlatformer Fun"
+  - title: "Skyscraper Frog"
+    subtitle: "Help Freddy Jump\nAcross Rooftops"
+  - title: "Skyscraper Frog"
+    subtitle: "Leap Through\nThe Clouds"
+  - title: "Skyscraper Frog"
+    subtitle: "Catch Flies\nFor Power Boosts"
+  - title: "Skyscraper Frog"
+    subtitle: "Classic Arcade\nAction"
+
+paths:
+  raw_folder: "/Users/oleksandr/Projects/rootyapps/froggo.swift/media/raw/mac"
+  output_folder: "/Users/oleksandr/Projects/rootyapps/froggo.swift/media/aso/mac"

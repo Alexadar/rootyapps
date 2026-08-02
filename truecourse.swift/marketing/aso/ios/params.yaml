@@ -1,0 +1,31 @@
+platform: ios
+size: [1320, 2868]          # iPhone 6.9" (APP_IPHONE_67)
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/truecourse.swift/marketing/raw/ios
+  output_folder: /Users/oleksandr/Projects/rootyapps/truecourse.swift/marketing/aso/ios
+style:
+  bg_gradient: true
+  bg_color_top: '#0E141B'
+  bg_color_bottom: '#05070A'
+  title_color: '#EAEFF4'
+  subtitle_color: '#35C4DE'
+  screenshot_zoom: 0.86
+  text_row_percent: 18
+  screenshot_row_percent: 82
+  border_width: 8
+  border_radius: 30
+  text_padding: 40
+  screenshot_padding: 40
+texts:
+  - title: "Every E6B calc. One app."
+    subtitle: "Wind · Airspeed · Altitude · W&B"
+  - title: "Wind triangle, solved"
+    subtitle: "Heading, groundspeed & crosswind"
+  - title: "True airspeed"
+    subtitle: "TAS & Mach from CAS"
+  - title: "Density altitude"
+    subtitle: "Pressure, true & flight-env"
+  - title: "Weight & balance"
+    subtitle: "CG inside the envelope"
+  - title: "Convert aviation units"
+    subtitle: "kt · nm · ft · °C · gal"

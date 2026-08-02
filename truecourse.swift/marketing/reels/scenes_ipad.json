@@ -1,0 +1,27 @@
+{
+  "canvas": [1200, 1600],
+  "content_len": 26,
+  "preview_maxlen": 28,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0E141B",
+    "bg_color_bottom": "#05070A",
+    "title_color": "#EAEFF4",
+    "subtitle_color": "#35C4DE",
+    "caption_band_percent": 20,
+    "side_padding": 60,
+    "border_width": 7,
+    "border_color": "#141B23",
+    "border_radius": 26
+  },
+  "app": {
+    "name": "TrueCourse",
+    "tagline": "E6B flight computer",
+    "icon": "TrueCourse/Assets.xcassets/AppIcon.appiconset/icon_1024.png"
+  },
+  "scenes": [
+    { "key": "Wind",     "start": 0,  "end": 11, "title": "Wind triangle, live",   "subtitle": "Inputs & readout, side by side" },
+    { "key": "Altitude", "start": 11, "end": 18, "title": "Density altitude",      "subtitle": "Pressure alt + OAT, validated ISA" },
+    { "key": "WB",       "start": 18, "end": 26, "title": "Weight & balance",      "subtitle": "CG envelope, within limits" }
+  ]
+}

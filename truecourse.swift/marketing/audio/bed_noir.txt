@@ -1,0 +1,4 @@
+bed_noir.wav
+prompt: smooth noir jazz instrumental, easy listening, warm mellow saxophone, soft piano, brushed drums, upright bass, relaxed late-night lounge, gentle, no vocals
+dit: sm-music  decoder: same-s  seconds: 30  steps: 8
+seed: 1649657889

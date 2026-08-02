@@ -1,0 +1,19 @@
+{
+  "id": 302,
+  "name": "Emergency Medpack",
+  "nameLocalizations": {
+    "en-us": "Emergency Medpack",
+    "ru-ru": "Экстренный медпакет"
+  },
+  "description": "Fully restores health to 100%. Save for critical moments.",
+  "consumableType": "RestoreHealthInGame",
+  "healthRestore": 1.0,
+  "maxStackSize": 3,
+  "levelRequirement": 10,
+  "buyPriceSoft": 1500,
+  "buyPriceHard": 35,
+  "sellPriceSoft": 750,
+  "sellPriceHard": 17,
+  "marketAvailability": true,
+  "orderId": 302
+}

@@ -1,0 +1,2 @@
+bed30_space_observatory.wav — Stable Audio 3 (sm-music / same-s, 30s, steps 24, seed 33) (2026-07-13)
+prompt: minimal ambient score, soft sine pads, gentle granular textures, sparse bell tones, quiet night observatory, understated and precise, floating, no percussion, no vocals

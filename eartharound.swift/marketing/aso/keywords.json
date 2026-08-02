@@ -1,0 +1,194 @@
+{
+  "_readme": [
+    "Per-locale App Store subtitle + keywords. STAGED ONLY — a human submits.",
+    "",
+    "The app NAME never changes and is never written: it stays 'Earth Around: Space Weather' and a",
+    "new localization inherits it. That has a consequence this file exists to answer — the heaviest",
+    "field is frozen in English, so in every other language the localized HEAD NOUN has to come from",
+    "the subtitle and the keywords, spelled out in full. Each locale therefore carries a complete",
+    "phrase set on its own; keywords never combine across locales.",
+    "",
+    "Head nouns were verified against each language's own authority rather than translated:",
+    "  de  DLR uses Polarlicht / geomagnetischer Sturm; 'Sonnensturm' is the popular search form",
+    "  fr  OQLF + Termium approve 'tempête géomagnétique'; 'orage magnétique' is the older form",
+    "  es  media and general readers say 'llamarada'/'erupción'; 'fulguración' is research register",
+    "  ja  NICT uses 磁気嵐 and デリンジャー現象/短波通信障害; オーロラ予報 is the searched phrase",
+    "",
+    "Rules applied (marketing/autoaso.md §6/§6.5): no word repeated between subtitle and keywords,",
+    "no 'app', no category name, no plural of an included singular, no space after a comma.",
+    "Search VOLUMES are unknown — Apple publishes them to nobody — and none are invented here."
+  ],
+  "locales": {
+    "en": {
+      "subtitle": "Aurora & solar storm alerts",
+      "keywords": "kp,index,geomagnetic,noaa,forecast,sun,flare,magnetic,sky,northern,lights,tracker,live",
+      "head_nouns": [
+        "aurora",
+        "solar storm",
+        "space weather (in name)"
+      ]
+    },
+    "uk": {
+      "subtitle": "Полярне сяйво і магнітні бурі",
+      "keywords": "космічна,погода,прогноз,сонце,спалах,геомагнітний,kp,індекс,noaa,небо,сонячна,активність",
+      "head_nouns": [
+        "полярне сяйво",
+        "магнітні бурі",
+        "космічна погода"
+      ]
+    },
+    "de": {
+      "subtitle": "Polarlicht & Sonnensturm live",
+      "keywords": "weltraumwetter,vorhersage,nordlicht,aurora,sonne,magnetsturm,kp,index,noaa,himmel,sturm",
+      "head_nouns": [
+        "Polarlicht",
+        "Sonnensturm",
+        "Weltraumwetter"
+      ]
+    },
+    "fr": {
+      "subtitle": "Aurore boréale & orage solaire",
+      "keywords": "météo,spatiale,prévision,tempête,géomagnétique,soleil,éruption,kp,indice,noaa,ciel,nord",
+      "head_nouns": [
+        "aurore boréale",
+        "orage solaire",
+        "météo spatiale"
+      ]
+    },
+    "es": {
+      "subtitle": "Aurora boreal y tormenta solar",
+      "keywords": "clima,espacial,pronóstico,geomagnética,sol,llamarada,erupción,kp,índice,noaa,cielo,norte",
+      "head_nouns": [
+        "aurora boreal",
+        "tormenta solar",
+        "clima espacial"
+      ]
+    },
+    "it": {
+      "subtitle": "Aurora boreale·tempesta solare",
+      "keywords": "meteo,spaziale,previsione,geomagnetica,sole,brillamento,kp,indice,noaa,cielo,nord,attività",
+      "head_nouns": [
+        "aurora boreale",
+        "tempesta solare",
+        "meteo spaziale"
+      ]
+    },
+    "pt-BR": {
+      "subtitle": "Aurora boreal·tempestade solar",
+      "keywords": "clima,espacial,previsão,geomagnética,sol,erupção,kp,índice,noaa,céu,norte,atividade",
+      "head_nouns": [
+        "aurora boreal",
+        "tempestade solar",
+        "clima espacial"
+      ]
+    },
+    "nl": {
+      "subtitle": "Noorderlicht & zonnestorm live",
+      "keywords": "ruimteweer,verwachting,poollicht,aurora,zon,geomagnetisch,kp,index,noaa,hemel,storm",
+      "head_nouns": [
+        "noorderlicht",
+        "zonnestorm",
+        "ruimteweer"
+      ]
+    },
+    "sv": {
+      "subtitle": "Norrsken & solstorm live",
+      "keywords": "rymdväder,prognos,aurora,sol,geomagnetisk,kp,index,noaa,himmel,storm,soleruption,norr",
+      "head_nouns": [
+        "norrsken",
+        "solstorm",
+        "rymdväder"
+      ]
+    },
+    "nb": {
+      "subtitle": "Nordlys & solstorm live",
+      "keywords": "romvær,varsel,aurora,sol,geomagnetisk,kp,indeks,noaa,himmel,storm,solutbrudd,nord",
+      "head_nouns": [
+        "nordlys",
+        "solstorm",
+        "romvær"
+      ]
+    },
+    "da": {
+      "subtitle": "Nordlys & solstorm live",
+      "keywords": "rumvejr,prognose,aurora,sol,geomagnetisk,kp,indeks,noaa,himmel,storm,soludbrud,nord",
+      "head_nouns": [
+        "nordlys",
+        "solstorm",
+        "rumvejr"
+      ]
+    },
+    "fi": {
+      "subtitle": "Revontulet & aurinkomyrsky",
+      "keywords": "avaruussää,ennuste,aurora,aurinko,geomagneettinen,kp,indeksi,noaa,taivas,myrsky,roihu",
+      "head_nouns": [
+        "revontulet",
+        "aurinkomyrsky",
+        "avaruussää"
+      ]
+    },
+    "pl": {
+      "subtitle": "Zorza polarna·burza słoneczna",
+      "keywords": "pogoda,kosmiczna,prognoza,magnetyczna,słońce,rozbłysk,kp,indeks,noaa,niebo,aktywność",
+      "head_nouns": [
+        "zorza polarna",
+        "burza słoneczna",
+        "pogoda kosmiczna"
+      ]
+    },
+    "cs": {
+      "subtitle": "Polární záře a sluneční bouře",
+      "keywords": "kosmické,počasí,předpověď,magnetická,slunce,erupce,kp,index,noaa,obloha,aktivita,sever",
+      "head_nouns": [
+        "polární záře",
+        "sluneční bouře",
+        "kosmické počasí"
+      ]
+    },
+    "tr": {
+      "subtitle": "Kuzey ışıkları·güneş fırtınası",
+      "keywords": "uzay,hava,durumu,tahmin,jeomanyetik,patlama,kp,indeksi,noaa,gökyüzü,aurora,kutup,manyetik",
+      "head_nouns": [
+        "kuzey ışıkları",
+        "güneş fırtınası",
+        "uzay hava durumu"
+      ]
+    },
+    "ja": {
+      "subtitle": "オーロラ予報と磁気嵐アラート",
+      "keywords": "宇宙天気,太陽フレア,太陽風,地磁気,予測,Kp指数,NOAA,オーロラ,黒点,通報,夜空,観測,太陽活動,磁気圏,北極光,天文",
+      "head_nouns": [
+        "オーロラ予報",
+        "磁気嵐",
+        "宇宙天気"
+      ]
+    },
+    "ko": {
+      "subtitle": "오로라 예보와 지자기폭풍 알림",
+      "keywords": "우주날씨,태양폭풍,태양풍,플레어,Kp지수,NOAA,관측,밤하늘,흑점,극광,실시간,예측,태양활동,자기권,천문",
+      "head_nouns": [
+        "오로라 예보",
+        "지자기폭풍",
+        "우주날씨"
+      ]
+    },
+    "zh-Hans": {
+      "subtitle": "极光预报与太阳风暴提醒",
+      "keywords": "空间天气,地磁暴,太阳耀斑,太阳风,Kp指数,NOAA,预测,观测,夜空,黑子,实时,北极光,太阳活动,磁层,天文,极光预报",
+      "head_nouns": [
+        "极光预报",
+        "太阳风暴",
+        "空间天气"
+      ]
+    },
+    "zh-Hant": {
+      "subtitle": "極光預報與太陽風暴提醒",
+      "keywords": "太空天氣,地磁暴,太陽閃焰,太陽風,Kp指數,NOAA,預測,觀測,夜空,黑子,即時,北極光,太陽活動,磁層,天文,極光預報",
+      "head_nouns": [
+        "極光預報",
+        "太陽風暴",
+        "太空天氣"
+      ]
+    }
+  }
+}

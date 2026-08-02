@@ -1,0 +1,56 @@
+par_bed.wav — Par app-preview music bed
+=======================================
+
+Engine   Stable Audio 3, pure-MLX port
+         ~/Projects/AudioProto/reference/stable-audio-3/optimized/mlx/scripts/sa3_mlx.py
+Model    --dit medium --decoder same-l          (the large pair; the small weights have been removed
+                                                 from this machine — see the note at the foot)
+Length   30.0 s · 44100 Hz · stereo · 16-bit
+Steps    100        Seed 8802        Date 2026-07-29
+Selected by ear (Oleksandr), 2026-07-29, from two candidates.
+
+prompt:
+  TrackType: Music, VocalType: Instrumental, Genre: Electronica, Genre: Downtempo,
+  Instruments: Marimba, Electric Piano, Synth Bass, Shaker. A clean modern instrumental with the
+  poise of a well-designed machine doing exactly what it should. A crisp marimba figure repeats and
+  gently evolves, a soft electric piano adds warm sustained chords, and a round synth bass moves
+  underneath with quiet purpose. Light shaker and rim clicks mark an easy pulse without ever
+  demanding attention. The production is spacious and uncluttered with a soft top end, the sound of
+  confident precision rather than urgency. 96 BPM.
+
+negative-prompt: vocals, singing, harsh, distorted, noisy, lo-fi
+
+Regenerating
+------------
+  cd ~/Projects/AudioProto/reference/stable-audio-3/optimized/mlx
+  /Users/oleksandr/miniconda3/envs/fantastic/bin/python scripts/sa3_mlx.py \
+    --prompt "<above>" --negative-prompt "<above>" \
+    --dit medium --decoder same-l --seconds 30 --steps 100 --seed 8802 --out raw.wav
+  ffmpeg -i raw.wav -af loudnorm=I=-16:TP=-1.5:LRA=11 -ar 44100 -ac 2 par_bed.wav
+
+Measured: centroid 4927 Hz · peak 84.8% FS · 0 clipped · crest 15.1 dB · onsets 2.80/s
+
+How to prompt this model — read docs/guides/prompting.md, not guesswork
+----------------------------------------------------------------------
+Five earlier batches were rejected. Every failure was method, and the fixes are all documented in
+~/Projects/AudioProto/reference/stable-audio-3/docs/guides/prompting.md:
+
+1. **Lead with AudioSparx tags.** `TrackType: Music, VocalType: Instrumental` is called out in the
+   guide as producing "higher quality, more semantically coherent outputs". Then `Genre:` (stackable
+   — `Genre: Funk, Genre: Jazz` is valid) and `Instruments:`.
+2. **State the BPM.** The guide lists it as a key element. Omitting it lets the model choose, and it
+   chose badly every time.
+3. **Write vivid, specific prose** about what each instrument plays and how the room sounds. The
+   guide's own examples are a paragraph long. Strings of mood adjectives give the model nothing.
+4. **Use a negative prompt** (marketing/reels/README.md: "worth more than extra steps").
+5. **Always loudnorm.** Raw generation is inconsistent and clips; every un-normalised take measured
+   between 595 and 39,326 clipped samples.
+6. **Steps: 100.** The house number. sa3_mlx.py's --help says the denoiser is distilled for 8 and
+   ">8 gives diminishing returns and may overshoot" — 128 was past both and sounded worse.
+
+The difference is measurable, not a matter of taste: the last badly-prompted bed came out at
+636 Hz centroid and 11.6 dB crest — dark and flat. Same model, same steps, correctly formed prompt:
+4927 Hz and 15.1 dB.
+
+Do not bake fades in: store_preview.py applies its own fade-in/out and volume at mux time.
+Never overwrite a bed already scored into a released preview — add a new file beside it.

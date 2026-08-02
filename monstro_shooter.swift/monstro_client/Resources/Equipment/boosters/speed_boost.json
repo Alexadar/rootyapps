@@ -1,0 +1,25 @@
+{
+  "id": 102,
+  "name": "Adrenaline Rush",
+  "nameLocalizations": {
+    "en-us": "Adrenaline Rush",
+    "ru-ru": "Выброс адреналина"
+  },
+  "description": "Increases movement speed by 25% for 3 minutes.",
+  "duration": 180000,
+  "effects": [
+    {
+      "effectType": 3,
+      "effectName": "ExoskeletonSpeed",
+      "valueType": "Multiplication",
+      "value": 1.25
+    }
+  ],
+  "levelRequirement": 3,
+  "buyPriceSoft": 1500,
+  "buyPriceHard": 35,
+  "sellPriceSoft": 750,
+  "sellPriceHard": 17,
+  "marketAvailability": true,
+  "orderId": 102
+}

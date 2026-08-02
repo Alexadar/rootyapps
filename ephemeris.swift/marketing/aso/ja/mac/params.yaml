@@ -1,0 +1,29 @@
+platform: mac
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/ephemeris.swift/marketing/raw/ja/mac
+  output_folder: /Users/oleksandr/Projects/rootyapps/ephemeris.swift/marketing/aso/ja/mac
+
+style:
+  bg_gradient: true
+  bg_color_top: '#0B1020'
+  bg_color_bottom: '#1A1330'
+  title_color: '#ffffff'
+  subtitle_color: '#9FB4FF'
+  screenshot_zoom: 1.0
+  screenshot_move_down: 0
+  border_width: 10
+  border_radius: 36
+  text_padding: 60
+
+texts:
+  - title: "Ephemeris Sky"
+    subtitle: "位置・アスペクト・会合周期"
+  - title: "すべての位置"
+    subtitle: "トロピカル・地心・その日の分点"
+  - title: "アスペクト"
+    subtitle: "推測ではなく計算"
+  - title: "水星の周期"
+    subtitle: "合・逆行・留"
+  - title: "イベント年表"
+    subtitle: "入宮・朔望・アスペクト"

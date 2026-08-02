@@ -1,0 +1,17 @@
+id: 3
+name: "Medium Armor"
+defence: 2.0
+speed: 1.0
+gameResourceSprite: "exoskeleton_medium"
+lobbyResourceSprite: "exoskeleton_medium_preview"
+levelRequirement: 7
+rankRequirement: 0
+buyPriceSoft: 8000
+buyPriceHard: 150
+sellPriceSoft: 4000
+sellPriceHard: 75
+marketAvailability: true
+orderId: 3
+nameLocalizations:
+  en-us: "Medium Armor"
+  ru-ru: "Средняя броня"

@@ -1,0 +1,30 @@
+platform: ios
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/raw/fr/ios
+  output_folder: /Users/oleksandr/Projects/rootyapps/overtonelab.swift/marketing/aso/fr/ios
+style:
+  bg_gradient: true
+  bg_color_top: '#0C0A18'
+  bg_color_bottom: '#08080B'
+  title_color: '#ffffff'
+  subtitle_color: '#B79FEA'
+  screenshot_zoom: 0.85
+  text_row_percent: 18
+  screenshot_row_percent: 82
+  border_width: 8
+  border_radius: 30
+  text_padding: 40
+  screenshot_padding: 40
+texts:
+  - title: "26 outils audio, une app"
+    subtitle: "Accord · Acoustique · Signal · Stéréo"
+  - title: "Le tempo au cordeau"
+    subtitle: "Durée de note, retard & échantillons"
+  - title: "Hauteur & fréquence"
+    subtitle: "Notes, harmoniques, longueur d'onde"
+  - title: "Acoustique des salles"
+    subtitle: "RT60, modes & fréquence de Schroeder"
+  - title: "Sonie de mastering"
+    subtitle: "Vrais LUFS ITU-R BS.1770"
+  - title: "L'image stéréo, résolue"
+    subtitle: "Angle de prise de son : ORTF, NOS, Blumlein"

@@ -1,0 +1,55 @@
+{
+  "canvas": [
+    886,
+    1920
+  ],
+  "content_len": 40,
+  "preview_maxlen": 30,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0E141B",
+    "bg_color_bottom": "#05070A",
+    "title_color": "#EAEFF4",
+    "subtitle_color": "#35C4DE",
+    "caption_band_percent": 22,
+    "side_padding": 46,
+    "border_width": 7,
+    "border_color": "#141B23",
+    "border_radius": 30
+  },
+  "app": {
+    "name": "TrueCourse",
+    "tagline": "E6B flight computer",
+    "icon": "TrueCourse/Assets.xcassets/AppIcon.appiconset/icon_1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Wind",
+      "start": 0,
+      "end": 9,
+      "title": "Wind triangle, live",
+      "subtitle": "Vectors, heading & GS travel with the wind"
+    },
+    {
+      "key": "Altitude",
+      "start": 9,
+      "end": 13,
+      "title": "Density altitude",
+      "subtitle": "OAT in — DA out, instantly"
+    },
+    {
+      "key": "WB",
+      "start": 13,
+      "end": 18,
+      "title": "Weight & balance",
+      "subtitle": "CG on the envelope, plotted live"
+    },
+    {
+      "key": "Convert",
+      "start": 18,
+      "end": 24,
+      "title": "Convert aviation units",
+      "subtitle": "kt · nm · ft · °C · gal"
+    }
+  ]
+}

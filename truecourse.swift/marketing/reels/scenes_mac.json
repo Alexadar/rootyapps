@@ -1,0 +1,27 @@
+{
+  "canvas": [1920, 1080],
+  "scene_dur": 5.0,
+  "xfade": 0.5,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0E141B",
+    "bg_color_bottom": "#05070A",
+    "title_color": "#EAEFF4",
+    "subtitle_color": "#35C4DE",
+    "text_col_percent": 40,
+    "side_padding": 70,
+    "border_width": 6,
+    "border_color": "#141B23",
+    "border_radius": 24
+  },
+  "app": {
+    "name": "TrueCourse",
+    "tagline": "E6B flight computer",
+    "icon": "TrueCourse/Assets.xcassets/AppIcon.appiconset/icon_1024.png"
+  },
+  "scenes": [
+    { "key": "wind",     "clip": "macclip_wind.mov",     "title": "Wind triangle, solved", "subtitle": "Heading, GS & crosswind" },
+    { "key": "airspeed", "clip": "macclip_airspeed.mov", "title": "True airspeed & Mach",  "subtitle": "Validated ISA math" },
+    { "key": "wb",       "clip": "macclip_wb.mov",       "title": "Weight & balance",      "subtitle": "CG envelope with fuel-burn travel" }
+  ]
+}

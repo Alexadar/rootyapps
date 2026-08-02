@@ -1,0 +1,90 @@
+# Par — App Store metadata, en-US. Source of truth; pushed to ASC by marketing/logic/update_metadata.py.
+#
+# App 6795570043 · SKU 0000017 · bundle oleksandr.aisixteen.fincalc
+#
+# BANNED EVERYWHERE (name, subtitle, keywords, description, screenshots, UI, identifiers):
+#   HP · 12C · 12c · BA II Plus · BA-II · TI · Texas Instruments · 10bII · 10BII
+# Not one of them appears below. Comparison is by capability, never by naming a rival.
+
+name: "Par: Financial Calculator"        # 25/30 — "Calculator" spelled out; "Calc" does not match it
+subtitle: "Mortgage, TVM, bonds, IRR/NPV" # 29/30 — carries the terms the name cannot
+
+categories:
+  primary: FINANCE
+  secondary: UTILITIES
+
+urls:
+  support: https://aisixteen.com/par/
+  marketing: https://aisixteen.com/par/
+  privacy: https://aisixteen.com/par/
+
+# 99/100. No spaces after commas (they cost characters), no word repeated from the name or subtitle —
+# Apple indexes all three fields together, so a repeat is a wasted slot.
+keywords: "amortization,loan,interest,apr,apy,yield,annuity,depreciation,macrs,dscr,ltv,caprate,daycount"
+
+promotional_text: >-
+  Every solve lands on a tape you can label, print and hand over. Ten tools, one document, no
+  subscription and no account. Buy it once; it works offline, forever.
+
+description: |
+  Par is a financial calculator that keeps its work.
+
+  Every number you solve lands on a tape — labelled, editable, saved as a document you can reopen
+  tomorrow, print, or export as text or CSV. Change one input on line two and only line two changes.
+  The tape is the point: it is what turns a calculation into something you can hand to a client, a
+  loan committee, or your future self.
+
+  TEN TOOLS, ONE DOCUMENT
+
+  • Time value of money — solve for any of n, i, PV, PMT or FV from the other four, with payments at
+    the beginning or the end of the period
+  • Amortization — a real, scrollable schedule with interest, principal and balance per period, by
+    year or every period, printable and exportable
+  • Cash flow — NPV and IRR over grouped flows, and an honest answer when no rate balances them
+  • Bond — price, yield to maturity, accrued interest, invoice price, current yield, Macaulay and
+    modified duration, convexity
+  • Rate and APR — nominal to effective, APR from a loan's actual cash flows
+  • Depreciation — straight line, declining balance, sum of years' digits and MACRS tables
+  • Dates and day count — 30/360, 30E/360, 30E/360 ISDA, Actual/Actual ICMA, Actual/360, Actual/365,
+    side by side, because they disagree and the difference is money
+  • Percent and margin — change, markup, margin, break-even
+  • Statistics — one and two variable, with linear fit
+  • Real estate — NOI, cap rate, and loan sizing that tells you whether DSCR or LTV is the binding
+    constraint
+
+  NUMBERS YOU CAN CHECK
+
+  Most calculators ask you to trust them. Par's maths is written against published authorities and
+  locked down by an automated test suite that compares its output to worked examples from the source
+  documents themselves:
+
+  • U.S. Treasury pricing and accrued interest — 31 CFR Part 356, Appendix B
+  • APR — Regulation Z, 12 CFR 1026, Appendix J
+  • APY — Regulation DD, 12 CFR 1030, Appendix A
+  • MACRS — IRS Publication 946, Appendix A tables
+  • Day count conventions — 2006 ISDA Definitions, Section 4.16
+  • Statistical routines — NIST/ITL reference datasets
+
+  Every screen shows which authority and which convention produced the number on it. Where a
+  published table and the continuous formula genuinely disagree, Par says so rather than quietly
+  picking one.
+
+  BUILT FOR THE WAY YOU ACTUALLY WORK
+
+  • Universal — one purchase covers iPhone, iPad and Mac
+  • Fully offline. No network code, no analytics, no account, nothing to sign in to
+  • Split View and Stage Manager on iPad, where the tape sits beside the calculator
+  • Dynamic Type throughout, VoiceOver labels on every control
+  • Dark, high-contrast interface designed for long sessions
+
+  HONEST PRICING
+
+  One purchase. No subscription, no advertising, no in-app purchases, no "pro" tier holding half the
+  tools hostage. What you see here is the whole app.
+
+  Par is for anyone who has to show their work: mortgage and commercial real estate people, treasury
+  and banking analysts, accountants, CFA and finance students, and anyone who has ever re-typed the
+  same twelve numbers because the last answer scrolled away.
+
+# Price is $9.99 (set on ASC 2026-07-28, base territory USA). Not set here, deliberately: anything
+# that submits for review.
