@@ -6,8 +6,17 @@
 #   HP · 12C · 12c · BA II Plus · BA-II · TI · Texas Instruments · 10bII · 10BII
 # Not one of them appears below. Comparison is by capability, never by naming a rival.
 
-name: "Par: Financial Calculator"        # 25/30 — "Calculator" spelled out; "Calc" does not match it
-subtitle: "Mortgage, TVM, bonds, IRR/NPV" # 29/30 — carries the terms the name cannot
+# Corrected 2026-08-03 against re-measured autocomplete demand (US storefront 143441-1,29).
+# Was: name "Par: Financial Calculator" (25) · subtitle "Mortgage, TVM, bonds, IRR/NPV" (29).
+# `irr npv` measured ZERO hits — about eight characters of the second-highest-weighted field buying
+# nothing. Fields combine but authority does not stack, so no term appears in more than one field.
+#
+# NOTE: the house docs (add_locale.py, autoaso.md §6.6) say never to write `name` through the API.
+# That is policy, not an Apple restriction — measured 2026-08-03, a plain
+# PATCH /v1/appInfoLocalizations/{id} with {"name": ...} is accepted and returns the new value.
+# `update_metadata.py` still cannot do it: it only touches appStoreVersionLocalizations.
+name: "Par: Loan Financial Calculator"    # 30/30 — head noun spelled out; "Calc" cannot match it
+subtitle: "Mortgage, car, TVM, bonds, APR" # 30/30 — `car` x the Title's `loan` forms "car loan" (10)
 
 categories:
   primary: FINANCE
@@ -20,7 +29,16 @@ urls:
 
 # 99/100. No spaces after commas (they cost characters), no word repeated from the name or subtitle —
 # Apple indexes all three fields together, so a repeat is a wasted slot.
-keywords: "amortization,loan,interest,apr,apy,yield,annuity,depreciation,macrs,dscr,ltv,caprate,daycount"
+#
+# Dropped and why: `loan` and `apr` moved to the Title and Subtitle (same coverage, cheaper field);
+# `caprate` and `daycount` were single tokens that could never match the two-word queries "cap rate"
+# (6 hits) and "day count" (none) — `cap,rate` fixes the first and the second is not worth a slot;
+# `yield` measured as brands (yieldclub, yieldstreet) not demand.
+# Added: `schedule` completes "amortization schedule"; `payment` -> "payment calculator" (10);
+# `finance` -> "finance calculator" (10, a different stem from `financial` — Apple does not stem
+# across them); `compound` -> "compound interest" (10); `auto` x the Title's `loan` -> "auto loan"
+# (10); `annuity` -> "annuity calculator" (10); `cap`+`rate` -> "cap rate" (6).
+keywords: "amortization,schedule,interest,compound,payment,finance,auto,annuity,cap,rate,depreciation,dscr,ltv"
 
 promotional_text: >-
   Every solve lands on a tape you can label, print and hand over. Ten tools, one document, no
