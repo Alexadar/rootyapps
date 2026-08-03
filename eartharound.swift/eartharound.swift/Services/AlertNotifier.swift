@@ -54,21 +54,25 @@ enum AlertNotifier {
         // locale formats the numbers inside it) — the same path the UI uses.
         let t = SWText.str
 
+        // Every geomagnetic alert LEADS WITH THE NUMBER. A notification is read at a glance on a
+        // lock screen, and "Aurora chance 45%" answered a question nobody asked while the measured
+        // value — the only thing that says how strong this actually is — was either buried in the
+        // body or missing entirely.
         switch alert.detail {
         case let .storm(g, kp):
             let level = SWText.loc(Geomag.gLabel(g))       // "G2 Moderate" → "G2 Mäßig"
-            let title = t("\(level) geomagnetic storm")
-            guard let kp else { return (title, t("NOAA G\(g) conditions now.")) }
-            return (title, t("NOAA G\(g) conditions now — Kp \(Fmt.num(kp, 1))."))
+            guard let kp else { return (t("\(level) geomagnetic storm"), t("NOAA G\(g) conditions now.")) }
+            return (t("Kp \(Fmt.num(kp, 1)) · \(level)"), t("NOAA G\(g) conditions now."))
 
         case let .flare(maxClass, meaning):
             // maxClass is a code (M4.2) and stays verbatim; the meaning is a catalog key.
+            // Untouched: a flare is an X-ray event with no Kp to lead with.
             return (t("\(maxClass) solar flare"), SWText.loc(meaning))
 
         case let .aurora(probability, kp):
             let lat = Int(Aurora.equatorwardGeomagLatitude(kp: kp).rounded())
-            return (t("Aurora chance \(probability)%"),
-                    t("Aurora may be visible down to \(lat)° geomagnetic latitude."))
+            return (t("Kp \(Fmt.num(kp, 1)) · aurora \(probability)%"),
+                    t("Visible down to \(lat)° geomagnetic latitude."))
         }
     }
 

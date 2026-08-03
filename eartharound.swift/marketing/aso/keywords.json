@@ -16,21 +16,36 @@
     "",
     "Rules applied (marketing/autoaso.md §6/§6.5): no word repeated between subtitle and keywords,",
     "no 'app', no category name, no plural of an included singular, no space after a comma.",
-    "Search VOLUMES are unknown — Apple publishes them to nobody — and none are invented here."
+    "",
+    "2026-08-03 — SUBTITLE REBUILT AROUND THE MEASURED PHRASE.",
+    "US autocomplete (storefront 143441-1,29) measured on 2026-08-03:",
+    "  aurora forecast   10 hits, incl. 'aurora forecast apps' — shopping intent, strongest signal",
+    "  aurora alert      10   aurora borealis 5   space weather 8   kp index 3   solar flare 3",
+    "  solar storm        0 — DEAD. It had been holding 11 of the 27 subtitle characters.",
+    "  geomagnetic storm  2, both of them app names: supply, not demand",
+    "  northern lights / aurora (bare): polluted — pizza, credit union, VPN, health care",
+    "So 'aurora forecast' moves to subtitle weight and 'solar storm' is gone; 'kp' and 'forecast'",
+    "leave the keyword field because a term in two fields is indexed once and paid for twice.",
+    "",
+    "ONLY ENGLISH IS MEASURED. Apple's hints endpoint needs a per-market storefront ID and none are",
+    "recorded here, so the other 18 locales mirror the English STRUCTURE — forecast phrase in the",
+    "subtitle, Kp with it, dead storm-word dropped — without evidence that their local terms rank the",
+    "same way. 'Sonnensturm' being dead in the US says nothing about German demand. Measure per",
+    "storefront before treating any non-English line as validated."
   ],
   "locales": {
     "en": {
-      "subtitle": "Aurora & solar storm alerts",
-      "keywords": "kp,index,geomagnetic,noaa,forecast,sun,flare,magnetic,sky,northern,lights,tracker,live",
+      "subtitle": "Aurora forecast & Kp alerts",
+      "keywords": "index,noaa,geomagnetic,sun,solar,flare,magnetic,storm,sky,northern,lights,tracker,map,live,borealis",
       "head_nouns": [
-        "aurora",
-        "solar storm",
+        "aurora forecast",
+        "geomagnetic storm",
         "space weather (in name)"
       ]
     },
     "uk": {
-      "subtitle": "Полярне сяйво і магнітні бурі",
-      "keywords": "космічна,погода,прогноз,сонце,спалах,геомагнітний,kp,індекс,noaa,небо,сонячна,активність",
+      "subtitle": "Прогноз сяйва та Kp-індекс",
+      "keywords": "космічна,погода,сонце,спалах,геомагнітний,noaa,небо,сонячна,активність,магнітні,бурі,полярне,сяйво",
       "head_nouns": [
         "полярне сяйво",
         "магнітні бурі",
@@ -38,8 +53,8 @@
       ]
     },
     "de": {
-      "subtitle": "Polarlicht & Sonnensturm live",
-      "keywords": "weltraumwetter,vorhersage,nordlicht,aurora,sonne,magnetsturm,kp,index,noaa,himmel,sturm",
+      "subtitle": "Polarlicht-Vorhersage & Kp",
+      "keywords": "weltraumwetter,nordlicht,aurora,sonne,magnetsturm,index,noaa,himmel,sturm,sonnensturm,karte,live",
       "head_nouns": [
         "Polarlicht",
         "Sonnensturm",
@@ -47,8 +62,8 @@
       ]
     },
     "fr": {
-      "subtitle": "Aurore boréale & orage solaire",
-      "keywords": "météo,spatiale,prévision,tempête,géomagnétique,soleil,éruption,kp,indice,noaa,ciel,nord",
+      "subtitle": "Prévision aurore & indice Kp",
+      "keywords": "météo,spatiale,tempête,géomagnétique,soleil,éruption,noaa,ciel,nord,boréale,orage,solaire,carte",
       "head_nouns": [
         "aurore boréale",
         "orage solaire",
@@ -56,8 +71,8 @@
       ]
     },
     "es": {
-      "subtitle": "Aurora boreal y tormenta solar",
-      "keywords": "clima,espacial,pronóstico,geomagnética,sol,llamarada,erupción,kp,índice,noaa,cielo,norte",
+      "subtitle": "Pronóstico aurora e índice Kp",
+      "keywords": "clima,espacial,geomagnética,sol,llamarada,erupción,noaa,cielo,norte,boreal,tormenta,solar,mapa",
       "head_nouns": [
         "aurora boreal",
         "tormenta solar",
@@ -65,8 +80,8 @@
       ]
     },
     "it": {
-      "subtitle": "Aurora boreale·tempesta solare",
-      "keywords": "meteo,spaziale,previsione,geomagnetica,sole,brillamento,kp,indice,noaa,cielo,nord,attività",
+      "subtitle": "Previsione aurora e indice Kp",
+      "keywords": "meteo,spaziale,geomagnetica,sole,brillamento,noaa,cielo,nord,boreale,tempesta,solare,attività,mappa",
       "head_nouns": [
         "aurora boreale",
         "tempesta solare",
@@ -74,8 +89,8 @@
       ]
     },
     "pt-BR": {
-      "subtitle": "Aurora boreal·tempestade solar",
-      "keywords": "clima,espacial,previsão,geomagnética,sol,erupção,kp,índice,noaa,céu,norte,atividade",
+      "subtitle": "Previsão aurora e índice Kp",
+      "keywords": "clima,espacial,geomagnética,sol,erupção,noaa,céu,norte,boreal,tempestade,solar,atividade,mapa",
       "head_nouns": [
         "aurora boreal",
         "tempestade solar",
@@ -83,8 +98,8 @@
       ]
     },
     "nl": {
-      "subtitle": "Noorderlicht & zonnestorm live",
-      "keywords": "ruimteweer,verwachting,poollicht,aurora,zon,geomagnetisch,kp,index,noaa,hemel,storm",
+      "subtitle": "Noorderlicht-verwachting & Kp",
+      "keywords": "ruimteweer,poollicht,aurora,zon,geomagnetisch,index,noaa,hemel,storm,zonnestorm,kaart,live",
       "head_nouns": [
         "noorderlicht",
         "zonnestorm",
@@ -92,8 +107,8 @@
       ]
     },
     "sv": {
-      "subtitle": "Norrsken & solstorm live",
-      "keywords": "rymdväder,prognos,aurora,sol,geomagnetisk,kp,index,noaa,himmel,storm,soleruption,norr",
+      "subtitle": "Norrskensprognos & Kp-index",
+      "keywords": "rymdväder,aurora,sol,geomagnetisk,noaa,himmel,storm,soleruption,norr,solstorm,norrsken,karta",
       "head_nouns": [
         "norrsken",
         "solstorm",
@@ -101,8 +116,8 @@
       ]
     },
     "nb": {
-      "subtitle": "Nordlys & solstorm live",
-      "keywords": "romvær,varsel,aurora,sol,geomagnetisk,kp,indeks,noaa,himmel,storm,solutbrudd,nord",
+      "subtitle": "Nordlysvarsel & Kp-indeks",
+      "keywords": "romvær,aurora,sol,geomagnetisk,noaa,himmel,storm,solutbrudd,nord,solstorm,nordlys,kart",
       "head_nouns": [
         "nordlys",
         "solstorm",
@@ -110,8 +125,8 @@
       ]
     },
     "da": {
-      "subtitle": "Nordlys & solstorm live",
-      "keywords": "rumvejr,prognose,aurora,sol,geomagnetisk,kp,indeks,noaa,himmel,storm,soludbrud,nord",
+      "subtitle": "Nordlysprognose & Kp-indeks",
+      "keywords": "rumvejr,aurora,sol,geomagnetisk,noaa,himmel,storm,soludbrud,nord,solstorm,nordlys,kort",
       "head_nouns": [
         "nordlys",
         "solstorm",
@@ -119,8 +134,8 @@
       ]
     },
     "fi": {
-      "subtitle": "Revontulet & aurinkomyrsky",
-      "keywords": "avaruussää,ennuste,aurora,aurinko,geomagneettinen,kp,indeksi,noaa,taivas,myrsky,roihu",
+      "subtitle": "Revontuliennuste & Kp-indeksi",
+      "keywords": "avaruussää,aurora,aurinko,geomagneettinen,noaa,taivas,myrsky,roihu,aurinkomyrsky,revontulet,kartta",
       "head_nouns": [
         "revontulet",
         "aurinkomyrsky",
@@ -128,8 +143,8 @@
       ]
     },
     "pl": {
-      "subtitle": "Zorza polarna·burza słoneczna",
-      "keywords": "pogoda,kosmiczna,prognoza,magnetyczna,słońce,rozbłysk,kp,indeks,noaa,niebo,aktywność",
+      "subtitle": "Prognoza zorzy i indeks Kp",
+      "keywords": "pogoda,kosmiczna,magnetyczna,słońce,rozbłysk,noaa,niebo,aktywność,polarna,burza,słoneczna,mapa,zorza",
       "head_nouns": [
         "zorza polarna",
         "burza słoneczna",
@@ -137,8 +152,8 @@
       ]
     },
     "cs": {
-      "subtitle": "Polární záře a sluneční bouře",
-      "keywords": "kosmické,počasí,předpověď,magnetická,slunce,erupce,kp,index,noaa,obloha,aktivita,sever",
+      "subtitle": "Předpověď záře a index Kp",
+      "keywords": "kosmické,počasí,magnetická,slunce,erupce,noaa,obloha,aktivita,sever,polární,sluneční,bouře,mapa",
       "head_nouns": [
         "polární záře",
         "sluneční bouře",
@@ -146,8 +161,8 @@
       ]
     },
     "tr": {
-      "subtitle": "Kuzey ışıkları·güneş fırtınası",
-      "keywords": "uzay,hava,durumu,tahmin,jeomanyetik,patlama,kp,indeksi,noaa,gökyüzü,aurora,kutup,manyetik",
+      "subtitle": "Kuzey ışıkları tahmini & Kp",
+      "keywords": "uzay,hava,durumu,jeomanyetik,patlama,indeksi,noaa,gökyüzü,aurora,kutup,güneş,fırtınası,harita",
       "head_nouns": [
         "kuzey ışıkları",
         "güneş fırtınası",
@@ -155,8 +170,8 @@
       ]
     },
     "ja": {
-      "subtitle": "オーロラ予報と磁気嵐アラート",
-      "keywords": "宇宙天気,太陽フレア,太陽風,地磁気,予測,Kp指数,NOAA,オーロラ,黒点,通報,夜空,観測,太陽活動,磁気圏,北極光,天文",
+      "subtitle": "オーロラ予報・Kp指数・磁気嵐",
+      "keywords": "宇宙天気,太陽フレア,太陽風,地磁気,予測,NOAA,黒点,通報,夜空,観測,太陽活動,磁気圏,北極光,天文,地磁気嵐,地図",
       "head_nouns": [
         "オーロラ予報",
         "磁気嵐",
@@ -164,8 +179,8 @@
       ]
     },
     "ko": {
-      "subtitle": "오로라 예보와 지자기폭풍 알림",
-      "keywords": "우주날씨,태양폭풍,태양풍,플레어,Kp지수,NOAA,관측,밤하늘,흑점,극광,실시간,예측,태양활동,자기권,천문",
+      "subtitle": "오로라 예보·Kp지수·지자기폭풍",
+      "keywords": "우주날씨,태양폭풍,태양풍,플레어,NOAA,관측,밤하늘,흑점,극광,실시간,예측,태양활동,자기권,천문,지도",
       "head_nouns": [
         "오로라 예보",
         "지자기폭풍",
@@ -173,8 +188,8 @@
       ]
     },
     "zh-Hans": {
-      "subtitle": "极光预报与太阳风暴提醒",
-      "keywords": "空间天气,地磁暴,太阳耀斑,太阳风,Kp指数,NOAA,预测,观测,夜空,黑子,实时,北极光,太阳活动,磁层,天文,极光预报",
+      "subtitle": "极光预报·Kp指数·地磁暴提醒",
+      "keywords": "空间天气,太阳耀斑,太阳风,NOAA,预测,观测,夜空,黑子,实时,北极光,太阳活动,磁层,天文,太阳风暴,地图",
       "head_nouns": [
         "极光预报",
         "太阳风暴",
@@ -182,8 +197,8 @@
       ]
     },
     "zh-Hant": {
-      "subtitle": "極光預報與太陽風暴提醒",
-      "keywords": "太空天氣,地磁暴,太陽閃焰,太陽風,Kp指數,NOAA,預測,觀測,夜空,黑子,即時,北極光,太陽活動,磁層,天文,極光預報",
+      "subtitle": "極光預報·Kp指數·地磁暴提醒",
+      "keywords": "太空天氣,太陽閃焰,太陽風,NOAA,預測,觀測,夜空,黑子,即時,北極光,太陽活動,磁層,天文,太陽風暴,地圖",
       "head_nouns": [
         "極光預報",
         "太陽風暴",
