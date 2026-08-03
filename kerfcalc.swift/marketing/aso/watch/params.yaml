@@ -1,0 +1,35 @@
+platform: watch
+size: [368, 448]          # APP_WATCH_SERIES_4 — NOT the generator default 416x496
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/kerfcalc.swift/marketing/raw/watch
+  output_folder: /Users/oleksandr/Projects/rootyapps/kerfcalc.swift/marketing/aso/watch
+
+# At 368x448 a caption band is expensive, so the text row is kept tight and the copy is short —
+# two or three words. Anything longer scales down into illegibility on this canvas.
+style:
+  bg_gradient: true
+  bg_color_top: '#EDE9E0'
+  bg_color_bottom: '#DCD7CB'
+  title_color: '#16171B'
+  subtitle_color: '#6E6F75'
+  border_color: '#CFC9BC'
+  border_width: 4
+  border_radius: 18
+  screenshot_zoom: 0.94
+  text_row_percent: 18
+  screenshot_row_percent: 82
+  text_padding: 16
+  screenshot_padding: 14
+
+texts:
+  - title: On your wrist
+    subtitle: All 20 calculators
+  - title: Cut length
+    subtitle: Pitch and run
+  - title: Concrete
+    subtitle: Yards and bags
+  - title: Pipe grade
+    subtitle: Fall per foot
+  - title: Convert
+    subtitle: Exact by NIST

@@ -1,0 +1,50 @@
+platform: ios
+size: [1320, 2868]        # iPhone 6.9" — APP_IPHONE_67
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/kerfcalc.swift/marketing/raw/ios
+  output_folder: /Users/oleksandr/Projects/rootyapps/kerfcalc.swift/marketing/aso/ios
+
+# KERF is a LIGHT field instrument — concrete paper, one graphite surface, signal used sparingly.
+# The frame carries the same palette so the app does not sit on a slab of someone else's colour:
+# a dark band around a light app reads as a mistake (and would read as Par, which is dark-only).
+#
+# `signal` #E8FB4A is deliberately NOT used here. DESIGN_GUIDELINES §9 reserves it for "exactly the
+# loud things" — the = key, the hero number, the favourite star. Spending it on a marketing subtitle
+# is exactly the misuse that rule exists to prevent.
+style:
+  bg_gradient: true
+  bg_color_top: '#EDE9E0'      # KC.background — the app's own body colour
+  bg_color_bottom: '#DCD7CB'
+  title_color: '#16171B'       # KC.textPrimary / KC.instrument
+  subtitle_color: '#6E6F75'    # KC.textSecondary
+  border_color: '#CFC9BC'
+  border_width: 7
+  border_radius: 30
+  screenshot_zoom: 1.0
+  text_row_percent: 22
+  screenshot_row_percent: 78
+  text_padding: 46
+  screenshot_padding: 46
+
+# Order is materials-first, deliberately. Frame 1 has to answer "why this one and not the free
+# calculator" — so it leads with 20 cited trade calculators, the thing no free keypad has, not with
+# the keypad itself (which is now frame 5).
+#
+# Captions are an INDEXED field. Every line below carries a phrase measured in Apple autocomplete
+# that the 159 characters of Title+Subtitle+Keywords could not fit. None of them uses Storypole's
+# territory — no feet, inch, fraction, tape measure, framing, board foot or miter — because the two
+# apps must not compete with each other.
+texts:
+  - title: 20 trade calculators
+    subtitle: Concrete, stairs, roofing, pipe — and the code behind every number
+  - title: Concrete takeoffs
+    subtitle: Cubic yards, bags and ready-mix trucks, with a waste allowance
+  - title: Stairs to code
+    subtitle: Live IRC and IBC riser, tread and headroom checks as you type
+  - title: Pipe offsets solved
+    subtitle: Travel, run and the fitting multiplier at any angle
+  - title: Precision you set
+    subtitle: 1/8, 1/16 or 1/32 — every result rounded to your tolerance
+  - title: Cut length, not guesswork
+    subtitle: Plumb and seat cuts, hip, valley and jack — every one cited

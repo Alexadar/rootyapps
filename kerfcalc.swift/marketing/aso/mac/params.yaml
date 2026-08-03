@@ -1,0 +1,38 @@
+platform: mac
+size: [2880, 1800]        # APP_DESKTOP
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/kerfcalc.swift/marketing/raw/mac
+  output_folder: /Users/oleksandr/Projects/rootyapps/kerfcalc.swift/marketing/aso/mac
+
+# Landscape uses TwoColumnStyle: text_col_percent / screenshot_col_percent. Row percentages are
+# accepted by the parser and then silently ignored on this platform — a real trap, documented in
+# par/marketing/aso/mac/params.yaml.
+style:
+  bg_gradient: true
+  bg_color_top: '#EDE9E0'
+  bg_color_bottom: '#DCD7CB'
+  title_color: '#16171B'
+  subtitle_color: '#6E6F75'
+  border_color: '#CFC9BC'
+  border_width: 8
+  border_radius: 30
+  screenshot_zoom: 1.0
+  text_col_percent: 38
+  screenshot_col_percent: 62
+  text_padding: 80
+  screenshot_padding: 70
+
+texts:
+  - title: Concrete takeoffs
+    subtitle: Cubic yards, bags and ready-mix trucks, with a waste allowance
+  - title: Stairs to code
+    subtitle: Live IRC and IBC riser, tread and headroom checks as you type
+  - title: Roofing squares
+    subtitle: Pitch-adjusted area, squares and waste — from the footprint
+  - title: Pipe offsets solved
+    subtitle: Travel, run and the fitting multiplier at any angle
+  - title: Precision you set
+    subtitle: 1/8, 1/16 or 1/32 — every result rounded to your tolerance
+  - title: Cut length, not guesswork
+    subtitle: Plumb and seat cuts, hip, valley and jack — every one cited
