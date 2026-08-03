@@ -88,3 +88,16 @@ repos/
 # Trained model artefacts are build outputs, never sources
 **/*.mlmodel
 **/*.mlmodelc
+
+# Credentials. `keys/` was already ignored; these are belt-and-braces so a stray key or a
+# .env written anywhere in the tree cannot be committed by accident.
+.env
+.env.*
+**/.env
+**/.env.*
+*.p8
+*.p8.txt
+*.pem
+# Negation LAST: a later re-ignoring pattern (**/.env.*) would otherwise win and the committed
+# template would silently vanish from the repo.
+!.env.example
