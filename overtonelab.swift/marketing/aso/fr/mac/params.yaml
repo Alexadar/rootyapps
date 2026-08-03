@@ -16,10 +16,10 @@ style:
   text_padding: 80
 texts:
   - title: "Overtone Lab sur Mac"
-    subtitle: "Tous les outils à gauche, le travail à droite"
+    subtitle: "Du RT60 au filtrage, tout dans la barre latérale"
   - title: "Acoustique des salles"
     subtitle: "RT60, modes propres & fréquence de Schroeder"
-  - title: "Concevoir une enceinte"
+  - title: "Concevoir un caisson de basses"
     subtitle: "Thiele-Small : clos & bass-reflex"
   - title: "Sonie de mastering"
     subtitle: "Vrais LUFS intégrés ITU-R BS.1770"

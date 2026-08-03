@@ -16,10 +16,10 @@ style:
   text_padding: 80
 texts:
   - title: "Mac でも Overtone Lab"
-    subtitle: "全ツールをサイドバーに、作業は詳細ペインで"
+    subtitle: "RT60 からクロスオーバーまでサイドバーに"
   - title: "部屋の音響"
     subtitle: "RT60・固有モード・シュレーダー周波数"
-  - title: "スピーカー設計"
+  - title: "サブウーファー"
     subtitle: "Thiele-Small：密閉とバスレフ"
   - title: "マスタリングのラウドネス"
     subtitle: "ITU-R BS.1770 の統合 LUFS"

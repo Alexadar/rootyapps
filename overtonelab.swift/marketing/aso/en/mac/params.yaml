@@ -16,10 +16,10 @@ style:
   text_padding: 80
 texts:
   - title: "Overtone Lab on Mac"
-    subtitle: "Sidebar of every tool, work in the detail pane"
+    subtitle: "From RT60 to crossovers, all in one sidebar"
   - title: "Room acoustics"
     subtitle: "RT60, room modes & Schroeder frequency"
-  - title: "Loudspeaker design"
+  - title: "Subwoofer box design"
     subtitle: "Thiele-Small sealed & ported enclosures"
   - title: "Mastering loudness"
     subtitle: "Real ITU-R BS.1770 integrated LUFS"
