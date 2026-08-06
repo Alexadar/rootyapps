@@ -19,6 +19,12 @@ enum OTL {
     // Favourite star (filled)
     static let star           = Color(rgbHex: 0xF2C14E)
 
+    /// Audio Analysis. A SOURCE accent, deliberately not one of the seven section accents: Measure is
+    /// not an eighth section, and borrowing a section's colour would make it look like one. Provenance
+    /// never relies on this — measured values are marked by glyph, texture and words, so the marking
+    /// survives greyscale and colour blindness.
+    static let measureAccent  = Color(rgbHex: 0x7FD1C1)
+
     // Radii
     static let rCard: CGFloat    = 20
     static let rTile: CGFloat    = 16

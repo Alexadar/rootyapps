@@ -59,6 +59,8 @@ packages:
     path: Kits/Acoustics/InterferenceKit
   StereoKit:
     path: Kits/Stereo/StereoKit
+  MeasureKit:
+    path: Kits/Analysis/MeasureKit
 targets:
   overtonelab.swift:
     type: application
@@ -108,6 +110,8 @@ targets:
         product: InterferenceKit
       - package: StereoKit
         product: StereoKit
+      - package: MeasureKit
+        product: MeasureKit
       - target: OverToneLabWatch
         embed: true                 # "Embed Watch Content" — iOS only
         platformFilter: iOS
@@ -186,6 +190,8 @@ targets:
         product: InterferenceKit
       - package: StereoKit
         product: StereoKit
+      - package: MeasureKit
+        product: MeasureKit
     sources:
       - path: OverToneLabWatch
       - path: DesignShared          # same tokens and the SAME Localizable.xcstrings as phone
@@ -283,7 +289,10 @@ schemes:
         # NavigationBar to tap). It belongs to the overtonelabReel scheme and runs only there.
         - name: overtonelabUITests
           skippedTests:
+            # Both capture drivers, not tests: 40 s of scripted tapping each, and ReelTour asserts
+            # against an iOS-shaped UI. They run only when a reel is being recorded.
             - ReelTour
+            - ReelTourMeasure
 
   OverToneLabWatch:
     build:

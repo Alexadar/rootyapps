@@ -82,17 +82,36 @@ struct CrownField: View {
     let targeted: Bool
     let accent: Color
     var fraction: Int = 0
+    /// Set when this value arrived from a phone measurement. Renders the same three signals the phone
+    /// uses — glyph, dotted underline, the word *Measured* — because a value should not change meaning
+    /// when it changes wrist. **The first crown detent clears it**: the moment the user turns the
+    /// crown, the number is theirs.
+    var measuredSource: String? = nil
 
     @EnvironmentObject private var crownFocus: CrownFocus
     @FocusState private var focused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(label)
+            HStack(spacing: 4) {
+                if measuredSource != nil {
+                    Image(systemName: "waveform")            // 1 — shape
+                        .font(.system(size: 8))
+                        .foregroundStyle(OTL.textSecondary)
+                        .accessibilityHidden(true)
+                }
+                Group {
+                    if measuredSource != nil {
+                        Text("\(Text(label)) · \(Text("Measured"))")   // 2 — words
+                    } else {
+                        Text(label)
+                    }
+                }
                 .font(.system(.caption2, design: .monospaced))
                 .foregroundStyle(OTL.textSecondary)
                 .minimumScaleFactor(0.85)
                 .fixedSize(horizontal: false, vertical: true)
+            }
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 // Fmt follows the chosen language, exactly as on phone — display and entry agree.
                 Text(Fmt.f(value, fraction))
@@ -111,6 +130,14 @@ struct CrownField: View {
                 }
             }
             .monospacedDigit()
+        }
+        .overlay(alignment: .bottom) {
+            if measuredSource != nil {              // 3 — texture, same as the phone
+                DottedRule()
+                    .stroke(style: .init(lineWidth: 2, dash: [2, 3]))
+                    .foregroundStyle(Color.white.opacity(0.45))
+                    .frame(height: 2)
+            }
         }
         .padding(.horizontal, 9).padding(.vertical, 7)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -142,7 +169,10 @@ struct CrownField: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { focused = true }
         }
         .accessibilityLabel(Text(label))
-        .accessibilityValue(Text(unit.isEmpty ? Fmt.f(value, fraction) : "\(Fmt.f(value, fraction)) \(unit)"))
+        .accessibilityValue(Text({
+            let base = unit.isEmpty ? Fmt.f(value, fraction) : "\(Fmt.f(value, fraction)) \(unit)"
+            return measuredSource == nil ? base : "\(base), measured"
+        }()))
         .accessibilityAdjustableAction { direction in
             switch direction {
             case .increment: value = min(value + step, range.upperBound)
