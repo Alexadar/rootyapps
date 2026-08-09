@@ -65,15 +65,35 @@ public struct DetectedAspect: Identifiable, Hashable {
 
 /// Aspect detection — the demo's tightest-match double loop, made testable.
 public enum Aspects {
+    /// The aspect a separation belongs to, when more than one is in orb.
+    ///
+    /// Exactness decides, not declaration order. Where two types both admit a separation, the one it
+    /// is *closest to* wins: 78° is 12° from a square and 18° from a sextile, so it is a square. This
+    /// is the documented convention — "the aspect closest to exactness receives primary emphasis"
+    /// (astro.com AstroWiki; astrolibrary.org) — and no source anywhere ranks aspects by list order.
+    ///
+    /// This used to `break` on the first type in `AspectType.all` that fit, which contradicted the
+    /// "tightest-match" in the comment above and disagreed with `detect(between:and:)`. Two functions
+    /// answering the same question differently is the defect class that produced `ChartGeometry`.
+    ///
+    /// Unreachable from the app either way: overlap needs `orbFactor` ≥ 2.5 (square 90±6f against
+    /// trine 120±6f) and the orb slider stops at 1.6. It is reachable through the Kit API, which is
+    /// why it is fixed rather than documented as a quirk.
+    static func tightest(for separation: Double, orbFactor: Double) -> (type: AspectType, orb: Double)? {
+        AspectType.all
+            .map { (type: $0, orb: abs(separation - $0.angle)) }
+            .filter { $0.orb <= $0.type.baseOrb * orbFactor }
+            .min { $0.orb < $1.orb }
+    }
+
     public static func detect(in positions: [BodyPosition], orbFactor: Double) -> [DetectedAspect] {
         var found: [DetectedAspect] = []
         for i in 0..<positions.count {
             for j in (i + 1)..<positions.count {
                 let s = AstroMath.separation(positions[i].longitude, positions[j].longitude)
-                for type in AspectType.all where abs(s - type.angle) <= type.baseOrb * orbFactor {
-                    found.append(DetectedAspect(type: type, a: positions[i].body,
-                                                b: positions[j].body, orb: abs(s - type.angle)))
-                    break
+                if let hit = tightest(for: s, orbFactor: orbFactor) {
+                    found.append(DetectedAspect(type: hit.type, a: positions[i].body,
+                                                b: positions[j].body, orb: hit.orb))
                 }
             }
         }

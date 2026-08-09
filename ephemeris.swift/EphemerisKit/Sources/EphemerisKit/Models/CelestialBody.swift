@@ -1,7 +1,7 @@
 import Foundation
 
 /// The ten classical chart bodies, in the demo's display order.
-public enum CelestialBody: String, CaseIterable, Identifiable, Hashable {
+public enum CelestialBody: String, CaseIterable, Identifiable, Hashable, Sendable {
     case sun, moon, mercury, venus, mars, jupiter, saturn, uranus, neptune, pluto
 
     public var id: String { rawValue }
@@ -26,7 +26,7 @@ public enum CelestialBody: String, CaseIterable, Identifiable, Hashable {
 }
 
 /// The twelve tropical zodiac signs.
-public enum ZodiacSign: Int, CaseIterable {
+public enum ZodiacSign: Int, CaseIterable, Sendable {
     case aries, taurus, gemini, cancer, leo, virgo
     case libra, scorpio, sagittarius, capricorn, aquarius, pisces
 
