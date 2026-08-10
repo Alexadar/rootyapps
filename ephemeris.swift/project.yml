@@ -43,15 +43,19 @@ targets:
         # rejects "Swift" in the app name. PRODUCT_NAME pins the real name.
         PRODUCT_NAME: Ephemeris
         PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.ephemeris
+        # iOS had NO entitlements file at all until iCloud was added — only the macOS one existed.
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": ephemeris-iOS.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": ephemeris-iOS.entitlements
         "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": ephemeris-macOS.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: liquid_icon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         TARGETED_DEVICE_FAMILY: "1,2"
-        INFOPLIST_KEY_CFBundleDisplayName: Ephemeris
-        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.lifestyle
-        INFOPLIST_KEY_NSMotionUsageDescription: "The star field gently parallaxes as you tilt your phone."
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        # Hand-written, because NSUbiquitousContainers is a nested dictionary and has no
+        # INFOPLIST_KEY_ form. Every INFOPLIST_KEY_* that used to live here was carried into
+        # ephemeris-Info.plist verbatim — see the comment at the top of that file. Note this is
+        # INFOPLIST_FILE, NOT xcodegen's `info:` key, which would generate a plist straight over it.
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: ephemeris-Info.plist
   # ── Watch app ────────────────────────────────────────────────────────────
   # Standalone on purpose: it computes everything itself via EphemerisKit, so it works with the
   # phone out of range. Only preferences cross from the phone, and they cross over

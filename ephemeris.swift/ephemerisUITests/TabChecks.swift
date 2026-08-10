@@ -149,10 +149,24 @@ final class TabChecks: XCTestCase {
 
     // MARK: - Coverage guard
 
-    /// Fails when a tab ships without a numeric check above (§C.1).
+    /// Fails when a section ships without a numeric check above (§C.1).
+    ///
+    /// The two counts are deliberately separate. Five sections render numbers at the pinned instant
+    /// and are asserted against known values. **Natal is not one of them** — its library is empty
+    /// until a chart is saved, so there is nothing numeric to pin; it is covered structurally by
+    /// `DeepLinkChecks` instead. Claiming a numeric check it does not have would be worse than
+    /// admitting the gap.
+    ///
+    /// The total is asserted too, so adding a sixth-and-then-seventh section forces this decision
+    /// rather than silently shipping untested.
     func testEveryToolHasANumericCheck() {
-        let covered = ["chart", "positions", "aspects", "cycle", "events"]
-        XCTAssertEqual(covered.count, 5, "the app ships 5 tabs")
-        XCTAssertEqual(Set(covered).count, covered.count, "duplicate in the coverage list")
+        let numericallyCovered = ["chart", "positions", "aspects", "cycle", "events"]
+        XCTAssertEqual(numericallyCovered.count, 5, "five sections assert a known value")
+        XCTAssertEqual(Set(numericallyCovered).count, numericallyCovered.count,
+                       "duplicate in the coverage list")
+
+        let allSections = numericallyCovered + ["natal"]
+        XCTAssertEqual(allSections.count, 6,
+                       "the app ships 6 sections — a new one needs a check, numeric or structural")
     }
 }

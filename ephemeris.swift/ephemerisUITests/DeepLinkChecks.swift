@@ -31,6 +31,9 @@ final class DeepLinkChecks: XCTestCase {
         2: "card.aspects",
         3: "card.currentPhase",
         4: "card.events",
+        // State-independent: the library shows an empty state, an error or a list, and this marker
+        // is on all three.
+        5: "screen.natal",
     ]
 
     func testEveryTabDeepLinkReachesItsOwnScreen() {

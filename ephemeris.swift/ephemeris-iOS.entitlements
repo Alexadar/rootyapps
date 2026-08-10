@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  New file: the iOS target had no entitlements at all — only CODE_SIGN_ENTITLEMENTS[sdk=macosx*]
+  existed, so iOS was signed with none.
+
+  Deliberately iCloud only. The app group is NOT declared here even though SharedStore reads that
+  suite, because adding it would change behaviour on iOS (UserDefaults(suiteName:) currently
+  returns nil and falls back to .standard) and that is a separate decision from chart storage.
+-->
 <plist version="1.0">
 <dict>
-	<key>com.apple.security.app-sandbox</key>
-	<true/>
-
-	<!--
-	  Same container as iOS — that is what makes a chart saved on the phone appear on the Mac.
-	  A sandboxed Mac app reaches its ubiquity container without a file-access entitlement, so
-	  nothing else needs relaxing here.
-	-->
 	<key>com.apple.developer.icloud-services</key>
 	<array>
 		<string>CloudDocuments</string>
