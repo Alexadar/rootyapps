@@ -20,7 +20,11 @@ settings:
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0.1"
-    CURRENT_PROJECT_VERSION: "5"
+    # Build 6 replaces build 5, which App Review rejected under 2.1(a) for launching the Mac app on
+    # an Open panel with no main window. MARKETING_VERSION stays at 1.0.1 deliberately: 1.0.1 was
+    # rejected, never released, and a rejected version accepts a replacement build in place — a
+    # version bump would be needed only if 1.0.1 had already gone live.
+    CURRENT_PROJECT_VERSION: "6"
     ENABLE_PREVIEWS: YES
     GENERATE_INFOPLIST_FILE: YES
 
