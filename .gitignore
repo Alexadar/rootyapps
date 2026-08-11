@@ -28,6 +28,8 @@ kerfcalc.swift/kerfcalc.swift.xcodeproj
 eartharound.swift/eartharound.swift.xcodeproj
 par/Par.xcodeproj
 producertycoon.swift/producertycoon.swift.xcodeproj
+# XcodeGen output — regenerate with `xcodegen generate` from aircore/project.yml
+aircore/aircore.xcodeproj
 
 # Friend's pdf-to-midi sidecar — cloned as local reference, not part of rootyapps
 pdf-to-midi

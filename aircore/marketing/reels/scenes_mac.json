@@ -1,0 +1,85 @@
+{
+  "canvas": [
+    1920,
+    1080
+  ],
+  "content_len": 28.8,
+  "preview_maxlen": 30,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#F0F7FB",
+    "bg_color_bottom": "#D8E9F4",
+    "title_color": "#FFFFFF",
+    "subtitle_color": "#9BD8FF",
+    "caption_band_percent": 20,
+    "side_padding": 70,
+    "border_width": 7,
+    "border_color": "#C7DEEC",
+    "border_radius": 30,
+    "title_scale": 0.03,
+    "subtitle_scale": 0.02
+  },
+  "app": {
+    "name": "AirCore",
+    "tagline": "HVAC psychrometrics, offline",
+    "icon": "AirCore/Assets.xcassets/AppIcon.appiconset/icon-1024.png"
+  },
+  "_note": "Mac cut of the SAME driven tour as scenes.json, from marketing/raw/en/mac/video/capture.mov. `src` is in the SOURCE recording's timebase, which is NOT the tour's: the recorder starts before the app is driven, so every marker sits 1.218 s later here than the REEL_* log says. The window is recorded at 1456x819 (AIRCORE_WINDOW) so 2912x1638 downscales to 1920x1080 with no crop — the earlier 1180x820 window would have lost 19 % off the bottom, and on the pipe scene that is the Darcy-vs-Hazen-Williams comparison the caption points at. Mixing gets 3.2 s rather than 5: after its dwell the tour is walking to the next tool, and navigation footage under a caption about mixing is the drift this file exists to prevent. Total 28.8 s, inside the 15-30 s window, so nothing is sped up.",
+  "scenes": [
+    {
+      "key": "Intro",
+      "src": [
+        1.3,
+        8.6
+      ],
+      "title": "AirCore — HVAC Psychrometric Calculator",
+      "subtitle": "Wet bulb, dew point, enthalpy, duct, fan and pipe sizing — fully offline",
+      "start": 0.0,
+      "end": 7.3
+    },
+    {
+      "key": "Elevation",
+      "start": 7.3,
+      "end": 13.3,
+      "src": [
+        9.6,
+        15.6
+      ],
+      "title": "Your site elevation",
+      "subtitle": "Denver is 18 % off sea level. Every number knows it."
+    },
+    {
+      "key": "Duct",
+      "start": 13.3,
+      "end": 20.3,
+      "src": [
+        21.0,
+        28.0
+      ],
+      "title": "Straight duct",
+      "subtitle": "Change the surface, watch the size and the noise move"
+    },
+    {
+      "key": "Mixing",
+      "start": 20.3,
+      "end": 23.5,
+      "src": [
+        30.4,
+        33.6
+      ],
+      "title": "Two airstreams",
+      "subtitle": "Mixed by mass, not by volume"
+    },
+    {
+      "key": "Pipe",
+      "start": 23.5,
+      "end": 28.8,
+      "src": [
+        36.6,
+        41.9
+      ],
+      "title": "Water, both methods",
+      "subtitle": "Darcy and Hazen–Williams, and the gap between them"
+    }
+  ]
+}

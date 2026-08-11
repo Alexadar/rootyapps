@@ -1,0 +1,42 @@
+platform: watch
+size: [368, 448]              # Apple Watch Series 4-6 44mm — APP_WATCH_SERIES_4
+# THE REQUIRED WATCH SLOT. Submission fails with
+# STATE_ERROR.SCREENSHOT_REQUIRED.APP_WATCH_SERIES_4 when this set is missing, and a Series 10
+# capture (416x496) does NOT satisfy it — it is a different slot. Learned on Storypole; see
+# storypole/make_watch_shots.sh.
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/aircore/marketing/raw/en/watch
+  output_folder: /Users/oleksandr/Projects/rootyapps/aircore/marketing/aso/en/watch
+
+# Dark, unlike the iPhone/iPad/Mac frames, and deliberately so: watchOS draws on black and the app
+# obeys that, so a light water-breeze frame would put a bright card around a black screen and read
+# as a different product. These are the app's own DARK palette values from DesignShared/Theme.swift
+# (breeze 0x0B1720, ink 0xE6F0F8, water 0x46AEEC), so it is the same palette, not a second one.
+style:
+  bg_gradient: true
+  bg_color_top: '#0B1720'
+  bg_color_bottom: '#050C12'
+  title_color: '#E6F0F8'
+  subtitle_color: '#46AEEC'
+  screenshot_zoom: 0.92
+  text_row_percent: 20
+  screenshot_row_percent: 80
+  border_width: 5
+  border_color: '#1E3A4C'
+  border_radius: 44
+  text_padding: 22
+  screenshot_padding: 24
+
+# Order follows make_watch_shots.sh SCENES. Short lines — 416 px is not a phone, and a subtitle
+# that wraps to three lines at this width eats the screen it is describing.
+#
+# The claim is deliberately narrow: a glance and a mirror, not "the app on your wrist". There is no
+# chart and no tool catalogue here, and a screenshot that implies otherwise is inaccurate metadata.
+texts:
+  - title: Dew point at a glance
+    subtitle: Wet bulb and enthalpy too
+  - title: Turn the crown
+    subtitle: It drives the field you pick
+  - title: Straight from the phone
+    subtitle: The last state you solved

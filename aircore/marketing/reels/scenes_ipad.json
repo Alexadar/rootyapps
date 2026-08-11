@@ -1,0 +1,83 @@
+{
+  "canvas": [
+    1200,
+    1600
+  ],
+  "content_len": 30.0,
+  "preview_maxlen": 30,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#F0F7FB",
+    "bg_color_bottom": "#D8E9F4",
+    "title_color": "#FFFFFF",
+    "subtitle_color": "#9BD8FF",
+    "caption_band_percent": 22,
+    "side_padding": 46,
+    "border_width": 7,
+    "border_color": "#C7DEEC",
+    "border_radius": 30
+  },
+  "app": {
+    "name": "AirCore",
+    "tagline": "HVAC psychrometrics, offline",
+    "icon": "AirCore/Assets.xcassets/AppIcon.appiconset/icon-1024.png"
+  },
+  "_note": "iPad. `src` windows are added after the first recording, from the marker times in .build/reel-dd/scenes.runtime.json — they are per-run and must never be copied from the iPhone config.",
+  "scenes": [
+    {
+      "key": "Intro",
+      "src": [
+        1.0,
+        8.0
+      ],
+      "title": "AirCore — HVAC Psychrometric Calculator",
+      "subtitle": "Wet bulb, dew point, enthalpy, duct, fan and pipe sizing — fully offline",
+      "start": 0.0,
+      "end": 7.0
+    },
+    {
+      "key": "Elevation",
+      "start": 7.0,
+      "end": 13.0,
+      "title": "Your site elevation",
+      "subtitle": "Denver is 18 % off sea level. Every number knows it.",
+      "src": [
+        9.42,
+        15.42
+      ]
+    },
+    {
+      "key": "Duct",
+      "start": 13.0,
+      "end": 19.5,
+      "title": "Straight duct",
+      "subtitle": "Change the surface, watch the size and the noise move",
+      "src": [
+        20.53,
+        27.03
+      ]
+    },
+    {
+      "key": "Mixing",
+      "start": 19.5,
+      "end": 24.5,
+      "title": "Two airstreams",
+      "subtitle": "Mixed by mass, not by volume",
+      "src": [
+        33.22,
+        38.22
+      ]
+    },
+    {
+      "key": "Pipe",
+      "start": 24.5,
+      "end": 30.0,
+      "title": "Water, both methods",
+      "subtitle": "Darcy and Hazen–Williams, and the gap between them",
+      "src": [
+        40.75,
+        46.25
+      ]
+    }
+  ]
+}

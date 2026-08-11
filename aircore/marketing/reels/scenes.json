@@ -1,0 +1,83 @@
+{
+  "canvas": [
+    886,
+    1920
+  ],
+  "content_len": 30.0,
+  "preview_maxlen": 30,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#F0F7FB",
+    "bg_color_bottom": "#D8E9F4",
+    "title_color": "#FFFFFF",
+    "subtitle_color": "#9BD8FF",
+    "caption_band_percent": 22,
+    "side_padding": 46,
+    "border_width": 7,
+    "border_color": "#C7DEEC",
+    "border_radius": 30
+  },
+  "app": {
+    "name": "AirCore",
+    "tagline": "HVAC psychrometrics, offline",
+    "icon": "AirCore/Assets.xcassets/AppIcon.appiconset/icon-1024.png"
+  },
+  "_note": "`src` is the window cut OUT of the 53.7 s walkthrough; `start`/`end` are where it lands in the 30 s cut. Without src, store_preview.py renders the first 30 s and the last two tools never appear while their captions still play over the wrong screen. Each window sits just AFTER its scene marker — the marker fires on arrival, so that is the settled screen and the action, while the tail of every scene is the walk to the next tool and is dead footage. Total is exactly 30 s, so nothing is sped up.",
+  "scenes": [
+    {
+      "key": "Intro",
+      "src": [
+        1.0,
+        8.0
+      ],
+      "title": "AirCore — HVAC Psychrometric Calculator",
+      "subtitle": "Wet bulb, dew point, enthalpy, duct, fan and pipe sizing — fully offline",
+      "start": 0.0,
+      "end": 7.0
+    },
+    {
+      "key": "Elevation",
+      "start": 7.0,
+      "end": 13.0,
+      "src": [
+        8.5,
+        14.5
+      ],
+      "title": "Your site elevation",
+      "subtitle": "Denver is 18 % off sea level. Every number knows it."
+    },
+    {
+      "key": "Duct",
+      "start": 13.0,
+      "end": 19.5,
+      "src": [
+        21.2,
+        27.7
+      ],
+      "title": "Straight duct",
+      "subtitle": "Change the surface, watch the size and the noise move"
+    },
+    {
+      "key": "Mixing",
+      "start": 19.5,
+      "end": 24.5,
+      "src": [
+        37.6,
+        42.6
+      ],
+      "title": "Two airstreams",
+      "subtitle": "Mixed by mass, not by volume"
+    },
+    {
+      "key": "Pipe",
+      "start": 24.5,
+      "end": 30.0,
+      "src": [
+        47.8,
+        53.3
+      ],
+      "title": "Water, both methods",
+      "subtitle": "Darcy and Hazen–Williams, and the gap between them"
+    }
+  ]
+}

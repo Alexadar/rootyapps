@@ -1,0 +1,40 @@
+platform: ipad
+size: [2064, 2752]        # iPad 13" — APP_IPAD_PRO_129
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/aircore/marketing/raw/en/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/aircore/marketing/aso/en/ipad
+
+# Water-breeze, the app's own palette (DesignShared/Theme.swift): deep-water ink on an airy
+# ground, with the one working blue spent on the subtitle and nowhere else. A dark frame around a
+# light instrument app would read as a different product.
+style:
+  bg_gradient: true
+  bg_color_top: '#F0F7FB'
+  bg_color_bottom: '#D8E9F4'
+  title_color: '#10314A'
+  subtitle_color: '#1288D4'
+  screenshot_zoom: 0.86
+  text_row_percent: 19
+  screenshot_row_percent: 81
+  border_width: 7
+  border_color: '#C7DEEC'
+  border_radius: 30
+  text_padding: 40
+  screenshot_padding: 40
+
+# Order follows make_sim_shots.sh. The first frame has to answer "why this and not the free one",
+# so it leads with the chart — the thing a spreadsheet cannot do — and the second makes the
+# commercial argument that this is one app instead of four.
+#
+# Nothing here says "Manual D", "ACCA", "ASHRAE", "SMACNA" or "code compliant", and nothing implies
+# a fitting library or a load calculation exists. That is a legal boundary, not a style choice.
+texts:
+  - title: Any two knowns
+    subtitle: The chart, and every value it implies, on one screen
+  - title: Straight duct from friction
+    subtitle: Real surface roughness, real air density, and a velocity you can hear
+  - title: Mixed on mass, not volume
+    subtitle: 25 % outdoor air by volume is 24.2 % by mass. It matters in winter.
+  - title: Water, both methods
+    subtitle: Darcy and Hazen–Williams, and exactly how far apart they are

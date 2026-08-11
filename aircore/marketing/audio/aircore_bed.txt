@@ -1,0 +1,56 @@
+aircore_bed.wav — AirCore app-preview music bed
+===============================================
+
+Engine   Stable Audio 3, pure-MLX port
+         ~/Projects/AudioProto/reference/stable-audio-3/optimized/mlx/scripts/sa3_mlx.py
+Model    --dit medium --decoder same-l
+Length   30.0 s · 44100 Hz · stereo · 16-bit
+Steps    100        Seed 4471        Date 2026-08-11
+Brief    "fun light music for a work on a beach house" (Oleksandr)
+Status   APPROVED by Oleksandr, 2026-08-11. Scored into the iOS store preview.
+         Do NOT overwrite this file — a bed that is in a released preview is frozen;
+         add a new one beside it.
+
+prompt:
+  TrackType: Music, VocalType: Instrumental, Genre: Tropical House, Genre: Bossa Nova,
+  Instruments: Nylon String Guitar, Marimba, Rhodes Piano, Upright Bass, Shaker, Rim Click.
+  A bright unhurried instrumental with the feel of working with the windows open and the sea air
+  coming through. A nylon-string guitar plays a light syncopated figure that keeps circling back on
+  itself, a marimba answers it in soft mallets, and a warm Rhodes lays down easy open chords
+  underneath. An upright bass walks gently, shaker and rim clicks keep a relaxed shuffle, and the
+  whole thing breathes rather than drives. The production is airy and wide with plenty of space
+  between the instruments and a soft sunlit top end, cheerful and capable and never busy. 104 BPM.
+
+negative-prompt: vocals, singing, harsh, distorted, noisy, lo-fi, aggressive drums, dense mix
+
+Regenerating
+------------
+  cd ~/Projects/AudioProto/reference/stable-audio-3/optimized/mlx
+  /Users/oleksandr/miniconda3/envs/fantastic/bin/python scripts/sa3_mlx.py \
+    --prompt "<above>" --negative-prompt "<above>" \
+    --dit medium --decoder same-l --seconds 30 --steps 100 --seed 4471 --out raw.wav
+  ffmpeg -i raw.wav -af loudnorm=I=-16:TP=-1.5:LRA=11 -ar 44100 -ac 2 aircore_bed.wav
+
+Generation: 56.8 s wall for 30 s audio (0.53× realtime), peak RAM 3.89 GB.
+
+Measured: peak 82.1% FS · 0 clipped · crest 16.3 dB
+  Directly comparable to par_bed.wav (84.8% · 0 clipped · 15.1 dB) — same loudnorm settings, so
+  these are the numbers that say the take is healthy. A spectral centroid was also measured but
+  with a coarse decimated DFT written here, not whatever tool produced par's 4927 Hz figure, so
+  the two are NOT comparable and no conclusion is drawn from it.
+
+Why this brief suits the app
+----------------------------
+The design system is called **water-breeze** and the product is an air-side calculator, so an
+airy, open-windowed instrumental is on-theme rather than at odds with it. The tempo is unhurried
+on purpose: the preview shows a technician solving a state, not a game.
+
+Method
+------
+Followed par/marketing/audio/par_bed.txt exactly — AudioSparx tags first, stacked genres, named
+instruments, vivid prose about what each one plays, a stated BPM, a negative prompt, 100 steps,
+and loudnorm at the end. That file records five earlier batches rejected on method rather than
+taste, so none of it was improvised.
+
+Do not bake fades in: store_preview.py applies its own fade-in/out and volume at mux time.
+Never overwrite a bed already scored into a released preview — add a new file beside it.
