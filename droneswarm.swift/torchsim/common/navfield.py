@@ -16,8 +16,23 @@ Method: branchless Godunov FAST-ITERATIVE / fast-sweeping Eikonal update — sol
 pitch), giving the TRUE Euclidean geodesic (a plain min-relaxation gives the ℓ¹/octile metric → zigzag
 routes). The 3→2→1 causal cascade (use the fewest upwind axes that stays consistent) is done with a
 min/max/where compare-swap network + safe-sqrt — NO python `if`, NO data loop, compile-safe, and
-differentiable ([[no-loops-in-engine]]). Ref: Jeong & Whitaker, "A Fast Iterative Method for Eikonal
-equations", arXiv:2106.15869 (+ Zhao fast-sweeping). All ops broadcast over arbitrary LEADING batch
+differentiable ([[no-loops-in-engine]]).
+Refs (this is the STANDARD Godunov Eikonal solver, not one paper's bespoke algorithm):
+  * [PAPER] per-cell upwind update  — Rouy & Tourin, "A Viscosity Solutions Approach to Shape-from-Shading",
+    SIAM J. Numer. Anal. 29(3), 1992 (the Godunov Eikonal discretization; same update Sethian's fast
+    marching and Zhao's fast-sweeping use).
+  * [PAPER] parallel fixed-sweep relaxation (Jacobi, NO active list) — the GPU "fast-iterative" framing of
+    Jeong & Whitaker, "A Fast Iterative Method for Eikonal Equations", SIAM J. Sci. Comput. 30(5), 2008;
+    and Huang, "Improved Fast Iterative Algorithm for Eikonal Equation for GPU Computing",
+    arXiv:2106.15869 (2021). We use plain full-grid sweeps -> FIM-inspired, not faithful FIM.
+  * [PAPER] flow = -grad(d) trilinearly sampled -> steering — Treuille, Cooper & Popovic, "Continuum Crowds",
+    ACM SIGGRAPH 2006.
+  * [NOVEL] the update above rewritten BRANCHLESS + DIFFERENTIABLE: the 3->2->1 causal cascade as a
+    min/max/where compare-swap network with safe-sqrt — NO python `if`, NO per-cell data loop, so the WHOLE
+    solver is one batched GPU kernel chain AND carries gradients (usable as a differentiable potential, not
+    only a perception). Standard FMM/FSM are inherently sequential/branchy; this vectorised form is what lets
+    it fit 45k differentiable worlds and backprop through the route field ([[no-loops-in-engine]]).
+All ops broadcast over arbitrary LEADING batch
 dims; the last three dims are the grid (Gz, Gy, Gx) with SQUARE horizontal resolution (Gx == Gy).
 """
 import torch

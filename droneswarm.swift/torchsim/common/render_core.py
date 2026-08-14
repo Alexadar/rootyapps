@@ -170,9 +170,13 @@ def _terrain_quads(gx, gy, gzt, shade_col, eye, right, up, fwd, f, W, H):
     scr = scr.reshape(P, Gry, Grx, 2); dep = dep.reshape(P, Gry, Grx)   # back to grid
     a = scr[:, :-1, :-1]; b = scr[:, :-1, 1:]; c = scr[:, 1:, 1:]; d = scr[:, 1:, :-1]     # 4 corners [P,Gry-1,Grx-1,2]
     quad = torch.stack([a, b, c, d], dim=3).reshape(P, (Gry - 1) * (Grx - 1), 4, 2)        # [P,Q,4,2]
-    qdep = (0.25 * (dep[:, :-1, :-1] + dep[:, :-1, 1:] + dep[:, 1:, 1:] + dep[:, 1:, :-1])).reshape(P, -1)  # mean depth
+    da_ = dep[:, :-1, :-1]; db_ = dep[:, :-1, 1:]; dc_ = dep[:, 1:, 1:]; dd_ = dep[:, 1:, :-1]   # 4 corner depths
+    qdep = (0.25 * (da_ + db_ + dc_ + dd_)).reshape(P, -1)                                 # mean depth
     qcol = shade_col.reshape(P, -1, 3)                                                     # [P,Q,3] precomputed shade
-    qval = torch.ones(P, quad.shape[1], dtype=torch.bool, device=quad.device)
+    # CULL any quad with a corner AT/BEHIND the near plane: such a quad straddles the camera and projects to
+    # garbage that fills the frame. Harmless for normal renders (all ground is in front -> all corners dep>0);
+    # required for a large SURROUND ground where part of the grid sits behind the eye.
+    qval = ((da_ > 0.05) & (db_ > 0.05) & (dc_ > 0.05) & (dd_ > 0.05)).reshape(P, -1)
     return _quads_to_tris(quad, qdep, qcol, qval)
 
 
