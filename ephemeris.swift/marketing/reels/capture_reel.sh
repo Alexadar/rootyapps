@@ -21,23 +21,27 @@ BUNDLE=oleksandr.aisixteen.ephemeris
 PYBIN=/Users/oleksandr/miniconda3/envs/fantastic/bin/python
 LOC="${1:-en}"
 PLATFORM="${PLATFORM:-ios}"
+# WHICH reel. The store allows three previews per device size, and one video cannot sell both the
+# live sky and saved natal charts. Everything below is namespaced by this, because the pipeline
+# used to assume exactly one reel per device+locale — a single scenes.json and a single output dir.
+REEL="${REEL:-sky}"
 
 if [ "$PLATFORM" = ipad ]; then
   SIM_NAME="${SIM_NAME:-Ephemeris-iPadPro13}"; CAPTURE_WH=2064x2752
-  _PREFIX=scenes_ipad
+  _DEV=ipad
 else
   SIM_NAME="${SIM_NAME:-Ephemeris-iPhone17ProMax}"; CAPTURE_WH=1320x2868
-  _PREFIX=scenes
+  _DEV=iphone
 fi
-SCENES="$APP_DIR/marketing/reels/$_PREFIX.json"
-[ "$LOC" = en ] || SCENES="$APP_DIR/marketing/reels/${_PREFIX}_$LOC.json"
+SCENES="$APP_DIR/marketing/reels/scenes/$REEL/${_DEV}_${LOC}.json"
+[ -f "$SCENES" ] || { echo "no scenes for reel '$REEL' $_DEV/$LOC at $SCENES" >&2; exit 1; }
 
-RAW_DIR="$APP_DIR/marketing/raw/$LOC/$PLATFORM/video"
-ASO_DIR="$APP_DIR/marketing/aso/$LOC/$PLATFORM/video"
+RAW_DIR="$APP_DIR/marketing/raw/$LOC/$PLATFORM/video/$REEL"
+ASO_DIR="$APP_DIR/marketing/aso/$LOC/$PLATFORM/video/$REEL"
 DERIVED="$APP_DIR/.build/reel2-$PLATFORM"
 mkdir -p "$RAW_DIR" "$ASO_DIR" "$DERIVED"
 RAW_MOV="$RAW_DIR/capture.mov"
-SYSLOG="$DERIVED/markers-$LOC.log"
+SYSLOG="$DERIVED/markers-$REEL-$LOC.log"
 
 CANVAS_W=$("$PYBIN" -c "import json,sys;print(json.load(open(sys.argv[1]))['canvas'][0])" "$SCENES")
 CANVAS_H=$("$PYBIN" -c "import json,sys;print(json.load(open(sys.argv[1]))['canvas'][1])" "$SCENES")
@@ -52,14 +56,20 @@ esac
 
 UDID=$(xcrun simctl list devices | grep "$SIM_NAME (" | grep -oE "[0-9A-F-]{36}" | head -1)
 [ -n "$UDID" ] || { echo "❌ simulator '$SIM_NAME' not found"; exit 1; }
-echo "▶ $PLATFORM / $LOC on $SIM_NAME ($PLACE)"
+echo "▶ $REEL reel · $PLATFORM / $LOC on $SIM_NAME ($PLACE)"
 xcrun simctl boot "$UDID" 2>/dev/null; xcrun simctl bootstatus "$UDID" -b >/dev/null 2>&1
 
 ( cd "$APP_DIR" && xcodegen generate >/dev/null 2>&1 )
 xcodebuild -project "$APP_DIR/ephemeris.swift.xcodeproj" -scheme ephemeris.swift \
   -destination "id=$UDID" -derivedDataPath "$DERIVED" build >/dev/null 2>&1 \
   || { echo "❌ build failed"; exit 1; }
-APP_PATH=$(find "$DERIVED/Build/Products" -maxdepth 2 -name 'Ephemeris.app' | head -1)
+# MUST be constrained to the simulator platform. The watch app also has PRODUCT_NAME=Ephemeris and
+# is built alongside (it is embedded in the iOS app), so an unconstrained find can return
+# Debug-watchsimulator/Ephemeris.app — which installs with "This app is not made for this device.
+# app is compatible with (4) but this device supports (1)", family 4 being watchOS.
+APP_PATH=$(find "$DERIVED/Build/Products" -maxdepth 2 -name 'Ephemeris.app' \
+  -path '*iphonesimulator*' | head -1)
+[ -n "$APP_PATH" ] || { echo "❌ no iphonesimulator build of Ephemeris.app in $DERIVED" >&2; exit 1; }
 xcrun simctl install "$UDID" "$APP_PATH" || { echo "❌ install failed"; exit 1; }
 xcrun simctl status_bar "$UDID" override --time "9:41" --cellularBars 4 --wifiBars 3 \
   --batteryState charged --batteryLevel 100 >/dev/null 2>&1
@@ -80,7 +90,8 @@ xcrun simctl io "$UDID" recordVideo --codec h264 --force "$RAW_MOV" &
 REC_PID=$!
 sleep 1
 
-SIMCTL_CHILD_EPHEMERIS_REEL=1 SIMCTL_CHILD_EPHEMERIS_DEMO=1 SIMCTL_CHILD_EPHEMERIS_LANG="$LOC" \
+SIMCTL_CHILD_EPHEMERIS_REEL=1 SIMCTL_CHILD_EPHEMERIS_REEL_TOUR="$REEL" \
+  SIMCTL_CHILD_EPHEMERIS_DEMO=1 SIMCTL_CHILD_EPHEMERIS_LANG="$LOC" \
 SIMCTL_CHILD_EPHEMERIS_TZ="$TZ" SIMCTL_CHILD_EPHEMERIS_LAT="$LAT" \
 SIMCTL_CHILD_EPHEMERIS_LON="$LON" SIMCTL_CHILD_EPHEMERIS_PLACE="$PLACE" \
   xcrun simctl launch "$UDID" "$BUNDLE" >/dev/null
@@ -109,7 +120,7 @@ HEAD_TRIM=$(echo "$T0 - $RSTART - 0.5" | bc -l)
 CONTENT_LEN=$(echo "$TEND - $T0" | bc -l)
 echo "▶ content ${CONTENT_LEN}s from HEAD ${HEAD_TRIM}s (marker-aligned)"
 
-SCENES_RUNTIME="$DERIVED/scenes-$LOC.runtime.json"
+SCENES_RUNTIME="$DERIVED/scenes-$REEL-$LOC.runtime.json"
 "$PYBIN" "$ROOT/marketing/reels/align_scenes.py" "$SCENES" "$SYSLOG" "$SCENES_RUNTIME" \
   || SCENES_RUNTIME="$SCENES"
 

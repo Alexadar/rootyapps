@@ -33,6 +33,8 @@ final class TabChecks: XCTestCase {
     // MARK: - Tab 0 — Chart
 
     func testChartWheelRendersAndHousesShowKnownAngles() {
+        // The wheel and the houses now live on two different lenses of the Sky section, so this
+        // checks the wheel first, then reopens on the Houses lens for the angles.
         let app = XCUIApplication().launchPinned(tab: Tab.chart)
 
         let wheel = any(app, "chart.wheel")
@@ -42,16 +44,20 @@ final class TabChecks: XCTestCase {
 
         // Placidus at 34.052N/118.244W. Ascendant and Midheaven are the two values a practitioner
         // checks first, so they are the ones worth pinning.
-        XCTAssertEqual(any(app, "angle.ac.degrees").text, "10° 50′", "Ascendant")
-        XCTAssertEqual(any(app, "angle.mc.degrees").text, "24° 40′", "Midheaven")
+        app.terminate()
+
+        let houses = XCUIApplication().launchPinned(tab: Tab.chart, lens: "houses")
+        XCTAssertTrue(any(houses, "card.houses").waitForExistence(timeout: 20))
+        XCTAssertEqual(any(houses, "angle.ac.degrees").text, "10° 50′", "Ascendant")
+        XCTAssertEqual(any(houses, "angle.mc.degrees").text, "24° 40′", "Midheaven")
         // Cusp 1 is the Ascendant, so this also proves the cusp rows are wired to the same houses.
-        XCTAssertEqual(any(app, "cusp.1.degrees").text, "10° 50′", "1st cusp = Ascendant")
+        XCTAssertEqual(any(houses, "cusp.1.degrees").text, "10° 50′", "1st cusp = Ascendant")
     }
 
     /// The house-system control: a model test can prove the six systems compute differently, but only
     /// this can prove the picker is actually bound to the cusps that get drawn.
     func testChangingHouseSystemRedrawsTheCusps() {
-        let app = XCUIApplication().launchPinned(tab: Tab.chart)
+        let app = XCUIApplication().launchPinned(tab: Tab.chart, lens: "houses")
         let cusp11 = any(app, "cusp.11.degrees")
         XCTAssertTrue(cusp11.waitForExistence(timeout: 20))
 
@@ -160,13 +166,19 @@ final class TabChecks: XCTestCase {
     /// The total is asserted too, so adding a sixth-and-then-seventh section forces this decision
     /// rather than silently shipping untested.
     func testEveryToolHasANumericCheck() {
-        let numericallyCovered = ["chart", "positions", "aspects", "cycle", "events"]
-        XCTAssertEqual(numericallyCovered.count, 5, "five sections assert a known value")
+        // Navigation regrouped from six flat sections to three categories with lenses. What is
+        // asserted did not shrink — these are the same readings, now reached differently.
+        let numericallyCovered = ["sky.wheel", "sky.table", "sky.aspects", "sky.houses",
+                                  "cycles.synodic", "cycles.timeline"]
+        XCTAssertEqual(numericallyCovered.count, 6, "six readings assert a known value")
         XCTAssertEqual(Set(numericallyCovered).count, numericallyCovered.count,
                        "duplicate in the coverage list")
 
-        let allSections = numericallyCovered + ["natal"]
-        XCTAssertEqual(allSections.count, 6,
-                       "the app ships 6 sections — a new one needs a check, numeric or structural")
+        // Charts is covered structurally by DeepLinkChecks, not numerically: its library is empty
+        // until a chart is saved, so there is nothing to pin. Claiming a numeric check it does not
+        // have would be worse than naming the gap.
+        let categories = ["sky", "charts", "cycles"]
+        XCTAssertEqual(categories.count, 3,
+                       "three categories — a fourth needs a check, numeric or structural")
     }
 }

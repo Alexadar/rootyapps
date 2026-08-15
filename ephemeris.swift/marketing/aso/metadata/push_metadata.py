@@ -43,8 +43,16 @@ def load():
     """Merge meta_*.json into {locale: {field: value}}."""
     meta = {}
     for path in sorted(glob.glob(os.path.join(HERE, "meta_*.json"))):
+        name = os.path.basename(path)
+        # The watch release notes match this glob but are {locale: "text"}, not {locale: {field: …}},
+        # and they belong to the watch app's own listing — push_watch_whatsnew.py owns them. Without
+        # this skip the loader tries `.items()` on a string and the whole push dies before it sends
+        # anything. It failed closed rather than writing something wrong, which is the good kind of
+        # break, but it blocked every locale.
+        if name == "meta_watch_whatsnew.json":
+            continue
         blob = json.load(open(path))
-        whatsnew = os.path.basename(path) == "meta_whatsnew.json"
+        whatsnew = name == "meta_whatsnew.json"
         for locale, value in blob.items():
             if locale.startswith("_"):
                 continue

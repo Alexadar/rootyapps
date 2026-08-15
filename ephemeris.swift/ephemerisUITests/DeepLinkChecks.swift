@@ -24,7 +24,22 @@ final class DeepLinkChecks: XCTestCase {
 
     override func setUp() { continueAfterFailure = false }
 
-    /// An identifier that exists **only** on the given tab, so landing anywhere else fails.
+    /// An identifier that exists **only** at the given destination, so landing anywhere else fails.
+    ///
+    /// The navigation was regrouped from six flat sections to three categories with lenses, and
+    /// these indices are unchanged on purpose: every store screenshot and preview is captured by
+    /// setting `EPHEMERIS_TAB`, so an index that stopped landing where it used to would silently
+    /// re-point the whole capture pipeline. `LegacyTab.destination(for:)` is the mapping; this table
+    /// is the assertion that it works.
+    ///
+    /// | index | was | now |
+    /// |---|---|---|
+    /// | 0 | Chart | Sky · Wheel |
+    /// | 1 | Positions | Sky · Table |
+    /// | 2 | Aspects | Sky · Aspects |
+    /// | 3 | Cycle | Cycles · Synodic |
+    /// | 4 | Events | Cycles · Timeline |
+    /// | 5 | Natal | Charts |
     private static let marker: [Int: String] = [
         0: "chart.wheel",
         1: "card.positions",

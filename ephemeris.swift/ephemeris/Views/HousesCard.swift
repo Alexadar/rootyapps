@@ -4,15 +4,20 @@ import EphemerisKit
 /// The twelve house cusps and the four angles, with a picker for the dividing system.
 /// Shown only once a place is set — houses are undefined without one.
 struct HousesCard: View {
-    @ObservedObject var vm: ChartViewModel
+    /// Plain data, not a view model — so a saved birth chart can feed this card exactly as the
+    /// live moment does. The other cards were already data-driven; this one and CycleView were the
+    /// last two holding MomentReadout back from being built once.
+    let houses: HouseCusps?
+    let fallback: HouseSystem?
+    @Binding var system: HouseSystem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            CardHeader(title: "Houses", trailing: vm.houses.map { Text(L.loc($0.system.displayName)) })
+            CardHeader(title: "Houses", trailing: houses.map { Text(L.loc($0.system.displayName)) })
 
-            if let houses = vm.houses {
+            if let houses {
                 systemPicker
-                if let attempted = vm.houseFallback { fallbackNote(attempted) }
+                if let attempted = fallback { fallbackNote(attempted) }
                 angles(houses.angles)
                 NebulaPalette.divider.frame(height: 0.75)
                 ForEach(1...12, id: \.self) { n in
@@ -33,7 +38,7 @@ struct HousesCard: View {
     }
 
     private var systemPicker: some View {
-        Picker("House system", selection: $vm.houseSystem) {
+        Picker("House system", selection: $system) {
             ForEach(HouseSystem.allCases) { Text(L.loc($0.displayName)).tag($0) }
         }
         .pickerStyle(.menu)

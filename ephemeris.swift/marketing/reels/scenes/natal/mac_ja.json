@@ -1,0 +1,57 @@
+{
+  "canvas": [
+    1920,
+    1080
+  ],
+  "scene_dur": 6.0,
+  "xfade": 0.5,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0B1020",
+    "bg_color_bottom": "#1A1330",
+    "title_color": "#ffffff",
+    "subtitle_color": "#9FB4FF",
+    "text_col_percent": 40,
+    "side_padding": 70,
+    "border_width": 6,
+    "border_color": "#2A2E52",
+    "border_radius": 26
+  },
+  "app": {
+    "name": "Ephemeris",
+    "tagline": "Your pocket sky almanac",
+    "icon": "liquid_icon.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "library",
+      "clip": "macclip_library.mov",
+      "title": "保存したチャート",
+      "subtitle": "あなた自身の iCloud Drive の中に"
+    },
+    {
+      "key": "natalwheel",
+      "clip": "macclip_natalwheel.mov",
+      "title": "開けば出生図",
+      "subtitle": "正確な瞬間と場所"
+    },
+    {
+      "key": "natalaspects",
+      "clip": "macclip_natalaspects.mov",
+      "title": "正確さ順のアスペクト",
+      "subtitle": "天体間のすべての角度"
+    },
+    {
+      "key": "natalhouses",
+      "clip": "macclip_natalhouses.mov",
+      "title": "6方式のハウス",
+      "subtitle": "プラシーダス・コッホ・ホールサインほか"
+    },
+    {
+      "key": "transits",
+      "clip": "macclip_transits.mov",
+      "title": "そこに今日の空を重ねて",
+      "subtitle": "同じ円の上のトランジット"
+    }
+  ]
+}

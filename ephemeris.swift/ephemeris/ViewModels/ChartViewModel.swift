@@ -115,6 +115,14 @@ final class ChartViewModel: ObservableObject {
         return cal.date(from: c) ?? date
     }
 
+    /// The live sky packaged for `MomentReadout` — the seam that lets the same four lenses render
+    /// either this moment or a saved chart's frozen one, without either knowing about the other.
+    var skyMoment: SkyMoment {
+        SkyMoment(positions: positions, aspects: aspects,
+                  houses: houses, houseFallback: houseFallback,
+                  outerPositions: nil, crossAspects: [])
+    }
+
     func recompute() {
         let t = instant
         recomputeChartOnly()

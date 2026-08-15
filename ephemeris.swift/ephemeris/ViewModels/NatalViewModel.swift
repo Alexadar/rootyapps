@@ -49,6 +49,16 @@ final class NatalViewModel: ObservableObject {
     /// chose. What must never happen is failing *silently* into local storage while implying sync —
     /// hence `storage`, which the library screen reports.
     nonisolated static func live() -> NatalViewModel {
+        // A preview-reel run gets a deterministic in-memory library instead of the real one. A reel
+        // must show real computed values — an empty library sells nothing, and capturing whatever
+        // charts happen to be in the developer's iCloud would put private birth data in a video on
+        // the App Store.
+        // Also seeded for UI tests: a fresh simulator's library is empty, so nothing natal could be
+        // asserted without either creating a chart through the entry form on every test (slow, and
+        // it would test the form rather than the thing under test) or seeding here.
+        if ReelDriver.isReelRun || LaunchOverride.flag("EPHEMERIS_SEED_CHARTS") {
+            return NatalViewModel(store: InMemoryChartStore(seed: reelFixtures), storage: .iCloud)
+        }
         if let cloud = try? ICloudChartStore() {
             return NatalViewModel(store: cloud, storage: .iCloud)
         }
@@ -57,6 +67,37 @@ final class NatalViewModel: ObservableObject {
         }
         return NatalViewModel(store: InMemoryChartStore(), storage: .local)
     }
+
+    /// The charts a reel shows. Invented people, fixed instants — nothing real, nothing private.
+    ///
+    /// UUIDs are **fixed**, not generated. A random id per launch means a UI test cannot address a
+    /// row, and a reel would open a different chart each capture.
+    nonisolated static let reelFixtures: [SavedChart] = {
+        func iso(_ s: String) -> Date { ISO8601DateFormatter().date(from: s) ?? Date() }
+        func id(_ s: String) -> UUID { UUID(uuidString: s)! }
+        return [
+            SavedChart(id: id("11111111-1111-4111-8111-111111111111"),
+                       name: "Olena",
+                       birthInstant: iso("1990-03-15T14:30:00Z"),
+                       timeZoneID: "Europe/Berlin", isTimeKnown: true,
+                       latitude: 52.52, longitude: 13.405, placeName: "Berlin"),
+            SavedChart(id: id("22222222-2222-4222-8222-222222222222"),
+                       name: "Marek",
+                       birthInstant: iso("1984-11-02T07:05:00Z"),
+                       timeZoneID: "Europe/Warsaw", isTimeKnown: true,
+                       latitude: 52.23, longitude: 21.01, placeName: "Warsaw"),
+            SavedChart(id: id("33333333-3333-4333-8333-333333333333"),
+                       name: "Yui",
+                       birthInstant: iso("1996-06-21T23:40:00Z"),
+                       timeZoneID: "Asia/Tokyo", isTimeKnown: true,
+                       latitude: 35.69, longitude: 139.69, placeName: "Tokyo"),
+            SavedChart(id: id("44444444-4444-4444-8444-444444444444"),
+                       name: "Sam",
+                       birthInstant: iso("1968-09-09T12:00:00Z"),
+                       timeZoneID: "Europe/London", isTimeKnown: false,
+                       latitude: 51.51, longitude: -0.13, placeName: "London"),
+        ]
+    }()
 
     /// Previews and tests — the mock, seeded so the library is never empty while building UI.
     nonisolated static func mock() -> NatalViewModel {

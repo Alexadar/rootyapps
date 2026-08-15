@@ -93,7 +93,10 @@ struct BirthDataEntryView: View {
 
                 verification
             }
-            .navigationTitle("Natal chart")
+            // Resolved eagerly, like the library's title: a navigation title renders in chrome that
+            // does not inherit this view's `\.locale` override on macOS, so the key would be looked
+            // up in the system language. `locale` is already in scope above.
+            .navigationTitle(Text(verbatim: L.string("Natal chart", locale: locale)))
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { onSave(chart) }

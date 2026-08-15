@@ -19,13 +19,19 @@ style:
   screenshot_padding: 56
 
 texts:
-  - title: "Ephemeris Sky"
+  - title: "ネイタルチャート"
+    subtitle: "iCloudに保存される出生図"
+  - title: "ネイタル＋トランジット"
+    subtitle: "今日の空を出生図に重ねて"
+  - title: "ハウスとアングル"
+    subtitle: "プラシーダス・コッホ・ホールサイン"
+  - title: "リアルタイムの空"
     subtitle: "本物の天体位置"
   - title: "すべての位置"
     subtitle: "トロピカル・地心・その日の分点"
   - title: "アスペクト"
     subtitle: "推測ではなく計算"
-  - title: "水星の周期"
+  - title: "会合周期"
     subtitle: "合・逆行・留"
   - title: "イベント年表"
     subtitle: "入宮・朔望・アスペクト"

@@ -19,13 +19,19 @@ style:
   screenshot_padding: 56
 
 texts:
-  - title: "Ephemeris Sky"
+  - title: "Geburtshoroskop"
+    subtitle: "Gespeichert in deiner iCloud"
+  - title: "Natal + Transite"
+    subtitle: "Der heutige Himmel im Vergleich"
+  - title: "Häuser & Achsen"
+    subtitle: "Placidus, Koch, Ganzzeichen u. a."
+  - title: "Der Himmel live"
     subtitle: "Echte Planetenpositionen"
   - title: "Jede Position"
     subtitle: "Tropisch, geozentrisch, zum Datum"
   - title: "Aspekte"
     subtitle: "Berechnet, nicht geraten"
-  - title: "Merkurs Phasen"
+  - title: "Synodischer Zyklus"
     subtitle: "Konjunktionen, Rückläufe, Stationen"
   - title: "Ereignis-Zeitleiste"
     subtitle: "Eintritte, Lunationen & Aspekte"

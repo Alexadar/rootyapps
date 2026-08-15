@@ -18,16 +18,23 @@ struct MacOSContentView: View {
     // Lets screenshot tooling open a specific section via EPHEMERIS_TAB. This is a SEPARATE deep-link
     // path from the iOS TabView's, so a tab deep link has to be asserted on the Mac as well —
     // passing on iPhone proves nothing here.
-    @State private var selection = LaunchOverride.int("EPHEMERIS_TAB") ?? 0
+    /// Seeded through the legacy map so EPHEMERIS_TAB=1 still opens Sky on the Table lens — the
+    /// screenshot pipeline and three UI tests depend on those indices landing on the same pixels.
+    @State private var selection: Int = LegacyTab.destination(
+        for: LaunchOverride.int("EPHEMERIS_TAB") ?? 0).section.rawValue
 
-    private let tabs: [MacTab] = [
-        .init(id: 0, title: "Chart",     icon: "circle.hexagongrid"),
-        .init(id: 1, title: "Positions", icon: "list.star"),
-        .init(id: 2, title: "Aspects",   icon: "point.3.connected.trianglepath.dotted"),
-        .init(id: 3, title: "Cycle",     icon: "arrow.triangle.2.circlepath"),
-        .init(id: 4, title: "Events",    icon: "calendar"),
-        .init(id: 5, title: "Natal",     icon: "person.crop.circle"),
-    ]
+    /// Three categories, matching iOS. Built from `ChartSection` so the two platforms cannot drift
+    /// apart about what the sections are.
+    private var tabs: [MacTab] {
+        ChartSection.allCases.map { .init(id: $0.rawValue, title: $0.title, icon: $0.icon) }
+    }
+
+    @State private var lens: MomentLens =
+        LaunchOverride.value("EPHEMERIS_LENS").flatMap(MomentLens.init(rawValue:))
+        ?? LegacyTab.destination(for: LaunchOverride.int("EPHEMERIS_TAB") ?? 0).moment ?? .wheel
+    @State private var cyclesLens: CyclesLens =
+        LaunchOverride.value("EPHEMERIS_LENS").flatMap(CyclesLens.init(rawValue:))
+        ?? LegacyTab.destination(for: LaunchOverride.int("EPHEMERIS_TAB") ?? 0).cycles ?? .timeline
 
     @StateObject private var natal = NatalViewModel.live()
 
@@ -88,18 +95,25 @@ struct MacOSContentView: View {
     }
 
     @ViewBuilder private var content: some View {
-        switch selection {
-        case 0:
+        switch ChartSection(rawValue: selection) ?? .sky {
+        case .sky:
+            // The Moment control lives ONLY here — every lens below reads it.
             MomentControls(vm: vm)
-            chartSection
-        case 1:
-            MomentControls(vm: vm)
-            PositionsTable(positions: vm.positions)
-        case 2:
-            AspectsList(aspects: vm.aspects)
-        case 3:
-            CycleView(vm: vm)
-        case 5:
+            MomentReadout(moment: vm.skyMoment, lens: $lens, houseSystem: $vm.houseSystem)
+                .onAppear { vm.startChartDemo() }
+                .onDisappear { vm.stopChartDemo() }
+        case .cycles:
+            Picker("Cycles", selection: $cyclesLens) {
+                ForEach(CyclesLens.allCases) { Label($0.title, systemImage: $0.icon).tag($0) }
+            }
+            .pickerStyle(.segmented).labelsHidden()
+            .accessibilityIdentifier("input.cyclesLens")
+            switch cyclesLens {
+            case .timeline: EventsView(events: vm.timelineEvents, now: vm.instant)
+            case .synodic:  CycleView(phase: vm.cyclePhase, upcoming: vm.upcomingEvents,
+                                      selectedBody: $vm.cycleBody)
+            }
+        case .charts:
             // The library brings its own List and navigation; the surrounding ScrollView is
             // harmless because the List sizes itself, and this keeps the section switch uniform.
             NavigationStack {
@@ -109,8 +123,6 @@ struct MacOSContentView: View {
                     }
             }
             .frame(minHeight: 520)
-        default:
-            EventsView(events: vm.timelineEvents, now: vm.instant)
         }
     }
 
@@ -142,44 +154,5 @@ struct MacOSContentView: View {
         }
     }
 
-    /// The Chart section, two-column where the window can hold it.
-    ///
-    /// This is what the width is *for*: the wheel is square, so a single column either wastes the
-    /// right half of a wide window or inflates the wheel to fill it. Side by side, the wheel keeps a
-    /// sane size and the numbers it draws sit next to it — which is how the practitioner tools this
-    /// app competes with are laid out.
-    ///
-    /// `ViewThatFits` rather than a `GeometryReader`: it picks the wide arrangement when it actually
-    /// fits and falls back on its own, with no size plumbing through the view tree.
-    ///
-    /// A reel run stays single-column deliberately. The macOS preview window is sized by its
-    /// *content* to hit exactly 16:9 (see the frame comment above, which cost three failed attempts),
-    /// and changing the content's shape underneath that is the fastest way to get pillarboxed
-    /// captures back — which is a Guideline 2.3.4 rejection, not a cosmetic problem.
-    @ViewBuilder
-    private var chartSection: some View {
-        let wheel = ChartWheel(positions: vm.positions, aspects: vm.aspects, houses: vm.houses)
-        // No reel special-case: a preview must show the layout users actually get. The reel differs
-        // only in window SIZE (1600x848 of content), never in what is drawn.
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .top, spacing: 16) {
-                wheel.frame(minWidth: 380, maxWidth: 560)
-                VStack(spacing: 16) {
-                    TightestAspects(aspects: vm.aspects)
-                    HousesCard(vm: vm)
-                }
-                .frame(minWidth: 360)
-            }
-            VStack(spacing: 16) {
-                wheel
-                TightestAspects(aspects: vm.aspects)
-                HousesCard(vm: vm)
-            }
-        }
-        // Hooks live on the container, not the wheel: `ViewThatFits` evaluates candidates, and
-        // hanging them off the wheel risks the demo starting from whichever branch was measured.
-        .onAppear { vm.startChartDemo() }
-        .onDisappear { vm.stopChartDemo() }
-    }
 }
 #endif

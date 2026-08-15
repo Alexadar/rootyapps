@@ -22,9 +22,25 @@ APP="$(find ~/Library/Developer/Xcode/DerivedData/ephemeris.swift-*/Build/Produc
 CAP="$ROOT/marketing/tools/capture_mac_window.sh"
 OUT_ROOT="$ROOT/ephemeris.swift/marketing/raw"
 
-# tab index → filename. Matches the caption order in captions.json; keep them in step.
-TABS=(0 1 2 3 4)
-NAMES=(01_chart 02_positions 03_aspects 04_cycle 05_events)
+# name | EPHEMERIS_TAB | EPHEMERIS_LENS | EPHEMERIS_CHART | EPHEMERIS_TRANSITS
+#
+# Matches the caption order in captions.json — `mac` there is 8 long, and gen_params.py refuses to
+# stamp the params if the counts disagree. Same order and same reasoning as make_sim_shots.sh:
+# natal, transits and houses lead because they are what the subtitle now promises and what an App
+# Store search result shows.
+#
+# Natal shots address the seeded fixture by UUID prefix, never a row index — `all()` sorts by
+# modifiedAt and the fixtures share an instant, so an index picks a different person per run.
+SHOTS=(
+  "01_natal|5|wheel|11111111|"
+  "02_transits|5|wheel|11111111|1"
+  "03_houses|5|houses|11111111|"
+  "04_sky|0|||"
+  "05_positions|1|||"
+  "06_aspects|2|||"
+  "07_cycle|3|||"
+  "08_events|4|||"
+)
 
 place_for() {
   case "$1" in
@@ -39,14 +55,25 @@ for LOC in "${@:-de fr ja}"; do
   IFS='|' read -r TZ LAT LON PLACE <<<"$(place_for "$LOC")"
   DEST="$OUT_ROOT/$LOC/mac"
   mkdir -p "$DEST"
+  # The previous shot plan's files must go first. Nothing downstream deletes, and the framer pairs
+  # captions to captures by sorted filename taking the first N — so a leftover `01_chart.png` beside
+  # the new `01_natal.png` shifts every caption by one. `video/` underneath is a different pipeline.
+  rm -f "$DEST"/*.png
   echo "=== $LOC ($PLACE) -> $DEST"
-  for i in "${!TABS[@]}"; do
-    "$CAP" "$APP" "$DEST/${NAMES[$i]}.png" \
-      EPHEMERIS_LANG="$LOC" EPHEMERIS_TAB="${TABS[$i]}" \
-      EPHEMERIS_TZ="$TZ" EPHEMERIS_LAT="$LAT" EPHEMERIS_LON="$LON" EPHEMERIS_PLACE="$PLACE" \
-      >/dev/null 2>&1 \
-      && echo "    ${NAMES[$i]}.png  $(python3 -c "
-from PIL import Image; print('x'.join(map(str,Image.open('$DEST/${NAMES[$i]}.png').size)))" 2>/dev/null)" \
-      || echo "    ${NAMES[$i]}.png FAILED"
+  for SHOT in "${SHOTS[@]}"; do
+    IFS='|' read -r NAME TAB LENS CHART TRANSITS <<<"$SHOT"
+    ENVV=(
+      EPHEMERIS_LANG="$LOC" EPHEMERIS_TAB="$TAB"
+      EPHEMERIS_TZ="$TZ" EPHEMERIS_LAT="$LAT" EPHEMERIS_LON="$LON" EPHEMERIS_PLACE="$PLACE"
+    )
+    [ -n "$LENS" ]     && ENVV+=(EPHEMERIS_LENS="$LENS")
+    [ -n "$TRANSITS" ] && ENVV+=(EPHEMERIS_TRANSITS="$TRANSITS")
+    # Invented people at fixed instants — a capture must never be able to reach the developer's
+    # real iCloud charts and put someone's birth data on the App Store.
+    [ -n "$CHART" ]    && ENVV+=(EPHEMERIS_CHART="$CHART" EPHEMERIS_SEED_CHARTS=1)
+    "$CAP" "$APP" "$DEST/$NAME.png" "${ENVV[@]}" >/dev/null 2>&1 \
+      && echo "    $NAME.png  $(/opt/homebrew/bin/python3 -c "
+from PIL import Image; print('x'.join(map(str,Image.open('$DEST/$NAME.png').size)))" 2>/dev/null)" \
+      || echo "    $NAME.png FAILED"
   done
 done

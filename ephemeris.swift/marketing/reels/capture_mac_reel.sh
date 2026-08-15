@@ -2,7 +2,19 @@
 #
 # capture_mac_reel.sh [locale …] — macOS App Store preview, per locale.
 #
-#   ./capture_mac_reel.sh de fr ja
+#   ./capture_mac_reel.sh de fr ja              # the sky reel
+#   REEL=natal ./capture_mac_reel.sh en de      # the natal reel
+#
+# `REEL` defaults to sky. Everything is namespaced by reel id, matching the phone/iPad pipeline:
+#
+#   marketing/reels/scenes/<reel>/mac_<loc>.json          captions
+#   marketing/raw/<loc>/mac/video/<reel>/clips/           one clip per screen
+#   marketing/aso/<loc>/mac/video/<reel>/                 full.mp4 + store_preview_*
+#
+# This script pointed at `scenes_mac_<loc>.json` until now — files the two-reel reorganisation
+# renamed to `scenes/sky/mac_<loc>.json`. It had been broken since, and would have failed on its
+# next run rather than producing anything wrong; the Mac previews on the store are still the
+# 2026-07-29 ones from before natal charts existed.
 #
 # Unlike the iPhone/iPad reel there is no XCUITest tour: the Mac cut is assembled from one short
 # clip per tab, and the tab is chosen by EPHEMERIS_TAB at launch. That makes it immune to the bug
@@ -33,8 +45,37 @@ APP=$(find ~/Library/Developer/Xcode/DerivedData/ephemeris.swift-*/Build/Product
 EXEC="$APP/Contents/MacOS/Ephemeris"
 [ -x "$RECORDER" ] || { echo "building recordwindow…"; swiftc -O "$ROOT/marketing/reels/RecordWindow.swift" -o "$RECORDER"; }
 
-KEYS=(chart positions aspects cycle events)
-TABS=(0 1 2 3 4)
+REEL="${REEL:-sky}"
+
+# key | EPHEMERIS_TAB | EPHEMERIS_LENS | EPHEMERIS_CHART | EPHEMERIS_TRANSITS
+#
+# Five clips per reel, because 5 × 5.8s = 29s and the App Store cap is 30.
+#
+# The natal clips address the seeded fixture by UUID prefix, exactly as the screenshots do — the
+# library sorts by modifiedAt and the fixtures share an instant, so a row index is not stable.
+# EPHEMERIS_REEL=1 (set on every launch below, for the 1600×848 window) already seeds that library
+# with invented people, so no real birth data can reach a capture.
+case "$REEL" in
+  sky)
+    CLIPS_SPEC=(
+      "chart|0|||"
+      "positions|1|||"
+      "aspects|2|||"
+      "cycle|3|||"
+      "events|4|||"
+    ) ;;
+  natal)
+    CLIPS_SPEC=(
+      "library|5|||"
+      "natalwheel|5|wheel|11111111|"
+      "natalaspects|5|aspects|11111111|"
+      "natalhouses|5|houses|11111111|"
+      "transits|5|wheel|11111111|1"
+    ) ;;
+  *) echo "unknown REEL '$REEL' (expected sky or natal)" >&2; exit 1 ;;
+esac
+KEYS=()
+for spec in "${CLIPS_SPEC[@]}"; do KEYS+=("${spec%%|*}"); done
 
 place_for() {
   case "$1" in
@@ -61,27 +102,34 @@ trap 'clear_window_frame' EXIT      # leave the user's normal window at its defa
 
 for LOC in "${@:-de fr ja}"; do
   IFS='|' read -r TZ LAT LON PLACE <<<"$(place_for "$LOC")"
-  CLIPS="$APP_DIR/marketing/raw/$LOC/mac/video/clips"
-  ASO_DIR="$APP_DIR/marketing/aso/$LOC/mac/video"
+  CLIPS="$APP_DIR/marketing/raw/$LOC/mac/video/$REEL/clips"
+  ASO_DIR="$APP_DIR/marketing/aso/$LOC/mac/video/$REEL"
   mkdir -p "$CLIPS" "$ASO_DIR"
-  SCENES="$APP_DIR/marketing/reels/scenes_mac.json"
-  [ "$LOC" = en ] || SCENES="$APP_DIR/marketing/reels/scenes_mac_$LOC.json"
-  echo "=== mac / $LOC ($PLACE)"
+  SCENES="$APP_DIR/marketing/reels/scenes/$REEL/mac_$LOC.json"
+  [ -f "$SCENES" ] || { echo "❌ no scenes file $SCENES" >&2; exit 1; }
+  echo "=== $REEL · mac / $LOC ($PLACE)"
 
-  for i in "${!TABS[@]}"; do
+  for i in "${!CLIPS_SPEC[@]}"; do
+    IFS='|' read -r KEY TAB LENS CHART TRANSITS <<<"${CLIPS_SPEC[$i]}"
     pkill -9 -f "MacOS/Ephemeris" 2>/dev/null
     while pgrep -f "MacOS/Ephemeris" >/dev/null; do sleep 0.3; done
-    # -g keeps focus where the user left it; SCK does not need the window frontmost.
-    EPHEMERIS_LANG="$LOC" EPHEMERIS_TAB="${TABS[$i]}" EPHEMERIS_TZ="$TZ" \
-    EPHEMERIS_LAT="$LAT" EPHEMERIS_LON="$LON" EPHEMERIS_PLACE="$PLACE" EPHEMERIS_DEMO=1 \
-    EPHEMERIS_REEL=1 \
-      "$EXEC" >/dev/null 2>&1 &
+    ENVV=(
+      EPHEMERIS_LANG="$LOC" EPHEMERIS_TAB="$TAB" EPHEMERIS_TZ="$TZ"
+      EPHEMERIS_LAT="$LAT" EPHEMERIS_LON="$LON" EPHEMERIS_PLACE="$PLACE"
+      EPHEMERIS_DEMO=1 EPHEMERIS_REEL=1
+    )
+    [ -n "$LENS" ]     && ENVV+=(EPHEMERIS_LENS="$LENS")
+    [ -n "$CHART" ]    && ENVV+=(EPHEMERIS_CHART="$CHART")
+    [ -n "$TRANSITS" ] && ENVV+=(EPHEMERIS_TRANSITS="$TRANSITS")
+    # Backgrounded: SCK records the window's own composited content, so it never has to be
+    # frontmost, and the user's focus stays where they left it.
+    env "${ENVV[@]}" "$EXEC" >/dev/null 2>&1 &
     PID=$!
     sleep 3.3                                   # let the window lay out and the demo start
-    "$RECORDER" --pid "$PID" "$CLIP_DUR" "$CLIPS/macclip_${KEYS[$i]}.mov" >/dev/null 2>&1
+    "$RECORDER" --pid "$PID" "$CLIP_DUR" "$CLIPS/macclip_$KEY.mov" >/dev/null 2>&1
     kill "$PID" 2>/dev/null
-    if [ -s "$CLIPS/macclip_${KEYS[$i]}.mov" ]; then echo "    ${KEYS[$i]}.mov"
-    else echo "    ${KEYS[$i]}.mov ❌ EMPTY (Screen Recording permission?)"; fi
+    if [ -s "$CLIPS/macclip_$KEY.mov" ]; then echo "    $KEY.mov"
+    else echo "    $KEY.mov ❌ EMPTY (Screen Recording permission?)"; fi
   done
   pkill -9 -f "MacOS/Ephemeris" 2>/dev/null
 
@@ -95,7 +143,8 @@ for LOC in "${@:-de fr ja}"; do
 
   # Hard cuts mean the timeline is deterministic — scene i owns [i*CLIP_DUR, (i+1)*CLIP_DUR].
   # No marker alignment needed, and no chance of the caption drift the phone reels hit.
-  RUNTIME="$APP_DIR/.build/scenes-mac-$LOC.runtime.json"
+  # Reel id in the filename: sky and natal would otherwise overwrite each other's runtime scenes.
+  RUNTIME="$APP_DIR/.build/scenes-mac-$REEL-$LOC.runtime.json"
   mkdir -p "$APP_DIR/.build"
   "$PYBIN" - "$SCENES" "$RUNTIME" "$CLIP_DUR" <<'PY'
 import json, sys

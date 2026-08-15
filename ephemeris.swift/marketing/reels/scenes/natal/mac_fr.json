@@ -1,0 +1,57 @@
+{
+  "canvas": [
+    1920,
+    1080
+  ],
+  "scene_dur": 6.0,
+  "xfade": 0.5,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0B1020",
+    "bg_color_bottom": "#1A1330",
+    "title_color": "#ffffff",
+    "subtitle_color": "#9FB4FF",
+    "text_col_percent": 40,
+    "side_padding": 70,
+    "border_width": 6,
+    "border_color": "#2A2E52",
+    "border_radius": 26
+  },
+  "app": {
+    "name": "Ephemeris",
+    "tagline": "Your pocket sky almanac",
+    "icon": "liquid_icon.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "library",
+      "clip": "macclip_library.mov",
+      "title": "Vos thèmes enregistrés",
+      "subtitle": "Des fichiers dans votre iCloud Drive"
+    },
+    {
+      "key": "natalwheel",
+      "clip": "macclip_natalwheel.mov",
+      "title": "En ouvrir un — le thème natal",
+      "subtitle": "L'instant et le lieu exacts"
+    },
+    {
+      "key": "natalaspects",
+      "clip": "macclip_natalaspects.mov",
+      "title": "Les aspects, par exactitude",
+      "subtitle": "Chaque angle entre les planètes"
+    },
+    {
+      "key": "natalhouses",
+      "clip": "macclip_natalhouses.mov",
+      "title": "Maisons en six systèmes",
+      "subtitle": "Placidus, Koch, signes entiers…"
+    },
+    {
+      "key": "transits",
+      "clip": "macclip_transits.mov",
+      "title": "Et le ciel du jour par-dessus",
+      "subtitle": "Les transits sur la même roue"
+    }
+  ]
+}

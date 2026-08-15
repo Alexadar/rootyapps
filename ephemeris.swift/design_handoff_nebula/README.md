@@ -1,5 +1,25 @@
 # Handoff: Ephemeris Sky — "Nebula" theme (v2, all platforms + Apple Watch)
 
+## Navigation (Aug 2026 regroup)
+Six flat sections collapsed to **four categories** so Natal leaves the iOS *More*
+overflow and becomes a first-class destination:
+- **Sky** (live moment) — Wheel · Table · Aspects · Houses lens segments (was
+  Chart/Positions/Aspects tabs + Houses card); the Moment control lives only here.
+- **Charts** (saved birth charts, **tab slot 2**) — library + chart detail; reserved
+  homes for Returns, Progressions, Synastry, Composite, Dignities, Analysis,
+  Astrocartography (all per-chart).
+- **Cycles** — Timeline (was Events) · Synodic (was Cycle) segments.
+- one spare seat, left empty on purpose.
+
+Positions/Aspects/Houses are one shared `MomentReadout` fed either the live moment or
+a saved chart's frozen moment — built once, no duplication. Deep links:
+`EPHEMERIS_TAB=0..5` resolve to category+lens so old indices land on the same pixels;
+leaf accessibility identifiers are unchanged. In the interactive reference the
+Nebula v2 build now shows Natal as tab 2, and the bottom tab bar / sidebar use the
+**Apple 2026 Liquid Glass** treatment (floating translucent capsule, layered
+highlight, glowing lozenge on the selected item). Full argument in
+`reference/Ephemeris Sky (Nebula v2 — interactive).html`.
+
 ## Overview
 "Nebula" is a vivid, immersive redesign of **Ephemeris Sky** (the SwiftUI ephemeris /
 astrology app). It keeps every existing data flow and control — it changes the

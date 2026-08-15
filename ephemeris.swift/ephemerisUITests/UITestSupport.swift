@@ -73,6 +73,25 @@ func menuOption(_ app: XCUIApplication, _ title: String) -> XCUIElement {
     return item   // return the macOS-shaped one so a failure message names something real
 }
 
+/// A segment inside a segmented `Picker`, by its visible title, scoped to the control.
+///
+/// Scoped on purpose. A whole-tree `descendants(matching: .any)` with a CONTAINS predicate is the
+/// query that took **127 seconds** and then failed with "Timed out while evaluating UI query"; used
+/// for lens switching it cost ~115s per test across five tests before this existed.
+///
+/// Measured from `app.debugDescription` on macOS: a segmented Picker publishes a `RadioGroup`
+/// carrying the identifier, whose children are `RadioButton`s labelled with the segment title. iOS
+/// publishes them as `buttons`. Both are tried rather than assumed — the type difference IS the
+/// thing being handled.
+func segment(_ app: XCUIApplication, in group: String, titled title: String) -> XCUIElement {
+    let control = any(app, group)
+    let radio = control.radioButtons[title]
+    if radio.waitForExistence(timeout: 5) { return radio }
+    let button = control.buttons[title]
+    if button.waitForExistence(timeout: 5) { return button }
+    return radio   // return the macOS-shaped one so a failure names something real
+}
+
 // MARK: - Launch
 
 /// The instant every assertion in this suite is written against.
@@ -103,7 +122,8 @@ extension XCUIApplication {
     /// `EPHEMERIS_LANG`. A fresh sim can boot in a comma-decimal region, where every formatted
     /// number renders `152,11` and tests fail on the separator rather than the arithmetic.
     @discardableResult
-    func launchPinned(tab: Int? = nil, screen: String? = nil) -> XCUIApplication {
+    func launchPinned(tab: Int? = nil, screen: String? = nil,
+                      lens: String? = nil) -> XCUIApplication {
         launchEnvironment["EPHEMERIS_DATE"] = pinnedInstant
         // The display zone must equal the DEVICE zone, or the pinned instant is not the instant the
         // chart computes from.
@@ -124,6 +144,8 @@ extension XCUIApplication {
         launchEnvironment["EPHEMERIS_LANG"] = "en"
         if let tab { launchEnvironment["EPHEMERIS_TAB"] = String(tab) }
         if let screen { launchEnvironment["EPHEMERIS_SCREEN"] = screen }
+        // Houses is a LENS now, not a tab, so it is unreachable by tab index alone.
+        if let lens { launchEnvironment["EPHEMERIS_LENS"] = lens }
 
         // Pin every PERSISTED preference that changes a number on screen.
         //
