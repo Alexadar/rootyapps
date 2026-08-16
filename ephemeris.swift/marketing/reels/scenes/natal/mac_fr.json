@@ -36,22 +36,28 @@
       "subtitle": "L'instant et le lieu exacts"
     },
     {
-      "key": "natalaspects",
-      "clip": "macclip_natalaspects.mov",
-      "title": "Les aspects, par exactitude",
-      "subtitle": "Chaque angle entre les planètes"
-    },
-    {
-      "key": "natalhouses",
-      "clip": "macclip_natalhouses.mov",
-      "title": "Maisons en six systèmes",
-      "subtitle": "Placidus, Koch, signes entiers…"
-    },
-    {
       "key": "transits",
       "clip": "macclip_transits.mov",
-      "title": "Et le ciel du jour par-dessus",
+      "title": "Le ciel du jour par-dessus",
       "subtitle": "Les transits sur la même roue"
+    },
+    {
+      "key": "analysis",
+      "clip": "macclip_analysis.mov",
+      "title": "Dignités, forme, répartition",
+      "subtitle": "Évaluées selon les tables classiques"
+    },
+    {
+      "key": "returns",
+      "clip": "macclip_returns.mov",
+      "title": "Révolutions solaire et lunaire",
+      "subtitle": "La prochaine, à la minute"
+    },
+    {
+      "key": "synastry",
+      "clip": "macclip_synastry.mov",
+      "title": "Et face à un second thème",
+      "subtitle": "Synastrie, chaque contact classé"
     }
   ]
 }

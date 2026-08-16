@@ -28,11 +28,17 @@ public final class WatchBridge: NSObject, WCSessionDelegate {
     }
 
     /// Phone side. Cheap and idempotent, so it can be called on every change without bookkeeping.
-    public func push(location: GeoLocation?, languageCode: String, houseSystem: HouseSystem) {
+    /// `defaultChart` is the one the watch shows a Returns row for. Pass nil when none is set —
+    /// omitting the keys would leave a previously-sent chart in place on the wrist forever.
+    public func push(location: GeoLocation?, languageCode: String, houseSystem: HouseSystem,
+                     defaultChart: (instant: Date, name: String)? = nil) {
         guard let session, session.activationState == .activated else { return }
         var context: [String: Any] = [
             SharedStore.Key.language: languageCode,
             SharedStore.Key.houseSystem: houseSystem.rawValue,
+            // Always present, so clearing the default chart actually clears it on the watch.
+            SharedStore.Key.defaultChartInstant: defaultChart?.instant.timeIntervalSince1970 ?? 0,
+            SharedStore.Key.defaultChartName: defaultChart?.name ?? "",
         ]
         if let location {
             context[SharedStore.Key.latitude]  = location.latitude
@@ -49,6 +55,11 @@ public final class WatchBridge: NSObject, WCSessionDelegate {
         if let code = context[SharedStore.Key.language] as? String { store.write(languageCode: code) }
         if let raw = context[SharedStore.Key.houseSystem] as? String,
            let system = HouseSystem(rawValue: raw) { store.write(houseSystem: system) }
+        // A zero instant or an empty name means "no default chart" — see `push`.
+        let instant = context[SharedStore.Key.defaultChartInstant] as? Double ?? 0
+        let chartName = context[SharedStore.Key.defaultChartName] as? String ?? ""
+        store.write(defaultChart: (instant > 0 && !chartName.isEmpty)
+                    ? (Date(timeIntervalSince1970: instant), chartName) : nil)
         if let lat = context[SharedStore.Key.latitude] as? Double,
            let lon = context[SharedStore.Key.longitude] as? Double {
             let name = context[SharedStore.Key.placeName] as? String

@@ -3,7 +3,7 @@
     1200,
     1600
   ],
-  "content_len": 30.5,
+  "content_len": 29.5,
   "preview_maxlen": 30,
   "outro_dur": 2.6,
   "style": {
@@ -25,45 +25,38 @@
   "scenes": [
     {
       "key": "Library",
-      "start": 0.0,
-      "end": 3.5,
       "title": "Vos thèmes enregistrés",
-      "subtitle": "Dans votre iCloud Drive"
+      "subtitle": "Des fichiers dans votre iCloud Drive"
     },
     {
       "key": "NatalWheel",
-      "start": 3.5,
-      "end": 8.5,
-      "title": "Ouvrez-en un — le thème natal",
+      "title": "En ouvrir un — le thème natal",
       "subtitle": "L'instant et le lieu exacts"
     },
     {
-      "key": "NatalAspects",
-      "start": 8.5,
-      "end": 14.5,
-      "title": "Aspects, par exactitude",
-      "subtitle": "Chaque angle entre les planètes"
-    },
-    {
-      "key": "NatalPositions",
-      "start": 14.5,
-      "end": 20.5,
-      "title": "Positions à la minute d'arc",
-      "subtitle": "Signe, degré et mouvement diurne"
-    },
-    {
       "key": "NatalHouses",
-      "start": 20.5,
-      "end": 26.5,
       "title": "Maisons en six systèmes",
-      "subtitle": "Placidus, Koch, Signe entier et plus"
+      "subtitle": "Placidus, Koch, signes entiers…"
     },
     {
       "key": "Transits",
-      "start": 26.5,
-      "end": 30.5,
-      "title": "Et le ciel du jour par-dessus",
-      "subtitle": "Transits sur la même roue"
+      "title": "Le ciel du jour par-dessus",
+      "subtitle": "Les transits sur la même roue"
+    },
+    {
+      "key": "Analysis",
+      "title": "Dignités, forme, répartition",
+      "subtitle": "Évaluées selon les tables classiques"
+    },
+    {
+      "key": "Returns",
+      "title": "Révolutions solaire et lunaire",
+      "subtitle": "La prochaine, à la minute"
+    },
+    {
+      "key": "Synastry",
+      "title": "Et face à un second thème",
+      "subtitle": "Synastrie, chaque contact classé"
     }
   ]
 }

@@ -18,8 +18,44 @@ struct WatchEventsView: View {
         return Array(EventTimeline.allEvents(in: window).filter { $0.date >= date }.prefix(40))
     }
 
+    /// The next return for the default chart set on the phone, or nil when none is set.
+    ///
+    /// This is the *only* one of the seven practitioner features that reaches the watch. The others
+    /// — synastry, composite, progressions, dignities, chart analysis, midpoints — are consultation
+    /// tools: multi-chart or table-shaped, and every one fails the test this row passes, which is
+    /// "does the value change, and would you glance at it more than once a day?". A synastry grid
+    /// at 176pt is the aspects list the watch already dropped.
+    ///
+    /// Computed here rather than sent across: the watch has the whole Kit, so a birth instant is
+    /// enough. Shipping the return *date* would be a snapshot that goes stale the moment it passes.
+    private var nextReturn: (event: ReturnEvent, chartName: String)? {
+        guard let chart = SharedStore().defaultChart else { return nil }
+        let natalSun = Ephemeris.longitude(of: .sun, at: chart.instant)
+        guard let event = Returns.next(.sun, to: natalSun, after: date) else { return nil }
+        return (event, chart.name)
+    }
+
     var body: some View {
         List {
+                // Present only when a default chart is set. With none, the row is simply absent —
+                // a placeholder would invite a tap that leads nowhere on a device with no library.
+                if let next = nextReturn {
+                    HStack(spacing: 8) {
+                        Text(verbatim: next.event.body.glyph + "\u{FE0E}")
+                            .frame(width: 18)
+                            .foregroundStyle(Color.pink)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(verbatim: next.chartName + " · " + L.string("Return", locale: .current))
+                                .font(.caption2).lineLimit(1)
+                            Text(next.event.date,
+                                 format: .dateTime.day().month(.abbreviated).hour().minute())
+                                .font(.system(size: 10)).foregroundStyle(.secondary)
+                        }
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("watch.returnRow")
+                }
+
                 if events.isEmpty {
                     Text(L.loc("No events in this window.")).font(.caption)
                         .foregroundStyle(.secondary)

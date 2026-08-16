@@ -120,8 +120,51 @@ final class NatalViewModel: ObservableObject {
     }
 
     func delete(_ chart: SavedChart) {
-        do { try store.delete(id: chart.id); reload() }
+        do {
+            try store.delete(id: chart.id)
+            // A deleted chart cannot stay the watch's default, or the wrist keeps showing a return
+            // for someone whose record no longer exists.
+            if defaultChartID == chart.id { setDefaultChart(nil) }
+            reload()
+        }
         catch { loadError = error.localizedDescription }
+    }
+
+    // MARK: - The watch's default chart
+
+    private static let defaultChartKey = "ephemeris.defaultChartID"
+
+    /// Which chart the watch shows a Returns row for. Nil is a real state — with none set the row
+    /// is absent rather than empty.
+    var defaultChartID: UUID? {
+        UserDefaults.standard.string(forKey: Self.defaultChartKey).flatMap(UUID.init(uuidString:))
+    }
+
+    /// Only a chart with a known birth time can be the default: a return is cast for the instant a
+    /// body regains its natal degree, so without a time there is no honest row to send.
+    func setDefaultChart(_ chart: SavedChart?) {
+        guard let chart, chart.isTimeKnown else {
+            UserDefaults.standard.removeObject(forKey: Self.defaultChartKey)
+            SharedStore().write(defaultChart: nil)
+            pushToWatch(nil)
+            objectWillChange.send()
+            return
+        }
+        UserDefaults.standard.set(chart.id.uuidString, forKey: Self.defaultChartKey)
+        let payload = (instant: chart.birthInstant, name: chart.name)
+        SharedStore().write(defaultChart: payload)
+        pushToWatch(payload)
+        objectWillChange.send()
+    }
+
+    private func pushToWatch(_ payload: (instant: Date, name: String)?) {
+#if os(iOS)
+        let shared = SharedStore()
+        WatchBridge.shared.push(location: shared.location,
+                                languageCode: UserDefaults.standard.string(forKey: "appLanguage") ?? "",
+                                houseSystem: shared.houseSystem,
+                                defaultChart: payload)
+#endif
     }
 
     // MARK: - Derived, for the open chart

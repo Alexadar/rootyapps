@@ -33,6 +33,22 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 
+	<!--
+	  Export compliance, answered in the binary rather than by hand on every upload.
+
+	  Without this key App Store Connect refuses the submission with a 409 naming
+	  `usesNonExemptEncryption` as a required build attribute — and the answer then has to be
+	  PATCHed onto each build individually, which is a step that is easy to forget and blocks
+	  review when it is. Declaring it here travels with every build forever.
+
+	  `false` is the accurate answer, not the convenient one: the app makes no network calls at
+	  all (no URLSession anywhere in the app, Kit or watch target), uses no CryptoKit or
+	  CommonCrypto, and its only data movement is iCloud Documents through Apple's own frameworks,
+	  which is exempt.
+	-->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.lifestyle</string>
 	<key>NSMotionUsageDescription</key>

@@ -36,7 +36,8 @@ ROOT=/Users/oleksandr/Projects/rootyapps
 APP_DIR="$ROOT/ephemeris.swift"
 RECORDER="$ROOT/marketing/reels/recordwindow"
 PYBIN=/Users/oleksandr/miniconda3/envs/fantastic/bin/python
-CLIP_DUR="${CLIP_DUR:-5.8}"        # 5 clips -> 29s, just inside the 30s App Store cap
+# sky ships 5 clips, natal 6 — each sized to land just inside the 30s App Store cap.
+CLIP_DUR="${CLIP_DUR:-}"           # resolved below, once REEL is known
 CANVAS_W=1920; CANVAS_H=1080
 
 APP=$(find ~/Library/Developer/Xcode/DerivedData/ephemeris.swift-*/Build/Products/Debug \
@@ -47,7 +48,7 @@ EXEC="$APP/Contents/MacOS/Ephemeris"
 
 REEL="${REEL:-sky}"
 
-# key | EPHEMERIS_TAB | EPHEMERIS_LENS | EPHEMERIS_CHART | EPHEMERIS_TRANSITS
+# key | TAB | LENS | CHART | TRANSITS | FACET | PARTNER
 #
 # Five clips per reel, because 5 × 5.8s = 29s and the App Store cap is 30.
 #
@@ -58,24 +59,29 @@ REEL="${REEL:-sky}"
 case "$REEL" in
   sky)
     CLIPS_SPEC=(
-      "chart|0|||"
-      "positions|1|||"
-      "aspects|2|||"
-      "cycle|3|||"
-      "events|4|||"
+      "chart|0|||||"
+      "positions|1|||||"
+      "aspects|2|||||"
+      "cycle|3|||||"
+      "events|4|||||"
     ) ;;
   natal)
+    # Six beats rather than five, so the practitioner facets this release adds each get one.
+    # CLIP_DUR drops to 4.8s below to keep 6 × dur inside the 30s App Store cap.
     CLIPS_SPEC=(
-      "library|5|||"
-      "natalwheel|5|wheel|11111111|"
-      "natalaspects|5|aspects|11111111|"
-      "natalhouses|5|houses|11111111|"
-      "transits|5|wheel|11111111|1"
+      "library|5|||||"
+      "natalwheel|5|wheel|11111111||wheel|"
+      "transits|5|wheel|11111111||biwheel|"
+      "analysis|5|wheel|11111111||analysis|"
+      "returns|5|wheel|11111111||returns|"
+      "synastry|5|wheel|11111111||wheel|22222222"
     ) ;;
   *) echo "unknown REEL '$REEL' (expected sky or natal)" >&2; exit 1 ;;
 esac
 KEYS=()
 for spec in "${CLIPS_SPEC[@]}"; do KEYS+=("${spec%%|*}"); done
+# 5 × 5.8 = 29.0s, 6 × 4.8 = 28.8s.
+[ -n "$CLIP_DUR" ] || CLIP_DUR=$([ "${#KEYS[@]}" -ge 6 ] && echo 4.8 || echo 5.8)
 
 place_for() {
   case "$1" in
@@ -110,7 +116,7 @@ for LOC in "${@:-de fr ja}"; do
   echo "=== $REEL · mac / $LOC ($PLACE)"
 
   for i in "${!CLIPS_SPEC[@]}"; do
-    IFS='|' read -r KEY TAB LENS CHART TRANSITS <<<"${CLIPS_SPEC[$i]}"
+    IFS='|' read -r KEY TAB LENS CHART TRANSITS FACET PARTNER <<<"${CLIPS_SPEC[$i]}"
     pkill -9 -f "MacOS/Ephemeris" 2>/dev/null
     while pgrep -f "MacOS/Ephemeris" >/dev/null; do sleep 0.3; done
     ENVV=(
@@ -121,6 +127,8 @@ for LOC in "${@:-de fr ja}"; do
     [ -n "$LENS" ]     && ENVV+=(EPHEMERIS_LENS="$LENS")
     [ -n "$CHART" ]    && ENVV+=(EPHEMERIS_CHART="$CHART")
     [ -n "$TRANSITS" ] && ENVV+=(EPHEMERIS_TRANSITS="$TRANSITS")
+    [ -n "$FACET" ]    && ENVV+=(EPHEMERIS_FACET="$FACET")
+    [ -n "$PARTNER" ]  && ENVV+=(EPHEMERIS_PARTNER="$PARTNER")
     # Backgrounded: SCK records the window's own composited content, so it never has to be
     # frontmost, and the user's focus stays where they left it.
     env "${ENVV[@]}" "$EXEC" >/dev/null 2>&1 &

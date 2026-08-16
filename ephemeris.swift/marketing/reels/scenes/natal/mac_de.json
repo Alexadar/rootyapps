@@ -36,22 +36,28 @@
       "subtitle": "Der genaue Moment und Ort"
     },
     {
-      "key": "natalaspects",
-      "clip": "macclip_natalaspects.mov",
-      "title": "Aspekte nach Exaktheit",
-      "subtitle": "Jeder Winkel zwischen den Planeten"
-    },
-    {
-      "key": "natalhouses",
-      "clip": "macclip_natalhouses.mov",
-      "title": "Häuser in sechs Systemen",
-      "subtitle": "Placidus, Koch, Ganzes Zeichen u. a."
-    },
-    {
       "key": "transits",
       "clip": "macclip_transits.mov",
-      "title": "Und der heutige Himmel darüber",
+      "title": "Der heutige Himmel darüber",
       "subtitle": "Transite im selben Rad"
+    },
+    {
+      "key": "analysis",
+      "clip": "macclip_analysis.mov",
+      "title": "Würden, Form, Verteilung",
+      "subtitle": "Nach den klassischen Tabellen bewertet"
+    },
+    {
+      "key": "returns",
+      "clip": "macclip_returns.mov",
+      "title": "Solar- und Lunarwiederkehr",
+      "subtitle": "Die nächste, auf die Minute"
+    },
+    {
+      "key": "synastry",
+      "clip": "macclip_synastry.mov",
+      "title": "Und gegen ein zweites Horoskop",
+      "subtitle": "Synastrie, jeder Kontakt sortiert"
     }
   ]
 }

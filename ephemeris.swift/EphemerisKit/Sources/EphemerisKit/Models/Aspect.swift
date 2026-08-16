@@ -2,7 +2,7 @@ import Foundation
 
 /// One of the five Ptolemaic aspect types (angle + base orb). Pure data — UI color
 /// lives in the app layer as an extension keyed by `name`.
-public struct AspectType: Identifiable, Hashable {
+public struct AspectType: Identifiable, Hashable, Sendable {
     public let name: String
     public let angle: Double
     public let baseOrb: Double
@@ -50,7 +50,7 @@ public struct BodyPosition: Identifiable, Hashable {
 }
 
 /// A detected aspect between two bodies.
-public struct DetectedAspect: Identifiable, Hashable {
+public struct DetectedAspect: Identifiable, Hashable, Sendable {
     public let type: AspectType
     public let a: CelestialBody
     public let b: CelestialBody

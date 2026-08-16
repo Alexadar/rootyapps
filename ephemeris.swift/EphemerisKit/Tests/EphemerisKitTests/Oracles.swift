@@ -34,6 +34,7 @@ enum Oracles {
         + midpointsOracles.all
         + progressionsOracles.all
         + returnsOracles.all
+        + uncertaintyOracles.all
 
     /// The original corpus that predates the module split (sidereal time, obliquity, Horizons
     /// longitudes). Kept as its own array so the merge above stays a one-line append per module.

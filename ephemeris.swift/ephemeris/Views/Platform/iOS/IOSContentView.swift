@@ -148,7 +148,9 @@ struct IOSContentView: View {
                     NatalChartView(vm: natal, chart: chart,
                                    reelLens: reel.isReelRun ? reel.natalLens : nil,
                                    reelTransits: reel.isReelRun ? reel.natalTransits : nil,
-                                   reelScrollNudge: reel.isReelRun ? reel.natalScrollNudge : nil)
+                                   reelScrollNudge: reel.isReelRun ? reel.natalScrollNudge : nil,
+                                   reelFacet: reel.isReelRun ? reel.natalFacet : nil,
+                                   reelPartner: reel.isReelRun ? reel.natalPartner : nil)
                 }
                 .settingsToolbar()
                 // The natal reel opens a chart from in-process rather than by tapping a row — a

@@ -343,6 +343,13 @@ all data.
   locale.
 - `DesignSystem/MoonPhaseDisc.swift` — drawn terminator at the true illuminated
   fraction (replaces every 🌑/🌕 emoji).
+- `DesignSystem/NebulaPractitioner.swift` — practitioner layer: bi-wheel source
+  control, ⚯ pairing conventions, honest missing-data treatments
+  (`HonestStateCard`), midpoint ambiguity, watch verdict, new a11y identifiers.
+- `reference/Ephemeris Sky (Practitioner Layer).html` — the practitioner-layer
+  design: placement of all eight Kit features inside Charts, ranking (Returns
+  ships first), the two-chart pairing interaction, and seven iPhone screens
+  including every no-data state.
 - `reference/Ephemeris Sky (All Platforms).html` — interactive canvas, iPhone/iPad/Mac
   plus watch, vision, TV, widgets and notifications.
 - `reference/Ephemeris Sky (Apple Watch).html` — the watch deliverable: 41 mm and 49 mm

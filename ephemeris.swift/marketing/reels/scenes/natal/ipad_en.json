@@ -3,7 +3,7 @@
     1200,
     1600
   ],
-  "content_len": 30.5,
+  "content_len": 29.5,
   "preview_maxlen": 30,
   "outro_dur": 2.6,
   "style": {
@@ -25,45 +25,38 @@
   "scenes": [
     {
       "key": "Library",
-      "start": 0.0,
-      "end": 3.5,
       "title": "Your saved charts",
-      "subtitle": "In your iCloud Drive"
+      "subtitle": "Files in your own iCloud Drive"
     },
     {
       "key": "NatalWheel",
-      "start": 3.5,
-      "end": 8.5,
       "title": "Open one — the birth chart",
       "subtitle": "The exact moment and place"
     },
     {
-      "key": "NatalAspects",
-      "start": 8.5,
-      "end": 14.5,
-      "title": "Aspects, by exactness",
-      "subtitle": "Every angle between the planets"
-    },
-    {
-      "key": "NatalPositions",
-      "start": 14.5,
-      "end": 20.5,
-      "title": "Positions, to the arcminute",
-      "subtitle": "Sign, degree and daily motion"
-    },
-    {
       "key": "NatalHouses",
-      "start": 20.5,
-      "end": 26.5,
       "title": "Houses in six systems",
       "subtitle": "Placidus, Koch, Whole Sign and more"
     },
     {
       "key": "Transits",
-      "start": 26.5,
-      "end": 30.5,
-      "title": "And today's sky over it",
+      "title": "Today's sky over it",
       "subtitle": "Transits on the same wheel"
+    },
+    {
+      "key": "Analysis",
+      "title": "Dignities, shape, balance",
+      "subtitle": "Scored against the classical tables"
+    },
+    {
+      "key": "Returns",
+      "title": "Solar and lunar returns",
+      "subtitle": "The next one, to the minute"
+    },
+    {
+      "key": "Synastry",
+      "title": "And against another chart",
+      "subtitle": "Synastry, every contact ranked"
     }
   ]
 }

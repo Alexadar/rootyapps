@@ -36,22 +36,28 @@
       "subtitle": "正確な瞬間と場所"
     },
     {
-      "key": "natalaspects",
-      "clip": "macclip_natalaspects.mov",
-      "title": "正確さ順のアスペクト",
-      "subtitle": "天体間のすべての角度"
-    },
-    {
-      "key": "natalhouses",
-      "clip": "macclip_natalhouses.mov",
-      "title": "6方式のハウス",
-      "subtitle": "プラシーダス・コッホ・ホールサインほか"
-    },
-    {
       "key": "transits",
       "clip": "macclip_transits.mov",
       "title": "そこに今日の空を重ねて",
       "subtitle": "同じ円の上のトランジット"
+    },
+    {
+      "key": "analysis",
+      "clip": "macclip_analysis.mov",
+      "title": "ディグニティ・形・バランス",
+      "subtitle": "古典の表に基づく点数"
+    },
+    {
+      "key": "returns",
+      "clip": "macclip_returns.mov",
+      "title": "ソーラー／ルナリターン",
+      "subtitle": "次回を分単位で"
+    },
+    {
+      "key": "synastry",
+      "clip": "macclip_synastry.mov",
+      "title": "さらに別のチャートと",
+      "subtitle": "シナストリー：接触を正確さ順に"
     }
   ]
 }

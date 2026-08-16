@@ -48,6 +48,11 @@ final class ReelDriver: ObservableObject {
     @Published var natalStep: Int = 0
     /// Which lens the natal chart shows, when the natal tour is driving.
     @Published var natalLens: MomentLens = .wheel
+    /// Which of the four chart-detail facets the tour is on. A value, not the driver — the natal
+    /// view observes values only; see `NatalChartView`'s note on the unobserved-reference failure.
+    @Published var natalFacet: ChartFacet = .wheel
+    /// Which chart the tour compares against, by fixture id prefix. Empty means "no partner".
+    @Published var natalPartner: String = ""
     /// Whether the bi-wheel's transiting ring is on.
     @Published var natalTransits: Bool = false
     /// Incremented to ask the open chart to scroll its current reading to the bottom.
@@ -114,33 +119,47 @@ final class ReelDriver: ObservableObject {
     /// So it now opens on the chart with the birth date and place legible, teaches the idea, shows
     /// what can be done with it, and ends on "and they are yours, in iCloud" as reassurance rather
     /// than as the opening pitch.
+    /// **Budget: 29.5s against a 30s cap.** 2.5 + 4.0 + 6.0 + 3.5 + 6.0 + 3.0 + 4.5, where each
+    /// `readingBeat` is 6.0 (1.6 still, then a 4.4 scroll). Adding a beat means taking the time
+    /// from another — the App Store rejects a preview over thirty seconds.
     private func walkNatal() async {
         // The library FIRST, briefly, then open a chart. That transition is what teaches the
         // navigation — cutting it and starting inside a chart left no sense of where charts live
         // or how you reach one.
         tab = 5                                  // Charts
         natalStep = 0
+        natalFacet = .wheel
         natalLens = .wheel
         natalTransits = false
-        await beat("Library", 3.5)
+        natalPartner = ""
+        await beat("Library", 2.5)
 
         natalStep = 1                            // open the seeded fixture
-        await beat("NatalWheel", 5.0)
+        await beat("NatalWheel", 4.0)
 
-        // Then every lens, in the order the segmented control shows them, so a viewer can map each
-        // beat onto a control they can see. The earlier cut skipped Aspects entirely — a chart has
-        // four readings and the video showed three, which is exactly why "what is inside a chart"
-        // did not land.
-        //
-        // Each data lens is read, not glanced at: a moment at the top, then a slow scroll through
-        // the rows. These beats are longer than the wheel's for that reason.
-        await readingBeat("NatalAspects", lens: .aspects)
-        await readingBeat("NatalPositions", lens: .table)
+        // Houses, because it is the one reading that proves the chart is cast for a *place* and not
+        // just a date. Positions and Aspects are cut from this tour — they are in the sky reel, and
+        // thirty seconds spent re-showing them would leave no room for what this release adds.
         await readingBeat("NatalHouses", lens: .houses)
 
+        // Then the four things that are new, each on its own facet. This is the whole argument of
+        // the release: one chart, read four ways, without leaving the screen.
         natalLens = .wheel
-        natalTransits = true                     // bi-wheel: natal inside, transiting outside
-        await beat("Transits", 4.0)
+        natalFacet = .biwheel
+        natalTransits = true                     // bi-wheel, transiting ring outside
+        await beat("Transits", 3.5)
+
+        natalFacet = .analysis
+        await readingBeat("Analysis", lens: .wheel)
+
+        natalFacet = .returns
+        await beat("Returns", 3.0)
+
+        // Synastry last, because it is the only beat that needs a second person and therefore the
+        // only one that changes the title bar — it reads as an arrival rather than another tab.
+        natalFacet = .wheel
+        natalPartner = "22222222"
+        await beat("Synastry", 4.5)
     }
 
     /// A lens that holds still long enough to start reading, then scrolls through what is beneath.

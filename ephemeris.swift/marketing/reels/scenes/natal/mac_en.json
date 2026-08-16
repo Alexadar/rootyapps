@@ -36,22 +36,28 @@
       "subtitle": "The exact moment and place"
     },
     {
-      "key": "natalaspects",
-      "clip": "macclip_natalaspects.mov",
-      "title": "Aspects, by exactness",
-      "subtitle": "Every angle between the planets"
-    },
-    {
-      "key": "natalhouses",
-      "clip": "macclip_natalhouses.mov",
-      "title": "Houses in six systems",
-      "subtitle": "Placidus, Koch, Whole Sign and more"
-    },
-    {
       "key": "transits",
       "clip": "macclip_transits.mov",
-      "title": "And today's sky over it",
+      "title": "Today's sky over it",
       "subtitle": "Transits on the same wheel"
+    },
+    {
+      "key": "analysis",
+      "clip": "macclip_analysis.mov",
+      "title": "Dignities, shape, balance",
+      "subtitle": "Scored against the classical tables"
+    },
+    {
+      "key": "returns",
+      "clip": "macclip_returns.mov",
+      "title": "Solar and lunar returns",
+      "subtitle": "The next one, to the minute"
+    },
+    {
+      "key": "synastry",
+      "clip": "macclip_synastry.mov",
+      "title": "And against another chart",
+      "subtitle": "Synastry, every contact ranked"
     }
   ]
 }

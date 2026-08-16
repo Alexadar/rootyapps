@@ -8,7 +8,7 @@ import Foundation
 /// sides are NOT interchangeable: transiting Sun square natal Moon and transiting Moon
 /// square natal Sun are different statements about different charts, and a type that
 /// forgets which side a body came from cannot tell them apart.
-public struct CrossAspect: Identifiable, Hashable {
+public struct CrossAspect: Identifiable, Hashable, Sendable {
     public let type: AspectType
     /// Body taken from the FIRST set (`between:`) — conventionally the transiting/moving chart.
     public let moving: CelestialBody

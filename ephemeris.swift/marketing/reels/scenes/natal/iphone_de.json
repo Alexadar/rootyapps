@@ -3,7 +3,7 @@
     886,
     1920
   ],
-  "content_len": 30.5,
+  "content_len": 29.5,
   "preview_maxlen": 30,
   "outro_dur": 2.6,
   "style": {
@@ -25,45 +25,38 @@
   "scenes": [
     {
       "key": "Library",
-      "start": 0.0,
-      "end": 3.5,
-      "title": "Deine Horoskope",
-      "subtitle": "In deiner iCloud Drive"
+      "title": "Ihre gespeicherten Horoskope",
+      "subtitle": "Dateien in Ihrer eigenen iCloud Drive"
     },
     {
       "key": "NatalWheel",
-      "start": 3.5,
-      "end": 8.5,
-      "title": "Öffne eins — das Geburtsbild",
+      "title": "Eines öffnen — das Geburtshoroskop",
       "subtitle": "Der genaue Moment und Ort"
     },
     {
-      "key": "NatalAspects",
-      "start": 8.5,
-      "end": 14.5,
-      "title": "Aspekte nach Genauigkeit",
-      "subtitle": "Jeder Winkel zwischen den Planeten"
-    },
-    {
-      "key": "NatalPositions",
-      "start": 14.5,
-      "end": 20.5,
-      "title": "Positionen auf die Bogenminute",
-      "subtitle": "Zeichen, Grad und Tagesbewegung"
-    },
-    {
       "key": "NatalHouses",
-      "start": 20.5,
-      "end": 26.5,
       "title": "Häuser in sechs Systemen",
-      "subtitle": "Placidus, Koch, Ganzes Zeichen und mehr"
+      "subtitle": "Placidus, Koch, Ganzes Zeichen u. a."
     },
     {
       "key": "Transits",
-      "start": 26.5,
-      "end": 30.5,
-      "title": "Und der heutige Himmel darüber",
-      "subtitle": "Transite auf demselben Rad"
+      "title": "Der heutige Himmel darüber",
+      "subtitle": "Transite im selben Rad"
+    },
+    {
+      "key": "Analysis",
+      "title": "Würden, Form, Verteilung",
+      "subtitle": "Nach den klassischen Tabellen bewertet"
+    },
+    {
+      "key": "Returns",
+      "title": "Solar- und Lunarwiederkehr",
+      "subtitle": "Die nächste, auf die Minute"
+    },
+    {
+      "key": "Synastry",
+      "title": "Und gegen ein zweites Horoskop",
+      "subtitle": "Synastrie, jeder Kontakt sortiert"
     }
   ]
 }

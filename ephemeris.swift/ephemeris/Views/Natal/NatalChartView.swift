@@ -1,17 +1,19 @@
 import SwiftUI
 import EphemerisKit
 
-/// One saved chart, read through exactly the same four lenses as the live sky.
+/// One saved chart, read four ways.
 ///
-/// The whole point of `MomentReadout`: Positions, Aspects and Houses are not rebuilt here. A saved
-/// chart is simply a different `SkyMoment` — a frozen instant instead of a live one — so the two
-/// halves of the app cannot drift apart about how a chart is drawn.
+/// The whole point of `MomentReadout`: Positions, Aspects and Houses are not rebuilt here, and
+/// neither are the practitioner features. A saved chart is a `SkyMoment`; so is a progressed chart,
+/// so is a return, so is a composite. Each facet below changes what feeds the readout, never how it
+/// draws — which is why seven Kit features cost four segments instead of seven screens.
 ///
-/// What differs is what a chart *has* that the live sky does not: an identity, a birth record, and
-/// something to compare against.
+/// What differs from the live sky is what a chart *has* that a moment does not: an identity, a
+/// birth record, and something to compare against.
 struct NatalChartView: View {
     @ObservedObject var vm: NatalViewModel
     let chart: SavedChart
+
     /// Reel-driven lens and transit ring, passed as **values** rather than as the driver object.
     ///
     /// Holding a plain `ReelDriver?` here did not work and failed silently: an unobserved reference
@@ -21,39 +23,34 @@ struct NatalChartView: View {
     /// values it publishes come down here.
     var reelLens: MomentLens? = nil
     var reelTransits: Bool? = nil
-    /// Bumped by the tour to scroll the current reading. A value, not the driver — see above.
     var reelScrollNudge: Int? = nil
+    /// Which facet the tour is on, and who it compares against — values, for the same reason.
+    var reelFacet: ChartFacet? = nil
+    var reelPartner: String? = nil
 
-    /// What the outer ring shows. Transits are a comparison, not another lens — they need two
-    /// moments at once, which is why they belong here rather than inside `MomentLens`.
-    enum Comparison: String, CaseIterable, Identifiable {
-        case none, transits
-        var id: String { rawValue }
-        var title: LocalizedStringKey {
-            switch self {
-            // Short, like every other segment. The long form is the heading below.
-            case .none:     "Natal"
-            case .transits: "Transits"
-            }
-        }
-    }
-
-    /// Both seeded from the launch environment so a store capture can open straight onto, say, the
-    /// bi-wheel — one shot per launch, no tapping, nothing to race. Absent (and always in Release,
-    /// since `LaunchOverride` is DEBUG-gated) these fall back to the real defaults a user sees.
-    @State private var comparison: Comparison =
-        LaunchOverride.flag("EPHEMERIS_TRANSITS") ? .transits : .none
+    @State private var facet: ChartFacet =
+        LaunchOverride.value("EPHEMERIS_FACET").flatMap(ChartFacet.init(rawValue:))
+        ?? (LaunchOverride.flag("EPHEMERIS_TRANSITS") ? .biwheel : .wheel)
+    @State private var source: NebulaPractitioner.BiWheelSource =
+        LaunchOverride.value("EPHEMERIS_BIWHEEL").flatMap(NebulaPractitioner.BiWheelSource.init(rawValue:))
+        ?? .transits
     @State private var lens: MomentLens =
         LaunchOverride.value("EPHEMERIS_LENS").flatMap(MomentLens.init(rawValue:)) ?? .wheel
 
-    private var moment: SkyMoment {
-        SkyMoment(positions: chart.positions,
-                  aspects: chart.aspects,
-                  houses: vm.houses,
-                  houseFallback: nil,
-                  outerPositions: comparison == .transits ? vm.transitPositions : nil,
-                  crossAspects: comparison == .transits ? vm.transits : [])
-    }
+    /// The date the bi-wheel compares against — "now" for transits, the scrub target for
+    /// progressions. One date for both, because the question "as of when?" is the same question.
+    @State private var target = Date()
+    @State private var selectedReturn: ReturnEvent?
+    @State private var partner: SavedChart?
+    @State private var showingPartnerPicker = false
+    /// Set once from `EPHEMERIS_PARTNER` so a capture can reach the pairing view, which is
+    /// otherwise two taps deep behind a sheet. Applied in `.task`, not in the initialiser: the
+    /// library has to have loaded before a UUID prefix can be matched against it.
+    @State private var appliedLaunchPartner = false
+
+    @Environment(\.locale) private var locale
+
+    private var facets: ChartFacets { ChartFacets(chart: chart) }
 
     var body: some View {
       ScrollViewReader { proxy in
@@ -62,50 +59,78 @@ struct NatalChartView: View {
                 Color.clear.frame(height: 0).id("top")
                 header
 
-                if !chart.isTimeKnown {
-                    Text("Houses and angles need a birth time.")
-                        .font(.callout)
-                        .foregroundStyle(NebulaPalette.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .glassCard()
-                        .accessibilityIdentifier("state.timeUnknown")
+                if !chart.isTimeKnown { untimedNotice }
+
+                facetPicker
+
+                switch facet {
+                case .wheel:    wheelFacet
+                case .biwheel:  biwheelFacet
+                case .analysis: AnalysisFacet(facets: facets)
+                case .returns:  returnsFacet
                 }
 
-                MomentReadout(moment: moment, lens: $lens, houseSystem: $vm.houseSystem,
-                              heading: "Natal chart")
-
-                if comparison == .transits { transitList }
                 Color.clear.frame(height: 1).id("bottom")
             }
             .padding()
         }
-        // Slow and linear on purpose: this is meant to read as someone scanning the list, not as a
-        // UI animation. A spring would overshoot and a fast scroll would defeat the point.
+        // Slow and linear on purpose: this reads as someone scanning the list, not as a UI
+        // animation. A spring would overshoot and a fast scroll would defeat the point.
         .onChange(of: reelScrollNudge) { _, _ in
             withAnimation(.easeInOut(duration: 4.0)) { proxy.scrollTo("bottom", anchor: .bottom) }
         }
-        // Every lens starts at the top, or the next list opens already scrolled and its heading is
-        // never seen.
         .onChange(of: lens) { _, _ in proxy.scrollTo("top", anchor: .top) }
+        .onChange(of: facet) { _, _ in proxy.scrollTo("top", anchor: .top) }
         .background(AppBackground())
         .navigationTitle(Text(verbatim: chart.name))
+        .toolbar { compareButton }
+        .sheet(isPresented: $showingPartnerPicker) {
+            PartnerPicker(vm: vm, subject: chart) { chosen in
+                partner = chosen
+                showingPartnerPicker = false
+            }
+        }
+        .navigationDestination(item: $partner) { other in
+            PairingView(subject: chart, partner: other, houseSystem: $vm.houseSystem)
+        }
+        .task { openLaunchPartner() }
         .onChange(of: reelLens) { _, new in if let new { lens = new } }
         .onChange(of: reelTransits) { _, new in
-            if let new { comparison = new ? .transits : .none }
+            if let new { source = .transits }
+        }
+        .onChange(of: reelFacet) { _, new in if let new { facet = new } }
+        .onChange(of: reelPartner) { _, new in
+            // Empty string clears the pairing; a prefix opens it. Matching by prefix, like every
+            // other chart deep link here, because the fixtures share a modifiedAt.
+            guard let new else { return }
+            partner = new.isEmpty ? nil : vm.charts.first {
+                $0.id != chart.id && $0.id.uuidString.lowercased().hasPrefix(new.lowercased())
+            }
         }
       }
     }
 
+    /// Opens the pairing view straight from the launch environment, for store captures.
+    ///
+    /// Addressed by UUID prefix, like `EPHEMERIS_CHART`, and for the same reason: the library sorts
+    /// by `modifiedAt` and the seeded fixtures share an instant, so a row index picks a different
+    /// person per run. `LaunchOverride` is DEBUG-gated, so this is inert in a shipping build.
+    private func openLaunchPartner() {
+        guard !appliedLaunchPartner, partner == nil,
+              let wanted = LaunchOverride.value("EPHEMERIS_PARTNER")?.lowercased()
+        else { return }
+        appliedLaunchPartner = true
+        partner = vm.charts.first {
+            $0.id != chart.id && $0.id.uuidString.lowercased().hasPrefix(wanted)
+        }
+    }
+
+    // MARK: - Chrome
+
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Picker("Natal chart", selection: $comparison) {
-                ForEach(Comparison.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .accessibilityIdentifier("input.comparison")
-
-            // The birth moment and place ARE what make this a natal chart rather than just a chart,
-            // so they read as content, not as a footnote. Previously caption-grey and easy to miss.
+            // The birth moment and place ARE what make this a natal chart rather than just a
+            // chart, so they read as content, not as a footnote.
             HStack(spacing: 6) {
                 Image(systemName: "smallcircle.filled.circle")
                     .font(.caption2)
@@ -120,29 +145,166 @@ struct NatalChartView: View {
             .foregroundStyle(NebulaPalette.textPrimary)
             .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .glassCard()
     }
 
-    /// The full cross-aspect list. The wheel draws only the tightest few — twenty glyphs, two cusp
-    /// sets and every chord in one circle is unreadable — so the rest are legible here.
-    private var transitList: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            CardHeader(title: "Transits", trailing: Text(vm.transits.count, format: .number))
-            ForEach(Array(vm.transits.prefix(12).enumerated()), id: \.offset) { _, t in
-                HStack(spacing: 10) {
-                    Text(verbatim: t.moving.glyph)
-                    Text(L.loc(t.type.name)).foregroundStyle(NebulaPalette.textSecondary)
-                    Text(verbatim: t.reference.glyph)
-                    Spacer()
-                    Text(verbatim: String(format: "%.2f°", t.orb))
-                        .font(.caption).monospacedDigit()
-                        .foregroundStyle(NebulaPalette.textSecondary)
-                }
-                .font(.callout)
+    private var untimedNotice: some View {
+        HonestStateCard(
+            title: L.string("Birth time unknown", locale: locale),
+            explanation: L.string(
+                "Positions still compute. Houses, angles and anything derived from them are left out rather than calculated from an assumed noon.",
+                locale: locale))
+        .accessibilityIdentifier("state.timeUnknown")
+    }
+
+    private var facetPicker: some View {
+        Picker("Chart", selection: $facet) {
+            ForEach(ChartFacet.allCases) { f in
+                Label(f.title, systemImage: f.icon).tag(f)
             }
         }
-        .glassCard()
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("card.transits")
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .accessibilityIdentifier(NebulaPractitioner.A11y.facet)
+    }
+
+    @ToolbarContentBuilder
+    private var compareButton: some ToolbarContent {
+        ToolbarItem {
+            Button {
+                showingPartnerPicker = true
+            } label: {
+                Label {
+                    Text("Compare")
+                } icon: {
+                    Text(verbatim: NebulaPractitioner.compareGlyph)
+                }
+            }
+            .accessibilityIdentifier(NebulaPractitioner.A11y.compare)
+        }
+    }
+
+    // MARK: - Facets
+
+    private var wheelFacet: some View {
+        MomentReadout(moment: SkyMoment(positions: chart.positions,
+                                        aspects: chart.aspects,
+                                        houses: vm.houses,
+                                        houseFallback: nil,
+                                        outerPositions: nil,
+                                        crossAspects: []),
+                      lens: $lens,
+                      houseSystem: $vm.houseSystem,
+                      heading: "Natal chart")
+    }
+
+    @ViewBuilder
+    private var biwheelFacet: some View {
+        VStack(spacing: 16) {
+            Picker("Bi-wheel", selection: $source) {
+                ForEach(NebulaPractitioner.BiWheelSource.allCases) { s in
+                    Text(verbatim: L.string(s.titleKey, locale: locale)).tag(s)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .accessibilityIdentifier(NebulaPractitioner.A11y.biwheelSource)
+
+            switch source {
+            case .transits:
+                biwheel(outer: facets.transitPositions(at: target),
+                        cross: chart.transits(at: target),
+                        caption: nil)
+            case .progressed:
+                let p = facets.progressed(to: target)
+                biwheel(outer: p.positions,
+                        cross: Aspects.detect(between: p.positions, and: chart.positions, orbFactor: 1.0),
+                        caption: progressedCaption(p))
+            case .chartReturn:
+                if let event = selectedReturn ?? facets.returnCycles().first {
+                    biwheel(outer: facets.returnPositions(for: event),
+                            cross: Aspects.detect(between: facets.returnPositions(for: event),
+                                                  and: chart.positions, orbFactor: 1.0),
+                            caption: returnCaption(event))
+                } else {
+                    HonestStateCard(
+                        title: L.string("No return available", locale: locale),
+                        explanation: L.string(
+                            "No solar, lunar or Saturn return falls inside the verified window.",
+                            locale: locale))
+                }
+            case .partner:
+                if let other = partner {
+                    biwheel(outer: other.positions,
+                            cross: chart.synastry(with: other),
+                            caption: Text(verbatim: "\(chart.name) \(NebulaPractitioner.compareGlyph) \(other.name)"))
+                } else {
+                    HonestStateCard(
+                        title: L.string("No partner chosen", locale: locale),
+                        explanation: L.string(
+                            "Pick a second chart to compare against this one.",
+                            locale: locale),
+                        fixLabel: L.string("Choose a partner", locale: locale),
+                        onFix: { showingPartnerPicker = true })
+                }
+            }
+        }
+    }
+
+    private func biwheel(outer: [BodyPosition], cross: [CrossAspect], caption: Text?) -> some View {
+        VStack(spacing: 10) {
+            if let caption {
+                caption
+                    .font(.caption)
+                    .foregroundStyle(NebulaPalette.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            MomentReadout(moment: SkyMoment(positions: chart.positions,
+                                            aspects: chart.aspects,
+                                            houses: vm.houses,
+                                            houseFallback: nil,
+                                            outerPositions: outer,
+                                            crossAspects: cross),
+                          lens: $lens,
+                          houseSystem: $vm.houseSystem,
+                          heading: "Natal chart")
+            CrossAspectList(chart: chart, cross: cross, partner: partner)
+        }
+    }
+
+    private func progressedCaption(_ p: ProgressedChart) -> Text {
+        Text(verbatim: L.string("Progressed to", locale: locale) + " ")
+            + Text(p.target, format: .dateTime.day().month(.abbreviated).year())
+            + Text(verbatim: " · " + String(format: "%.1f", p.ageYears) + " ")
+            + Text(verbatim: L.string("years", locale: locale))
+    }
+
+    private func returnCaption(_ e: ReturnEvent) -> Text {
+        Text(verbatim: e.body.glyph + " ")
+            + Text(verbatim: L.string("Return", locale: locale) + " · ")
+            + Text(e.date, format: .dateTime.day().month(.abbreviated).year().hour().minute())
+    }
+
+    private var returnsFacet: some View {
+        ReturnsList(facets: facets,
+                    selected: $selectedReturn,
+                    onOpen: { event in
+                        selectedReturn = event
+                        source = .chartReturn
+                        facet = .biwheel
+                    },
+                    watchDefault: watchDefaultControl)
+    }
+
+    /// Offered only on iOS, and only for a chart the watch could actually use.
+    private var watchDefaultControl: (isDefault: Bool, toggle: () -> Void)? {
+#if os(iOS)
+        guard chart.isTimeKnown else { return nil }
+        let isDefault = vm.defaultChartID == chart.id
+        return (isDefault, { vm.setDefaultChart(isDefault ? nil : chart) })
+#else
+        nil
+#endif
     }
 }

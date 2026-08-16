@@ -3,7 +3,7 @@
     886,
     1920
   ],
-  "content_len": 30.5,
+  "content_len": 29.5,
   "preview_maxlen": 30,
   "outro_dur": 2.6,
   "style": {
@@ -25,45 +25,38 @@
   "scenes": [
     {
       "key": "Library",
-      "start": 0.0,
-      "end": 3.5,
       "title": "保存したチャート",
-      "subtitle": "iCloud Drive の中に"
+      "subtitle": "あなた自身の iCloud Drive の中に"
     },
     {
       "key": "NatalWheel",
-      "start": 3.5,
-      "end": 8.5,
-      "title": "開くと、出生図",
+      "title": "開けば出生図",
       "subtitle": "正確な瞬間と場所"
     },
     {
-      "key": "NatalAspects",
-      "start": 8.5,
-      "end": 14.5,
-      "title": "アスペクトを正確な順に",
-      "subtitle": "天体どうしのすべての角度"
-    },
-    {
-      "key": "NatalPositions",
-      "start": 14.5,
-      "end": 20.5,
-      "title": "位置を分単位で",
-      "subtitle": "サイン・度・日々の動き"
-    },
-    {
       "key": "NatalHouses",
-      "start": 20.5,
-      "end": 26.5,
-      "title": "6 種類のハウスシステム",
+      "title": "6方式のハウス",
       "subtitle": "プラシーダス・コッホ・ホールサインほか"
     },
     {
       "key": "Transits",
-      "start": 26.5,
-      "end": 30.5,
       "title": "そこに今日の空を重ねて",
-      "subtitle": "同じ円盤上のトランジット"
+      "subtitle": "同じ円の上のトランジット"
+    },
+    {
+      "key": "Analysis",
+      "title": "ディグニティ・形・バランス",
+      "subtitle": "古典の表に基づく点数"
+    },
+    {
+      "key": "Returns",
+      "title": "ソーラー／ルナリターン",
+      "subtitle": "次回を分単位で"
+    },
+    {
+      "key": "Synastry",
+      "title": "さらに別のチャートと",
+      "subtitle": "シナストリー：接触を正確さ順に"
     }
   ]
 }

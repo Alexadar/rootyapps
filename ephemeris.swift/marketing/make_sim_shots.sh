@@ -12,7 +12,7 @@
 # The status bar is pinned to 9:41 / full bars / full battery — Apple's own marketing
 # convention, and it stops a real low-battery icon from dating the screenshots.
 #
-# iPhone ships 7 screens and iPad 8; the counts must match captions.json or gen_params.py
+# iPhone ships 8 screens and iPad 9; the counts must match captions.json or gen_params.py
 # refuses to stamp the params.
 set -uo pipefail
 
@@ -23,7 +23,7 @@ PLATFORM="${PLATFORM:-ios}"
 
 # ── The shot list ────────────────────────────────────────────────────────────
 #
-#   name | EPHEMERIS_TAB | EPHEMERIS_LENS | EPHEMERIS_CHART | EPHEMERIS_TRANSITS
+#   name | EPHEMERIS_TAB | EPHEMERIS_LENS | EPHEMERIS_CHART | EPHEMERIS_TRANSITS | EPHEMERIS_FACET | EPHEMERIS_PARTNER
 #
 # Order is the store's listing order, and the first three are what search results show — so the
 # first three are the subtitle, made visible: natal chart, transits, houses. The live sky follows;
@@ -39,27 +39,29 @@ PLATFORM="${PLATFORM:-ios}"
 if [ "$PLATFORM" = ipad ]; then
   SIM_NAME="${SIM_NAME:-Ephemeris-iPadPro13}"
   SHOTS=(
-    "01_natal|5|wheel|11111111|"
-    "02_transits|5|wheel|11111111|1"
-    "03_houses|5|houses|11111111|"
-    "04_sky|0|||"
-    "05_positions|1|||"
-    "06_aspects|2|||"
-    "07_cycle|3|||"
-    "08_events|4|||"
+    "01_natal|5|wheel|11111111||wheel|"
+    "02_transits|5|wheel|11111111||biwheel|"
+    "03_synastry|5|wheel|11111111||wheel|22222222"
+    "04_analysis|5|wheel|11111111||analysis|"
+    "05_returns|5|wheel|11111111||returns|"
+    "06_houses|5|houses|11111111||wheel|"
+    "07_sky|0|||||"
+    "08_aspects|2|||||"
+    "09_events|4|||||"
   )
 else
   SIM_NAME="${SIM_NAME:-Ephemeris-iPhone17ProMax}"   # 6.9"
-  # No Events shot: the phone ships seven, and the timeline is the weakest of the eight on a
-  # narrow screen — it reads as a list of dates without the width to show what they are.
+  # Eight on the phone. Events is the one dropped: the timeline reads as a bare list of dates
+  # without the width to show what they are, and the practitioner surfaces earn the slot.
   SHOTS=(
-    "01_natal|5|wheel|11111111|"
-    "02_transits|5|wheel|11111111|1"
-    "03_houses|5|houses|11111111|"
-    "04_sky|0|||"
-    "05_positions|1|||"
-    "06_aspects|2|||"
-    "07_cycle|3|||"
+    "01_natal|5|wheel|11111111||wheel|"
+    "02_transits|5|wheel|11111111||biwheel|"
+    "03_synastry|5|wheel|11111111||wheel|22222222"
+    "04_analysis|5|wheel|11111111||analysis|"
+    "05_returns|5|wheel|11111111||returns|"
+    "06_houses|5|houses|11111111||wheel|"
+    "07_sky|0|||||"
+    "08_aspects|2|||||"
   )
 fi
 
@@ -138,7 +140,7 @@ for LOC in "${@:-de fr ja}"; do
   rm -f "$DEST"/*.png
   echo "=== $LOC / $PLATFORM ($PLACE)"
   for SHOT in "${SHOTS[@]}"; do
-    IFS='|' read -r NAME TAB LENS CHART TRANSITS <<<"$SHOT"
+    IFS='|' read -r NAME TAB LENS CHART TRANSITS FACET PARTNER <<<"$SHOT"
     xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
     # Only exported when non-empty: LaunchOverride treats an empty value as absent, but an empty
     # EPHEMERIS_LENS would still shadow nothing while an empty EPHEMERIS_CHART reads as "no match"
@@ -153,6 +155,10 @@ for LOC in "${@:-de fr ja}"; do
     )
     [ -n "$LENS" ]     && ENVV+=(SIMCTL_CHILD_EPHEMERIS_LENS="$LENS")
     [ -n "$TRANSITS" ] && ENVV+=(SIMCTL_CHILD_EPHEMERIS_TRANSITS="$TRANSITS")
+    [ -n "$FACET" ]    && ENVV+=(SIMCTL_CHILD_EPHEMERIS_FACET="$FACET")
+    # A partner implies the seeded library too — the pairing needs two charts.
+    [ -n "$PARTNER" ]  && ENVV+=(SIMCTL_CHILD_EPHEMERIS_PARTNER="$PARTNER"
+                                 SIMCTL_CHILD_EPHEMERIS_SEED_CHARTS=1)
     # The seeded library is invented people at fixed instants — a capture must never be able to
     # reach the developer's real iCloud charts and put someone's birth data on the App Store.
     [ -n "$CHART" ]    && ENVV+=(SIMCTL_CHILD_EPHEMERIS_CHART="$CHART"

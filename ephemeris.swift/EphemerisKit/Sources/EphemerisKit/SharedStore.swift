@@ -38,6 +38,19 @@ public struct SharedStore {
         public static let placeName = "observerPlaceName"
         /// House system raw value, so a complication showing a cusp matches the app.
         public static let houseSystem = "houseSystem"
+
+        /// The default chart's birth instant and name, for the watch's Returns row.
+        ///
+        /// Two values and no more. The watch has `EphemerisKit`, so from a birth instant it can
+        /// compute the natal longitudes and the next return itself — sending a chart's *results*
+        /// would be a snapshot that goes stale the moment the return passes, and sending the whole
+        /// chart file would put someone's birth record on a second device to save arithmetic that
+        /// takes milliseconds.
+        ///
+        /// Nothing is sent for a chart with no birth time: a return needs an exact moment, so the
+        /// row would have nothing honest to show.
+        public static let defaultChartInstant = "defaultChartInstant"
+        public static let defaultChartName = "defaultChartName"
     }
 
     private let defaults: UserDefaults
@@ -60,6 +73,18 @@ public struct SharedStore {
         HouseSystem(rawValue: defaults.string(forKey: Key.houseSystem) ?? "") ?? .placidus
     }
 
+    /// The chart the watch should show a return for, or nil when none is set.
+    ///
+    /// Nil is a real state and not a failure: with no default chart the watch simply has no
+    /// Returns row, which is the correct outcome rather than a placeholder inviting a tap that
+    /// leads nowhere.
+    public var defaultChart: (instant: Date, name: String)? {
+        guard let seconds = defaults.object(forKey: Key.defaultChartInstant) as? Double,
+              let name = defaults.string(forKey: Key.defaultChartName), !name.isEmpty
+        else { return nil }
+        return (Date(timeIntervalSince1970: seconds), name)
+    }
+
     // MARK: Writing — the app is the only writer; extensions read.
 
     public func write(location: GeoLocation?) {
@@ -69,6 +94,17 @@ public struct SharedStore {
             defaults.set(location.name,      forKey: Key.placeName)
         } else {
             [Key.latitude, Key.longitude, Key.placeName].forEach(defaults.removeObject(forKey:))
+        }
+    }
+
+    /// Passing nil clears it — which is what must happen when the user unsets the default chart or
+    /// deletes it, or the watch keeps showing a return for a chart that no longer exists.
+    public func write(defaultChart: (instant: Date, name: String)?) {
+        if let defaultChart {
+            defaults.set(defaultChart.instant.timeIntervalSince1970, forKey: Key.defaultChartInstant)
+            defaults.set(defaultChart.name, forKey: Key.defaultChartName)
+        } else {
+            [Key.defaultChartInstant, Key.defaultChartName].forEach(defaults.removeObject(forKey:))
         }
     }
 

@@ -122,8 +122,12 @@ extension XCUIApplication {
     /// `EPHEMERIS_LANG`. A fresh sim can boot in a comma-decimal region, where every formatted
     /// number renders `152,11` and tests fail on the separator rather than the arithmetic.
     @discardableResult
+    /// `facet` and `biwheel` reach the practitioner surfaces inside an open chart — the four-way
+    /// Wheel/Bi-wheel/Analysis/Returns control and, within the bi-wheel, which outer ring is fed.
+    /// Both are read only in DEBUG, like every other `EPHEMERIS_*`.
     func launchPinned(tab: Int? = nil, screen: String? = nil,
-                      lens: String? = nil) -> XCUIApplication {
+                      lens: String? = nil, facet: String? = nil,
+                      biwheel: String? = nil) -> XCUIApplication {
         launchEnvironment["EPHEMERIS_DATE"] = pinnedInstant
         // The display zone must equal the DEVICE zone, or the pinned instant is not the instant the
         // chart computes from.
@@ -146,6 +150,8 @@ extension XCUIApplication {
         if let screen { launchEnvironment["EPHEMERIS_SCREEN"] = screen }
         // Houses is a LENS now, not a tab, so it is unreachable by tab index alone.
         if let lens { launchEnvironment["EPHEMERIS_LENS"] = lens }
+        if let facet { launchEnvironment["EPHEMERIS_FACET"] = facet }
+        if let biwheel { launchEnvironment["EPHEMERIS_BIWHEEL"] = biwheel }
 
         // Pin every PERSISTED preference that changes a number on screen.
         //
