@@ -22,7 +22,7 @@ APP="$(find ~/Library/Developer/Xcode/DerivedData/ephemeris.swift-*/Build/Produc
 CAP="$ROOT/marketing/tools/capture_mac_window.sh"
 OUT_ROOT="$ROOT/ephemeris.swift/marketing/raw"
 
-# name | EPHEMERIS_TAB | EPHEMERIS_LENS | EPHEMERIS_CHART | EPHEMERIS_TRANSITS
+# name | TAB | LENS | CHART | TRANSITS | FACET | PARTNER
 #
 # Matches the caption order in captions.json — `mac` there is 8 long, and gen_params.py refuses to
 # stamp the params if the counts disagree. Same order and same reasoning as make_sim_shots.sh:
@@ -32,14 +32,15 @@ OUT_ROOT="$ROOT/ephemeris.swift/marketing/raw"
 # Natal shots address the seeded fixture by UUID prefix, never a row index — `all()` sorts by
 # modifiedAt and the fixtures share an instant, so an index picks a different person per run.
 SHOTS=(
-  "01_natal|5|wheel|11111111|"
-  "02_transits|5|wheel|11111111|1"
-  "03_houses|5|houses|11111111|"
-  "04_sky|0|||"
-  "05_positions|1|||"
-  "06_aspects|2|||"
-  "07_cycle|3|||"
-  "08_events|4|||"
+  "01_natal|5|wheel|11111111||wheel|"
+  "02_transits|5|wheel|11111111||biwheel|"
+  "03_synastry|5|wheel|11111111||wheel|22222222"
+  "04_analysis|5|wheel|11111111||analysis|"
+  "05_returns|5|wheel|11111111||returns|"
+  "06_houses|5|houses|11111111||wheel|"
+  "07_sky|0|||||"
+  "08_aspects|2|||||"
+  "09_events|4|||||"
 )
 
 place_for() {
@@ -61,13 +62,18 @@ for LOC in "${@:-de fr ja}"; do
   rm -f "$DEST"/*.png
   echo "=== $LOC ($PLACE) -> $DEST"
   for SHOT in "${SHOTS[@]}"; do
-    IFS='|' read -r NAME TAB LENS CHART TRANSITS <<<"$SHOT"
+    IFS='|' read -r NAME TAB LENS CHART TRANSITS FACET PARTNER <<<"$SHOT"
     ENVV=(
       EPHEMERIS_LANG="$LOC" EPHEMERIS_TAB="$TAB"
       EPHEMERIS_TZ="$TZ" EPHEMERIS_LAT="$LAT" EPHEMERIS_LON="$LON" EPHEMERIS_PLACE="$PLACE"
+      # Launch as an accessory: the window is drawn and capturable, but the app never takes the
+      # foreground. Without this every launch here steals the owner's focus.
+      EPHEMERIS_CAPTURE=1
     )
     [ -n "$LENS" ]     && ENVV+=(EPHEMERIS_LENS="$LENS")
     [ -n "$TRANSITS" ] && ENVV+=(EPHEMERIS_TRANSITS="$TRANSITS")
+    [ -n "$FACET" ]    && ENVV+=(EPHEMERIS_FACET="$FACET")
+    [ -n "$PARTNER" ]  && ENVV+=(EPHEMERIS_PARTNER="$PARTNER" EPHEMERIS_SEED_CHARTS=1)
     # Invented people at fixed instants — a capture must never be able to reach the developer's
     # real iCloud charts and put someone's birth data on the App Store.
     [ -n "$CHART" ]    && ENVV+=(EPHEMERIS_CHART="$CHART" EPHEMERIS_SEED_CHARTS=1)

@@ -85,10 +85,31 @@ LOG_PID=$!
 for _ in $(seq 1 30); do [ -s "$SYSLOG" ] && break; sleep 0.5; done
 
 echo "▶ recording"
+# simctl allows ONE host recording at a time, across every simulator. `kill -INT` returns before
+# the recorder has actually released it, so a run that starts the moment the previous one exits
+# gets "Resource busy — Host recording is already in progress", writes nothing, and leaves the
+# PREVIOUS capture's file sitting on disk. That is how a whole platform's reels were reported as
+# 30.00s with audio while being a day old: the failure is loud in the log and invisible in the
+# output. Wait for the recorder to be genuinely gone before claiming it.
+for _ in $(seq 1 40); do
+  pgrep -f "simctl io .* recordVideo" >/dev/null || break
+  sleep 0.5
+done
+if pgrep -f "simctl io .* recordVideo" >/dev/null; then
+  echo "❌ another simctl recording is still running — refusing to start" >&2
+  exit 1
+fi
 RSTART=$(date +%s.%N)
 xcrun simctl io "$UDID" recordVideo --codec h264 --force "$RAW_MOV" &
 REC_PID=$!
 sleep 1
+# The recorder can fail *after* forking — the error goes to its stderr and the pid still exists
+# for a moment. Confirm it survived rather than assuming a successful start.
+sleep 1
+if ! kill -0 "$REC_PID" 2>/dev/null; then
+  echo "❌ recorder exited immediately — the host recorder was busy" >&2
+  exit 1
+fi
 
 SIMCTL_CHILD_EPHEMERIS_REEL=1 SIMCTL_CHILD_EPHEMERIS_REEL_TOUR="$REEL" \
   SIMCTL_CHILD_EPHEMERIS_DEMO=1 SIMCTL_CHILD_EPHEMERIS_LANG="$LOC" \
@@ -100,6 +121,12 @@ SIMCTL_CHILD_EPHEMERIS_LON="$LON" SIMCTL_CHILD_EPHEMERIS_PLACE="$PLACE" \
 for _ in $(seq 1 150); do grep -q "REEL_END" "$SYSLOG" 2>/dev/null && break; sleep 0.5; done
 sleep 1
 kill -INT "$REC_PID" 2>/dev/null; wait "$REC_PID" 2>/dev/null
+# `wait` returns when our child exits, but simctl's recorder is a separate process that outlives
+# it briefly and keeps the host slot. Not draining it here is what made the NEXT platform fail.
+for _ in $(seq 1 40); do
+  pgrep -f "simctl io .* recordVideo" >/dev/null || break
+  sleep 0.5
+done
 kill "$LOG_PID" 2>/dev/null
 xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null
 xcrun simctl status_bar "$UDID" clear 2>/dev/null

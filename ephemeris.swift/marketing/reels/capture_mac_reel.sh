@@ -123,6 +123,9 @@ for LOC in "${@:-de fr ja}"; do
       EPHEMERIS_LANG="$LOC" EPHEMERIS_TAB="$TAB" EPHEMERIS_TZ="$TZ"
       EPHEMERIS_LAT="$LAT" EPHEMERIS_LON="$LON" EPHEMERIS_PLACE="$PLACE"
       EPHEMERIS_DEMO=1 EPHEMERIS_REEL=1
+      # Accessory policy — SCK records the window's own content, so the app never needs to be
+      # frontmost, and a reel run must not take the machine over.
+      EPHEMERIS_CAPTURE=1
     )
     [ -n "$LENS" ]     && ENVV+=(EPHEMERIS_LENS="$LENS")
     [ -n "$CHART" ]    && ENVV+=(EPHEMERIS_CHART="$CHART")

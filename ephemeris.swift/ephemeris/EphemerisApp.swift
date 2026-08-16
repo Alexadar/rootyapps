@@ -13,6 +13,30 @@ struct EphemerisApp: App {
     // frosts content as it scrolls under. Titles are white via `.preferredColorScheme(.dark)`.
     @StateObject private var language = LanguageStore()
 
+#if os(macOS)
+    /// A capture launch must not steal the machine's focus.
+    ///
+    /// `capture_mac_window.sh` and `capture_mac_reel.sh` launch the binary inside the bundle
+    /// directly — that is deliberate, because it yields the exact pid to capture and lets several
+    /// copies coexist. But a directly-launched `.regular` app *activates*, so every one of the 36
+    /// screenshot launches and every reel clip yanked the foreground away from whatever the owner
+    /// was doing. Nothing in ScreenCaptureKit needs that: `SCContentFilter(desktopIndependentWindow:)`
+    /// composites the window's own content whether or not it is frontmost or even occluded.
+    ///
+    /// `.accessory` keeps the window — it is drawn, laid out and capturable exactly as before —
+    /// while the app never becomes active and takes no Dock slot. This is the same policy
+    /// `marketing/tools/CaptureWindow.swift` sets on *itself* for the same reason; the capture tool
+    /// was well-behaved and the app being captured was not.
+    ///
+    /// Gated on `EPHEMERIS_CAPTURE`, which `LaunchOverride` compiles out in Release, so a shipping
+    /// build can never launch without a Dock icon.
+    init() {
+        if LaunchOverride.flag("EPHEMERIS_CAPTURE") {
+            NSApplication.shared.setActivationPolicy(.accessory)
+        }
+    }
+#endif
+
     var body: some Scene {
         WindowGroup {
             ContentView()
