@@ -9,7 +9,8 @@ is**, **how it was derived**, and **what is still unresolved and where the answe
 database. §7 lists the four queries that would confirm it.
 
 **Contents:** §1–§3 sources and the dissection rule · §4–§6 the campaign · §7–§9 verification,
-method, open questions · §10–§13 the equipment economy and the per-map auto-loadout table.
+method, open questions · §10–§13 the equipment economy and the per-map auto-loadout table ·
+**§14 where the sim reads gear from, and what is still missing to run the sequence.**
 
 ---
 
@@ -288,8 +289,11 @@ Source: `ItemTypes` rows in `…/20150626 - TestRC/Data.sql` (61 parsed), `Monst
 
 > **Do not use `monstro_client/Resources/Equipment/*.json` for this.** Those 33 files were written
 > during the Swift port, not extracted: `pistol.json` says damage 10 / range 800 / free, while the
-> real `Пистолет Стартовый` is damage 2 / range 200 / 23 credits. `light_armor.json` also changes
-> the semantics of `speed` — see §10.3.
+> real `Пистолет Стартовый` is damage 2 / range 200 / 23 credits.
+>
+> The files that *do* matter are `monstro_client/Assets/configs/weapons/*.yaml` and
+> `…/exoskeletons/*.yaml` — that is the catalogue the sim reads (§14). Their **schema is complete
+> and correct**; only their contents are invented. §14 has the field-by-field mapping.
 
 ### 10.1 Two parallel lines
 
@@ -572,3 +576,89 @@ economy from it.
    ground truth for this entire section: it says what players actually equipped on each map, rather
    than what the price ladder implies they should have. If the DB gets attached, diff it against
    §12.3 — that single query validates or replaces the whole table.
+
+---
+
+## 14. Wiring the sequence into the sim — where to look
+
+This doc carries the **sequence** (§12.3, §12.4). It deliberately does **not** carry weapon and
+armor stat blocks, because the sim already has a place for those and reading them from prose would
+be the wrong source. This section says where that place is.
+
+### 14.1 The files
+
+| what | path | state |
+|---|---|---|
+| monster stats the sim reads | `monstro_client/Assets/configs/monsters/*.yaml` | **correct** — all 21 types (1–18, 22–24), values match `Monsters.Data` (HP and damage 1:1, speed ×100) |
+| weapon stats the sim reads | `monstro_client/Assets/configs/weapons/*.yaml` | schema correct, **contents invented** — 6 files, ids 1–6, none of the 13 real weapons |
+| armor stats the sim reads | `monstro_client/Assets/configs/exoskeletons/*.yaml` | schema correct, **contents invented** — 4 files, ids 1–4, none of the 12 real armors |
+| loader | `torchsim/data.py` → `load_weapons()` / `load_exoskeletons()` / `GameData` | reads the YAML dirs above; ignores `Resources/Equipment/*.json` entirely |
+| loadout selection | `torchsim/export_world.py:52-53` | **hardcoded** `gd.weapons.get(1)` / `gd.exoskeletons.get(1)` — one loadout for every map in a run |
+| env | `torchsim/env_torch.py` → `EnvTorch(sched, weapon, exo, …)` | one `(weapon, exo)` per env batch |
+| exported schedule | `SchedJSON` in `MonstroSim/Sources/MetalGame/SimCore.swift` | the twelve gear scalars the Swift side consumes |
+
+Do **not** add a private weapon/exo table anywhere else. `data.py` is the only loader; a second
+catalogue is how the two engines drift, which is the whole reason `WorldConfig` exists.
+
+### 14.2 Field mapping — `ItemTypes` → YAML → `SchedJSON`
+
+The YAML schema already has a slot for every scalar the sim needs. Nothing has to be invented:
+
+| `SchedJSON` | weapon YAML key | `ItemTypes.Data` XML | conversion |
+|---|---|---|---|
+| `bullet_damage` | `damage` | `Damage` | 1:1 |
+| `bullets_per_shot` | `bulletsPerShot` | `BulletsCount` | 1:1 |
+| `penetration` | `penetrationPower` | `PenetrationPower` | 1:1 |
+| `mag_size` | `magazineSize` | `CageSize` | 1:1 |
+| `fire_interval` | `shotDelay` | `ShotDelay` | ms → s (350 → 0.35) |
+| `reload_ticks` | `reloadTime` | `RechargeDelay` | ms → s (1500 → 1.5) |
+| `bullet_speed` | `bulletSpeed` | `BulletSpeed` | **×60** (15/frame → 900; matches the existing rifle/minigun values) |
+| `max_dev` | `maxDeviation` | `BulletMaxDeviation` | 1:1 — both are **pixels of offset at the target**, which is exactly what the sim's `atan2(max_dev, 500)` spread expects |
+| `bullet_range` | `shotRange` | `ShotRange` | 1:1, subject to §14.4 |
+| `defense` | `defence` (exo) | `Defence` | 1:1, flat subtraction |
+| `exo_speed` | `speed` (exo) | `Speed` | **1:1 — see §14.3** |
+
+`contact_interval` is global (`WorldConfig.damage_interval`), not per item.
+
+### 14.3 `exo_speed` is not a conversion — it is already the multiplier
+
+Earlier drafts of this doc treated the DB's armor `Speed` as an absolute per-frame value needing a
+scale factor, by analogy with monster `Speed` (which does get ×100). That is wrong, and the armor
+YAML settles it: it uses `speed` as a **multiplier** on `WorldConfig.player_speed` (standard 1.0,
+light 1.05, heavy 0.85), and the DB's own values are already centred on 1.0 —
+
+`Броня Солдата` is exactly `1`, the ladder running `0.7` at the starter suit to `1.6` at the top.
+
+So `exo_speed = Speed`, unchanged. At `player_speed 300` that is 210–480 units/s against monsters at
+60–280: the player outruns everything, which is correct for the genre. Monster `Speed` is a per-frame
+absolute and takes ×100; exo `Speed` is a ratio and takes nothing. Different quantities, same column
+name.
+
+### 14.4 The one open conversion — world scale
+
+The port did not use a single factor. Monster speeds went in at DB×100 while `player_speed` was set
+to 300, where a straight 60 fps conversion would have given ×60 and 60. The invented weapon YAMLs
+were then written to match the inflated world (shotgun `shotRange` 350 against the DB's 250).
+
+Whatever factor is chosen, **apply it to `shotRange` and `bulletSpeed` together**, or DB weapons
+will read as short-ranged against monsters that are already scaled up. This is the only number in
+§14.2 that is a judgement call rather than a lookup.
+
+### 14.5 Run granularity
+
+`EnvTorch` takes one `(weapon, exo)` per env batch, so the natural unit is the **span, not the map**
+— **28 runs**: 24 from §12.3 plus 4 from §12.4, each an env batch over that span's map ids with its
+pair applied. No per-map gear switching is required, and the span table maps onto the batches 1:1.
+
+### 14.6 What is missing, exactly
+
+1. **25 catalogue rows.** 13 weapon YAMLs and 12 armor YAMLs generated from `ItemTypes` (§10.3,
+   §10.4) with the ids the DB uses — weapons 85, 86, 87, 96, 99, 101, 105, 106, 1091–1095; armors
+   112–117, 1085–1090 — replacing or joining the 6 + 4 invented files.
+2. **A machine-readable sequence.** §12.3 / §12.4 as JSON: span → map ids → weapon id, exo id.
+   Markdown tables are for people; the worker should not be parsing prose.
+3. **One change in `export_world.py`.** Take the pair from the sequence file instead of
+   `gd.weapons.get(1)` / `gd.exoskeletons.get(1)`.
+
+With those three in place the other machine reads gear from the config path it already reads, and
+this document is only consulted for the sequence itself.
