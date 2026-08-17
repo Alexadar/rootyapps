@@ -34,6 +34,9 @@ enum Oracles {
         + midpointsOracles.all
         + progressionsOracles.all
         + returnsOracles.all
+        + hoursOracles.all
+        + moonPhaseOracles.all
+        + zodiacOracles.all
         + uncertaintyOracles.all
 
     /// The original corpus that predates the module split (sidereal time, obliquity, Horizons
