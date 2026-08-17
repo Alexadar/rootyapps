@@ -1,24 +1,41 @@
 # Handoff: Ephemeris Sky — "Nebula" theme (v2, all platforms + Apple Watch)
 
-## Navigation (Aug 2026 regroup)
-Six flat sections collapsed to **four categories** so Natal leaves the iOS *More*
-overflow and becomes a first-class destination:
-- **Sky** (live moment) — Wheel · Table · Aspects · Houses lens segments (was
-  Chart/Positions/Aspects tabs + Houses card); the Moment control lives only here.
-- **Charts** (saved birth charts, **tab slot 2**) — library + chart detail; reserved
-  homes for Returns, Progressions, Synastry, Composite, Dignities, Analysis,
-  Astrocartography (all per-chart).
-- **Cycles** — Timeline (was Events) · Synodic (was Cycle) segments.
-- one spare seat, left empty on purpose.
+## Navigation (target structure — coverage redesign)
+Six flat sections collapse to **three occupied categories plus one deliberately empty
+seat**, so Natal leaves the iOS *More* overflow and every one of the 16 functions has a
+home. This describes the TARGET the coverage redesign builds toward; where an older
+paragraph further down still narrates the pre-redesign build, **this section wins** —
+the links doc's own rule is that a doc contradicting what ships is stale, so say so.
 
-Positions/Aspects/Houses are one shared `MomentReadout` fed either the live moment or
-a saved chart's frozen moment — built once, no duplication. Deep links:
+- **Sky** (live moment, tab slot 0) — the front door; works on an empty install. Its
+  picker is **four lens segments only: Chart · Positions · Aspects · Houses**, and the
+  Moment control lives here. Moon and Hours are **not** lens segments — they read a
+  *place over time*, not a chart at an instant, so they are **pushed destinations**: two
+  live-value rows beneath the readout (current phase %, current ruler + minutes left)
+  that open the full-screen **moon calendar** and **unequal planetary-hours ring**.
+  `MomentLens.skyLenses` is deleted; `chartLenses` is the only lens list. Gate-0 first
+  run leads with the moon hero, then teaching rows.
+- **Charts** (saved birth charts, tab slot 2) — the practitioner hub: library → chart
+  detail. Dignities · balances · shape · midpoints are the **Analysis** segment;
+  synastry · composite are the **⚯ pairing** view; **Returns** is its own segment; and
+  **astrocartography is a row beneath the wheel that pushes the full-screen map** — the
+  app's only non-wheel view. All per-chart.
+- **Cycles** — **Timeline** (was Events) · **Synodic** (was Cycle) segments.
+- **Fourth seat — empty, decided not deferred.** Nothing earns it: every unsurfaced
+  function is per-chart (→ Charts), a place-over-time reading (→ Sky), an action (⤴), or
+  a setting. `LegacyTab` never learns a fourth case, so no seat-filler ever ships.
+
+**Export is an action, not a category** — one ⤴ per exportable surface (timeline →
+.ics/JSON, chart detail → chart JSON, moon calendar → phase events), never a submenu.
+
+Positions/Aspects/Houses are one shared `MomentReadout` fed either the live moment or a
+saved chart's frozen moment — built once, no duplication. Deep links:
 `EPHEMERIS_TAB=0..5` resolve to category+lens so old indices land on the same pixels;
-leaf accessibility identifiers are unchanged. In the interactive reference the
-Nebula v2 build now shows Natal as tab 2, and the bottom tab bar / sidebar use the
-**Apple 2026 Liquid Glass** treatment (floating translucent capsule, layered
-highlight, glowing lozenge on the selected item). Full argument in
-`reference/Ephemeris Sky (Nebula v2 — interactive).html`.
+leaf accessibility identifiers are unchanged. The bottom tab bar / sidebar use the
+**Apple 2026 Liquid Glass** treatment (floating translucent capsule, layered highlight,
+glowing lozenge on the selected item). Full coverage argument in
+`reference/Ephemeris Sky (Coverage Redesign).html`; the Nebula v2 nav argument in
+`reference/Ephemeris Sky (Nebula v2 - interactive).html`.
 
 ## Overview
 "Nebula" is a vivid, immersive redesign of **Ephemeris Sky** (the SwiftUI ephemeris /
@@ -62,8 +79,18 @@ existing view structure; restyle and re-layout only as described.
 
 A **standalone product**, not a companion — it must read on its own. Reference:
 `reference/Ephemeris Sky (Apple Watch).html`, every screen at true 1× point size, which
-is the honest legibility test. Code: `NebulaWatch.swift`, `NebulaComplications.swift`,
-`MoonPhaseDisc.swift`.
+is the honest legibility test. Code: `NebulaWatch.swift`, `NebulaComplications.swift`.
+Moon rendering uses the app's `ephemeris/Views/MoonDisc.swift` (hemisphere-correct;
+requires a latitude).
+
+> **Brief provenance.** The original design brief is `WATCH_APP_BRIEF.md` — the prompt
+> this section answers. **This Apple Watch section is the authoritative delivered
+> spec;** where the brief and this section differ, this section wins. The one known
+> difference: the moon *complication* is **text-only** (a watch face has no guaranteed
+> latitude), not the "drawn disc" the brief's first draft assumed — the latitude rule
+> was established after the brief was written. The brief is kept (not folded away) so
+> merging the handoff never silently drops it, and stamped so it is never mistaken for
+> a second, divergent spec.
 
 ## The headline question: is the stripped wheel legible at 41 mm?
 
@@ -90,15 +117,17 @@ makes it worth arriving at. Hero interaction, second screen.
 ## Screens (41 mm = 176×215 pt, designed there first)
 
 1. **Now** *(launch)* — retrograde block (amber ℞, each with its direct date), Moon
-   phase disc + sign + degree + illuminated %, next ingress with its exact date. Zero
-   geometry. **Its title is the place name** ("LOS ANGELES") — see stale place.
+   phase + sign + degree + illuminated % (a drawn `MoonDisc` once a place is set — this
+   screen's own title *is* that place — text until then), next ingress with its exact
+   date. Zero geometry. **Its title is the place name** ("LOS ANGELES") — see stale place.
 2. **Wheel** — stripped ring, ten glyphs, AC/MC axis, centre readout; crown scrubs time.
    Mid-scrub: header becomes "SCRUBBING" + signed delta, crown arc on the right, centre
    ring tints accent, planets leave motion trails, sign ring dims to 60%.
 3. **Positions** — the 176 pt table problem, solved as **four columns totalling 136 pt**:
    planet glyph (16) · sign glyph (15) · `d°mm′` mono (≈62) · daily motion right-aligned,
    retrograde rows amber and ℞-prefixed. Row height 31 pt, six visible.
-4. **Events** — glyph-led rows, date as subtitle; lunations use a drawn phase disc.
+4. **Events** — glyph-led rows, date as subtitle; lunations use a drawn phase disc where
+   the app has a place, text phase otherwise (the moon rule, applied on-device).
 
 **49 mm (205×251 pt) is not a redesign** — +16% width buys all twelve sign glyphs and a
 seventh Positions row, and every value steps one rung up the type scale.
@@ -129,7 +158,7 @@ once a day?** Ranked:
 |---|---|---|
 | ① | **Rising sign** | The Ascendant moves a sign ~every 2 h — the only value that changes *while you are looking at it*, and it exists only because the app computes real houses. **Lead with this.** On `accessoryCorner` the bezel curve is a **Gauge** for progress through the current sign. |
 | ② | **Retrograde status** | Most-checked fact in the domain. Glyphs + ℞ amber; gauge = elapsed fraction, so "how much longer" needs no words. Inline: "♄︎ ℞ until 18 Nov". |
-| ③ | **Moon phase + sign** | Drawn terminator at the real illuminated fraction. |
+| ③ | **Moon phase + sign** | **Text phase — name · illuminated % · waxing/waning.** A complication has no guaranteed latitude (the saved place is a per-device App Group that does not reach the watch's widget process), and a hemisphere-correct disc needs one — so **no drawn terminator on the face**, the same constraint that keeps the moon *widget* text-only. Never an emoji moon. A drawn `MoonDisc` is earned only in-app, where a place exists. |
 | ④ | **Next event + real date** | "☽︎ → ♏︎ 30 Jul 04:12", exact to the minute — what makes it an almanac, not a horoscope. |
 | ⑤ | **Synodic phase** | "☿︎ morning star · day 16 of 45". Niche, nobody else has it, last because it moves slowly. |
 
@@ -179,8 +208,10 @@ needs an entry per sign boundary plus ~6 min gauge steps.
 ## Moon phase: never an emoji
 🌑/🌕 quantise to eight phases, so 18.0% and 31.4% render identically — and they arrive in
 someone else's colour and drawing style, breaking a monochrome glyph vocabulary. Use
-`MoonPhaseDisc` (drawn terminator at the true fraction) on Now, on Events, and in every
-complication family. It holds down to 15 pt.
+the app's `MoonDisc` (`ephemeris/Views/MoonDisc.swift` — drawn terminator at the true
+fraction, hemisphere-correct via `litOnRight(waxing:latitude:)`) wherever a latitude
+exists. It holds down to 15 pt. Where no latitude exists, the phase is text — never a
+drawn or emoji moon.
 
 ## Type scale that survives German and Japanese
 
@@ -341,15 +372,41 @@ all data.
 - `DesignSystem/NebulaComplications.swift` — ranked candidates, per-family budgets,
   rendering modes, timeline entry dates, no-place / stale-place decisions, App Group
   locale.
-- `DesignSystem/MoonPhaseDisc.swift` — drawn terminator at the true illuminated
-  fraction (replaces every 🌑/🌕 emoji).
+- ⚠️ `MoonPhaseDisc.swift` — **removed.** It was northern-hemisphere-only (no latitude
+  input), the category's most-reported defect. The moon disc authority is the app's
+  `ephemeris/Views/MoonDisc.swift` (hemisphere-correct, 5 tests). Do not re-add a
+  second disc.
+- `DesignSystem/NebulaCoverage.swift` — coverage redesign: four-lens picker, Sky
+  destinations (Moon · Hours), unequal hours ring, export contract, widget gating,
+  gate-0 first-run, new a11y identifiers.
 - `DesignSystem/NebulaPractitioner.swift` — practitioner layer: bi-wheel source
   control, ⚯ pairing conventions, honest missing-data treatments
   (`HonestStateCard`), midpoint ambiguity, watch verdict, new a11y identifiers.
+- `reference/Ephemeris Sky (Coverage Redesign).html` — the target navigation for all
+  16 functions: the six problems resolved, five iPhone screens (gate-0 Sky, steady
+  Sky, moon calendar, hours ring, export sheet), iPad/macOS layout, honest states,
+  and the EPHEMERIS_TAB / identifier migration.
 - `reference/Ephemeris Sky (Practitioner Layer).html` — the practitioner-layer
   design: placement of all eight Kit features inside Charts, ranking (Returns
   ships first), the two-chart pairing interaction, and seven iPhone screens
   including every no-data state.
+- `reference/Ephemeris Sky (Astrocartography).html` — the astrocartography
+  deliverable: the "near you" first frame (4–8 lines, not 40), the full 40-line map
+  gated behind one tap, per-line inspection with circumpolar honesty (a line that
+  stops is drawn as absent, never clipped), and the iPad/macOS map + scrubable line
+  rail. This is the map the coverage doc points to as "detail design already exists."
+- `reference/Ephemeris Sky (Analysis).html` — chart analysis: dignities as a ranked,
+  tap-to-expand list on iPhone / the real 10×7 matrix at width, element & modality
+  balances, Jones chart-shape classification, and the watch verdict (it does not
+  belong on the wrist).
+- `reference/Ephemeris Sky (Explain This Screen).html` — the on-device "Explain this
+  screen" Q&A window: per-platform placement (iPhone bottom panel + peek pill,
+  iPad/macOS inspector), the hide/show state rules, and all seven states (empty,
+  working, answered, plus the four unavailable ones) — designed so the answer never
+  covers what it describes.
+- `WATCH_APP_BRIEF.md` — the ORIGINAL design brief (the prompt the Apple Watch section
+  answers), kept for traceability. The authoritative watch spec is the Apple Watch
+  section above; where the brief and that section differ, the section wins.
 - `reference/Ephemeris Sky (All Platforms).html` — interactive canvas, iPhone/iPad/Mac
   plus watch, vision, TV, widgets and notifications.
 - `reference/Ephemeris Sky (Apple Watch).html` — the watch deliverable: 41 mm and 49 mm

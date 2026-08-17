@@ -1,5 +1,14 @@
 # Design an Apple Watch app for Ephemeris Sky
 
+> **Provenance — read first.** This is the ORIGINAL design brief: the prompt the Nebula
+> watch work answers, kept for traceability. The **authoritative delivered spec is the
+> Apple Watch section of `README.md`**; where this brief and that section differ, the
+> spec wins. One known difference: the moon *complication* is **text-only** (a watch
+> face has no guaranteed latitude, so a hemisphere-correct disc cannot be drawn there),
+> not the "drawn disc" this brief's item 3 first assumed — the latitude rule was
+> established after this brief was written. This file is included so merging the handoff
+> never silently drops the brief; it is not a second, divergent spec.
+
 ## What the app is
 
 A precision astronomy/astrology tool for iPhone, iPad and Mac. It computes real geocentric
@@ -66,8 +75,11 @@ a day?** Anything static is wasted on a watch face. Ranked by how well they pass
    Sign glyph plus degree; on `accessoryCorner` use the gauge for progress through the current sign.
 2. **Retrograde status.** Which planets are retrograde now, as glyphs with ℞ in amber. The single
    most-checked fact in this domain. `accessoryInline` reads "☿ ℞ until 22 Aug".
-3. **Moon phase + sign.** Phase as a drawn disc showing the real illuminated fraction — not an
-   emoji, which breaks the visual language and can't show it.
+3. **Moon phase + sign.** Never an emoji (it can't show the true fraction and breaks the
+   glyph vocabulary). **Resolved in the delivered spec:** a hemisphere-correct disc
+   needs a latitude and a complication can't guarantee one, so the *complication* shows
+   **text phase** (name · % · waxing/waning); a drawn `MoonDisc` is used only on in-app
+   screens where a place exists. See the README moon rule.
 4. **Next event with its real date** — "Mars → Gemini, 28 Jun". `accessoryRectangular` fits two
    lines. This is what makes it read as an almanac rather than a horoscope.
 5. **Chosen planet's synodic phase** — "Morning star · day 2 of 9". Niche, but no competitor has it.

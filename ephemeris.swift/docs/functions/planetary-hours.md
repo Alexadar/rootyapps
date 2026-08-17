@@ -1,9 +1,17 @@
 # Planetary hours
 
-**Status:** engine implemented and oracled — **no UI**; the hour ring below is not built
+**Status:** **shipped** — engine, the unequal hour ring (a Sky **destination**, pushed from a live
+row — not a lens segment), and a systemSmall + accessory widget
 **Lives in:** `EphemerisKit/Sources/EphemerisKit/Hours/PlanetaryHours.swift`, over the shared
 `Astronomy/RiseSet.swift` primitive built for it
-**Tests:** `PlanetaryHoursTests.swift` (12) · **Oracle:** `Oracles+hours.swift` (5 entries)
+**Surfaces:** `PlanetaryHoursView.swift` · `SkyDestinations.swift` (the row) ·
+`EphemerisWidgetIOS/PlanetaryHoursWidget.swift`
+
+⚠️ **Gate 1, so the widget needs the App Group.** A widget extension has its own bundle and its own
+`UserDefaults.standard`; before `group.oleksandr.aisixteen.ephemeris` was declared on iOS/macOS the
+observer's place could not cross the process boundary at all. Both empty states are worded rather
+than blank — "set a place" is fixable by the user, "no sunrise today" is the sky.
+**Tests:** `PlanetaryHoursTests.swift` (12) · `HourRingTests.swift` (7) · **Oracle:** `Oracles+hours.swift` (5 entries)
 **Depends on:** [[astronomy-core]] (sunrise/sunset), [[houses]] (observer location)
 
 ## What it does

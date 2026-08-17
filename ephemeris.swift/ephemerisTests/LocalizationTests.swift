@@ -182,4 +182,71 @@ struct LocalizationTests {
                     "Kit string '\(key)' has no catalog entry")
         }
     }
+
+    /// **Structural**, not a spot check: every key that exists in English must exist in all sixteen
+    /// languages.
+    ///
+    /// `keyStringsResolveInEveryLanguage` above tests a hand-written list, so a key added later is
+    /// covered only if somebody remembers to extend that list — and a missing translation does not
+    /// announce itself, because `localizedString(forKey:)` returns the *key* rather than empty when
+    /// it cannot find one. English text therefore appears in a German build and nothing fails.
+    ///
+    /// This compares the compiled `.strings` key sets directly, so it covers every key the catalog
+    /// will ever hold without being told about any of them.
+    @Test func everyEnglishKeyIsTranslatedInEveryShippedLanguage() throws {
+        func keys(_ code: String) throws -> Set<String> {
+            let path = try #require(Bundle.main.path(forResource: code, ofType: "lproj"),
+                                    "\(code).lproj is not in the bundle")
+            let file = URL(fileURLWithPath: path).appendingPathComponent("Localizable.strings")
+            let dict = try #require(NSDictionary(contentsOf: file) as? [String: String],
+                                    "\(code) has no readable Localizable.strings")
+            return Set(dict.keys)
+        }
+
+        let english = try keys("en")
+        #expect(english.count > 150, "only \(english.count) English keys — catalog not compiled?")
+
+        for code in Self.shipped {
+            let missing = english.subtracting(try keys(code)).sorted()
+            let sample = missing.prefix(5).joined(separator: " · ")
+            let why = "\(code) is missing \(missing.count) of \(english.count) keys: \(sample)"
+            #expect(missing.isEmpty, "\(why)")
+        }
+    }
+
+    /// Catches a key that is **absent from the catalog entirely** — which the test above cannot.
+    ///
+    /// `everyEnglishKeyIsTranslatedInEveryShippedLanguage` compares each locale's key set against
+    /// English. A key nobody ever added is missing from English too, so the sets still match and the
+    /// comparison is silent. Meanwhile `Text("First Quarter")` renders the literal in every
+    /// language, because `localizedString(forKey:)` returns the key when it finds nothing.
+    ///
+    /// That shipped: the gate-0 moon hero and the Sky rows used `First Quarter`, `Last Quarter`,
+    /// `Waxing` and `Waning`, none of which were in the catalog, and every localized build showed
+    /// English. The vocabulary below is the user-facing set those surfaces depend on; a key that
+    /// resolves to itself in *every* shipped language is not translated, it is missing.
+    @Test func userFacingVocabularyIsActuallyInTheCatalog() throws {
+        let vocabulary = [
+            // Moon surfaces — the gate-0 hero, the Sky rows, the calendar.
+            "New Moon", "First Quarter", "Full Moon", "Last Quarter", "Waxing", "Waning",
+            "Moonrise", "Moonset", "Does not occur today",
+            // Sky destinations and their empty states.
+            "Moon", "Hours", "Set a location", "No sunrise today",
+            // Export.
+            "Export", "Format", "Range", "What will be exported",
+            // Settings.
+            "Zodiac", "Tropical", "Moon alerts",
+        ]
+        for key in vocabulary {
+            var translated = 0
+            for code in Self.shipped {
+                let path = try #require(Bundle.main.path(forResource: code, ofType: "lproj"))
+                let bundle = try #require(Bundle(path: path))
+                if bundle.localizedString(forKey: key, value: nil, table: nil) != key { translated += 1 }
+            }
+            let why = "'\(key)' resolved to itself in all \(Self.shipped.count) languages — "
+                    + "it is missing from the catalog, not merely untranslated"
+            #expect(translated > 0, "\(why)")
+        }
+    }
 }

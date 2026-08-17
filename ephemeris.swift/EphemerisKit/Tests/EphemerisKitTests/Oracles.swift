@@ -37,6 +37,7 @@ enum Oracles {
         + hoursOracles.all
         + moonPhaseOracles.all
         + zodiacOracles.all
+        + voidOfCourseOracles.all
         + uncertaintyOracles.all
 
     /// The original corpus that predates the module split (sidereal time, obliquity, Horizons

@@ -53,23 +53,13 @@ See [`../VALIDATION.md`](../VALIDATION.md) for the measured accuracy headline, a
 
 ## Index
 
-### Engine implemented and oracled — no UI yet
-The maths, the corpus entries and the tests exist and are green; every "Suggested design" section
-in these three is still unbuilt, so nothing of this reaches a user yet.
-
-| Function | One line |
-|---|---|
-| [[planetary-hours]] | Chaldean-order hour rulers between sunrise and sunset |
-| [[sidereal-zodiac]] | ayanamsa offset — the same chart read in the sidereal frame |
-| [[moon-phases]] | lunar calendar surface over existing lunation maths — **gate 0, no birth data** |
-
 ### Implemented
 | Function | One line |
 |---|---|
 | [[astronomy-core]] | positions of Sun, Moon and planets — everything else depends on this |
 | [[houses]] | dividing the local sky into twelve, several ways |
 | [[natal-chart]] | the birth chart, its storage, and its uncertainty |
-| [[astrocartography]] | planetary angle lines drawn on a world map |
+| [[astrocartography]] | planetary angle lines drawn on a world map — equirectangular, offline |
 | [[aspects]] | angular relationships inside one chart |
 | [[cross-aspects]] | one chart against another — transits, synastry, progressed-to-radix |
 | [[midpoints-composite]] | half-sums, and the relationship chart built from them |
@@ -78,7 +68,11 @@ in these three is still unbuilt, so nothing of this reaches a user yet.
 | [[dignities]] | a body's condition by sign — the classical scoring |
 | [[events]] | ingresses, lunations, mundane aspects, synodic cycles |
 | [[chart-analysis]] | shape, emphasis and distribution across a whole chart |
-| [[export]] | getting the results out in a form other tools accept |
+| [[export]] | getting the results out in a form other tools accept — an ⤴ action, CSV/JSON |
+| [[planetary-hours]] | Chaldean-order hour rulers between sunrise and sunset — **gate 1, place only** |
+| [[sidereal-zodiac]] | ayanamsa offset — a setting, not a screen |
+| [[moon-phases]] | month calendar, widget and alerts — **gate 0, no birth data** |
+| [[assistant]] | "what is this?" — on-device Q&A grounded in the current screen |
 
 ## Document template
 

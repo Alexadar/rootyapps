@@ -131,4 +131,26 @@ public enum Ayanamsa: String, CaseIterable, Identifiable, Sendable {
     public func positions(at date: Date) -> [BodyPosition] {
         CelestialBody.allCases.map { position(of: $0, at: date) }
     }
+
+    /// House cusps read in this frame.
+    ///
+    /// **The houses have to move too, and this is the step that gets forgotten.** Cusps are derived
+    /// from sidereal *time* and the observer's place, which puts them in the tropical frame like
+    /// everything else. Shift the bodies and leave the cusps alone and every house placement is
+    /// wrong by the ayanamsa — currently about 24°, which is most of a sign. The chart still *looks*
+    /// right, because each individual number is plausible and the wheel is still a wheel.
+    ///
+    /// Note this rotates the frame, not the sky: the ascendant is the same point on the horizon,
+    /// renamed. RAMC and obliquity are diagnostics of the underlying geometry and are carried
+    /// through unchanged, because they are not zodiacal quantities and rotating them would be
+    /// meaningless.
+    public func cusps(_ h: HouseCusps, at date: Date) -> HouseCusps {
+        let shift = { (deg: Double) in self.sidereal(fromTropical: deg, at: date) }
+        return HouseCusps(system: h.system,
+                          cusps: h.cusps.map(shift),
+                          angles: ChartAngles(ascendant: shift(h.angles.ascendant),
+                                              midheaven: shift(h.angles.midheaven),
+                                              ramc: h.angles.ramc,
+                                              obliquity: h.angles.obliquity))
+    }
 }

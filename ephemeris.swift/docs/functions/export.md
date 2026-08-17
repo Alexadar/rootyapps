@@ -1,9 +1,29 @@
 # Export
 
-**Status:** implemented
+**Status:** **shipped** — engine and an in-app action. The engine and CLI were long done; there was
+**no UI at all** until this pass
 **Source:** `EphemerisKit/Sources/EphemerisKit/Export/TimelineExporter.swift`,
 `EphemerisKit/Sources/ephemeris-export/main.swift`
-**Tests:** `ExporterTests.swift`
+**Surfaces:** `Views/ExportSheet.swift` · `Services/ExportPayload.swift` (pure). One ⤴ per
+exportable surface — timeline (`export.events`), chart detail (`export.chart`), moon calendar
+(`export.moon`) — never a submenu
+**Tests:** `ExporterTests.swift` · `ExportPayloadTests.swift` (10)
+
+## Formats: CSV and JSON
+
+⚠️ **Not `.ics`.** The design handoff described the timeline export as ".ics/JSON"; there is no ICS
+generator in the Kit, and writing an unproven RFC 5545 serializer to satisfy a document would invert
+this project's order — the engine leads, the doc follows. The handoff is corrected instead.
+
+A **chart** exports as JSON only, and specifically as its own `SavedChart` document — the same bytes
+iCloud syncs and `ChartStoreTests` round-trips. A CSV of a chart would be a flattened lookalike of a
+file that already has a canonical form.
+
+⚠️ **The sheet states the count and range before anything happens**, and both are read from the same
+array the file is written from. A summary computed separately from the bytes is the failure nobody
+sees: neither the number nor the file looks wrong alone.
+
+Nothing uploads. The file is written to the temporary directory and handed to the share sheet.
 
 ## What it does
 

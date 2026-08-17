@@ -175,4 +175,59 @@ struct MoonPhasesTests {
         }
         #expect(missing >= 2, "expected several riseless days inside the Arctic Circle, got \(missing)")
     }
+
+    // MARK: - The display snapshot
+
+    /// `Snapshot` is what the widget, the calendar and the notification scheduler all read, so its
+    /// day arithmetic is load-bearing in three places at once.
+    @Test func snapshotAgreesWithTheFunctionsItAggregates() {
+        var t = utc(2026, 1, 1)
+        let end = utc(2026, 4, 1)
+        while t < end {
+            let s = MoonPhases.snapshot(at: t)
+            #expect(s.illumination == MoonPhases.illuminatedFraction(at: t))
+            #expect(s.waxing == MoonPhases.isWaxing(at: t))
+            #expect(s.phase == MoonPhases.currentPhase(at: t))
+            #expect(s.percent >= 0 && s.percent <= 100, "percent \(s.percent)")
+            t = t.addingTimeInterval(7 * 3600)
+        }
+    }
+
+    /// The count must never read zero, and never count a past event. Truncation would print
+    /// "full in 0 d" for the whole final day, which is the one day a user is most likely to look.
+    @Test func daysUntilNeverReturnsZeroAndIgnoresThePast() {
+        let now = utc(2026, 3, 1)
+        let s = MoonPhases.snapshot(at: now)
+
+        #expect(s.days(until: nil) == nil)
+        #expect(s.days(until: now) == nil, "an event at this instant is not upcoming")
+        #expect(s.days(until: now.addingTimeInterval(-3600)) == nil, "past events do not count")
+
+        // Anything strictly in the future is at least one day away, however close.
+        for seconds in [1.0, 60, 3600, 86_399] {
+            let d = s.days(until: now.addingTimeInterval(seconds))
+            #expect(d == 1, "\(seconds) s ahead should read 1 d, got \(d.map(String.init) ?? "nil")")
+        }
+        #expect(s.days(until: now.addingTimeInterval(86_401)) == 2)
+    }
+
+    /// `soonest` must pick the nearer of the two, and one of them always exists — a widget with no
+    /// line to show is the empty state this surface is supposed to be incapable of.
+    @Test func soonestPicksTheNearerEventAndAlwaysExists() {
+        var t = utc(2026, 1, 1)
+        let end = utc(2027, 1, 1)
+        while t < end {
+            let s = MoonPhases.snapshot(at: t)
+            guard let soonest = s.soonest else {
+                Issue.record("no upcoming full or new moon at \(t)"); t = t.addingTimeInterval(86_400); continue
+            }
+            let f = s.days(until: s.nextFull) ?? Int.max
+            let n = s.days(until: s.nextNew) ?? Int.max
+            #expect(soonest.days == Swift.min(f, n))
+            #expect(soonest.phase == (f <= n ? .full : .new))
+            // Never more than a synodic month away.
+            #expect(soonest.days <= 30, "\(soonest.days) d at \(t)")
+            t = t.addingTimeInterval(86_400)
+        }
+    }
 }

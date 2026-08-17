@@ -1,12 +1,15 @@
 # Moon phases and lunar calendar
 
-**Status:** engine implemented and oracled — **no UI**; the calendar grid and widgets below are not
-built. **Void-of-course is still not implemented** — it needs the Moon's last aspect before leaving
-a sign, which is a different search from phase root-finding
+**Status:** **shipped** — engine, month calendar, iOS/macOS widget and full/new-moon notifications.
+Void-of-course is now implemented too (`Events/VoidOfCourse.swift`), as an optional overlay that is
+off by default
 **Lives in:** `EphemerisKit/Sources/EphemerisKit/Events/MoonPhases.swift` (quarters, illumination,
 waxing state, current phase) over `Astronomy/RiseSet.swift` for moonrise/moonset. The older
 `Lunations.swift` still feeds the event timeline and is unchanged
-**Tests:** `MoonPhasesTests.swift` (11) · `EventCatalogTests.swift` ·
+**Surfaces:** `MoonCalendarView.swift` (a Sky **destination**, pushed from a live row) · `MoonDisc.swift` (hemisphere-correct
+terminator) · `EphemerisWidgetIOS/MoonPhaseWidget.swift` · `Services/MoonNotifications.swift`
+**Tests:** `MoonPhasesTests.swift` (14) · `VoidOfCourseTests.swift` (11) · `MoonDiscTests.swift` (5) ·
+`MoonNotificationTests.swift` (6) · `EventCatalogTests.swift` ·
 **Oracle:** `Oracles+moonphases.swift` (3 entries, Espenak) · `Oracles.swift`
 **Gate:** 0 — needs **no birth data**. See [`../ASTROLOGY_LINKS.md`](../ASTROLOGY_LINKS.md)
 

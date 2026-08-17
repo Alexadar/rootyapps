@@ -1,9 +1,11 @@
 # Sidereal zodiac (ayanamsa)
 
-**Status:** engine implemented and oracled — **no UI**; the frame switch below is not built.
-Note `sidereal` elsewhere in this repo means *sidereal time*, which is unrelated
+**Status:** **shipped** — a Settings picker (default Lahiri absent = tropical) that reaches
+positions, cusps, aspects and dignities. Note `sidereal` elsewhere in this repo means *sidereal
+time*, which is unrelated
 **Lives in:** `EphemerisKit/Sources/EphemerisKit/Zodiac/Ayanamsa.swift`
-**Tests:** `AyanamsaTests.swift` (9) · **Oracle:** `Oracles+zodiac.swift` (4 entries)
+**Surfaces:** `SettingsView.swift` · applied in `ChartViewModel.recomputeChartOnly`
+**Tests:** `AyanamsaTests.swift` (9) · `SiderealFrameTests.swift` (7) · **Oracle:** `Oracles+zodiac.swift` (4 entries)
 **Depends on:** [[astronomy-core]]
 
 ## What it does

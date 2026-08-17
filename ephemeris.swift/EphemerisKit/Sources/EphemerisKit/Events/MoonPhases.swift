@@ -149,6 +149,92 @@ public enum MoonPhases {
         }
     }
 
+    /// The next `limit` occurrences of any phase in `wanted`, in time order.
+    ///
+    /// `phases(in:)` needs an interval, and a caller who wants "the next eight full and new moons"
+    /// has to guess one — guess short and the list comes back incomplete, guess long and every
+    /// caller pays for a scan it did not need. This grows the window instead, a synodic month at a
+    /// time, and stops as soon as it has enough.
+    ///
+    /// Used by the notification scheduler, which must respect a hard cap on pending notifications
+    /// and therefore asks for an exact count rather than a date range.
+    public static func upcoming(_ wanted: Set<Phase>, from date: Date, limit: Int) -> [Event] {
+        guard limit > 0, !wanted.isEmpty else { return [] }
+        var out: [Event] = []
+        var months = 2.0
+        // Bounded so a caller asking for something unreachable cannot spin: each pass roughly
+        // doubles the horizon, so this covers decades long before it gives up.
+        while out.count < limit, months < 1_024 {
+            let end = date.addingTimeInterval(months * meanSynodicMonth * 86_400)
+            out = phases(in: DateInterval(start: date, end: end))
+                .filter { wanted.contains($0.phase) && $0.date > date }
+            if out.count >= limit { break }
+            months *= 2
+        }
+        return Array(out.prefix(limit))
+    }
+
+    // MARK: - Everything a display needs, in one read
+
+    /// The full lunar state at an instant.
+    ///
+    /// Exists because three surfaces need exactly this set — the widget, the month calendar and the
+    /// notification scheduler — and each computing it separately is how one calculation acquires
+    /// two definitions. `ChartGeometry` already taught this repo that lesson once, with two
+    /// disagreeing answers about which way the zodiac turns.
+    ///
+    /// Building it costs four position lookups, so callers should hold one rather than ask for the
+    /// pieces individually.
+    public struct Snapshot: Hashable, Sendable {
+        public let date: Date
+        /// 0…1.
+        public let illumination: Double
+        public let waxing: Bool
+        /// The phase most recently *passed*, never the one approaching.
+        public let phase: Phase
+        public let nextFull: Date?
+        public let nextNew: Date?
+
+        /// Illumination as whole percent, 0…100.
+        public var percent: Int { Int((illumination * 100).rounded()) }
+
+        /// Whole days from this instant until `target`, rounded **up**, or nil when `target` is nil
+        /// or already past.
+        ///
+        /// Rounding up and flooring at 1 is deliberate: a UI saying "full in 0 days" is nonsense,
+        /// and truncation produces it for the whole final day before the event. The event's own day
+        /// reads "full in 1 d" right up to the instant, then the count moves to the next occurrence.
+        public func days(until target: Date?) -> Int? {
+            guard let target else { return nil }
+            let seconds = target.timeIntervalSince(date)
+            guard seconds > 0 else { return nil }
+            return Swift.max(1, Int((seconds / 86_400).rounded(.up)))
+        }
+
+        /// Whichever of the next full or new moon comes first, with its day count — the single most
+        /// useful thing a glanceable surface can show, and one of the two always exists.
+        public var soonest: (phase: Phase, days: Int)? {
+            let f = days(until: nextFull)
+            let n = days(until: nextNew)
+            switch (f, n) {
+            case let (f?, n?): return f <= n ? (.full, f) : (.new, n)
+            case let (f?, nil): return (.full, f)
+            case let (nil, n?): return (.new, n)
+            default: return nil
+            }
+        }
+    }
+
+    /// The lunar state at `date`.
+    public static func snapshot(at date: Date) -> Snapshot {
+        Snapshot(date: date,
+                 illumination: illuminatedFraction(at: date),
+                 waxing: isWaxing(at: date),
+                 phase: currentPhase(at: date),
+                 nextFull: next(.full, after: date)?.date,
+                 nextNew: next(.new, after: date)?.date)
+    }
+
     // MARK: - Rise and set
 
     /// Moonrise and moonset for a civil day, either of which can legitimately be absent.

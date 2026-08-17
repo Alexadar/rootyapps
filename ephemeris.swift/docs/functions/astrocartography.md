@@ -1,8 +1,37 @@
 # Astrocartography
 
-**Status:** implemented
+**Status:** **shipped** — engine and the map. Until this pass the engine was oracle-tested and had
+**zero UI**; the status line said "implemented", which was true of the maths and misleading about
+the app
 **Source:** `EphemerisKit/Sources/EphemerisKit/Astrocartography/AstroCartography.swift`
-**Tests:** `AstroCartographyTests.swift` · **Oracle:** `Oracles+astrocarto.swift`
+**Surfaces:** `Views/Astro/AstroMapView.swift` (a row beneath the wheel in chart detail pushes it) ·
+`Views/Astro/MapProjection.swift` (pure) · `Views/Astro/NearestLines.swift` (pure) ·
+`Resources/coastline-110m.json`
+**Tests:** `AstroCartographyTests.swift` · `MapProjectionTests.swift` (11) ·
+`NearestLinesTests.swift` (6) · **Oracle:** `Oracles+astrocarto.swift`
+
+## How the map is drawn
+
+**Equirectangular, offline, no MapKit.** Longitude and latitude map linearly to x and y, so an
+MC/IC meridian is a vertical line and the Kit's geometry is drawn without reprojection. MapKit was
+rejected for two reasons: its tiles need a network and this app is paid-upfront and offline, and its
+light labelled cartography cannot sit inside the Nebula visual language.
+
+The coastline is **Natural Earth 1:110m land** (public domain), simplified to 110 rings / 5,003
+points at 0.01° and bundled at ~73 KB.
+
+⚠️ **Two traps, both tested.**
+
+- **The antimeridian.** A line leaving the right edge at +180° reappears at −180°, and joining the
+  ends drags a horizontal stroke across the whole map — a line that exists nowhere on Earth.
+  `MapProjection.segments` splits any path whose neighbours jump more than half a world.
+- **Circumpolar means absent, not clipped.** When a body never touches the horizon there is no AC or
+  DC line, and `AstroCartography.line` returns no points. The map draws nothing and the list says
+  "Circumpolar — no line". Clipping to the map edge would draw a boundary someone could try to move
+  to.
+
+Line colours are indexed by position in `CelestialBody.allCases`, **not** by `hashValue` — Swift
+seeds string hashing per process, so a hash-keyed palette repaints every line on every launch.
 
 ## What it does
 

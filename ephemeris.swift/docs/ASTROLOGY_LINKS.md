@@ -7,10 +7,34 @@ it answers *which category does this belong to*, *what must exist before this sc
 Per-function detail lives in [`functions/`](functions/README.md). This file is only the wiring.
 
 ```
-LEGEND     [■] implemented      [□] proposed, not built      [·] known gap, unproposed
-           [◧] engine built and oracled, but NO UI — reaches no user yet
+LEGEND     [■] SHIPPED — oracle-tested engine AND a surface a user can reach
+           [□] proposed, not built      [·] known gap, unproposed
            ──▶  requires        ═══▶ is rendered by
 ```
+
+> **`[■]` means both halves, and that wording is deliberate.** It used to mean "the maths exists",
+> which is how **astrocartography and export sat marked implemented while having zero UI** — the
+> engines were oracle-tested for months and no screen reached them. A marker that cannot tell those
+> apart hides exactly the gap it is meant to expose. If an engine ships without a surface it does
+> not get `[■]`; say so in words instead.
+
+**Audited against the code on 2026-08-17: all 20 entries below carry both halves.** Each was checked
+by resolving its Kit symbol *and* a compiled Swift file that reads it — a match in a string catalog
+or in `design_handoff_nebula/` does not count, since neither reaches a user.
+
+| | |
+|---|---|
+| Sky | astronomy core · houses · events/timeline · **moon phases** · **planetary hours** |
+| Charts | natal chart · aspects · dignities · chart analysis · midpoints · composite · synastry · **astrocartography** · uncertainty |
+| Cycles | transits/cross-aspects · progressions · returns |
+| Neither | **export** (an action) · **sidereal zodiac** (a setting) · **void-of-course** (an overlay) |
+
+Everything **bold** gained its surface in the coverage-redesign pass; the rest already had one.
+
+**Nothing proposed remains unbuilt.** The only unimplemented functions are the three `[·]` gaps
+below — eclipses, harmonics and fixed stars — which have no Kit symbol and were never measured, so
+no file here asserts they are worth building. Eclipses are the obvious Sky-shaped one and would be
+the first to scope.
 
 ---
 
@@ -27,7 +51,7 @@ never be shown. They are deliberately silent on visual language.
 | **Visual system** | `design_handoff_nebula/DesignSystem/` + `README.md` | tokens, type, spacing, colour |
 | **Visual reference** | `design_handoff_nebula/reference/` | the shipped look |
 | **Watch** | `design_handoff_nebula/WATCH_APP_BRIEF.md` | a whole platform, already briefed |
-| **Widget** | `EphemerisWidget/` (watchOS) · `EphemerisWidgetIOS/` (iOS/macOS) | glanceable surfaces — the natural home for moon phase and planetary hours. ⚠️ `EphemerisWidget` is a **watchOS-only** app-extension, and a moon complication was **removed from it after five attempts** because the terminator never rendered right on device (`EphemerisWidgetBundle.swift`). Text-first there; earn the drawn disc |
+| **Widget** | `EphemerisWidget/` (watchOS) · `EphemerisWidgetIOS/` (iOS/macOS) | glanceable surfaces. ⚠️ `EphemerisWidget` is **watchOS-only** and never serves iOS; Home/Lock Screen widgets come from `EphemerisWidgetIOS`, which ships **moon phase** (gate 0, text-only — no location means no hemisphere, and every phase emoji is handed) and **planetary hours** (gate 1, reads the observer through the App Group). A moon complication was **removed from the watch bundle after five attempts** because the terminator never rendered right on device. The drawn disc lives in `MoonDisc.swift`, on the calendar, where a latitude exists |
 | **Localization** | `Localization/` | 17 languages. Every label here will expand; German and Ukrainian break tight layouts |
 | **Current screens** | `ephemeris/*View.swift` | `BirthDataEntry` · `ChartLibrary` · `Cycle` · `Events` · `NatalChart` · `Pairing` · `Settings`, plus an `IOSContentView` / `MacOSContentView` split |
 
@@ -37,6 +61,11 @@ views before proposing a structure, and say explicitly what you are changing and
 
 **Order of authority when they disagree:** the code, then `design_handoff_nebula/`, then these
 files. If a doc here contradicts what ships, the doc is stale — say so rather than designing to it.
+
+✅ **`design_handoff_nebula/` is up to date with the delivered coverage redesign.** It carries
+`NebulaCoverage.swift` and the Coverage Redesign / Astrocartography / Analysis references, and the
+northern-hemisphere-only `MoonPhaseDisc.swift` has been **deleted** — the moon disc authority is the
+shipped `ephemeris/Views/MoonDisc.swift`, which takes a latitude. Do not re-add a second disc.
 
 ---
 
@@ -51,9 +80,9 @@ than an arbitrary one.
 │  no birth data required — works on a brand-new install                    │
 │                                                                            │
 │  [■] events: ingresses · mundane aspects · synodic cycles                 │
-│  [■] lunations  →  [◧] MOON PHASES as its own surface                     │
+│  [■] lunations  →  [■] MOON PHASES as its own surface                     │
 │  [■] retrogrades                                                          │
-│  [◧] planetary hours          (needs location only)                        │
+│  [■] planetary hours          (needs location only)                        │
 │  [·] eclipses                 (unproposed gap — obviously Sky)             │
 │                                                                            │
 │  ⚠ THIS IS THE ENTRANCE. Everything else is locked until birth data        │
@@ -83,7 +112,7 @@ than an arbitrary one.
 
 ┌─ NEITHER — do not give these a category ──────────────────────────────────┐
 │  [■] export             an ACTION, available wherever you are              │
-│  [◧] sidereal zodiac    a SETTING — re-reads Charts and Cycles in another  │
+│  [■] sidereal zodiac    a SETTING — re-reads Charts and Cycles in another  │
 │                         frame, adds no screen of its own                    │
 │  [■] astronomy core     the engine underneath all three                     │
 └────────────────────────────────────────────────────────────────────────────┘
@@ -110,7 +139,7 @@ Category shown in the margin.
                             │   instant + place     │
                             ▼          ▼            ▼
         ┌───────────────────────┐  ┌──────────┐  ┌───────────────────┐
-        │ [■] ASTRONOMY CORE    │  │[■] HOUSES│  │[◧] PLANETARY HOURS│ SKY
+        │ [■] ASTRONOMY CORE    │  │[■] HOUSES│  │[■] PLANETARY HOURS│ SKY
         │  10 body longitudes   │  │ cusps    │  │ sunrise → sunset  │
         │  ±7′, 1900–2100       │  │ ASC · MC │  │ Chaldean rulers   │
         │  ORACLE: JPL Horizons │  │          │  │                   │
@@ -127,13 +156,13 @@ Category shown in the margin.
            │        │              │                  └──┬───┬───┬───┬───┬───┘
            │        │              ▼                     │   │   │   │   │
            │        │  ┌───────────────────────┐         │   │   │   │   │
-           │        │  │[◧] MOON PHASES        │ SKY     │   │   │   │   │
+           │        │  │[■] MOON PHASES        │ SKY     │   │   │   │   │
            │        │  │ calendar · widget     │         │   │   │   │   │
            │        │  │ ⚠ the paid-volume one │         │   │   │   │   │
            │        │  └───────────────────────┘         │   │   │   │   │
            │        │                                    │   │   │   │   │
            │        └─▶┌────────────────────┐            │   │   │   │   │
-           │           │[◧] SIDEREAL ZODIAC │ SETTING    │   │   │   │   │
+           │           │[■] SIDEREAL ZODIAC │ SETTING    │   │   │   │   │
            │           │  λ − ayanamsa      │            │   │   │   │   │
            │           └────────────────────┘            │   │   │   │   │
            │                                             │   │   │   │   │
@@ -188,10 +217,10 @@ Gate maps almost exactly onto category.
 
 ```
 GATE 0  nothing                 ┌─ [■] EVENTS (ingresses, mundane aspects, retrogrades)
-        no user data at all     ├─ [■] LUNATIONS ─▶ [◧] MOON PHASES
+        no user data at all     ├─ [■] LUNATIONS ─▶ [■] MOON PHASES
         ══▶ SKY                 └─ these work on an EMPTY app. THE first-run content.
 
-GATE 1  place only              ┌─ [◧] PLANETARY HOURS
+GATE 1  place only              ┌─ [■] PLANETARY HOURS
         (device GPS is fine)    └─ still no birth data. Second-best first-run content.
         ══▶ SKY
 
@@ -241,9 +270,11 @@ it reads as broken. **Sky is not a secondary tab; it is the front door.**
 └───────────────────────────────────────────────────────────────────┘
 
 ┌─ THE CALENDAR ────────────────────────────────────── SKY ─────────┐
-│  [◧] moon phases — a MONTH grid, not a timeline. Different        │
+│  [■] moon phases — a MONTH grid, not a timeline. Different        │
 │  audience, different mental model. Do NOT merge into the timeline.│
 │  Widget + full/new moon notifications are the feature being bought│
+│  Reached from a Sky ROW, not a lens segment: a month is not a     │
+│  reading of one instant, and six segments do not fit 16 languages.│
 └───────────────────────────────────────────────────────────────────┘
 
 ┌─ THE GRID ───────────────────────────────────────── CHARTS ───────┐
@@ -257,8 +288,9 @@ it reads as broken. **Sky is not a secondary tab; it is the front door.**
 └───────────────────────────────────────────────────────────────────┘
 
 ┌─ THE CLOCK ─────────────────────────────────────────── SKY ───────┐
-│  [◧] planetary hours — unequal ring, current hour, widget-shaped  │
+│  [■] planetary hours — unequal ring, current hour, widget-shaped  │
 │  segment widths MUST visibly differ or the drawing is lying       │
+│  Sky ROW → full screen. Widget ships too (gate 1, App Group).     │
 └───────────────────────────────────────────────────────────────────┘
 ```
 
