@@ -17,7 +17,7 @@ style:
   screenshot_padding: 40
 texts:
   - title: "26 herramientas de audio"
-    subtitle: "Afinación · Acústica · Señal · Estéreo"
+    subtitle: "Acústica · Subwoofer · Filtros · LUFS"
   - title: "El tempo, clavado"
     subtitle: "Duración de nota, retardo y muestras"
   - title: "Altura y frecuencia"

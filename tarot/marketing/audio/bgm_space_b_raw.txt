@@ -1,0 +1,7 @@
+prompt: atmospheric space ambient electronica, warm analog pads, soft echoing synth plucks drifting in delay, deep cosmic atmosphere, lush reverb, slowly evolving, immersive, no beats
+negative: drums, percussion, beat, vocals, harsh, distorted, noisy, cheerful, jingle, music box
+dit: medium
+decoder: same-l
+seconds: 72
+steps: 50
+seed: 77052

@@ -11,8 +11,8 @@ settings:
     DEVELOPMENT_TEAM: LSKNNBG94G
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.0.2"
-    CURRENT_PROJECT_VERSION: "3"
+    MARKETING_VERSION: "1.0.3"
+    CURRENT_PROJECT_VERSION: "4"
     ENABLE_PREVIEWS: YES
     GENERATE_INFOPLIST_FILE: YES
 packages:
@@ -63,7 +63,14 @@ targets:
         # CFBundleName drives that menu title; CFBundleDisplayName drives Finder/Dock/menu items.
         # Bundle identifier must NOT change (Apple: it would orphan existing installs).
         # CFBundleName is always $(PRODUCT_NAME) (INFOPLIST_KEY_CFBundleName is not a supported
-        # key), so PRODUCT_NAME itself must read "Kerf Calc" to match the App Store name exactly.
+        # key), so PRODUCT_NAME itself must read "Kerf Calc".
+        #
+        # It deliberately does NOT match the App Store listing name. From 1.0.3 the listing reads
+        # "Kerf: Construction Calculator" — 29 of the 30 indexed characters, because Title is the
+        # heaviest-weighted search field and "Kerf Calc" wasted 21 of them. That name lives in App
+        # Store Connect (appInfoLocalizations.name) and never in the binary. The two are allowed to
+        # differ, and should: this one is the home-screen and menu-bar label, where a long string is
+        # truncated to nothing useful.
         PRODUCT_NAME: "Kerf Calc"
         # Pin the Swift module name. It otherwise derives from PRODUCT_NAME ("Kerf Calc" → Kerf_Calc),
         # so renaming the product silently breaks `@testable import` in the test targets.

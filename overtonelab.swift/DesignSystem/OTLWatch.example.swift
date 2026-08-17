@@ -2,11 +2,7 @@ import SwiftUI
 
 // watchOS 26 — Overtone Lab on the wrist. Dark only, no light variant.
 // Inherits OTL tokens + ToolSection.accent unchanged; the math packages compile as-is.
-//
-// SUPERSEDED in part: this file curates 7 tools, on the assumption that a 26-item catalog is
-// unnavigable by paging alone. Wearing it proved the paging fine and the *absence of a catalog*
-// the real problem, so the shipped app (OverToneLabWatch/) adds a tool list as page zero and
-// carries all 26. Everything else here — tokens, stacked labels, crown detents — still holds.
+// Curated to 7 tools: tempo, delay, pitch, spl, sabine, levels, pan.
 
 // MARK: - Curation
 

@@ -1,0 +1,7 @@
+prompt: single soft low wooden knock, muted, very short, quiet, dry, foley
+negative: music, melody, drums, vocals, chime, sparkle, bright, metallic
+dit: medium
+decoder: same-l
+seconds: 4
+steps: 100
+seed: 77026

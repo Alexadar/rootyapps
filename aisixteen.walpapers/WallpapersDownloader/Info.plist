@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<!-- Required for an ExtensionKit extension; App Store validation rejects the build without it
+	     (90360). Never shown to the user — the extension has no UI. -->
+	<key>CFBundleDisplayName</key>
+	<string>AISixteen Wallpapers Downloader</string>
+	<key>CFBundlePackageType</key>
+	<string>XPC!</string>
+	<!-- An extension whose version does not match its host fails to install with the opaque
+	     "Invalid placeholder attributes". These must track the app, so they are variables. -->
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- ExtensionKit, not the old NSExtension dictionary. The identifier is what tells the system
+	     this is the app's Background Assets downloader; without it the framework reports that the
+	     app "lacks a Background Assets downloader extension" and traps. -->
+	<key>EXAppExtensionAttributes</key>
+	<dict>
+		<key>EXExtensionPointIdentifier</key>
+		<string>com.apple.background-asset-downloader-extension</string>
+	</dict>
+</dict>
+</plist>

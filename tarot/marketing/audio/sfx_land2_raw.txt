@@ -1,0 +1,7 @@
+prompt: single low soft thud, heavy card set down on thick felt, deep, muted, close-mic, dry, foley
+negative: music, melody, drums, vocals, chime, sparkle, bright, reverb tail
+dit: medium
+decoder: same-l
+seconds: 4
+steps: 100
+seed: 77023

@@ -18,12 +18,24 @@ struct CatalogGrid: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
+                // Sources first, and absent entirely when unavailable — `CatalogEntry.sources` is []
+                // on a released SDK, so this is a missing array element rather than a disabled row.
+                if !CatalogEntry.sources.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        SectionLabel(title: "Sources", accent: OTL.measureAccent)
+                        ForEach(CatalogEntry.sources) { entry in
+                            NavigationLink(value: entry) { MeasureTile() }
+                                .buttonStyle(.plain)
+                                .accessibilityIdentifier("catalog.measure")
+                        }
+                    }
+                }
                 ForEach(Array(groups.enumerated()), id: \.offset) { _, group in
                     VStack(alignment: .leading, spacing: 10) {
                         SectionLabel(title: group.title, accent: group.accent)
                         LazyVGrid(columns: columns, spacing: 9) {
                             ForEach(group.tools) { tool in
-                                NavigationLink(value: tool) { ToolTile(tool: tool) }
+                                NavigationLink(value: CatalogEntry.tool(tool)) { ToolTile(tool: tool) }
                                     .buttonStyle(.plain)
                                     // Star lives ON TOP of the link (not inside its label) so it is
                                     // an independent tap target — tapping it toggles, not navigates.
@@ -107,5 +119,33 @@ private struct ToolTile: View {
                 .clipShape(.rect(topLeadingRadius: OTL.rTile, topTrailingRadius: OTL.rTile))
         }
         .overlay(RoundedRectangle(cornerRadius: OTL.rTile).strokeBorder(OTL.hairline, lineWidth: 1))
+    }
+}
+
+/// The Measure tile — full width, not a grid cell: a source is not one of 26 peers, and the catalog
+/// should not read as "27 tools" the moment it appears.
+private struct MeasureTile: View {
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "waveform.badge.mic")
+                .font(.title3)
+                .foregroundStyle(OTL.measureAccent)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Measure")
+                    .font(.system(.body, design: .default).weight(.semibold))
+                    .foregroundStyle(OTL.textPrimary)
+                Text("Analyse audio, hand values over")
+                    .font(.caption)
+                    .foregroundStyle(OTL.textSecondary)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundStyle(OTL.textTertiary)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity)
+        .background(OTL.surface, in: .rect(cornerRadius: OTL.rCard))
+        .overlay(RoundedRectangle(cornerRadius: OTL.rCard).strokeBorder(OTL.hairline, lineWidth: 1))
     }
 }

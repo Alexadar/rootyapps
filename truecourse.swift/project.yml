@@ -12,7 +12,7 @@ settings:
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "3"
+    CURRENT_PROJECT_VERSION: "4"
     ENABLE_PREVIEWS: YES
     GENERATE_INFOPLIST_FILE: YES
 packages:
@@ -109,6 +109,7 @@ targets:
       - path: TrueCourse/Views/TCColors.swift
       - path: TrueCourse/Views/InputBounds.swift
       - path: TrueCourse/Views/Format.swift
+      - path: TrueCourse/Views/ConvertFocus.swift
       - path: TrueCourse/LaunchOverride.swift
       # Watch has its OWN asset catalog (TrueCourseWatch/Assets.xcassets, included via the folder
       # above) with a watchOS single-size AppIcon — the phone's AppIcon has no watchOS content.

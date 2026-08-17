@@ -1,0 +1,109 @@
+name: froggo2
+
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    # The App Store record (Apple ID 6753925277) has one version: macOS 1.0, PREPARE_FOR_SUBMISSION,
+    # with no attachable build — its three existing builds all expired on 2026-01-10. So 1.0 is the
+    # version to match (CFBundleShortVersionString must equal the store version string to attach),
+    # and build numbers 1 and 2 are already taken under it.
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "3"
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+
+packages:
+  ReachabilityKit:
+    path: Kits/Reachability/ReachabilityKit
+  FroggoSim:
+    path: Kits/Sim/FroggoSim
+
+targets:
+  froggo2:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: ReachabilityKit
+        product: ReachabilityKit
+      - package: FroggoSim
+        product: FroggoSim
+    sources:
+      - path: Froggo2
+      - path: froggo2.icon
+        buildPhase: resources
+    settings:
+      base:
+        # The bundle id is inherited from the existing App Store record and must not change.
+        # The "froggo-swift" in it is fine: bundle ids are never user-visible and are permanent.
+        # Guideline 5.2.5 is about what people SEE — the product name and the record name — and
+        # both of those are fixed here and on the record respectively.
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.froggo-swift
+
+        # Guideline 5.2.5, the trap this repo has fallen into three times. With
+        # GENERATE_INFOPLIST_FILE the generator always sets CFBundleName (which is the macOS
+        # menu-bar title) from PRODUCT_NAME, and silently ignores INFOPLIST_KEY_CFBundleName.
+        # Without this line the product would ship under the target name. Froggo 1's target is
+        # literally called "froggo.swift", which is exactly how it ends up shipping a product
+        # named "froggo.swift" — and why this folder is froggo2, not froggo2.swift.
+        PRODUCT_NAME: Froggo 2
+        # Pinned so renaming the product cannot break @testable import.
+        PRODUCT_MODULE_NAME: Froggo2
+
+        # No app group, deliberately. A capability on macOS forces a Mac Development provisioning
+        # profile, and then every `-destination platform=macOS` build fails without
+        # -allowProvisioningUpdates. This game needs no shared container.
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": froggo2-macOS.entitlements
+
+        ASSETCATALOG_COMPILER_APPICON_NAME: froggo2
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+
+        INFOPLIST_KEY_CFBundleDisplayName: Froggo 2
+        # Required by the Mac App Store — its absence fails upload with error 90242.
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.games
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        # Landscape on iPhone, matching froggo 1 — a 2-D field of rooftops needs the width.
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+
+  froggo2Tests:
+    type: bundle.unit-test
+    # macOS only. These tests exercise MLX, whose Metal kernels are compiled by Xcode's build
+    # system; running them on a simulator destination buys nothing here and costs a boot.
+    supportedDestinations: [macOS]
+    sources:
+      - path: Froggo2Tests
+    dependencies:
+      - target: froggo2
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.froggo-swift.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: froggo2
+        # Spelled out because PRODUCT_NAME ("Froggo 2") differs from the target name ("froggo2"),
+        # and the default TEST_HOST is built from the target name — so it points at an app that
+        # does not exist. This is the cost of the 5.2.5 fix, and it is worth paying.
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Froggo 2.app/Contents/MacOS/Froggo 2"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+schemes:
+  froggo2:
+    build:
+      targets:
+        froggo2: all
+        froggo2Tests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets: [froggo2Tests]

@@ -7,6 +7,14 @@ struct ParApp: App {
     /// A scratch tape used only by the capture scene below — never written to disk.
     @State private var scratch = CaptureMode.sampleTape
 
+    // Without this the shipping Mac build launches on an Open panel and no main window, which is
+    // what App Review rejected 1.0.1 build 5 for under 2.1(a). See `MacDocumentLaunchDelegate`.
+#if os(macOS) && !PAR_CAPTURE
+    @NSApplicationDelegateAdaptor(MacDocumentLaunchDelegate.self) private var appDelegate
+
+    init() { MacDocumentLaunchDelegate.openATapeInsteadOfAnOpenPanel() }
+#endif
+
     // A DocumentGroup app opens on the system document browser. That is the right first run for a
     // user and useless for a capture, where the frame has to show the calculator working rather than
     // an empty file list.
@@ -37,6 +45,14 @@ struct ParApp: App {
             RootView(document: file.$document)
         }
         .commands { toolCommands }
+        // A document window with no stated size opened at 905x450 — narrow enough that the split
+        // view collapsed the tool list into a translucent overlay sitting ON the calculator, with
+        // "Solve for" clipped to "ve for". Nothing was broken, but it read as broken, which is the
+        // same rejection by a different route. This is the width at which the sidebar, the
+        // calculator and the tape are all laid out side by side, and it fits a 13-inch screen.
+        #if os(macOS)
+        .defaultSize(width: 1280, height: 800)
+        #endif
     }
 #endif
 

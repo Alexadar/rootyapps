@@ -12,13 +12,38 @@ struct NumberField: View {
     @Binding var value: Double
     var unit: String = ""
     var range: ClosedRange<Double>? = nil
+    /// Names this field for Audio Analysis. When set, a measured value shows its three provenance
+    /// signals here and typing clears them — there is no "measured but modified".
+    var field: FieldKey? = nil
+
+    @EnvironmentObject private var provenance: FieldProvenance
 
     private var bound: Binding<Double> {
         Binding(get: { value },
-                set: { v in value = range.map { Swift.min(Swift.max(v, $0.lowerBound), $0.upperBound) } ?? v })
+                set: { v in
+                    // The user typed: provenance goes immediately, before the value even lands, so
+                    // there is no frame in which a changed number still claims to be measured.
+                    if let field, provenance.isMeasured(field) { provenance.markTyped(field) }
+                    value = range.map { Swift.min(Swift.max(v, $0.lowerBound), $0.upperBound) } ?? v
+                })
     }
 
     var body: some View {
+        if let field, provenance.isMeasured(field) {
+            MeasuredValue(provenance: provenance.provenance(for: field),
+                          label: title,
+                          spokenValue: Fmt.f(value, 2)) {
+                row
+            }
+            .accessibilityAction(named: Text("Revert to typed")) {
+                if let previous = provenance.revert(field) { value = previous }
+            }
+        } else {
+            row
+        }
+    }
+
+    private var row: some View {
         HStack {
             Text(title).foregroundStyle(OTL.textPrimary)
             Spacer()

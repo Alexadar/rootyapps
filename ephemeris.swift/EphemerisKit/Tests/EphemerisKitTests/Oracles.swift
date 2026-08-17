@@ -20,7 +20,29 @@ struct Oracle {
 
 enum Oracles {
     /// The corpus. Expected numbers live ONLY here, each tied to an external source.
-    static let all: [Oracle] = [
+    ///
+    /// Module corpora live in their own `Oracles+<slug>.swift` files so that several modules can
+    /// be developed in parallel without contending for this file; this is the single merge point
+    /// that folds them in. Everything below `core` is appended verbatim — no entry is rewritten
+    /// here, so a module owns its own citations and tolerances.
+    static let all: [Oracle] =
+        core
+        + analysisOracles.all
+        + astrocartoOracles.all
+        + crossaspectsOracles.all
+        + dignitiesOracles.all
+        + midpointsOracles.all
+        + progressionsOracles.all
+        + returnsOracles.all
+        + hoursOracles.all
+        + moonPhaseOracles.all
+        + zodiacOracles.all
+        + voidOfCourseOracles.all
+        + uncertaintyOracles.all
+
+    /// The original corpus that predates the module split (sidereal time, obliquity, Horizons
+    /// longitudes). Kept as its own array so the merge above stays a one-line append per module.
+    static let core: [Oracle] = [
         // ── Sidereal time & obliquity (Meeus worked examples) ──
         Oracle(
             id: "meeus-12a-gmst",

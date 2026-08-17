@@ -18,8 +18,13 @@ enum NebulaComplications {
     // ② RETROGRADE — the most-checked fact in the domain. Glyphs + ℞ in amber; the
     //   gauge shows elapsed fraction, so "how much longer" needs no words.
     //   Inline: "♄︎ ℞ until 18 Nov".
-    // ③ MOON PHASE + SIGN — drawn terminator at the real fraction (MoonPhaseDisc),
-    //   never an emoji.
+    // ③ MOON PHASE + SIGN — TEXT phase only: name · illuminated % · waxing/waning. A
+    //   complication runs in the widget-extension process and has NO guaranteed
+    //   latitude (the saved place is a per-device App Group that does not reach the
+    //   watch), and a hemisphere-correct disc needs one — so no drawn terminator on the
+    //   face, exactly as the moon widget is text-only. Never an emoji moon either.
+    //   (The former `MoonPhaseDisc.swift` is deleted; a drawn `MoonDisc` is used only
+    //   in-app, where a place exists.)
     // ④ NEXT EVENT + REAL DATE — "☽︎ → ♏︎ 30 Jul 04:12", exact to the minute. This
     //   is what makes it read as an almanac rather than a horoscope.
     // ⑤ SYNODIC PHASE — "☿︎ morning star · day 16 of 45". Niche, nobody else has it,

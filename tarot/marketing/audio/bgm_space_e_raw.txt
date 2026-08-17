@@ -1,0 +1,7 @@
+prompt: deep atmospheric ambient, layered warm pads with slow filter sweeps, subtle granular shimmer, floating in space, serene, hypnotic, immersive stereo field, no beats
+negative: drums, percussion, beat, vocals, harsh, distorted, noisy, cheerful, jingle, music box
+dit: medium
+decoder: same-l
+seconds: 72
+steps: 50
+seed: 77055

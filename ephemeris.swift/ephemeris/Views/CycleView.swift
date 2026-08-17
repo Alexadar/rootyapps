@@ -4,7 +4,11 @@ import EphemerisKit
 /// Synodic-cycle panel — a body's conjunctions, stations ("U-turns") and elongations
 /// relative to the Sun. Defaults to Mercury's phases.
 struct CycleView: View {
-    @ObservedObject var vm: ChartViewModel
+    let phase: SynodicPhase?
+    let upcoming: [SynodicEvent]
+    /// Named `selectedBody`, not `body`: a stored property called `body` collides with the
+/// View's own `var body: some View`.
+    @Binding var selectedBody: CelestialBody
     @Environment(\.locale) private var locale
 
     private static let bodies: [CelestialBody] = CelestialBody.allCases.filter { $0 != .sun && $0 != .moon }
@@ -12,7 +16,7 @@ struct CycleView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             picker
-            if let phase = vm.cyclePhase { phaseCard(phase) }
+            if let phase { phaseCard(phase) }
             eventsCard
         }
     }
@@ -20,7 +24,7 @@ struct CycleView: View {
     private var picker: some View {
         VStack(alignment: .leading, spacing: 10) {
             CardHeader(title: "Synodic cycle")
-            Picker("Body", selection: $vm.cycleBody) {
+            Picker("Body", selection: $selectedBody) {
                 // Glyph verbatim, name resolved through the catalog, then joined as one String.
                 // `Text("\(glyph)  \(name)")` would leave the Kit's English name untranslated, and
                 // `Text(...) + Text(...)` is deprecated — so resolve first, render once.
@@ -61,7 +65,7 @@ struct CycleView: View {
         VStack(alignment: .leading, spacing: 8) {
             CardHeader(title: "Current phase")
             HStack(spacing: 10) {
-                Text(vm.cycleBody.glyph + "\u{FE0E}").font(.largeTitle)
+                Text(selectedBody.glyph + "\u{FE0E}").font(.largeTitle)
                     .foregroundStyle(NebulaPalette.glyph).nebulaGlow()
                 VStack(alignment: .leading, spacing: 3) {
                     Self.phaseTitle(phase, locale).font(.headline)
@@ -88,10 +92,10 @@ struct CycleView: View {
     private var eventsCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             CardHeader(title: "Upcoming events")
-            if vm.upcomingEvents.isEmpty {
+            if upcoming.isEmpty {
                 Text("No events found in range.").font(.callout).foregroundStyle(NebulaPalette.textSecondary)
             } else {
-                ForEach(vm.upcomingEvents) { e in
+                ForEach(upcoming) { e in
                     HStack(spacing: 12) {
                         Text(e.kind.glyph + "\u{FE0E}")
                             .font(.headline)

@@ -17,11 +17,29 @@ final class ChartViewModel: ObservableObject {
     @Published var location: GeoLocation? { didSet { persistLocation(); onInputChange() } }
     @Published var houseSystem: HouseSystem { didSet { persistHouseSystem(); onInputChange() } }
 
+    /// Which zodiac the chart is read in. **nil is tropical**, and is the default.
+    ///
+    /// A setting rather than a screen: the same chart, the same houses, the same aspects, measured
+    /// from a different origin. Anything that duplicated the wheel for sidereal would have
+    /// misunderstood the function.
+    @Published var zodiac: Ayanamsa? { didSet { persistZodiac(); onInputChange() } }
+
     private static let tzKey = "timeZoneIdentifier"
     private static let latKey = "observerLatitude"
     private static let lonKey = "observerLongitude"
     private static let placeKey = "observerPlaceName"
     private static let houseSystemKey = "houseSystem"
+    private static let zodiacKey = "siderealAyanamsa"
+
+    /// Where preferences live.
+    ///
+    /// Injectable purely so tests can be isolated. `zodiac` persists on set — which is correct
+    /// behaviour and also means one test selecting a sidereal frame changes what **every other
+    /// suite in the process** computes. Swift Testing runs suites in parallel, so no amount of
+    /// setup/teardown in the sidereal suite can contain a process-global; six unrelated tests went
+    /// red comparing sidereal longitudes against tropical oracles. A separate suite name per test
+    /// is the only containment that actually works.
+    private let defaults: UserDefaults
 
     private var demoTimer: Timer?
     private var demoActive = false
@@ -32,6 +50,12 @@ final class ChartViewModel: ObservableObject {
     @Published private(set) var cyclePhase: SynodicPhase?
     @Published private(set) var upcomingEvents: [SynodicEvent] = []
     @Published private(set) var timelineEvents: [AstroEvent] = []
+    /// The window `timelineEvents` was built from.
+    ///
+    /// Published rather than recomputed by the exporter: a second copy of "−30 to +120 days" would
+    /// drift the moment either changed, and the export sheet would then state a range that is not
+    /// the range of the rows in the file.
+    @Published private(set) var timelineWindow = DateInterval(start: .now, duration: 1)
 
     /// Cusps for the chosen system, or nil when there's no location yet **or** the system is
     /// undefined there (Placidus/Koch beyond the polar circle). `houseFallback` says which.
@@ -39,17 +63,22 @@ final class ChartViewModel: ObservableObject {
     /// Set when the chosen system couldn't be computed and `houses` fell back to Whole Sign.
     @Published private(set) var houseFallback: HouseSystem?
 
-    init() {
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         // EPHEMERIS_DATE pins the instant so a UI test can assert a known position. Every screen
         // here renders the live sky, so without it there is no stable expected value to assert
         // against. Unset or unparseable falls back to the real clock.
         date = LaunchOverride.pinnedDate() ?? Date()
         // EPHEMERIS_TZ overrides the persisted/device zone (used by preview reels); doesn't persist.
-        let savedID = UserDefaults.standard.string(forKey: Self.tzKey) ?? TimeZone.current.identifier
+        let savedID = defaults.string(forKey: Self.tzKey) ?? TimeZone.current.identifier
         timeZone = TimeZone(identifier: LaunchOverride.value("EPHEMERIS_TZ") ?? savedID) ?? .current
 
-        let d = UserDefaults.standard
+        let d = defaults
         houseSystem = HouseSystem(rawValue: d.string(forKey: Self.houseSystemKey) ?? "") ?? .placidus
+        // Absent key = tropical, which is the default and what every existing install has.
+        // EPHEMERIS_AYANAMSA lets a reel or a screenshot pin the frame without persisting it.
+        zodiac = (LaunchOverride.value("EPHEMERIS_AYANAMSA") ?? d.string(forKey: Self.zodiacKey))
+            .flatMap(Ayanamsa.init(rawValue:))
         // EPHEMERIS_LAT / EPHEMERIS_LON mirror the EPHEMERIS_TZ convention so reels are
         // reproducible; they override the saved place without persisting.
         if let lat = LaunchOverride.double("EPHEMERIS_LAT"),
@@ -70,11 +99,18 @@ final class ChartViewModel: ObservableObject {
     }
 
     private func persistTimeZone() {
-        UserDefaults.standard.set(timeZone.identifier, forKey: Self.tzKey)
+        defaults.set(timeZone.identifier, forKey: Self.tzKey)
     }
 
     private func persistHouseSystem() {
-        UserDefaults.standard.set(houseSystem.rawValue, forKey: Self.houseSystemKey)
+        defaults.set(houseSystem.rawValue, forKey: Self.houseSystemKey)
+    }
+
+    /// Tropical is stored as the absence of a value, not as a sentinel string, so a future ayanamsa
+    /// named "tropical" could never collide with it.
+    private func persistZodiac() {
+        if let zodiac { defaults.set(zodiac.rawValue, forKey: Self.zodiacKey) }
+        else { defaults.removeObject(forKey: Self.zodiacKey) }
     }
 
     /// Mirror the observer to the app group (for this device's widgets) AND across the pairing
@@ -93,7 +129,7 @@ final class ChartViewModel: ObservableObject {
 
     private func persistLocation() {
         syncShared()
-        let d = UserDefaults.standard
+        let d = defaults
         guard let location else {
             [Self.latKey, Self.lonKey, Self.placeKey].forEach(d.removeObject(forKey:))
             return
@@ -115,6 +151,14 @@ final class ChartViewModel: ObservableObject {
         return cal.date(from: c) ?? date
     }
 
+    /// The live sky packaged for `MomentReadout` — the seam that lets the same four lenses render
+    /// either this moment or a saved chart's frozen one, without either knowing about the other.
+    var skyMoment: SkyMoment {
+        SkyMoment(positions: positions, aspects: aspects,
+                  houses: houses, houseFallback: houseFallback,
+                  outerPositions: nil, crossAspects: [])
+    }
+
     func recompute() {
         let t = instant
         recomputeChartOnly()
@@ -122,6 +166,7 @@ final class ChartViewModel: ObservableObject {
         upcomingEvents = SynodicCycle.nextEvents(of: cycleBody, from: t, count: 6)
         let window = DateInterval(start: t.addingTimeInterval(-30 * 86_400),
                                   end: t.addingTimeInterval(120 * 86_400))
+        timelineWindow = window
         timelineEvents = EventTimeline.allEvents(in: window)
     }
 
@@ -129,10 +174,18 @@ final class ChartViewModel: ObservableObject {
     /// Houses are closed-form, so they stay in step during the demo's date scrub.
     func recomputeChartOnly() {
         let t = instant
-        positions = CelestialBody.allCases.map {
-            BodyPosition(body: $0,
-                         longitude: Ephemeris.longitude(of: $0, at: t),
-                         speed: Ephemeris.dailyMotion(of: $0, at: t))
+        // The frame is applied HERE, at the source, and not at render time.
+        //
+        // Everything downstream reads `positions`: aspects are detected from them, dignities score
+        // the sign each one falls in, chart analysis counts elements. Shifting only the displayed
+        // number would leave every one of those computing in the tropical frame while the screen
+        // claimed sidereal — and it would look completely correct, because each individual degree
+        // shown would be right.
+        positions = CelestialBody.allCases.map { body in
+            let tropical = Ephemeris.longitude(of: body, at: t)
+            return BodyPosition(body: body,
+                                longitude: zodiac?.sidereal(fromTropical: tropical, at: t) ?? tropical,
+                                speed: Ephemeris.dailyMotion(of: body, at: t))
         }
         aspects = Aspects.detect(in: positions, orbFactor: orbFactor)
         recomputeHouses(at: t)
@@ -141,11 +194,18 @@ final class ChartViewModel: ObservableObject {
     /// Whole Sign is the safety net: it's pure ecliptic geometry, so it works at every latitude.
     private func recomputeHouses(at t: Date) {
         guard let location else { houses = nil; houseFallback = nil; return }
+        // Cusps move with the frame too. Leaving them tropical while the bodies are sidereal puts
+        // every planet in the wrong house by ~24° — most of a sign — with nothing on screen looking
+        // out of place.
+        func framed(_ h: HouseCusps?) -> HouseCusps? {
+            guard let h else { return nil }
+            return zodiac.map { $0.cusps(h, at: t) } ?? h
+        }
         if let h = Houses.compute(at: t, location: location, system: houseSystem) {
-            houses = h
+            houses = framed(h)
             houseFallback = nil
         } else {
-            houses = Houses.compute(at: t, location: location, system: .wholeSign)
+            houses = framed(Houses.compute(at: t, location: location, system: .wholeSign))
             houseFallback = houseSystem
         }
     }

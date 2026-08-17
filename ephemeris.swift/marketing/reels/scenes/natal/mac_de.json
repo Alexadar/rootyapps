@@ -1,0 +1,63 @@
+{
+  "canvas": [
+    1920,
+    1080
+  ],
+  "scene_dur": 6.0,
+  "xfade": 0.5,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0B1020",
+    "bg_color_bottom": "#1A1330",
+    "title_color": "#ffffff",
+    "subtitle_color": "#9FB4FF",
+    "text_col_percent": 40,
+    "side_padding": 70,
+    "border_width": 6,
+    "border_color": "#2A2E52",
+    "border_radius": 26
+  },
+  "app": {
+    "name": "Ephemeris",
+    "tagline": "Your pocket sky almanac",
+    "icon": "liquid_icon.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "library",
+      "clip": "macclip_library.mov",
+      "title": "Ihre gespeicherten Horoskope",
+      "subtitle": "Dateien in Ihrer eigenen iCloud Drive"
+    },
+    {
+      "key": "natalwheel",
+      "clip": "macclip_natalwheel.mov",
+      "title": "Eines öffnen — das Geburtshoroskop",
+      "subtitle": "Der genaue Moment und Ort"
+    },
+    {
+      "key": "transits",
+      "clip": "macclip_transits.mov",
+      "title": "Der heutige Himmel darüber",
+      "subtitle": "Transite im selben Rad"
+    },
+    {
+      "key": "analysis",
+      "clip": "macclip_analysis.mov",
+      "title": "Würden, Form, Verteilung",
+      "subtitle": "Nach den klassischen Tabellen bewertet"
+    },
+    {
+      "key": "returns",
+      "clip": "macclip_returns.mov",
+      "title": "Solar- und Lunarwiederkehr",
+      "subtitle": "Die nächste, auf die Minute"
+    },
+    {
+      "key": "synastry",
+      "clip": "macclip_synastry.mov",
+      "title": "Und gegen ein zweites Horoskop",
+      "subtitle": "Synastrie, jeder Kontakt sortiert"
+    }
+  ]
+}

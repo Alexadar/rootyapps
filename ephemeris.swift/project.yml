@@ -12,9 +12,14 @@ settings:
     DEVELOPMENT_TEAM: LSKNNBG94G
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.0.5"
-    CURRENT_PROJECT_VERSION: "8"
+    MARKETING_VERSION: "1.0.6"
+    CURRENT_PROJECT_VERSION: "11"
     ENABLE_PREVIEWS: YES
+    # Makes Xcode register EXPLICIT bundle IDs when a target declares an app group. Without it,
+    # automatic signing uses the team wildcard and creates no App ID at all — so the group silently
+    # does not exist and `UserDefaults(suiteName:)` returns nil on device while working in the
+    # simulator. Same setting, same reason, as eartharound.swift/project.yml.
+    REGISTER_APP_GROUPS: YES
     GENERATE_INFOPLIST_FILE: YES
     SWIFT_EMIT_LOC_STRINGS: YES
     LOCALIZATION_PREFERS_STRING_CATALOGS: YES
@@ -32,6 +37,10 @@ targets:
       - target: EphemerisWatch
         embed: true
         platformFilter: iOS
+      # Home Screen / Lock Screen / desktop widgets. No platformFilter: this one is wanted on both
+      # iOS and macOS, unlike the watch app.
+      - target: EphemerisWidgetIOS
+        embed: true
     sources:
       - path: ephemeris
       - path: liquid_icon.icon
@@ -43,15 +52,19 @@ targets:
         # rejects "Swift" in the app name. PRODUCT_NAME pins the real name.
         PRODUCT_NAME: Ephemeris
         PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.ephemeris
+        # iOS had NO entitlements file at all until iCloud was added — only the macOS one existed.
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": ephemeris-iOS.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": ephemeris-iOS.entitlements
         "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": ephemeris-macOS.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: liquid_icon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         TARGETED_DEVICE_FAMILY: "1,2"
-        INFOPLIST_KEY_CFBundleDisplayName: Ephemeris
-        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.lifestyle
-        INFOPLIST_KEY_NSMotionUsageDescription: "The star field gently parallaxes as you tilt your phone."
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        # Hand-written, because NSUbiquitousContainers is a nested dictionary and has no
+        # INFOPLIST_KEY_ form. Every INFOPLIST_KEY_* that used to live here was carried into
+        # ephemeris-Info.plist verbatim — see the comment at the top of that file. Note this is
+        # INFOPLIST_FILE, NOT xcodegen's `info:` key, which would generate a plist straight over it.
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: ephemeris-Info.plist
   # ── Watch app ────────────────────────────────────────────────────────────
   # Standalone on purpose: it computes everything itself via EphemerisKit, so it works with the
   # phone out of range. Only preferences cross from the phone, and they cross over
@@ -104,9 +117,10 @@ targets:
         INFOPLIST_KEY_WKCompanionAppBundleIdentifier: oleksandr.aisixteen.ephemeris
         INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: YES
 
-  # ── Complications / widgets ──────────────────────────────────────────────
-  # One extension serving watchOS and iOS: the accessory families it declares appear on the watch
-  # face and on the iPhone Lock Screen, so the same code covers both.
+  # ── Watch complications ──────────────────────────────────────────────────
+  # watchOS ONLY. This previously claimed to serve the iPhone Lock Screen too — it cannot: a
+  # watchOS app-extension is embedded in the watch app and is never loaded by iOS. Lock Screen and
+  # Home Screen widgets need their own iOS extension, which is EphemerisWidgetIOS below.
   EphemerisWidget:
     type: app-extension
     platform: watchOS
@@ -123,6 +137,32 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: EphemerisWidget-Info.plist
         SKIP_INSTALL: YES
+
+  # ── Home Screen / Lock Screen / desktop widgets ──────────────────────────
+  # iOS and macOS, matching the app's own supportedDestinations. Carries the moon phase, which is
+  # the app's only gate-0 surface — it renders on a brand-new install with nothing entered.
+  EphemerisWidgetIOS:
+    type: app-extension
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: EphemerisKit
+        product: EphemerisKit
+    sources:
+      - path: EphemerisWidgetIOS
+    settings:
+      base:
+        PRODUCT_NAME: EphemerisWidgetIOS
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.ephemeris.widgets
+        # macOS widget extensions must be sandboxed or they never load; both platforms now declare
+        # the app group so the hours widget can read the observer's saved place across the process
+        # boundary. Separate files because only macOS may declare the sandbox key.
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": EphemerisWidgetIOS-iOS.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": EphemerisWidgetIOS-iOS.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": EphemerisWidgetIOS-macOS.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: EphemerisWidgetIOS-Info.plist
+        SKIP_INSTALL: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
 
   ephemerisTests:
     type: bundle.unit-test

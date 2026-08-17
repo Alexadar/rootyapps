@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  macOS only, and deliberately minimal.
+
+  A macOS widget extension must be sandboxed or it will not load, so app-sandbox is the one thing
+  that has to be here. iOS gets no entitlements file at all, because it needs none.
+
+  The app group IS declared, and the previous note here predicted exactly why: "a widget that needs
+  the user's saved location (planetary hours would) is the conversation that reopens this". That
+  widget now exists. The moon widget still reads nothing but the clock and is unaffected.
+
+  NOT declared: iCloud. Chart storage does not reach a widget that never shows a chart.
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.oleksandr.aisixteen.ephemeris</string>
+	</array>
+</dict>
+</plist>

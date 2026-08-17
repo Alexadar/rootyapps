@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  iOS widget extension. New file: iOS previously needed no entitlements here at all, because the
+  only widget was the moon phase, which reads the clock and nothing else.
+
+  The planetary-hours widget needs the observer's place, and a widget extension has its own bundle
+  and therefore its own `UserDefaults.standard`. The app group is the only channel that crosses that
+  process boundary — without it `SharedStore` in the extension reads an empty store and the widget
+  can render nothing but its no-place state.
+
+  No sandbox key: unlike macOS, iOS extensions are sandboxed by the system and must not declare it.
+  No iCloud: this widget never shows a chart.
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.oleksandr.aisixteen.ephemeris</string>
+	</array>
+</dict>
+</plist>

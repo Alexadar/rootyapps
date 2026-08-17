@@ -7,95 +7,459 @@
     "runs to twice the width in German and wraps into the screenshot. Meaning is preserved, wording",
     "is not, and length is the binding constraint.",
     "",
+    "THE PRACTITIONER LAYER LEADS. The first five shots are natal, transits, synastry, dignities and",
+    "returns — the features this release adds and the reason an astrologer would buy it. The live sky",
+    "follows: still why the numbers are trustworthy, no longer the thing being sold.",
+    "",
     "Never translated: Ephemeris Sky, NASA/JPL Horizons, Placidus, Koch, Campanus, Regiomontanus.",
     "",
-    "iOS ships 4 shots, iPad and Mac ship 5 — the counts must match the raw captures, so the ios",
-    "lists are 4 long and the others 5."
+    "iOS ships 8 shots, iPad and Mac ship 9 — the counts must match the raw captures, so the ios",
+    "lists are 8 long and the others 9."
   ],
   "ios": {
     "en": [
-      ["Ephemeris", "Real planetary positions"],
-      ["Every Position", "Tropical, geocentric, of date"],
-      ["Aspects", "Computed, not guessed"],
-      ["Mercury's Phases", "Conjunctions, retrogrades & stations"]
+      [
+        "Your Natal Chart",
+        "Saved in your own iCloud"
+      ],
+      [
+        "Natal + Transits",
+        "Today's sky on your own chart"
+      ],
+      [
+        "Synastry",
+        "Two charts, every contact ranked"
+      ],
+      [
+        "Dignities & Balance",
+        "Score-ranked, with the shape"
+      ],
+      [
+        "Solar & Lunar Returns",
+        "The next one, to the minute"
+      ],
+      [
+        "Houses & Angles",
+        "Placidus, Koch, Whole Sign & more"
+      ],
+      [
+        "The Live Sky",
+        "Real planetary positions"
+      ],
+      [
+        "Aspects",
+        "Computed, not guessed"
+      ]
     ],
     "de": [
-      ["Ephemeriden", "Echte Planetenpositionen"],
-      ["Jede Position", "Tropisch, geozentrisch, zum Datum"],
-      ["Aspekte", "Berechnet, nicht geraten"],
-      ["Merkurs Phasen", "Konjunktionen, Rückläufe, Stationen"]
+      [
+        "Geburtshoroskop",
+        "Gespeichert in deiner iCloud"
+      ],
+      [
+        "Natal + Transite",
+        "Der heutige Himmel im Vergleich"
+      ],
+      [
+        "Synastrie",
+        "Zwei Horoskope, jeder Kontakt sortiert"
+      ],
+      [
+        "Würden & Verteilung",
+        "Nach Punkten, mit der Form"
+      ],
+      [
+        "Solar- & Lunarwiederkehr",
+        "Die nächste, auf die Minute"
+      ],
+      [
+        "Häuser & Achsen",
+        "Placidus, Koch, Ganzzeichen u. a."
+      ],
+      [
+        "Der Himmel live",
+        "Echte Planetenpositionen"
+      ],
+      [
+        "Aspekte",
+        "Berechnet, nicht geraten"
+      ]
     ],
     "fr": [
-      ["Éphémérides", "De vraies positions planétaires"],
-      ["Chaque position", "Tropique, géocentrique, de la date"],
-      ["Aspects", "Calculés, pas devinés"],
-      ["Les phases de Mercure", "Conjonctions, rétrogradations, stations"]
+      [
+        "Votre thème natal",
+        "Enregistré dans votre iCloud"
+      ],
+      [
+        "Natal + transits",
+        "Le ciel du jour, sur votre thème"
+      ],
+      [
+        "Synastrie",
+        "Deux thèmes, chaque contact classé"
+      ],
+      [
+        "Dignités & répartition",
+        "Classées, avec la forme"
+      ],
+      [
+        "Révolutions solaire & lunaire",
+        "La prochaine, à la minute"
+      ],
+      [
+        "Maisons & angles",
+        "Placidus, Koch, signes entiers…"
+      ],
+      [
+        "Le ciel en direct",
+        "De vraies positions planétaires"
+      ],
+      [
+        "Aspects",
+        "Calculés, pas devinés"
+      ]
     ],
     "ja": [
-      ["天体暦", "本物の天体位置"],
-      ["すべての位置", "トロピカル・地心・その日の分点"],
-      ["アスペクト", "推測ではなく計算"],
-      ["水星の周期", "合・逆行・留"]
+      [
+        "ネイタルチャート",
+        "iCloudに保存される出生図"
+      ],
+      [
+        "ネイタル＋トランジット",
+        "今日の空を出生図に重ねて"
+      ],
+      [
+        "シナストリー",
+        "2つのチャートの接触を正確さ順に"
+      ],
+      [
+        "ディグニティとバランス",
+        "点数順、チャート形状つき"
+      ],
+      [
+        "ソーラー／ルナリターン",
+        "次回を分単位で"
+      ],
+      [
+        "ハウスとアングル",
+        "プラシーダス・コッホ・ホールサイン"
+      ],
+      [
+        "リアルタイムの空",
+        "本物の天体位置"
+      ],
+      [
+        "アスペクト",
+        "推測ではなく計算"
+      ]
     ]
   },
   "ipad": {
     "en": [
-      ["Ephemeris Sky", "Real planetary positions"],
-      ["Every Position", "Tropical, geocentric, of date"],
-      ["Aspects", "Computed, not guessed"],
-      ["Mercury's Phases", "Conjunctions, retrogrades & stations"],
-      ["Event Timeline", "Ingresses, lunations & aspects"]
+      [
+        "Your Natal Chart",
+        "Saved in your own iCloud"
+      ],
+      [
+        "Natal + Transits",
+        "Today's sky on your own chart"
+      ],
+      [
+        "Synastry",
+        "Two charts, every contact ranked"
+      ],
+      [
+        "Dignities & Balance",
+        "Score-ranked, with the shape"
+      ],
+      [
+        "Solar & Lunar Returns",
+        "The next one, to the minute"
+      ],
+      [
+        "Houses & Angles",
+        "Placidus, Koch, Whole Sign & more"
+      ],
+      [
+        "The Live Sky",
+        "Real planetary positions"
+      ],
+      [
+        "Aspects",
+        "Computed, not guessed"
+      ],
+      [
+        "Event Timeline",
+        "Ingresses, lunations & aspects"
+      ]
     ],
     "de": [
-      ["Ephemeris Sky", "Echte Planetenpositionen"],
-      ["Jede Position", "Tropisch, geozentrisch, zum Datum"],
-      ["Aspekte", "Berechnet, nicht geraten"],
-      ["Merkurs Phasen", "Konjunktionen, Rückläufe, Stationen"],
-      ["Ereignis-Zeitleiste", "Eintritte, Lunationen & Aspekte"]
+      [
+        "Geburtshoroskop",
+        "Gespeichert in deiner iCloud"
+      ],
+      [
+        "Natal + Transite",
+        "Der heutige Himmel im Vergleich"
+      ],
+      [
+        "Synastrie",
+        "Zwei Horoskope, jeder Kontakt sortiert"
+      ],
+      [
+        "Würden & Verteilung",
+        "Nach Punkten, mit der Form"
+      ],
+      [
+        "Solar- & Lunarwiederkehr",
+        "Die nächste, auf die Minute"
+      ],
+      [
+        "Häuser & Achsen",
+        "Placidus, Koch, Ganzzeichen u. a."
+      ],
+      [
+        "Der Himmel live",
+        "Echte Planetenpositionen"
+      ],
+      [
+        "Aspekte",
+        "Berechnet, nicht geraten"
+      ],
+      [
+        "Ereignis-Zeitleiste",
+        "Eintritte, Lunationen & Aspekte"
+      ]
     ],
     "fr": [
-      ["Ephemeris Sky", "De vraies positions planétaires"],
-      ["Chaque position", "Tropique, géocentrique, de la date"],
-      ["Aspects", "Calculés, pas devinés"],
-      ["Les phases de Mercure", "Conjonctions, rétrogradations, stations"],
-      ["Fil des événements", "Ingrès, lunaisons & aspects"]
+      [
+        "Votre thème natal",
+        "Enregistré dans votre iCloud"
+      ],
+      [
+        "Natal + transits",
+        "Le ciel du jour, sur votre thème"
+      ],
+      [
+        "Synastrie",
+        "Deux thèmes, chaque contact classé"
+      ],
+      [
+        "Dignités & répartition",
+        "Classées, avec la forme"
+      ],
+      [
+        "Révolutions solaire & lunaire",
+        "La prochaine, à la minute"
+      ],
+      [
+        "Maisons & angles",
+        "Placidus, Koch, signes entiers…"
+      ],
+      [
+        "Le ciel en direct",
+        "De vraies positions planétaires"
+      ],
+      [
+        "Aspects",
+        "Calculés, pas devinés"
+      ],
+      [
+        "Fil des événements",
+        "Ingrès, lunaisons & aspects"
+      ]
     ],
     "ja": [
-      ["Ephemeris Sky", "本物の天体位置"],
-      ["すべての位置", "トロピカル・地心・その日の分点"],
-      ["アスペクト", "推測ではなく計算"],
-      ["水星の周期", "合・逆行・留"],
-      ["イベント年表", "入宮・朔望・アスペクト"]
+      [
+        "ネイタルチャート",
+        "iCloudに保存される出生図"
+      ],
+      [
+        "ネイタル＋トランジット",
+        "今日の空を出生図に重ねて"
+      ],
+      [
+        "シナストリー",
+        "2つのチャートの接触を正確さ順に"
+      ],
+      [
+        "ディグニティとバランス",
+        "点数順、チャート形状つき"
+      ],
+      [
+        "ソーラー／ルナリターン",
+        "次回を分単位で"
+      ],
+      [
+        "ハウスとアングル",
+        "プラシーダス・コッホ・ホールサイン"
+      ],
+      [
+        "リアルタイムの空",
+        "本物の天体位置"
+      ],
+      [
+        "アスペクト",
+        "推測ではなく計算"
+      ],
+      [
+        "イベント年表",
+        "入宮・朔望・アスペクト"
+      ]
     ]
   },
   "mac": {
     "en": [
-      ["Ephemeris Sky", "Positions, aspects & the synodic cycle"],
-      ["Every Position", "Tropical, geocentric, of date"],
-      ["Aspects", "Computed, not guessed"],
-      ["Mercury's Phases", "Conjunctions, retrogrades & stations"],
-      ["Event Timeline", "Ingresses, lunations & aspects"]
+      [
+        "Your Natal Chart",
+        "Saved in your own iCloud"
+      ],
+      [
+        "Natal + Transits",
+        "Today's sky on your own chart"
+      ],
+      [
+        "Synastry",
+        "Two charts, every contact ranked"
+      ],
+      [
+        "Dignities & Balance",
+        "Score-ranked, with the shape"
+      ],
+      [
+        "Solar & Lunar Returns",
+        "The next one, to the minute"
+      ],
+      [
+        "Houses & Angles",
+        "Placidus, Koch, Whole Sign & more"
+      ],
+      [
+        "The Live Sky",
+        "Real planetary positions"
+      ],
+      [
+        "Aspects",
+        "Computed, not guessed"
+      ],
+      [
+        "Event Timeline",
+        "Ingresses, lunations & aspects"
+      ]
     ],
     "de": [
-      ["Ephemeris Sky", "Positionen, Aspekte & synodischer Zyklus"],
-      ["Jede Position", "Tropisch, geozentrisch, zum Datum"],
-      ["Aspekte", "Berechnet, nicht geraten"],
-      ["Merkurs Phasen", "Konjunktionen, Rückläufe, Stationen"],
-      ["Ereignis-Zeitleiste", "Eintritte, Lunationen & Aspekte"]
+      [
+        "Geburtshoroskop",
+        "Gespeichert in deiner iCloud"
+      ],
+      [
+        "Natal + Transite",
+        "Der heutige Himmel im Vergleich"
+      ],
+      [
+        "Synastrie",
+        "Zwei Horoskope, jeder Kontakt sortiert"
+      ],
+      [
+        "Würden & Verteilung",
+        "Nach Punkten, mit der Form"
+      ],
+      [
+        "Solar- & Lunarwiederkehr",
+        "Die nächste, auf die Minute"
+      ],
+      [
+        "Häuser & Achsen",
+        "Placidus, Koch, Ganzzeichen u. a."
+      ],
+      [
+        "Der Himmel live",
+        "Echte Planetenpositionen"
+      ],
+      [
+        "Aspekte",
+        "Berechnet, nicht geraten"
+      ],
+      [
+        "Ereignis-Zeitleiste",
+        "Eintritte, Lunationen & Aspekte"
+      ]
     ],
     "fr": [
-      ["Ephemeris Sky", "Positions, aspects & cycle synodique"],
-      ["Chaque position", "Tropique, géocentrique, de la date"],
-      ["Aspects", "Calculés, pas devinés"],
-      ["Les phases de Mercure", "Conjonctions, rétrogradations, stations"],
-      ["Fil des événements", "Ingrès, lunaisons & aspects"]
+      [
+        "Votre thème natal",
+        "Enregistré dans votre iCloud"
+      ],
+      [
+        "Natal + transits",
+        "Le ciel du jour, sur votre thème"
+      ],
+      [
+        "Synastrie",
+        "Deux thèmes, chaque contact classé"
+      ],
+      [
+        "Dignités & répartition",
+        "Classées, avec la forme"
+      ],
+      [
+        "Révolutions solaire & lunaire",
+        "La prochaine, à la minute"
+      ],
+      [
+        "Maisons & angles",
+        "Placidus, Koch, signes entiers…"
+      ],
+      [
+        "Le ciel en direct",
+        "De vraies positions planétaires"
+      ],
+      [
+        "Aspects",
+        "Calculés, pas devinés"
+      ],
+      [
+        "Fil des événements",
+        "Ingrès, lunaisons & aspects"
+      ]
     ],
     "ja": [
-      ["Ephemeris Sky", "位置・アスペクト・会合周期"],
-      ["すべての位置", "トロピカル・地心・その日の分点"],
-      ["アスペクト", "推測ではなく計算"],
-      ["水星の周期", "合・逆行・留"],
-      ["イベント年表", "入宮・朔望・アスペクト"]
+      [
+        "ネイタルチャート",
+        "iCloudに保存される出生図"
+      ],
+      [
+        "ネイタル＋トランジット",
+        "今日の空を出生図に重ねて"
+      ],
+      [
+        "シナストリー",
+        "2つのチャートの接触を正確さ順に"
+      ],
+      [
+        "ディグニティとバランス",
+        "点数順、チャート形状つき"
+      ],
+      [
+        "ソーラー／ルナリターン",
+        "次回を分単位で"
+      ],
+      [
+        "ハウスとアングル",
+        "プラシーダス・コッホ・ホールサイン"
+      ],
+      [
+        "リアルタイムの空",
+        "本物の天体位置"
+      ],
+      [
+        "アスペクト",
+        "推測ではなく計算"
+      ],
+      [
+        "イベント年表",
+        "入宮・朔望・アスペクト"
+      ]
     ]
   }
 }

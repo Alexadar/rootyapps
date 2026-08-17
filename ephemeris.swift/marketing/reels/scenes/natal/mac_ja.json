@@ -1,0 +1,63 @@
+{
+  "canvas": [
+    1920,
+    1080
+  ],
+  "scene_dur": 6.0,
+  "xfade": 0.5,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0B1020",
+    "bg_color_bottom": "#1A1330",
+    "title_color": "#ffffff",
+    "subtitle_color": "#9FB4FF",
+    "text_col_percent": 40,
+    "side_padding": 70,
+    "border_width": 6,
+    "border_color": "#2A2E52",
+    "border_radius": 26
+  },
+  "app": {
+    "name": "Ephemeris",
+    "tagline": "Your pocket sky almanac",
+    "icon": "liquid_icon.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "library",
+      "clip": "macclip_library.mov",
+      "title": "保存したチャート",
+      "subtitle": "あなた自身の iCloud Drive の中に"
+    },
+    {
+      "key": "natalwheel",
+      "clip": "macclip_natalwheel.mov",
+      "title": "開けば出生図",
+      "subtitle": "正確な瞬間と場所"
+    },
+    {
+      "key": "transits",
+      "clip": "macclip_transits.mov",
+      "title": "そこに今日の空を重ねて",
+      "subtitle": "同じ円の上のトランジット"
+    },
+    {
+      "key": "analysis",
+      "clip": "macclip_analysis.mov",
+      "title": "ディグニティ・形・バランス",
+      "subtitle": "古典の表に基づく点数"
+    },
+    {
+      "key": "returns",
+      "clip": "macclip_returns.mov",
+      "title": "ソーラー／ルナリターン",
+      "subtitle": "次回を分単位で"
+    },
+    {
+      "key": "synastry",
+      "clip": "macclip_synastry.mov",
+      "title": "さらに別のチャートと",
+      "subtitle": "シナストリー：接触を正確さ順に"
+    }
+  ]
+}

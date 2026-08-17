@@ -1,0 +1,13 @@
+build/
+.build/
+*.xcodeproj
+DerivedData/
+xcuserdata/
+marketing/raw/
+marketing/aso/**/*.png
+marketing/aso/**/*.jpg
+marketing/reels/**/*.mp4
+marketing/reels/**/*.mov
+marketing/reels/**/*.wav
+# keep app-icon PNGs tracked
+!gridscan.icon/Assets/*.png

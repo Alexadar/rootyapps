@@ -338,10 +338,11 @@ struct WBWatch: View {
 
 struct ConvertWatch: View {
     @Environment(\.tc) private var tc
-    @EnvironmentObject private var crownFocus: CrownFocus
-    @State private var catIdx = 0
-    @State private var fromIdx = 0
-    @State private var value = 100.0
+    // Manual crown focus: one @FocusState for all three controls. The crown drives whichever is
+    // focused; focus moves ONLY when the user taps a control — never on a value/category/unit change
+    // (that auto-reclaim was the focus-steal bug). `ConvertFocus` owns the policy and is unit-tested.
+    @StateObject private var m = ConvertFocus()
+    @FocusState private var focus: ConvertField?
     private var a: Color { tc.accent(.convert) }
 
     // (name, decimals, [(unit, toBase, fromBase)]) — the same tables as the phone's ConvertKit wiring.
@@ -357,24 +358,24 @@ struct ConvertWatch: View {
 
     var body: some View {
         WatchToolScreen(title: "Convert") {
-            let cat = cats[catIdx]
-            let from = cat.units[min(fromIdx, cat.units.count - 1)]
-            let base = from.1(value)
-            Picker("Category", selection: $catIdx) {
+            let cat = cats[m.catIdx]
+            let from = cat.units[min(m.unitIdx, cat.units.count - 1)]
+            let base = from.1(m.value)
+            // Setters route through the model so a crown tick can't move focus. `.focused(…, equals:)`
+            // reflects taps back into the model via the `focus` sync below; scrolling keeps focus put.
+            Picker("Category", selection: Binding(get: { m.catIdx }, set: { m.setCategory($0) })) {
                 ForEach(cats.indices, id: \.self) { Text(cats[$0].name).tag($0) }
             }
             .frame(minHeight: 44).tint(a).labelsHidden()
-            .onChange(of: catIdx) { _, _ in fromIdx = 0; crownFocus.reclaim() }
-            Picker("From", selection: $fromIdx) {
+            .focused($focus, equals: .category)
+            Picker("From", selection: Binding(get: { m.unitIdx }, set: { m.setUnit($0) })) {
                 ForEach(cat.units.indices, id: \.self) { Text(cat.units[$0].0).tag($0) }
             }
             .frame(minHeight: 44).tint(a).labelsHidden()
-            .onChange(of: fromIdx) { _, _ in crownFocus.reclaim() }
-            CrownField(label: "Value", value: $value, unit: from.0, step: 1, range: 0...100000,
-                       targeted: true, accent: a, places: cat.dec)
-                .onTapGesture { crownFocus.reclaim() }
+            .focused($focus, equals: .unit)
+            valueCard(dec: cat.dec, unit: from.0)
             // One hero = the first other-unit conversion; any remaining units are compact stats.
-            let others = cat.units.indices.filter { $0 != fromIdx }
+            let others = cat.units.indices.filter { $0 != m.unitIdx }
             if let first = others.first {
                 HeroReadout(label: cat.units[first].0, value: Fmt.f(cat.units[first].2(base), cat.dec), accent: a)
             }
@@ -386,6 +387,46 @@ struct ConvertWatch: View {
                 }
             }
         }
+        // Two-way mirror: a tap changes @FocusState → record it as the manual switch; the model never
+        // moves focus on its own, so scrolling any control leaves the crown where the user put it.
+        .onAppear { focus = m.field }
+        .onChange(of: focus) { _, f in if let f { m.focus(f) } }
+        .onChange(of: m.field) { _, f in if focus != f { focus = f } }
+    }
+
+    // The Value card — a crown target sharing the SAME @FocusState as the pickers, so exactly one
+    // control holds the crown and tapping switches between them.
+    @ViewBuilder private func valueCard(dec: Int, unit: String) -> some View {
+        let targeted = (focus == .value)
+        VStack(alignment: .leading, spacing: 1) {
+            Text("VALUE")
+                .font(.system(size: 9, design: .monospaced).weight(.semibold)).tracking(0.8)
+                .foregroundStyle(tc.textTertiary)
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(Fmt.f(m.value, dec))
+                    .font(.system(.title3, design: .monospaced).weight(.semibold)).monospacedDigit()
+                    .foregroundStyle(tc.textPrimary)
+                Text(unit).font(.system(size: 9, design: .monospaced)).foregroundStyle(tc.textTertiary)
+                Spacer(minLength: 2)
+                if targeted {
+                    Image(systemName: "digitalcrown.arrow.clockwise.fill")
+                        .font(.system(size: 9)).foregroundStyle(a)
+                }
+            }
+        }
+        .padding(.horizontal, 9).padding(.vertical, 7)
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .background(tc.surfaceRaised, in: .rect(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12)
+            .strokeBorder(targeted ? a : tc.hairline, lineWidth: targeted ? 1.5 : 1))
+        .focusable()
+        .focused($focus, equals: .value)
+        .digitalCrownRotation(Binding(get: { m.value }, set: { m.setValue($0) }),
+                              from: 0, through: 100000, by: 1, sensitivity: .medium,
+                              isContinuous: false, isHapticFeedbackEnabled: true)
+        .onTapGesture { focus = .value }
+        .accessibilityLabel(Text("Value"))
+        .accessibilityValue(Text("\(Fmt.f(m.value, dec)) \(unit)"))
     }
 }
 

@@ -18,56 +18,106 @@ struct MacOSContentView: View {
     // Lets screenshot tooling open a specific section via EPHEMERIS_TAB. This is a SEPARATE deep-link
     // path from the iOS TabView's, so a tab deep link has to be asserted on the Mac as well —
     // passing on iPhone proves nothing here.
-    @State private var selection = LaunchOverride.int("EPHEMERIS_TAB") ?? 0
+    /// Seeded through the legacy map so EPHEMERIS_TAB=1 still opens Sky on the Table lens — the
+    /// screenshot pipeline and three UI tests depend on those indices landing on the same pixels.
+    @State private var selection: Int = LegacyTab.destination(
+        for: LaunchOverride.int("EPHEMERIS_TAB") ?? 0).section.rawValue
 
-    private let tabs: [MacTab] = [
-        .init(id: 0, title: "Chart",     icon: "circle.hexagongrid"),
-        .init(id: 1, title: "Positions", icon: "list.star"),
-        .init(id: 2, title: "Aspects",   icon: "point.3.connected.trianglepath.dotted"),
-        .init(id: 3, title: "Cycle",     icon: "arrow.triangle.2.circlepath"),
-        .init(id: 4, title: "Events",    icon: "calendar"),
-    ]
+    /// Three categories, matching iOS. Built from `ChartSection` so the two platforms cannot drift
+    /// apart about what the sections are.
+    private var tabs: [MacTab] {
+        ChartSection.allCases.map { .init(id: $0.rawValue, title: $0.title, icon: $0.icon) }
+    }
+
+    @State private var lens: MomentLens =
+        LaunchOverride.value("EPHEMERIS_LENS").flatMap(MomentLens.init(rawValue:))
+        ?? LegacyTab.destination(for: LaunchOverride.int("EPHEMERIS_TAB") ?? 0).moment ?? .wheel
+
+    /// The pushed Sky surface, or nil when none is open.
+    ///
+    /// `EPHEMERIS_LENS=moon|hours` used to select a segment and now pushes a screen. Both values
+    /// must keep working: the capture pipeline sets them, and a deep link that silently lands on
+    /// the default screen produces a confidently captioned picture of the wrong thing.
+    @State private var skyDestination: SkyDestination?
+
+    /// How many charts the user has saved, which sets the gate the assistant is told about — the
+    /// model must not offer a chart reading to someone who has entered none.
+    private var natalChartCount: Int { natal.charts.count }
+    @State private var cyclesLens: CyclesLens =
+        LaunchOverride.value("EPHEMERIS_LENS").flatMap(CyclesLens.init(rawValue:))
+        ?? LegacyTab.destination(for: LaunchOverride.int("EPHEMERIS_TAB") ?? 0).cycles ?? .timeline
+
+    @StateObject private var natal = NatalViewModel.live()
+    /// Owned here, above the TabView, so a held answer survives a tab change and a push. A
+    /// `@State` inside a screen would die with the screen — which is what the modal sheet did.
+    @StateObject private var assistant = AssistantPresenter()
+
+
+    /// Sidebar visibility, bound so the user can collapse it — and so a reel run can record a
+    /// **real** state of the app rather than a layout built for the camera.
+    ///
+    /// This is the difference that matters for the App Store: a collapsed sidebar is something any
+    /// user can reach with the toolbar toggle, so a preview recorded that way still depicts the
+    /// shipping app. A separate reel-only chrome would not.
+    @State private var columns: NavigationSplitViewVisibility = .all
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) { content }
-                .frame(maxWidth: 720)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 28)
-                .padding(.vertical, 24)
-        }
-        .background(AppBackground())
-        .navigationTitle("Ephemeris Sky")
-        .toolbar {
-            // Section navigator — a single Liquid Glass capsule of icon buttons.
-            ToolbarItemGroup(placement: .principal) {
-                ForEach(tabs) { tab in
-                    let selected = tab.id == selection
-                    Button {
-                        withAnimation(.smooth(duration: 0.35)) { selection = tab.id }
-                    } label: {
-                        // A filled magenta pill marks the active section — toolbar `.tint`
-                        // alone is nearly invisible (and several of these symbols have no
-                        // distinct `.fill` variant), so highlight the selection explicitly.
-                        Label(tab.title, systemImage: tab.icon)
-                            .labelStyle(.iconOnly)
-                            .symbolVariant(selected ? .fill : .none)
-                            .font(.system(size: 14, weight: selected ? .semibold : .regular))
-                            .foregroundStyle(selected ? NebulaPalette.accent : NebulaPalette.textSecondary)
-                            .frame(width: 32, height: 26)
-                            .background(selected ? NebulaPalette.accent.opacity(0.18) : .clear, in: .capsule)
-                            .overlay {
-                                if selected {
-                                    Capsule().stroke(NebulaPalette.accent.opacity(0.55), lineWidth: 1)
-                                }
-                            }
-                    }
-                    .buttonStyle(.plain)
-                    .help(tab.title)
+        NavigationSplitView(columnVisibility: $columns) {
+            sidebar
+                // Pinned during a reel so the arithmetic below stays exact: 220 sidebar + 1380
+                // detail = the 1600 of content that `.windowResizability(.contentSize)` turns into
+                // a 1600x900 window. Left flexible otherwise, because a Mac user resizing the
+                // sidebar is normal behaviour and nothing downstream depends on it.
+                .navigationSplitViewColumnWidth(
+                    min: Self.isReelRun ? 220 : 200,
+                    ideal: 220,
+                    max: Self.isReelRun ? 220 : 300)
+        } detail: {
+            // A NavigationStack around the detail column, so Sky's Moon and Hours rows have
+            // somewhere to push. Without it `.navigationDestination` is inert on macOS and the
+            // rows would look tappable and do nothing.
+            NavigationStack {
+            ScrollView {
+                VStack(spacing: 16) { content }
+                    // 720 was a phone column centred in an 820-minimum window — the Mac's width was
+                    // simply unused. 1180 lets the two-column Chart layout engage while keeping
+                    // single-column sections at a readable measure.
+                    .frame(maxWidth: 1180)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 24)
+            }
+            .background(AppBackground())
+            .task {
+                // Assigned after a yield: navigation state set during the stack's first update is
+                // swallowed, which cost a capture run on the natal deep link once already.
+                await Task.yield()
+                if let d = SkyRouting.resolve(LaunchOverride.value("EPHEMERIS_LENS")).destination {
+                    skyDestination = d
                 }
             }
+            .navigationDestination(item: $skyDestination) { d in
+                switch d {
+                case .moon:
+                    MoonCalendarView(location: vm.location, timeZone: vm.timeZone, now: vm.instant)
+                        .skyDestinationChrome(d)
+                        .moonExportToolbar(now: vm.instant)
+                        .skyDestinationAssistant(d, presenter: assistant, date: vm.instant, location: vm.location,
+                                                 timeZone: vm.timeZone, charts: natalChartCount)
+                case .hours:
+                    PlanetaryHoursView(location: vm.location, timeZone: vm.timeZone, now: vm.instant)
+                        .skyDestinationChrome(d)
+                        .skyDestinationAssistant(d, presenter: assistant, date: vm.instant, location: vm.location,
+                                                 timeZone: vm.timeZone, charts: natalChartCount)
+                }
+            }
+            }
         }
-        .settingsToolbar()
+        .navigationTitle("Ephemeris Sky")
+        .assistantPlacement(assistant)
+        .environment(\.assistantPresenter, assistant)
+        .settingsToolbar(vm: vm)
+            .assistantToolbar()
         .preferredColorScheme(.dark)   // celestial UI is always dark — keeps glass + text legible
         // A preview-reel run sizes the CONTENT to 16:9, which — because the scene uses
         // `.windowResizability(.contentSize)` — makes the window exactly 1600x900.
@@ -91,23 +141,91 @@ struct MacOSContentView: View {
     }
 
     @ViewBuilder private var content: some View {
-        switch selection {
-        case 0:
+        switch ChartSection(rawValue: selection) ?? .sky {
+        case .sky:
+            // Gate 0: with no place set, the wheel means nothing to a new user. Lead with the one
+            // thing this app can say on a fresh launch that is both true and legible.
+            if vm.location == nil { SkyFirstRunHero(date: vm.instant) }
+            // The Moment control lives ONLY here — every lens below reads it.
             MomentControls(vm: vm)
-            ChartWheel(positions: vm.positions, aspects: vm.aspects, houses: vm.houses)
+            MomentReadout(moment: vm.skyMoment, lens: $lens, houseSystem: $vm.houseSystem)
                 .onAppear { vm.startChartDemo() }
                 .onDisappear { vm.stopChartDemo() }
-            HousesCard(vm: vm)
-        case 1:
-            MomentControls(vm: vm)
-            PositionsTable(positions: vm.positions)
-        case 2:
-            AspectsList(aspects: vm.aspects)
-        case 3:
-            CycleView(vm: vm)
-        default:
-            EventsView(events: vm.timelineEvents, now: vm.instant)
+            SkyDestinationRows(date: vm.instant, location: vm.location, timeZone: vm.timeZone) {
+                skyDestination = $0
+            }
+            .assistantContext(assistant,
+                              screen: .init(id: "sky.\(lens.rawValue)", title: "Sky")) {
+                ScreenContexts.sky(lens: lens, moment: vm.skyMoment, date: vm.instant,
+                                   timeZone: vm.timeZone, location: vm.location,
+                                   zodiac: vm.zodiac, houseSystem: vm.houseSystem,
+                                   charts: natalChartCount, rowLimit: 4)
+            }
+        case .cycles:
+            Picker("Cycles", selection: $cyclesLens) {
+                ForEach(CyclesLens.allCases) { Label($0.title, systemImage: $0.icon).tag($0) }
+            }
+            .pickerStyle(.segmented).labelsHidden()
+            .accessibilityIdentifier("input.cyclesLens")
+            switch cyclesLens {
+            case .timeline:
+                EventsView(events: vm.timelineEvents, now: vm.instant)
+                    .assistantContext(assistant,
+                                      screen: .init(id: "cycles.timeline",
+                                                    title: "Cycles · event timeline")) {
+                        ScreenContexts.timeline(events: vm.timelineEvents, window: vm.timelineWindow,
+                                                now: vm.instant, timeZone: vm.timeZone,
+                                                location: vm.location, charts: natalChartCount,
+                                                rowLimit: 4)
+                    }
+                    .exportToolbar {
+                        ExportPayload(subject: .events("ephemeris-timeline"),
+                                      content: .events(vm.timelineEvents),
+                                      range: vm.timelineWindow)
+                    }
+            case .synodic:  CycleView(phase: vm.cyclePhase, upcoming: vm.upcomingEvents,
+                                      selectedBody: $vm.cycleBody)
+            }
+        case .charts:
+            // The library brings its own List and navigation; the surrounding ScrollView is
+            // harmless because the List sizes itself, and this keeps the section switch uniform.
+            NavigationStack {
+                ChartLibraryView(vm: natal)
+                    .navigationDestination(item: $natal.openChart) { chart in
+                        NatalChartView(vm: natal, chart: chart)
+                    }
+            }
+            .frame(minHeight: 520)
         }
     }
+
+    /// Section list — the Mac-native navigation Apple's own apps use, and what Nebula v2 draws.
+    ///
+    /// Replaces a toolbar capsule of icon-only buttons. Labels rather than icons alone: five
+    /// astronomy glyphs in a row are not self-describing, and `help` tooltips only reach a user who
+    /// already hovered the right one.
+    private var sidebar: some View {
+        List(tabs, selection: $selection) { tab in
+            Label(tab.title, systemImage: tab.icon)
+                .tag(tab.id)
+                .accessibilityIdentifier("nav.section.\(tab.id)")
+        }
+        .scrollContentBackground(.hidden)
+        .background(AppBackground())
+        .safeAreaInset(edge: .top, spacing: 0) {
+            Text(verbatim: "Ephemeris Sky")
+                .font(.system(size: 14, weight: .bold))
+                .kerning(0.3)
+                .foregroundStyle(
+                    LinearGradient(colors: [Color(rgbHex: 0xFF4D9D), Color(rgbHex: 0x35E7FF)],
+                                   startPoint: .leading, endPoint: .trailing)
+                )
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 18)
+                .padding(.top, 10)
+                .padding(.bottom, 12)
+        }
+    }
+
 }
 #endif

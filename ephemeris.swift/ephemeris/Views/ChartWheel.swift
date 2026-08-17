@@ -8,6 +8,17 @@ struct ChartWheel: View {
     /// Cusps to overlay; nil when no place is set (the wheel then draws exactly as before).
     var houses: HouseCusps? = nil
 
+    /// Transiting bodies for a bi-wheel. Nil — the default — draws the single wheel exactly as the
+    /// shipping screens do, so adding this changed no existing call site.
+    var outerPositions: [BodyPosition]? = nil
+    /// Chords between the two rings.
+    var crossAspects: [CrossAspect] = []
+    /// **The legibility cap.** Twenty glyphs, two cusp sets and every cross-chord in one phone-width
+    /// circle is unreadable — it is the complaint competitors collect 3★ for ("frustrating only
+    /// seeing small icons"). Only the tightest few chords are drawn; the rest are in the list below
+    /// the wheel, where they can actually be read.
+    var maxCrossChords: Int = 10
+
     var body: some View {
         Canvas { ctx, size in
             let s = min(size.width, size.height)
@@ -91,13 +102,45 @@ struct ChartWheel: View {
                 }
             }
 
+            // In a bi-wheel the natal ring moves inward to make room for the transiting ring, so the
+            // two never overlap. A single wheel keeps its original radius exactly.
+            let biWheel = outerPositions != nil
+            let Rnatal = biWheel ? Rpl * 0.74 : Rpl
+            let Rtransit = Rpl * 1.16
+
+            // Cross-chords first, under the glyphs, tightest only.
+            if let outer = outerPositions, !crossAspects.isEmpty {
+                for a in crossAspects.sorted(by: { $0.orb < $1.orb }).prefix(maxCrossChords) {
+                    guard let nat = positions.first(where: { $0.body == a.reference }),
+                          let tr = outer.first(where: { $0.body == a.moving }) else { continue }
+                    var line = Path()
+                    line.move(to: pt(c, Rnatal, nat.longitude))
+                    line.addLine(to: pt(c, Rtransit, tr.longitude))
+                    ctx.stroke(line, with: .color(a.type.color.opacity(0.55)),
+                               style: StrokeStyle(lineWidth: s * 0.003, lineCap: .round,
+                                                  dash: [s * 0.012, s * 0.008]))
+                }
+            }
+
             // Planet glyphs — glowing light symbols
             ctx.drawLayer { layer in
                 layer.addFilter(.shadow(color: Color(rgbHex: 0xA078FF).opacity(0.9), radius: s * 0.012))
                 for p in positions {
-                    let g = pt(c, Rpl, p.longitude)
+                    let g = pt(c, Rnatal, p.longitude)
                     layer.draw(Text(p.body.glyph + "\u{FE0E}")
-                        .font(.system(size: s * 0.045)).foregroundStyle(NebulaPalette.glyph), at: g)
+                        .font(.system(size: s * (biWheel ? 0.040 : 0.045)))
+                        .foregroundStyle(NebulaPalette.glyph), at: g)
+                }
+            }
+
+            // Transiting ring — dimmer and smaller than natal, because the natal chart is the
+            // subject and the transits are what is passing over it.
+            if let outer = outerPositions {
+                for p in outer {
+                    let g = pt(c, Rtransit, p.longitude)
+                    ctx.draw(Text(p.body.glyph + "\u{FE0E}")
+                        .font(.system(size: s * 0.034))
+                        .foregroundStyle(NebulaPalette.accent.opacity(0.95)), at: g)
                 }
             }
         }

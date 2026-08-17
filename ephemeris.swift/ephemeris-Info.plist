@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Hand-written because NSUbiquitousContainers is a NESTED DICTIONARY and there is no
+  INFOPLIST_KEY_ build setting for it. Every other key here was previously an INFOPLIST_KEY_*
+  in project.yml and has been carried over verbatim; losing one silently changes the app, so this
+  file is the source of truth now and project.yml sets GENERATE_INFOPLIST_FILE: NO.
+
+  Keys Xcode injects at build time (DT*, MinimumOSVersion, CFBundleSupportedPlatforms,
+  BuildMachineOSBuild, UIDeviceFamily from TARGETED_DEVICE_FAMILY) are deliberately absent —
+  they are added to the built product regardless and hard-coding them would go stale.
+
+  One plist serves iOS and macOS: the platform that does not use a key ignores it.
+-->
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Ephemeris</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+
+	<!--
+	  Export compliance, answered in the binary rather than by hand on every upload.
+
+	  Without this key App Store Connect refuses the submission with a 409 naming
+	  `usesNonExemptEncryption` as a required build attribute — and the answer then has to be
+	  PATCHed onto each build individually, which is a step that is easy to forget and blocks
+	  review when it is. Declaring it here travels with every build forever.
+
+	  `false` is the accurate answer, not the convenient one: the app makes no network calls at
+	  all (no URLSession anywhere in the app, Kit or watch target), uses no CryptoKit or
+	  CommonCrypto, and its only data movement is iCloud Documents through Apple's own frameworks,
+	  which is exempt.
+	-->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.lifestyle</string>
+	<key>NSMotionUsageDescription</key>
+	<string>The star field gently parallaxes as you tilt your phone.</string>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+
+	<!--
+	  This is the whole reason the file exists. Declaring the container here with
+	  NSUbiquitousContainerIsDocumentScopePublic is what makes the app's folder appear to the user
+	  in Files and iCloud Drive. Without it the container still syncs, but privately — and a folder
+	  the user can open, back up and inspect is exactly the answer to the competing apps whose
+	  reviews are full of charts vanishing into an opaque store.
+	-->
+	<key>NSUbiquitousContainers</key>
+	<dict>
+		<key>iCloud.oleksandr.aisixteen.ephemeris</key>
+		<dict>
+			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+			<true/>
+			<key>NSUbiquitousContainerName</key>
+			<string>Ephemeris Sky</string>
+			<key>NSUbiquitousContainerSupportedFolderLevels</key>
+			<string>Any</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

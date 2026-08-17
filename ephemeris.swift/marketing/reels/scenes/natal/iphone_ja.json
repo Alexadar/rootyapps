@@ -1,0 +1,62 @@
+{
+  "canvas": [
+    886,
+    1920
+  ],
+  "content_len": 29.5,
+  "preview_maxlen": 30,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0B1020",
+    "bg_color_bottom": "#1A1330",
+    "title_color": "#ffffff",
+    "subtitle_color": "#9FB4FF",
+    "caption_band_percent": 22,
+    "side_padding": 46,
+    "border_width": 7,
+    "border_color": "#2A2E52",
+    "border_radius": 30
+  },
+  "app": {
+    "name": "Ephemeris",
+    "tagline": "ポケットの中の天空暦",
+    "icon": "liquid_icon.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Library",
+      "title": "保存したチャート",
+      "subtitle": "あなた自身の iCloud Drive の中に"
+    },
+    {
+      "key": "NatalWheel",
+      "title": "開けば出生図",
+      "subtitle": "正確な瞬間と場所"
+    },
+    {
+      "key": "NatalHouses",
+      "title": "6方式のハウス",
+      "subtitle": "プラシーダス・コッホ・ホールサインほか"
+    },
+    {
+      "key": "Transits",
+      "title": "そこに今日の空を重ねて",
+      "subtitle": "同じ円の上のトランジット"
+    },
+    {
+      "key": "Analysis",
+      "title": "ディグニティ・形・バランス",
+      "subtitle": "古典の表に基づく点数"
+    },
+    {
+      "key": "Returns",
+      "title": "ソーラー／ルナリターン",
+      "subtitle": "次回を分単位で"
+    },
+    {
+      "key": "Synastry",
+      "title": "さらに別のチャートと",
+      "subtitle": "シナストリー：接触を正確さ順に"
+    }
+  ]
+}

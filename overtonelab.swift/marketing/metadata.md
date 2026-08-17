@@ -1,6 +1,52 @@
 # Overtone Lab — App Store metadata (live record)
 
-_Source of truth is App Store Connect; this file mirrors it. Last synced from ASC **2026-07-26**._
+_Source of truth is App Store Connect; this file mirrors it. Last synced from ASC **2026-08-03**._
+
+## ASO correction, 2026-08-03 — measured, not assumed
+
+The Title was spending its 16 non-brand characters on `Audio Calculator`. Re-measured that day against
+MZSearchHints (US storefront, ≥3.3 s throttle): **`audio calculator` returns ONE completion, and it is
+`mak audio calculator` — an app name. That is supply, not demand.** Meanwhile the terms with real
+demand sat in the 100-character keyword field at the lowest weight.
+
+The Title now carries the terms that have demand **and** no incumbent. The meter category does have the
+most demand (`spl meter` 7 completions, `decibel meter` 10, `sound level meter` 10) but every top result
+is free — 160,251 · 54,075 · 36,105 · 16,573 (NIOSH) ratings, against one paid app with 27. `subwoofer
+box` tops out at 339 ratings and `rt60` at 11. So SPL and decibel stay at keyword weight, where they
+still form `spl meter` / `decibel meter` against the keyword `meter`.
+
+| Locale | Name | Subtitle | Keywords |
+|---|---|---|---|
+| en-US | Overtone Lab: Acoustics & RT60 (30) | Subwoofer Box, Crossover, LUFS (30) | 97/100 |
+| de-DE | Overtone Lab: Raumakustik RT60 (30) | Subwoofer, Gehäuse & Rechner (28) | 88/100 |
+| fr-FR | Overtone Lab: Acoustique RT60 (29) | Sonomètre, Caisson & Calculs (28) | 84/100 |
+| es-ES | Overtone Lab: Acústica RT60 (27) | Subwoofer, Caja y Calculadora (29) | 92/100 |
+| es-MX | Overtone Lab: Acústica RT60 (27) | Subwoofer, Caja y Calculadora (29) | 92/100 |
+| ja | Overtone Lab 音響・RT60計算 (22) | 室内音響・残響・スピーカー設計 (15) | 56/100 |
+
+**Per-locale intent traps found by measuring each storefront** — a translated en-US line would have
+walked into all of them:
+
+- `lautsprecher` (DE), `altavoz` (ES), `bocina` (MX), `スピーカー` (JP) autocomplete to **phone-speaker
+  cleaning** apps (`lautsprecher reinigung`, `limpiador altavoz iphone gratis`)
+- `enceinte` (FR) also means **pregnant** — `enceinte que puis-je manger ?`
+- `crossover` (ES/MX) is **basketball, a dance studio, trivia and a church**
+- **zero completions:** `frequenzweiche` (DE), `caisson de basses` (FR), `bafle` (MX),
+  `サブウーファー` and `ラウドネス` (JP)
+- **`lufs` outside the US returns only app titles** — supply, no local demand
+
+Negative result worth keeping: the `X-Apple-Store-Front` **language suffix does not matter**. Suffixes
+1, 2, 3, 4, 5, 9 and 12 all returned byte-identical in-language hints; the store id alone selects the
+storefront. Do not spend a probe round on it again.
+
+Also repaired: **es-MX was an unlocalized clone** — English subtitle, English description (byte-identical
+to en-US) and a disjoint English keyword set. It now carries the es-ES Spanish description, promo text
+and keyword set.
+
+**Still open:** captions carry `RT60`, `Room acoustics`, `LUFS`, `Loudspeaker design` but **not
+`subwoofer box` or `crossover`**, which the subtitle now bets on. Captions are an indexed field. Raw
+captures survive for de/en/es/fr/ja (14 each), so that is a re-frame with no simulator and no rebuild —
+but `raw/ipad/` is **empty**, so iPad would need a genuine re-capture.
 
 - **App id** `6787524729` · **bundle** `oleksandr.aisixteen.overtonelab` · **SKU** 0000013
 - **Category** Music · **Age** 4+ · **Price** **$9.99** one-time (no ads, no subscription, no IAP)

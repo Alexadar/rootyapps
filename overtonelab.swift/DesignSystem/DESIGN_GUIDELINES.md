@@ -168,7 +168,82 @@ See `OTLWatch.example.swift` for the root, `CrownField`, `StackedReadout`, and `
 
 ---
 
-## 9. Rules
+## 10. Audio Analysis (MusicUnderstanding — future OS)
+
+A **source**, not tool #27. Analysis measures real audio and hands values to the existing
+calculators. Same tokens, same accents, same one-hero-readout rule.
+
+**Availability — absent, not disabled.** The Measure entry is appended to the catalog model
+behind `#available`, so on the released SDK it is a missing array element: no tab, no greyed
+row, no "coming soon", nothing reflows. `MeasurementStore`, the provenance chip, and the deep
+links are all framework-independent and can ship in a patch with the row never inserted. The
+mic usage description ships with the gated build only.
+
+**Navigation — results outlive the stack.** `MeasurementStore` is a `@StateObject` on
+`RootView`, a sibling of `FavoritesStore`. Analysis is an ordinary push, so popping it
+discards a view and not a session: measure once → visit three calculators → back, intact.
+The session is `Codable` end to end and persists on `scenePhase` change, so backgrounding and
+cold start both survive. Re-opening Measure shows the last session with *Measure again*.
+
+**Provenance — three signals, none of them colour.** A waveform glyph before the caption, a
+2 pt dotted underline under the value, and the word *Measured* in the caption line. Editing
+clears all three instantly — there is no "measured but modified". Provenance rides in
+`accessibilityValue`, not a decorative image. Rotor actions: *Revert to typed*, and one that
+reads the source.
+
+**Routing.** BPM → `tempo`, `delay`. Key → `pitch`, `partch`, `comma`. Integrated/short-term
+LUFS and peak → `benchmark` (peak also `levels`). Bars/sections → `timecode`. Instrument
+activity → `sra`, `pan`. Every handed value lands in the input field and stays **fully
+editable** — measurement is a starting point, never a lock. Parked on purpose: pace (nothing
+consumes it), segments/phrases (too noisy at phone width), structure → room tools (the physics
+does not support the link).
+
+**The `benchmark` collision — choice (b), with a hard boundary.** Analysis measures loudness;
+`benchmark` alone reasons about it. **Analysis renders no target, no delta, and no verdict** —
+that single rule is what stops LUFS existing in two places, and it is easy to test: if a
+screen compares against something, it is `benchmark`.
+
+**BPM is optional.** `beatsPerMinute` is nil until two beats land. The UI shows
+`—— listening`, never a zero and never a spinner that lies; Send buttons are absent (not
+disabled) while nil.
+
+**Time-series — bands, never curves.** Every value Apple returns is already a `CMTimeRange`, so
+a smooth line would imply interpolation nobody measured; a band is also a hit target and an
+accessibility element for free. Structure, pace, and instrument activity share **one ruler and
+one playhead** so they read as one piece of audio. **Strength is height and a number, never
+opacity alone.**
+
+**The watchOS call — receive, never capture.** A wrist mic at hip height under a sleeve is not
+a measurement this app can stand behind, sustained capture is expensive for a worse answer than
+the phone in the same room, and a live meter has no crown target so it would be the first watch
+screen to break `CrownFocusChecks`. Tap tempo already gets BPM more reliably. The watch
+displays measured values with identical marking; the first crown detent overrides.
+
+**New state axes** (all tested both directions): field provenance typed↔measured; revert
+restores the pre-handoff value, not a default; session presence none/live/complete; BPM
+nil/determined; framework absent/present; session cold/restored.
+
+**New deep links** (existing `LaunchOverride` pattern): `OVERTONELAB_MEASURE=1`,
+`OVERTONELAB_SESSION=<json>` (seeds a fixture session so UI tests can exercise provenance with
+no microphone), `OVERTONELAB_TOOL=<t>&measured=1`.
+
+**Known friction, stated rather than designed around:**
+- `Tool` is a closed enum where every case implies a Kit and a detail view, so Measure cannot
+  be a case of it. The catalog model becomes `.source(.measure) | .tool(Tool)` — the one
+  structural change, touching `CatalogGrid` and the sidebar only.
+- `ReelTour` must fork into two tours; a screenshot freezes its build.
+- A `MeasureKit` oracle can only assert at the boundary (a −23 LUFS tone reads −23, a 120 BPM
+  click reads 120). Section labels and pace have no ground truth and are passed through
+  untested by design.
+- Mic permission is a new first-run event for an app that has never asked for anything —
+  triggered by the Listen button, never at launch.
+
+See `OTLAnalysis.example.swift` for `CatalogEntry`, `MeasurementStore`, `MeasuredValue`, and
+`BandTrack`.
+
+---
+
+## 11. Rules
 
 **Do**
 - One section accent per tool, everywhere it appears.

@@ -16,10 +16,10 @@ style:
   text_padding: 80
 texts:
   - title: "Overtone Lab en el Mac"
-    subtitle: "Todas las herramientas a un lado, el trabajo al otro"
+    subtitle: "Del RT60 al crossover, todo en la barra lateral"
   - title: "Acústica de sala"
     subtitle: "RT60, modos propios y frecuencia de Schroeder"
-  - title: "Diseño de altavoces"
+  - title: "Diseño de caja de subwoofer"
     subtitle: "Thiele-Small: selladas y bass-reflex"
   - title: "Sonoridad de masterización"
     subtitle: "LUFS integrados reales ITU-R BS.1770"

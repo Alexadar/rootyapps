@@ -1,0 +1,62 @@
+{
+  "canvas": [
+    1200,
+    1600
+  ],
+  "content_len": 29.5,
+  "preview_maxlen": 30,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0B1020",
+    "bg_color_bottom": "#1A1330",
+    "title_color": "#ffffff",
+    "subtitle_color": "#9FB4FF",
+    "caption_band_percent": 20,
+    "side_padding": 70,
+    "border_width": 8,
+    "border_color": "#2A2E52",
+    "border_radius": 34
+  },
+  "app": {
+    "name": "Ephemeris",
+    "tagline": "Your pocket sky almanac",
+    "icon": "liquid_icon.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Library",
+      "title": "Your saved charts",
+      "subtitle": "Files in your own iCloud Drive"
+    },
+    {
+      "key": "NatalWheel",
+      "title": "Open one — the birth chart",
+      "subtitle": "The exact moment and place"
+    },
+    {
+      "key": "NatalHouses",
+      "title": "Houses in six systems",
+      "subtitle": "Placidus, Koch, Whole Sign and more"
+    },
+    {
+      "key": "Transits",
+      "title": "Today's sky over it",
+      "subtitle": "Transits on the same wheel"
+    },
+    {
+      "key": "Analysis",
+      "title": "Dignities, shape, balance",
+      "subtitle": "Scored against the classical tables"
+    },
+    {
+      "key": "Returns",
+      "title": "Solar and lunar returns",
+      "subtitle": "The next one, to the minute"
+    },
+    {
+      "key": "Synastry",
+      "title": "And against another chart",
+      "subtitle": "Synastry, every contact ranked"
+    }
+  ]
+}

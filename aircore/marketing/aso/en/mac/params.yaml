@@ -1,0 +1,34 @@
+platform: mac
+size: [2880, 1800]
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/aircore/marketing/raw/en/mac
+  output_folder: /Users/oleksandr/Projects/rootyapps/aircore/marketing/aso/en/mac
+
+# Water-breeze, same palette as the app and the iOS frames — one product, one identity.
+style:
+  bg_gradient: true
+  bg_color_top: '#F0F7FB'
+  bg_color_bottom: '#D8E9F4'
+  title_color: '#10314A'
+  subtitle_color: '#1288D4'
+  screenshot_zoom: 0.92
+  text_row_percent: 17
+  screenshot_row_percent: 83
+  border_width: 6
+  border_color: '#C7DEEC'
+  border_radius: 22
+  text_padding: 40
+  screenshot_padding: 40
+
+# The Mac story is the desk: the chart at a size worth thinking in front of, and getting results
+# out of the app and into the job you are writing up.
+texts:
+  - title: The chart at desk size
+    subtitle: Chart and inputs side by side, both directions live — type or drag
+  - title: Straight duct from friction
+    subtitle: Real surface roughness, real air density, and a velocity you can hear
+  - title: Mixed on mass, not volume
+    subtitle: 25 % outdoor air by volume is 24.2 % by mass. It matters in winter.
+  - title: Get the numbers out
+    subtitle: Copy a value, copy the table, export CSV with the site elevation on it

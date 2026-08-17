@@ -1,0 +1,19 @@
+build/
+.build/
+*.xcodeproj
+DerivedData/
+.DS_Store
+# The stand-in asset-pack payload is generated filler, not source — it exists only so the real
+# BADownloadManager code path has real bytes to move. Never commit it.
+AssetPacks/*/Payload/
+AssetPacks/build/
+# App-icon and asset-catalog PNGs are deliberately NOT ignored — they are tracked source.
+marketing/**/*.png
+marketing/**/*.mp4
+
+# The converted Core ML model, copied in from aisixteen.models for on-device testing before the
+# Background Assets pack exists. ~850 MB of build output — it ships as an asset pack, not in git
+# and ultimately not in the app bundle either.
+# The shipped models, ~1.1 GB. In the bundle, not downloaded — see project.yml — but far too big
+# for git. Rebuild them with aisixteen.models/scripts/convert_sd15_coreml.py.
+BundledModel/

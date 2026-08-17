@@ -4,5 +4,33 @@
 <dict>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
+
+	<!--
+	  Same group as iOS, for the same reason: the desktop widget is a separate process with its own
+	  `UserDefaults.standard`, so the observer's place reaches it only through the group container.
+	  On a sandboxed Mac app the group also grants the shared container directory itself.
+	-->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.oleksandr.aisixteen.ephemeris</string>
+	</array>
+
+	<!--
+	  Same container as iOS — that is what makes a chart saved on the phone appear on the Mac.
+	  A sandboxed Mac app reaches its ubiquity container without a file-access entitlement, so
+	  nothing else needs relaxing here.
+	-->
+	<key>com.apple.developer.icloud-services</key>
+	<array>
+		<string>CloudDocuments</string>
+	</array>
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.oleksandr.aisixteen.ephemeris</string>
+	</array>
+	<key>com.apple.developer.ubiquity-container-identifiers</key>
+	<array>
+		<string>iCloud.oleksandr.aisixteen.ephemeris</string>
+	</array>
 </dict>
 </plist>

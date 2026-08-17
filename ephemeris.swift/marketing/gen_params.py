@@ -19,7 +19,7 @@ PLATFORMS = ("ios", "ipad", "mac")
 # Screenshot locales only. Every other storefront inherits the primary language's images by
 # Apple's own default, so shooting them would buy nothing but a maintenance tax on each future
 # UI change. See marketing/aso/metadata/ for the 17 locales that DO get localized text.
-SHOT_LOCALES = ("de", "fr", "ja")
+SHOT_LOCALES = ("en", "de", "fr", "ja")
 
 
 def render(template: str, locale: str, platform: str, texts) -> str:
@@ -43,8 +43,11 @@ def main() -> None:
         template = (ROOT / "aso" / "en" / platform / "params.yaml").read_text()
         expected = len(CAPTIONS[platform]["en"])
         for locale in wanted:
-            if locale == "en":
-                continue                      # the template IS English
+            # English is stamped too, from its own file's head. It used to be skipped because the
+            # en params.yaml *was* the template — which meant every caption change had to be hand
+            # applied to English and generated for the rest, and the two drifted the moment a shot
+            # was added. Only `style:` and the paths come from the file now; `texts:` always comes
+            # from captions.json, for every locale including English.
             texts = CAPTIONS[platform][locale]
             if len(texts) != expected:
                 sys.exit(f"{locale}/{platform}: {len(texts)} captions, English has {expected} — "

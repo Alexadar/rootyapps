@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><style>
+body{margin:0;background:#ECE8E1;font-family:-apple-system,BlinkMacSystemFont,"SF Pro",system-ui,sans-serif}
+a{color:#B4552D}a:hover{color:#8F3F1E}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.55)}
+.dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+.dv-next{margin:22px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}
+.dv-grouplabel{flex-basis:100%;font:600 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:rgba(0,0,0,.4);margin:18px 0 -14px}
+.note{width:300px;background:#FBFAF7;border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:16px 18px;font:12px/1.55 system-ui;color:#3d3833}
+.note h4{margin:0 0 6px;font:600 12px system-ui;color:#1a1a1a}
+.note ul{margin:6px 0 0;padding-left:16px}.note li{margin:3px 0}
+</style></helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">AISixteen Architecture — every screen, every state · white Liquid Glass · whole-image diffusion, no segmentation, no measuring</span></div>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px;margin:0 0 26px;max-width:1380px">
+<div class="note" style="width:430px"><h4>Assumptions — handoff bundle not provided</h4>
+PROMPT.md gives the system's rules (white glass canonical, morph springs 0.8/0.85, milk veil rgba(255,255,255,.22) blur 26→0pt, floating glass segment control, SF Pro, px=pt) but not the token sheet or mockups. Derived here, deltas in <a class="dv-oid" href="#1n">1n</a>: ink #1D1A17, accent terracotta #B4552D (this app only), capsule r999 / card r26 / sheet r34, glass = blur 18–24 · saturate 1.7 · white .60–.72. Rooms are geometric placeholders — identical geometry before/after by construction, which is the promise; real renders drop in 1:1.</div>
+<div class="note" style="width:430px"><h4>Model reality &amp; platform honesty</h4>
+<ul><li><b>No segmentation, no measuring — yet.</b> The model diffuses the whole frame, conditioned on depth. So: no region picking, no dimension callouts, and no copy that claims metric accuracy. Depth conditioning still holds walls, windows and proportions — that stays the headline. Per-object edits and real dimensions are roadmap, and nothing here paints the UI into a corner for them.</li><li><b>Minutes of background Neural Engine work isn't guaranteed</b> — iOS may suspend it. The Live Activity never fakes progress; suspension reads "Waiting for you", completion is a local notification (<a class="dv-oid" href="#1e">1e</a>, <a class="dv-oid" href="#1h">1h</a>).</li><li><b>Thermal throttling</b> is observed, not predicted — time-left is a rolling estimate from measured step duration.</li></ul></div>
+</div>
+
+<div class="dv-opts">
+<div class="dv-grouplabel">Core flow — two screens: Capture · Direction</div>
+
+<div class="dv-opt" id="1a" data-screen-label="Capture"><div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Capture — a coach line, not a tutorial</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="position:relative;width:100%;height:100%;background:#000">
+  <div style="position:absolute;inset:0">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,#B3A288 0%,#9C8B71 70%,#8F7455 70%,#75604A 100%)"></div>
+    <div style="position:absolute;left:10%;top:14%;width:34%;height:40%;background:linear-gradient(165deg,#E3E9EA,#AEBFC2);border:5px solid #7E6F58"></div>
+    <div style="position:absolute;right:8%;bottom:22%;width:46%;height:9%;background:#6E5C48;border-radius:12px 12px 0 0"></div>
+    <div style="position:absolute;right:8%;bottom:12%;width:46%;height:11%;background:#63523F;border-radius:4px 4px 6px 6px"></div>
+    <div style="position:absolute;left:22%;bottom:4%;width:48%;height:8%;background:rgba(45,32,20,.28);border-radius:50%"></div>
+  </div>
+  <div style="position:absolute;top:74px;left:0;right:0;display:flex;justify-content:center">
+    <div style="display:flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.6);backdrop-filter:blur(18px) saturate(1.7);border:1px solid rgba(255,255,255,.6);box-shadow:0 8px 24px rgba(30,20,10,.12)">
+      <div style="padding:7px 18px;border-radius:999px;background:#1D1A17;color:#fff;font-size:14px;font-weight:600">Interior</div>
+      <div style="padding:7px 18px;border-radius:999px;color:#1D1A17;font-size:14px;font-weight:500">Exterior</div>
+    </div>
+  </div>
+  <div style="position:absolute;left:0;right:0;top:44%;display:flex;justify-content:center">
+    <div style="display:flex;align-items:center;gap:8px;padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.6);backdrop-filter:blur(18px) saturate(1.7);border:1px solid rgba(255,255,255,.6);box-shadow:0 8px 24px rgba(30,20,10,.12);font-size:13px;font-weight:500;color:#1D1A17">
+      <span style="width:8px;height:8px;border-radius:50%;background:#3E8E5A"></span>Level · whole wall in frame · good light
+    </div>
+  </div>
+  <div style="position:absolute;left:24px;right:24px;bottom:44px;display:flex;align-items:center;justify-content:space-between">
+    <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(160deg,#D9C7A5,#8F7455);border:2px solid rgba(255,255,255,.8);box-shadow:0 4px 14px rgba(0,0,0,.25)"></div>
+    <div style="width:76px;height:76px;border-radius:50%;border:5px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(0,0,0,.3)"><div style="width:60px;height:60px;border-radius:50%;background:#fff"></div></div>
+    <div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.6);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:20px;color:#1D1A17">⟳</div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><div class="note"><h4>Capture</h4><ul><li>One live coach line, state-driven (tilt → "hold level"; too close → "step back"). Green dot = the shot is usable. No modal tutorial.</li><li>Left: photo-library import — same path, depth then estimated from the single photo.</li><li>Interior/Exterior chosen here because it changes the guidance ("stand across the street, whole facade in frame") and the style set in <a class="dv-oid" href="#1c">1c</a>.</li></ul></div></sc-if>
+</div>
+
+<div class="dv-opt" id="1c" data-screen-label="Direction"><div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Direction — presets seed an editable prompt</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="position:relative;width:100%;height:100%;background:#EFEBE4;display:flex;flex-direction:column">
+  <div style="position:relative;height:21%;overflow:hidden">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,#B3A288 0%,#9C8B71 70%,#8F7455 70%,#75604A 100%)"></div>
+    <div style="position:absolute;left:10%;top:16%;width:34%;height:50%;background:linear-gradient(165deg,#E3E9EA,#AEBFC2);border:4px solid #7E6F58"></div>
+    <div style="position:absolute;left:16px;bottom:34px;display:flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(12px);font-size:12px;font-weight:600;color:#1D1A17"><span style="width:7px;height:7px;border-radius:50%;background:#3E8E5A"></span>Depth read — geometry will hold</div>
+    <div style="position:absolute;right:16px;bottom:34px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(12px);font-size:12px;font-weight:600;color:#1D1A17">Retake</div>
+  </div>
+  <div style="flex:1;margin:-26px 0 0;padding:20px 20px 30px;border-radius:34px 34px 0 0;background:rgba(255,255,255,.72);backdrop-filter:blur(24px) saturate(1.7);border-top:1px solid rgba(255,255,255,.7);box-shadow:0 -8px 30px rgba(30,20,10,.10);position:relative;z-index:5;display:flex;flex-direction:column;gap:13px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="border-radius:18px;border:2.5px solid #B4552D;background:#fff;padding:11px;box-shadow:0 4px 14px rgba(180,85,45,.15)">
+        <div style="display:flex;gap:3px;height:30px;border-radius:9px;overflow:hidden"><span style="flex:2;background:#EFEAE2"></span><span style="flex:1;background:#D8C6A6"></span><span style="flex:1;background:#C7CBC6"></span><span style="flex:1;background:#5E7357"></span></div>
+        <div style="margin-top:7px;font-size:14px;font-weight:600;color:#1D1A17">Scandinavian</div><div style="font-size:11.5px;color:rgba(29,26,23,.55)">Pale oak, white, calm</div>
+      </div>
+      <div style="border-radius:18px;border:1px solid rgba(29,26,23,.12);background:#fff;padding:11px">
+        <div style="display:flex;gap:3px;height:30px;border-radius:9px;overflow:hidden"><span style="flex:2;background:#8A5A34"></span><span style="flex:1;background:#C98F4B"></span><span style="flex:1;background:#3F5044"></span><span style="flex:1;background:#E4D6BC"></span></div>
+        <div style="margin-top:7px;font-size:14px;font-weight:600;color:#1D1A17">Mid-century</div><div style="font-size:11.5px;color:rgba(29,26,23,.55)">Walnut, brass, olive</div>
+      </div>
+      <div style="border-radius:18px;border:1px solid rgba(29,26,23,.12);background:#fff;padding:11px">
+        <div style="display:flex;gap:3px;height:30px;border-radius:9px;overflow:hidden"><span style="flex:2;background:#4A4A4C"></span><span style="flex:1;background:#8C8C8E"></span><span style="flex:1;background:#5C4632"></span><span style="flex:1;background:#B7B3AC"></span></div>
+        <div style="margin-top:7px;font-size:14px;font-weight:600;color:#1D1A17">Industrial</div><div style="font-size:11.5px;color:rgba(29,26,23,.55)">Concrete, steel, leather</div>
+      </div>
+      <div style="border-radius:18px;border:1px solid rgba(29,26,23,.12);background:#fff;padding:11px">
+        <div style="display:flex;gap:3px;height:30px;border-radius:9px;overflow:hidden"><span style="flex:2;background:#E9E2D4"></span><span style="flex:1;background:#B8A88C"></span><span style="flex:1;background:#6B6A5E"></span><span style="flex:1;background:#2E2C27"></span></div>
+        <div style="margin-top:7px;font-size:14px;font-weight:600;color:#1D1A17">Japandi</div><div style="font-size:11.5px;color:rgba(29,26,23,.55)">Low, warm, unadorned</div>
+      </div>
+    </div>
+    <div style="border-radius:18px;background:rgba(255,255,255,.9);border:1px solid rgba(29,26,23,.10);padding:12px 14px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.06em;color:rgba(29,26,23,.45)">IN YOUR WORDS — optional</div>
+      <div style="margin-top:6px;font-size:14px;line-height:1.45;color:#1D1A17">Bright Scandinavian living room, pale oak floor, white walls, wool textiles<span style="display:inline-block;width:2px;height:16px;background:#B4552D;vertical-align:-3px;margin-left:1px"></span></div>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+        <span style="padding:5px 11px;border-radius:999px;background:rgba(29,26,23,.06);font-size:12px;color:#1D1A17">+ warmer light</span>
+        <span style="padding:5px 11px;border-radius:999px;background:rgba(29,26,23,.06);font-size:12px;color:#1D1A17">+ more plants</span>
+        <span style="padding:5px 11px;border-radius:999px;background:rgba(29,26,23,.06);font-size:12px;color:#1D1A17">+ darker floor</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-radius:18px;background:rgba(255,255,255,.85);border:1px solid rgba(29,26,23,.10)">
+      <div><div style="font-size:14px;font-weight:600;color:#1D1A17">3 variations</div><div style="font-size:12px;color:rgba(29,26,23,.55)">about 2 min each · run one after another</div></div>
+      <div style="display:flex;align-items:center;gap:14px;font-size:20px;color:#1D1A17"><span style="width:34px;height:34px;border-radius:50%;background:rgba(29,26,23,.07);display:flex;align-items:center;justify-content:center">−</span><b style="font-size:17px">3</b><span style="width:34px;height:34px;border-radius:50%;background:rgba(29,26,23,.07);display:flex;align-items:center;justify-content:center">+</span></div>
+    </div>
+    <div style="margin-top:auto;display:flex;justify-content:center"><div style="padding:15px 30px;border-radius:999px;background:#B4552D;color:#fff;font-size:16px;font-weight:600;box-shadow:0 6px 18px rgba(180,85,45,.35)">Redesign · ~6 min total</div></div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><div class="note"><h4>Direction — how the prompt works</h4><ul><li><b>Presets are prompt macros:</b> picking Scandinavian writes a full prompt into the field; the field stays editable. Structured first, free text second — a novice never has to type, an enthusiast can say anything. Refinement chips append to it.</li><li>The prompt is stored with the result and is the "regenerate from this" seed — same metadata contract as the wallpaper app.</li><li>Photo check folded in up top: depth badge + Retake. With no measuring there's nothing else a separate Space screen would earn.</li><li><b>Time is priced before commitment</b> — the CTA says ~6 min; nobody is surprised by a wait they chose.</li><li>Exterior mode swaps presets (Modern farmhouse, Georgian, Mediterranean, Minimal render).</li></ul></div></sc-if>
+</div>
+
+<div class="dv-grouplabel">The wait — minutes, honestly</div>
+
+<div class="dv-opt" id="1d" data-screen-label="Generating in app"><div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Generating, in app — the image is the progress bar</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="position:relative;width:100%;height:100%;background:#EFEBE4;display:flex;flex-direction:column">
+  <div style="position:relative;flex:1;overflow:hidden">
+    <div style="position:absolute;inset:-20px;filter:blur(9px)">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#F0EBE2 0%,#E7E0D4 70%,#D3BE97 70%,#C4AC82 100%)"></div>
+      <div style="position:absolute;left:10%;top:16%;width:34%;height:38%;background:linear-gradient(165deg,#EAF0F1,#C4D2D5);border:5px solid #F6F3ED"></div>
+      <div style="position:absolute;right:8%;bottom:26%;width:46%;height:8%;background:#D0D4CF;border-radius:12px 12px 0 0"></div>
+      <div style="position:absolute;right:8%;bottom:16%;width:46%;height:10%;background:#C7CBC6;border-radius:4px 4px 6px 6px"></div>
+    </div>
+    <div style="position:absolute;inset:0;background:rgba(255,255,255,.22)"></div>
+    <div style="position:absolute;top:70px;left:0;right:0;display:flex;justify-content:center"><div style="padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(12px);font-size:12px;font-weight:600;color:rgba(29,26,23,.7)">Scandinavian · variation 1 of 3</div></div>
+  </div>
+  <div style="flex:none;margin:-26px 0 0;padding:20px 20px 24px;border-radius:34px 34px 0 0;background:rgba(255,255,255,.72);backdrop-filter:blur(24px) saturate(1.7);border-top:1px solid rgba(255,255,255,.7);box-shadow:0 -8px 30px rgba(30,20,10,.10);position:relative;z-index:5">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><div style="font-size:16px;font-weight:600;color:#1D1A17">Refining details</div><div style="font-size:13px;color:rgba(29,26,23,.55)">step 18 of 32</div></div>
+    <div style="height:6px;border-radius:999px;background:rgba(29,26,23,.08);overflow:hidden"><div style="width:56%;height:100%;border-radius:999px;background:#B4552D"></div></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-top:14px;font-size:13.5px;color:#1D1A17">
+      <div style="display:flex;gap:8px;align-items:center;color:rgba(29,26,23,.45)"><span>✓</span>Reading the space</div>
+      <div style="display:flex;gap:8px;align-items:center;color:rgba(29,26,23,.45)"><span>✓</span>Composing the redesign</div>
+      <div style="display:flex;gap:8px;align-items:center;font-weight:600"><span style="width:8px;height:8px;border-radius:50%;background:#B4552D;margin:0 3px"></span>Refining details · about 1 min left</div>
+      <div style="display:flex;gap:8px;align-items:center;color:rgba(29,26,23,.35)"><span style="width:8px;height:8px;border-radius:50%;border:1.5px solid currentColor;margin:0 3px"></span>Full resolution</div>
+    </div>
+    <div style="margin-top:14px;padding:10px 14px;border-radius:14px;background:rgba(29,26,23,.05);font-size:12.5px;color:rgba(29,26,23,.65)">You can leave — it keeps going and you'll get a notification. <b>Queued next:</b> variations 2 and 3.</div>
+    <div style="margin-top:12px;display:flex;justify-content:center"><div style="padding:10px 22px;border-radius:999px;background:rgba(255,255,255,.85);border:1px solid rgba(29,26,23,.14);font-size:14px;font-weight:600;color:#1D1A17">Cancel this one</div></div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><div class="note"><h4>The multi-minute state</h4><ul><li><b>The forming image is the progress bar:</b> latents decode every 2–3 steps under the milk veil (rgba(255,255,255,.22), blur 26→0 as steps advance) — the wallpaper app's forming-image spec, unchanged.</li><li><b>Named stages, real steps</b> (`GenerationProgress` is step-based by contract): Reading the space → Composing → Refining → Full resolution. Never a bare spinner, never a fake percent.</li><li>Time-left is a rolling estimate from measured step duration, so it self-corrects under throttling.</li><li>Cancel is scoped — the queue survives. Cancel plays the morph in reverse, per the wallpaper spec.</li></ul></div></sc-if>
+</div>
+
+<div class="dv-opt" id="1e" data-screen-label="Lock screen"><div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Backgrounded — Live Activity, then the notification</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+<div style="position:relative;width:100%;height:100%;background:linear-gradient(180deg,#141210,#2A241D 60%,#1A1611);display:flex;flex-direction:column;align-items:center;padding-top:80px">
+  <div style="font-size:20px;color:rgba(255,255,255,.85);font-weight:500">Tuesday, August 12</div>
+  <div style="font-size:84px;font-weight:700;color:#fff;line-height:1;margin-top:2px;letter-spacing:-2px">9:41</div>
+  <div style="width:86%;margin-top:26px;border-radius:26px;background:rgba(255,255,255,.14);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.16);padding:14px 16px;display:flex;gap:12px;align-items:center">
+    <div style="position:relative;width:52px;height:52px;border-radius:12px;overflow:hidden;flex:none">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#E7E0D4 70%,#C4AC82 70%);filter:blur(2px)"></div>
+      <div style="position:absolute;inset:0;background:rgba(255,255,255,.25)"></div>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:14px;font-weight:600;color:#fff">Living room · Scandinavian</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.65);margin:2px 0 6px">Refining details · step 18 of 32 · ~1 min</div>
+      <div style="height:4px;border-radius:999px;background:rgba(255,255,255,.2)"><div style="width:56%;height:100%;border-radius:999px;background:#E08A5C"></div></div>
+    </div>
+    <div style="font-size:12px;color:rgba(255,255,255,.55)">2 queued</div>
+  </div>
+  <div style="width:86%;margin-top:10px;border-radius:26px;background:rgba(255,255,255,.14);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.16);padding:14px 16px;display:flex;gap:12px;align-items:center">
+    <div style="width:52px;height:52px;border-radius:12px;flex:none;background:linear-gradient(180deg,#F0EBE2 70%,#D3BE97 70%)"></div>
+    <div style="flex:1"><div style="display:flex;justify-content:space-between"><div style="font-size:14px;font-weight:600;color:#fff">AISixteen Architecture</div><div style="font-size:12px;color:rgba(255,255,255,.5)">now</div></div>
+    <div style="font-size:13px;color:rgba(255,255,255,.8);margin-top:2px">Your Scandinavian living room is ready. Two more on the way.</div></div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><div class="note"><h4>Backgrounded</h4><ul><li><b>The Live Activity is the queue's public face:</b> forming thumbnail, named stage, real step count, queue depth. Dynamic Island: mini thumbnail + step fraction.</li><li>Completion = local notification per variation; tapping opens that Result. All on-device — nothing here touches a network.</li><li>If iOS suspends the work, the Activity switches to "Waiting for you — opens where it left off" (<a class="dv-oid" href="#1h">1h</a>). It never shows progress it isn't making.</li></ul></div></sc-if>
+</div>
+
+<div class="dv-opt" id="1h" data-screen-label="Interruptions"><div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>Interruptions — pauses, never errors</div>
+<div style="display:flex;flex-direction:column;gap:14px;width:360px">
+  <div class="dv-card" style="padding:16px 18px;border-radius:22px">
+    <div style="font-size:13px;font-weight:700;color:#1D1A17">Phone call</div>
+    <div style="margin-top:8px;padding:12px 14px;border-radius:16px;background:#F4F1EB;font-size:13px;color:#1D1A17"><b>Paused during your call.</b><br><span style="color:rgba(29,26,23,.6)">It resumes by itself when the call ends — nothing is lost.</span></div>
+  </div>
+  <div class="dv-card" style="padding:16px 18px;border-radius:22px">
+    <div style="font-size:13px;font-weight:700;color:#1D1A17">Thermal throttling</div>
+    <div style="margin-top:8px;padding:12px 14px;border-radius:16px;background:#F4F1EB;font-size:13px;color:#1D1A17"><b>Running slower to keep the phone cool.</b><br><span style="color:rgba(29,26,23,.6)">Step 21 of 32 · time remaining updates as it goes. Setting the phone down helps.</span></div>
+  </div>
+  <div class="dv-card" style="padding:16px 18px;border-radius:22px">
+    <div style="font-size:13px;font-weight:700;color:#1D1A17">Low battery</div>
+    <div style="margin-top:8px;padding:12px 14px;border-radius:16px;background:#F4F1EB;font-size:13px;color:#1D1A17"><b>Paused at 10% battery.</b><br><span style="color:rgba(29,26,23,.6)">Progress is saved. Resumes on charge — or resume now.</span><div style="margin-top:8px;display:flex;gap:8px"><span style="padding:6px 14px;border-radius:999px;background:#1D1A17;color:#fff;font-size:12px;font-weight:600">Resume anyway</span><span style="padding:6px 14px;border-radius:999px;background:rgba(29,26,23,.07);font-size:12px;font-weight:600;color:#1D1A17">Wait for charge</span></div></div>
+  </div>
+  <div class="dv-card" style="padding:16px 18px;border-radius:22px">
+    <div style="font-size:13px;font-weight:700;color:#1D1A17">Suspended in the background</div>
+    <div style="margin-top:8px;padding:12px 14px;border-radius:16px;background:#F4F1EB;font-size:13px;color:#1D1A17"><b>Waiting for you.</b><br><span style="color:rgba(29,26,23,.6)">iPhone set this aside to save power. It picks up exactly where it left off when you open the app.</span></div>
+  </div>
+</div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><div class="note"><h4>Interruption grammar</h4>One shape for all four: <b>what happened → what's safe → what resumes it.</b> Checkpointed denoising state means every pause is resumable, so nothing is phrased as failure. These render inside the progress card (<a class="dv-oid" href="#1d">1d</a>) and mirror to the Live Activity (<a class="dv-oid" href="#1e">1e</a>). Titles get SF Symbols in the app.</div></sc-if>
+</div>
+
+<div class="dv-grouplabel">Result — the core view (use the "Compare mode" tweak to see the alternatives)</div>
+
+<div class="dv-opt" id="1i" data-screen-label="Result"><div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a>Result — before/after. Drag the handle: it works.</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="position:relative;width:100%;height:100%;background:#EFEBE4;display:flex;flex-direction:column">
+  <sc-if value="{{ isSlider }}" hint-placeholder-val="{{ true }}">
+  <div ref="{{ cmpRef }}" onPointerDown="{{ dragStart }}" style="position:relative;flex:1;overflow:hidden;cursor:ew-resize;touch-action:none">
+    <div style="position:absolute;inset:0">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#B3A288 0%,#9C8B71 70%,#8F7455 70%,#75604A 100%)"></div>
+      <div style="position:absolute;left:10%;top:16%;width:34%;height:38%;background:linear-gradient(165deg,#E3E9EA,#AEBFC2);border:5px solid #7E6F58"></div>
+      <div style="position:absolute;right:8%;bottom:26%;width:46%;height:8%;background:#6E5C48;border-radius:12px 12px 0 0"></div>
+      <div style="position:absolute;right:8%;bottom:16%;width:46%;height:10%;background:#63523F;border-radius:4px 4px 6px 6px"></div>
+      <div style="position:absolute;left:22%;bottom:6%;width:48%;height:8%;background:rgba(45,32,20,.28);border-radius:50%"></div>
+    </div>
+    <div style="position:absolute;inset:0;clip-path:{{ clip }}">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#F0EBE2 0%,#E7E0D4 70%,#D3BE97 70%,#C4AC82 100%)"></div>
+      <div style="position:absolute;left:0;right:0;top:70%;bottom:0;background:repeating-linear-gradient(90deg,transparent 0 44px,rgba(120,95,60,.14) 44px 46px)"></div>
+      <div style="position:absolute;left:10%;top:16%;width:34%;height:38%;background:linear-gradient(165deg,#EAF0F1,#C4D2D5);border:5px solid #F6F3ED"></div>
+      <div style="position:absolute;right:8%;bottom:26%;width:46%;height:8%;background:#D0D4CF;border-radius:12px 12px 0 0"></div>
+      <div style="position:absolute;right:8%;bottom:16%;width:46%;height:10%;background:#C7CBC6;border-radius:4px 4px 6px 6px"></div>
+      <div style="position:absolute;left:22%;bottom:6%;width:48%;height:8%;background:rgba(120,95,60,.16);border-radius:50%"></div>
+      <div style="position:absolute;left:13%;bottom:24%;width:7%;height:12%;background:#5E7357;border-radius:50% 50% 20% 20%"></div>
+      <div style="position:absolute;left:15%;bottom:18%;width:3.5%;height:7%;background:#B99B78;border-radius:3px"></div>
+    </div>
+    <div style="position:absolute;top:0;bottom:0;left:{{ posPct }};width:0;border-left:2.5px solid #fff;box-shadow:0 0 12px rgba(0,0,0,.35)"></div>
+    <div style="position:absolute;top:50%;left:{{ posPct }};transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.75);backdrop-filter:blur(14px) saturate(1.7);border:1px solid rgba(255,255,255,.8);box-shadow:0 4px 14px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;font-size:15px;color:#1D1A17;font-weight:700;pointer-events:none">⇔</div>
+    <div style="position:absolute;top:72px;left:16px;padding:4px 11px;border-radius:999px;background:rgba(29,26,23,.55);backdrop-filter:blur(10px);color:#fff;font-size:12px;font-weight:600">Before</div>
+    <div style="position:absolute;top:72px;right:16px;padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.75);backdrop-filter:blur(10px);color:#1D1A17;font-size:12px;font-weight:600">After · Scandinavian</div>
+  </div>
+  </sc-if>
+  <sc-if value="{{ isToggle }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ toggleAfter }}" style="position:relative;flex:1;overflow:hidden;cursor:pointer">
+    <sc-if value="{{ showAfter }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#F0EBE2 0%,#E7E0D4 70%,#D3BE97 70%,#C4AC82 100%)"></div>
+      <div style="position:absolute;left:10%;top:16%;width:34%;height:38%;background:linear-gradient(165deg,#EAF0F1,#C4D2D5);border:5px solid #F6F3ED"></div>
+      <div style="position:absolute;right:8%;bottom:26%;width:46%;height:8%;background:#D0D4CF;border-radius:12px 12px 0 0"></div>
+      <div style="position:absolute;right:8%;bottom:16%;width:46%;height:10%;background:#C7CBC6;border-radius:4px 4px 6px 6px"></div>
+    </sc-if>
+    <sc-if value="{{ showBefore }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#B3A288 0%,#9C8B71 70%,#8F7455 70%,#75604A 100%)"></div>
+      <div style="position:absolute;left:10%;top:16%;width:34%;height:38%;background:linear-gradient(165deg,#E3E9EA,#AEBFC2);border:5px solid #7E6F58"></div>
+      <div style="position:absolute;right:8%;bottom:26%;width:46%;height:8%;background:#6E5C48;border-radius:12px 12px 0 0"></div>
+      <div style="position:absolute;right:8%;bottom:16%;width:46%;height:10%;background:#63523F;border-radius:4px 4px 6px 6px"></div>
+    </sc-if>
+    <div style="position:absolute;top:72px;left:0;right:0;display:flex;justify-content:center"><div style="display:flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.65);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.6)"><div style="padding:6px 16px;border-radius:999px;font-size:13px;font-weight:600;color:{{ beforeInk }};background:{{ beforeBg }}">Before</div><div style="padding:6px 16px;border-radius:999px;font-size:13px;font-weight:600;color:{{ afterInk }};background:{{ afterBg }}">After</div></div></div>
+    <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:11.5px;color:rgba(29,26,23,.55)">tap anywhere to flip · hold to peek</div>
+  </div>
+  </sc-if>
+  <sc-if value="{{ isSxS }}" hint-placeholder-val="{{ false }}">
+  <div style="position:relative;flex:1;display:flex;gap:3px;overflow:hidden">
+    <div style="position:relative;flex:1;overflow:hidden"><div style="position:absolute;inset:0;background:linear-gradient(180deg,#B3A288 0%,#9C8B71 70%,#8F7455 70%,#75604A 100%)"></div><div style="position:absolute;left:12%;top:16%;width:52%;height:38%;background:linear-gradient(165deg,#E3E9EA,#AEBFC2);border:4px solid #7E6F58"></div><div style="position:absolute;right:6%;bottom:16%;width:70%;height:16%;background:#63523F;border-radius:8px"></div><div style="position:absolute;top:70px;left:10px;padding:3px 9px;border-radius:999px;background:rgba(29,26,23,.55);color:#fff;font-size:11px;font-weight:600">Before</div></div>
+    <div style="position:relative;flex:1;overflow:hidden"><div style="position:absolute;inset:0;background:linear-gradient(180deg,#F0EBE2 0%,#E7E0D4 70%,#D3BE97 70%,#C4AC82 100%)"></div><div style="position:absolute;left:12%;top:16%;width:52%;height:38%;background:linear-gradient(165deg,#EAF0F1,#C4D2D5);border:4px solid #F6F3ED"></div><div style="position:absolute;right:6%;bottom:16%;width:70%;height:16%;background:#C7CBC6;border-radius:8px"></div><div style="position:absolute;top:70px;left:10px;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.8);color:#1D1A17;font-size:11px;font-weight:600">After</div></div>
+  </div>
+  </sc-if>
+  <div style="flex:none;margin:-26px 0 0;padding:18px 20px 24px;border-radius:34px 34px 0 0;background:rgba(255,255,255,.72);backdrop-filter:blur(24px) saturate(1.7);border-top:1px solid rgba(255,255,255,.7);box-shadow:0 -8px 30px rgba(30,20,10,.10);position:relative;z-index:5">
+    <div style="display:flex;gap:10px;align-items:center">
+      <div style="width:56px;height:42px;border-radius:10px;border:2.5px solid #B4552D;background:linear-gradient(180deg,#E7E0D4 70%,#D3BE97 70%)"></div>
+      <div style="width:56px;height:42px;border-radius:10px;border:1px solid rgba(29,26,23,.12);background:linear-gradient(180deg,#C9A97E 70%,#8A5A34 70%)"></div>
+      <div style="width:56px;height:42px;border-radius:10px;border:1px solid rgba(29,26,23,.12);background:linear-gradient(180deg,#E9E2D4 70%,#B8A88C 70%)"></div>
+      <div style="width:56px;height:42px;border-radius:10px;border:1px dashed rgba(29,26,23,.25);display:flex;align-items:center;justify-content:center;font-size:18px;color:rgba(29,26,23,.4)">+</div>
+      <div style="margin-left:auto;font-size:12px;color:rgba(29,26,23,.55)">3 of 3 done</div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <div style="flex:1;padding:13px 0;border-radius:999px;background:#1D1A17;color:#fff;font-size:15px;font-weight:600;text-align:center">Save</div>
+      <div style="flex:1;padding:13px 0;border-radius:999px;background:rgba(255,255,255,.85);border:1px solid rgba(29,26,23,.14);font-size:15px;font-weight:600;color:#1D1A17;text-align:center">Try again</div>
+      <div style="width:48px;padding:13px 0;border-radius:999px;background:rgba(255,255,255,.85);border:1px solid rgba(29,26,23,.14);font-size:15px;font-weight:600;color:#1D1A17;text-align:center">···</div>
+    </div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><div class="note"><h4>Recommendation: the wipe slider — and why</h4><ul><li><b>Slider wins</b> because the promise is geometric fidelity: a wipe lets the eye track one edge (window frame, wall line) across the divider and see it not move. A toggle tests memory; side-by-side halves the image and hides misalignment. Both survive as secondary gestures — <b>tap to flip, hold to peek</b> — and side-by-side becomes the variant-vs-variant view on iPad/Mac (<a class="dv-oid" href="#1k">1k</a>, <a class="dv-oid" href="#1l">1l</a>).</li><li>"Try again" re-runs with the same prompt, new seed; "···" holds Share, Regenerate with edits (back to <a class="dv-oid" href="#1c">1c</a> with the prompt loaded), Delete.</li><li>VoiceOver: the slider is an adjustable element — swipe up/down moves 10%: "After revealed, 60 percent"; double-tap flips before/after.</li></ul></div></sc-if>
+</div>
+
+<div class="dv-grouplabel">Library · iPad · Mac</div>
+
+<div class="dv-opt" id="1j" data-screen-label="Library"><div class="dv-olabel"><a class="dv-oid" href="#1j">1j</a>Library — spaces, each holding its variations</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="position:relative;width:100%;height:100%;background:#F4F1EB;display:flex;flex-direction:column">
+  <div style="padding:70px 20px 0;display:flex;justify-content:center">
+    <div style="display:flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.6);backdrop-filter:blur(18px) saturate(1.7);border:1px solid rgba(255,255,255,.6);box-shadow:0 8px 24px rgba(30,20,10,.12)">
+      <div style="padding:7px 20px;border-radius:999px;color:#1D1A17;font-size:14px;font-weight:500">Redesign</div>
+      <div style="padding:7px 20px;border-radius:999px;background:#1D1A17;color:#fff;font-size:14px;font-weight:600">Library</div>
+    </div>
+  </div>
+  <div style="flex:1;overflow:hidden;padding:22px 20px 0;display:flex;flex-direction:column;gap:20px">
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-size:17px;font-weight:700;color:#1D1A17">Living room</div><div style="font-size:12px;color:rgba(29,26,23,.5)">3 variations · today</div></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <div style="position:relative;flex:1.6;height:110px;border-radius:16px;overflow:hidden"><div style="position:absolute;inset:0;background:linear-gradient(180deg,#E7E0D4 68%,#D3BE97 68%)"></div><div style="position:absolute;left:10%;top:14%;width:30%;height:40%;background:#DCE6E7;border:3px solid #F6F3ED"></div><div style="position:absolute;left:8px;bottom:8px;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.8);font-size:11px;font-weight:600;color:#1D1A17">Scandinavian</div></div>
+        <div style="flex:1;height:110px;border-radius:16px;background:linear-gradient(180deg,#C9A97E 68%,#8A5A34 68%)"></div>
+        <div style="flex:1;height:110px;border-radius:16px;background:linear-gradient(180deg,#E9E2D4 68%,#B8A88C 68%)"></div>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-size:17px;font-weight:700;color:#1D1A17">House facade</div><div style="font-size:12px;color:rgba(29,26,23,.5)">2 variations · Sunday</div></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <div style="position:relative;flex:1.6;height:110px;border-radius:16px;overflow:hidden"><div style="position:absolute;inset:0;background:linear-gradient(180deg,#BFD3DC 55%,#8FA98F 55%)"></div><div style="position:absolute;left:22%;bottom:20%;width:56%;height:52%;background:#E8E4DA;border-radius:2px"></div><div style="position:absolute;left:30%;bottom:20%;width:12%;height:26%;background:#4A4A4C"></div><div style="position:absolute;left:8px;bottom:8px;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.8);font-size:11px;font-weight:600;color:#1D1A17">Modern farmhouse</div></div>
+        <div style="flex:1;height:110px;border-radius:16px;background:linear-gradient(180deg,#BFD3DC 55%,#9C8B71 55%)"></div>
+        <div style="flex:1;height:110px;border-radius:16px;border:1px dashed rgba(29,26,23,.25);display:flex;align-items:center;justify-content:center;color:rgba(29,26,23,.4);font-size:18px">+</div>
+      </div>
+    </div>
+    <div style="margin-top:auto;padding:12px 0 20px;text-align:center;font-size:12px;color:rgba(29,26,23,.45)">Stored in your iCloud folder — yours, in Files, on all your devices</div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><div class="note"><h4>Library</h4><ul><li><b>Grouped by space, not a flat grid</b> — a project is "my living room", variations live under it. Original photo + prompt + seed + style are sidecar metadata, so any variation can be re-run or extended later.</li><li>Shell = the wallpaper app's floating glass segment control (Redesign · Library), one GlassEffectContainer, not a TabView.</li><li>iCloud line is user-owned-storage language; nothing implies a service.</li></ul></div></sc-if>
+</div>
+
+<div class="dv-opt" id="1k" data-screen-label="iPad"><div class="dv-olabel"><a class="dv-oid" href="#1k">1k</a>iPad — direction rail beside the photo; result compares variants side-by-side</div>
+<div class="dv-card" style="width:760px;border-radius:24px;background:#1D1A17;padding:14px">
+  <div style="position:relative;border-radius:14px;overflow:hidden;height:520px;background:#EFEBE4;display:flex">
+    <div style="position:relative;flex:1.7;overflow:hidden">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#B3A288 0%,#9C8B71 70%,#8F7455 70%,#75604A 100%)"></div>
+      <div style="position:absolute;left:10%;top:14%;width:34%;height:42%;background:linear-gradient(165deg,#E3E9EA,#AEBFC2);border:5px solid #7E6F58"></div>
+      <div style="position:absolute;right:8%;bottom:20%;width:46%;height:12%;background:#63523F;border-radius:6px"></div>
+      <div style="position:absolute;left:16px;top:16px;display:flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.7);backdrop-filter:blur(12px);font-size:12px;font-weight:600;color:#1D1A17"><span style="width:7px;height:7px;border-radius:50%;background:#3E8E5A"></span>Depth read — geometry will hold</div>
+    </div>
+    <div style="flex:1;background:rgba(255,255,255,.72);backdrop-filter:blur(24px) saturate(1.7);border-left:1px solid rgba(255,255,255,.7);padding:18px;display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:15px;font-weight:700;color:#1D1A17">Direction</div>
+      <div style="border-radius:14px;border:2px solid #B4552D;background:#fff;padding:9px"><div style="display:flex;gap:3px;height:22px;border-radius:6px;overflow:hidden"><span style="flex:2;background:#EFEAE2"></span><span style="flex:1;background:#D8C6A6"></span><span style="flex:1;background:#5E7357"></span></div><div style="margin-top:5px;font-size:13px;font-weight:600;color:#1D1A17">Scandinavian</div></div>
+      <div style="border-radius:14px;border:1px solid rgba(29,26,23,.12);background:#fff;padding:9px"><div style="display:flex;gap:3px;height:22px;border-radius:6px;overflow:hidden"><span style="flex:2;background:#8A5A34"></span><span style="flex:1;background:#C98F4B"></span><span style="flex:1;background:#3F5044"></span></div><div style="margin-top:5px;font-size:13px;font-weight:600;color:#1D1A17">Mid-century</div></div>
+      <div style="border-radius:14px;border:1px solid rgba(29,26,23,.12);background:#fff;padding:9px"><div style="display:flex;gap:3px;height:22px;border-radius:6px;overflow:hidden"><span style="flex:2;background:#4A4A4C"></span><span style="flex:1;background:#8C8C8E"></span><span style="flex:1;background:#5C4632"></span></div><div style="margin-top:5px;font-size:13px;font-weight:600;color:#1D1A17">Industrial</div></div>
+      <div style="border-radius:14px;background:rgba(255,255,255,.9);border:1px solid rgba(29,26,23,.1);padding:10px;font-size:12px;color:#1D1A17;line-height:1.4">Bright Scandinavian living room, pale oak floor…<div style="margin-top:4px;font-size:10.5px;font-weight:700;letter-spacing:.05em;color:rgba(29,26,23,.4)">IN YOUR WORDS</div></div>
+      <div style="margin-top:auto;padding:12px 0;border-radius:999px;background:#B4552D;color:#fff;font-size:14px;font-weight:600;text-align:center;box-shadow:0 5px 16px rgba(180,85,45,.35)">Redesign · ~6 min</div>
+    </div>
+  </div>
+</div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><div class="note" style="width:360px"><h4>iPad</h4>Same two-screen shell, but Direction becomes a rail beside the full-height photo — choose while looking at the space. On Result, iPad earns true side-by-side: <b>variant vs variant</b> (both same geometry), while before/after stays the wipe slider. Queue and Live Activity behave as on iPhone.</div></sc-if>
+</div>
+
+<div class="dv-opt" id="1l" data-screen-label="Mac"><div class="dv-olabel"><a class="dv-oid" href="#1l">1l</a>Mac — library sidebar, wipe on canvas, queue in the toolbar</div>
+<x-import component-from-global-scope="ArchMacWindow" from="./macos-window.jsx ./mac-arch.jsx" hint-size="900px,590px">
+<div style="display:flex;flex-direction:column;height:512px;background:#EFEBE4;border-radius:12px;overflow:hidden">
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid rgba(29,26,23,.07)">
+      <div style="display:flex;padding:2px;border-radius:999px;background:rgba(29,26,23,.06)"><span style="padding:4px 12px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1);font-size:12px;font-weight:600;color:#1D1A17">Wipe</span><span style="padding:4px 12px;font-size:12px;color:rgba(29,26,23,.55)">Flip</span><span style="padding:4px 12px;font-size:12px;color:rgba(29,26,23,.55)">Variants</span></div>
+      <div style="margin-left:auto;display:flex;gap:8px"><span style="padding:6px 14px;border-radius:999px;background:rgba(29,26,23,.06);font-size:12px;font-weight:600;color:#1D1A17">New variation</span><span style="padding:6px 14px;border-radius:999px;background:#1D1A17;color:#fff;font-size:12px;font-weight:600">Export…</span></div>
+    </div>
+    <div style="position:relative;flex:1;overflow:hidden">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#B3A288 0%,#9C8B71 70%,#8F7455 70%,#75604A 100%)"></div>
+      <div style="position:absolute;left:10%;top:14%;width:30%;height:44%;background:linear-gradient(165deg,#E3E9EA,#AEBFC2);border:5px solid #7E6F58"></div>
+      <div style="position:absolute;inset:0;clip-path:inset(0 0 0 55%)">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,#F0EBE2 0%,#E7E0D4 70%,#D3BE97 70%,#C4AC82 100%)"></div>
+        <div style="position:absolute;left:10%;top:14%;width:30%;height:44%;background:linear-gradient(165deg,#EAF0F1,#C4D2D5);border:5px solid #F6F3ED"></div>
+        <div style="position:absolute;right:10%;bottom:14%;width:40%;height:14%;background:#C7CBC6;border-radius:6px"></div>
+      </div>
+      <div style="position:absolute;top:0;bottom:0;left:55%;border-left:2px solid #fff;box-shadow:0 0 10px rgba(0,0,0,.3)"></div>
+      <div style="position:absolute;top:50%;left:55%;transform:translate(-50%,-50%);width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.8);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.8);box-shadow:0 3px 10px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#1D1A17">⇔</div>
+      <div style="position:absolute;top:12px;left:12px;padding:3px 10px;border-radius:999px;background:rgba(29,26,23,.55);color:#fff;font-size:11px;font-weight:600">Before</div>
+      <div style="position:absolute;top:12px;right:12px;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.8);color:#1D1A17;font-size:11px;font-weight:600">After · Scandinavian</div>
+    </div>
+  </div>
+</div>
+</x-import>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><div class="note" style="width:360px"><h4>Mac</h4>Sidebar = spaces; canvas = the same wipe; the in-flight queue lives quietly at the sidebar's foot with real step counts. Mac has no Live Activity — completion is a standard user notification. Export writes PNG/HEIC to a user-chosen folder. Unlike the wallpaper app there is no "Set as Desktop" — the deliverable here is the image itself.</div></sc-if>
+</div>
+
+<div class="dv-grouplabel">Icon · accessibility · system deltas</div>
+
+<div class="dv-opt" id="1m" data-screen-label="App icon"><div class="dv-olabel"><a class="dv-oid" href="#1m">1m</a>App icon — iOS/iPad squircle + macOS</div>
+<div style="display:flex;gap:26px;align-items:flex-end;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:26px 30px">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+    <div style="position:relative;width:120px;height:120px;border-radius:27px;overflow:hidden;background:linear-gradient(160deg,#E8DFD2 0%,#C9A97E 55%,#8F5A34 100%);box-shadow:0 8px 22px rgba(30,20,10,.25)">
+      <div style="position:absolute;left:18%;top:22%;width:64%;height:56%;border-radius:10px;background:rgba(255,255,255,.28);backdrop-filter:blur(6px);border:2.5px solid rgba(255,255,255,.85);box-shadow:inset 0 1px 0 rgba(255,255,255,.6)"></div>
+      <div style="position:absolute;left:18%;top:50%;width:64%;height:0;border-top:2.5px solid rgba(255,255,255,.85)"></div>
+      <div style="position:absolute;left:50%;top:22%;width:0;height:56%;border-left:2.5px solid rgba(255,255,255,.85)"></div>
+      <div style="position:absolute;left:26%;top:31%;width:22%;height:13%;border-radius:4px;background:rgba(255,255,255,.55)"></div>
+    </div>
+    <div style="font-size:11px;color:rgba(0,0,0,.5)">iOS / iPadOS</div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+    <div style="position:relative;width:104px;height:104px;border-radius:23px;overflow:hidden;background:linear-gradient(160deg,#E8DFD2 0%,#C9A97E 55%,#8F5A34 100%);box-shadow:0 10px 24px rgba(30,20,10,.3),inset 0 1px 0 rgba(255,255,255,.5)">
+      <div style="position:absolute;left:18%;top:22%;width:64%;height:56%;border-radius:9px;background:rgba(255,255,255,.28);backdrop-filter:blur(6px);border:2.5px solid rgba(255,255,255,.85)"></div>
+      <div style="position:absolute;left:18%;top:50%;width:64%;height:0;border-top:2.5px solid rgba(255,255,255,.85)"></div>
+      <div style="position:absolute;left:50%;top:22%;width:0;height:56%;border-left:2.5px solid rgba(255,255,255,.85)"></div>
+      <div style="position:absolute;left:26%;top:31%;width:22%;height:13%;border-radius:4px;background:rgba(255,255,255,.55)"></div>
+    </div>
+    <div style="font-size:11px;color:rgba(0,0,0,.5)">macOS</div>
+  </div>
+</div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><div class="note"><h4>Icon</h4>A white-glass window frame over a material gradient (plaster → oak → walnut — the before/after arc in one wash). Family logic: same glass object, different subject — wallpaper app carries a glass wave/canvas, this one a window. Ships as a layered icon so iOS 26 renders true specular glass; this flat comp is the fallback/marketing form.</div></sc-if>
+</div>
+
+<div class="dv-opt" id="1o" data-screen-label="Reduced modes"><div class="dv-olabel"><a class="dv-oid" href="#1o">1o</a>Reduce Transparency / Reduce Motion / Dynamic Type</div>
+<div style="display:flex;flex-direction:column;gap:14px;width:360px">
+  <div class="dv-card" style="padding:16px 18px;border-radius:22px">
+    <div style="font-size:13px;font-weight:700;color:#1D1A17">Reduce Transparency</div>
+    <div style="margin-top:8px;display:flex;gap:10px;align-items:center">
+      <div style="flex:1;padding:9px 0;border-radius:999px;background:rgba(255,255,255,.6);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.6);text-align:center;font-size:12px;font-weight:600;color:#1D1A17">glass</div>
+      <span style="color:rgba(0,0,0,.35)">→</span>
+      <div style="flex:1;padding:9px 0;border-radius:999px;background:#F6F3ED;border:1px solid rgba(29,26,23,.16);text-align:center;font-size:12px;font-weight:600;color:#1D1A17">opaque</div>
+    </div>
+    <div style="margin-top:8px;font-size:12px;line-height:1.5;color:rgba(29,26,23,.6)">Every glass surface swaps to opaque #F6F3ED with a hairline border. Layout, radii and hierarchy identical — nothing moves.</div>
+  </div>
+  <div class="dv-card" style="padding:16px 18px;border-radius:22px">
+    <div style="font-size:13px;font-weight:700;color:#1D1A17">Reduce Motion</div>
+    <div style="margin-top:8px;font-size:12px;line-height:1.5;color:rgba(29,26,23,.6)">The capsule→frame morph becomes a cross-fade; the forming image updates as stepped stills (no live blur easing); the wipe handle still drags but doesn't spring.</div>
+  </div>
+  <div class="dv-card" style="padding:16px 18px;border-radius:22px">
+    <div style="font-size:13px;font-weight:700;color:#1D1A17">Dynamic Type &amp; VoiceOver</div>
+    <div style="margin-top:8px;font-size:12px;line-height:1.5;color:rgba(29,26,23,.6)">All copy scales to AX5 — capsules grow, grids reflow to one column. Progress announces stage changes ("Refining details, step 18 of 32"). The comparison is one adjustable element; every control has a label and hint. Hit targets ≥44 pt.</div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="1n" data-screen-label="System deltas"><div class="dv-olabel"><a class="dv-oid" href="#1n">1n</a>Design-system deltas from AISixteen Wallpapers</div>
+<div class="dv-card" style="width:430px;border-radius:14px;padding:20px 22px;font-size:12.5px;line-height:1.6;color:#3d3833">
+  <div style="font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:8px">Inherited unchanged</div>
+  White glass canonical · .glassEffect() + GlassEffectContainer + glassEffectID morphs (springs 0.8/0.85) · milk veil rgba(255,255,255,.22), blur 26→0 · floating glass segment control shell (Redesign · Library) · capsule buttons, .buttonStyle(.glass) · SF Pro, px=pt · no .ultraThinMaterial anywhere · first-run model gate (4 states, real BADownloadManager bytes) reused verbatim with this app's model pack.
+  <div style="font-size:13px;font-weight:700;color:#1a1a1a;margin:14px 0 8px">New in this app</div>
+  <b>Accent terracotta #B4552D</b> — wallpaper stays neutral; here one warm accent marks selection + primary action (drains to neutral during generation, per the tint-drain rule). <b>Bottom glass sheet</b> (r34 top corners) as the standing control surface over a full-bleed photo. <b>Style preset card</b> (swatch strip + name). <b>Prompt field seeded by presets.</b> <b>Stage list progress</b> — the wallpaper app's single capsule grows into a stage list because minutes need structure seconds don't. <b>Queue</b> (N variations, Live Activity). <b>Wipe comparison handle</b> — 44 pt glass knob.
+  <div style="font-size:13px;font-weight:700;color:#1a1a1a;margin:14px 0 8px">Explicitly absent</div>
+  Segmentation/region UI · dimensions & measuring UI · "Set as Desktop" (no wallpaper claim here) · any network, account, or paywall surface.
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "show the failure state" · "exterior mode end to end" · "make the generating screen calmer" — and the Tweaks panel switches Compare mode (slider / toggle / side-by-side) and hides these annotation notes.</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;compareMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Slider&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;Slider&quot;,&quot;Toggle&quot;,&quot;Side-by-side&quot;],&quot;section&quot;:&quot;Result&quot;},&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Board&quot;}}">
+class Component extends DCLogic {
+  state = { pos: 55, after: true };
+  dragStart = (e) => {
+    const el = this.cmpEl; if (!el) return;
+    el.setPointerCapture && el.setPointerCapture(e.pointerId);
+    const move = (ev) => {
+      const r = el.getBoundingClientRect();
+      const p = Math.max(2, Math.min(98, ((ev.clientX - r.left) / r.width) * 100));
+      this.setState({ pos: p });
+    };
+    move(e);
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  };
+  renderVals() {
+    const mode = this.props.compareMode ?? 'Slider';
+    const after = this.state.after;
+    return {
+      showNotes: this.props.showNotes ?? true,
+      isSlider: mode === 'Slider', isToggle: mode === 'Toggle', isSxS: mode === 'Side-by-side',
+      posPct: this.state.pos + '%',
+      clip: 'inset(0 0 0 ' + this.state.pos + '%)',
+      cmpRef: (el) => { this.cmpEl = el; },
+      dragStart: this.dragStart,
+      toggleAfter: () => this.setState(s => ({ after: !s.after })),
+      showAfter: after, showBefore: !after,
+      beforeBg: after ? 'transparent' : '#1D1A17', beforeInk: after ? '#1D1A17' : '#fff',
+      afterBg: after ? '#1D1A17' : 'transparent', afterInk: after ? '#fff' : '#1D1A17',
+    };
+  }
+}
+</script>
+</body>
+</html>

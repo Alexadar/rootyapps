@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+
+	<!-- The Mac has no camera path in this app: a redesign starts from an imported photo, chosen
+	     through NSOpenPanel via .fileImporter or dropped on the window. Read-only is enough — the
+	     app copies the photo into its own project folder and never writes back to the original.
+	     There is deliberately no com.apple.security.device.camera. -->
+	<key>com.apple.security.files.user-selected.read-only</key>
+	<true/>
+
+	<!-- ⚠️ NO com.apple.security.application-groups HERE, ON PURPOSE.
+	     An app group is a capability; a capability on macOS forces a Mac App Development
+	     provisioning profile; and every `-destination platform=macOS` build — including the
+	     UI-test runs — then fails without `-allowProvisioningUpdates`. storypole already paid for
+	     this lesson. The group exists solely to hand a forming thumbnail to the Live Activity, and
+	     macOS has no Live Activity, so the Mac gains nothing and pays the whole cost. -->
+
+	<!-- iCloud Drive documents only. NOT CloudKit: there is no database, no server and no account.
+	     Same container as iOS, so a space redesigned on the phone opens on the Mac. -->
+	<key>com.apple.developer.icloud-services</key>
+	<array>
+		<string>CloudDocuments</string>
+	</array>
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.oleksandr.aisixteen.architecture</string>
+	</array>
+	<key>com.apple.developer.ubiquity-container-identifiers</key>
+	<array>
+		<string>iCloud.oleksandr.aisixteen.architecture</string>
+	</array>
+</dict>
+</plist>

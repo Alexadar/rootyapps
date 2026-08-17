@@ -17,7 +17,7 @@ style:
   screenshot_padding: 40
 texts:
   - title: "26のツールを1つに"
-    subtitle: "調律・音響・信号・ステレオ"
+    subtitle: "音響・スピーカー設計・クロスオーバー・LUFS"
   - title: "テンポは正確に"
     subtitle: "音価、ディレイ、サンプル数"
   - title: "音高と周波数"

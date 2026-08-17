@@ -1,0 +1,62 @@
+{
+  "canvas": [
+    1200,
+    1600
+  ],
+  "content_len": 29.5,
+  "preview_maxlen": 30,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0B1020",
+    "bg_color_bottom": "#1A1330",
+    "title_color": "#ffffff",
+    "subtitle_color": "#9FB4FF",
+    "caption_band_percent": 20,
+    "side_padding": 70,
+    "border_width": 8,
+    "border_color": "#2A2E52",
+    "border_radius": 34
+  },
+  "app": {
+    "name": "Ephemeris",
+    "tagline": "Votre almanach du ciel de poche",
+    "icon": "liquid_icon.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Library",
+      "title": "Vos thèmes enregistrés",
+      "subtitle": "Des fichiers dans votre iCloud Drive"
+    },
+    {
+      "key": "NatalWheel",
+      "title": "En ouvrir un — le thème natal",
+      "subtitle": "L'instant et le lieu exacts"
+    },
+    {
+      "key": "NatalHouses",
+      "title": "Maisons en six systèmes",
+      "subtitle": "Placidus, Koch, signes entiers…"
+    },
+    {
+      "key": "Transits",
+      "title": "Le ciel du jour par-dessus",
+      "subtitle": "Les transits sur la même roue"
+    },
+    {
+      "key": "Analysis",
+      "title": "Dignités, forme, répartition",
+      "subtitle": "Évaluées selon les tables classiques"
+    },
+    {
+      "key": "Returns",
+      "title": "Révolutions solaire et lunaire",
+      "subtitle": "La prochaine, à la minute"
+    },
+    {
+      "key": "Synastry",
+      "title": "Et face à un second thème",
+      "subtitle": "Synastrie, chaque contact classé"
+    }
+  ]
+}

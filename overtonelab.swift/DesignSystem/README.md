@@ -25,6 +25,7 @@ matching files in `OverToneLab/Views/`:
 | `CatalogGrid.example.swift` | reference for restyling `RootCatalogView.swift` (direction **1b**, grouped + favourites) |
 | `RootView.example.swift` | reference for the **cross-platform** root — size-class switch: compact → grid+push, regular → `NavigationSplitView` (iPad landscape / Mac) |
 | `OTLWatch.example.swift` | **watchOS** — curated 7-tool root, `CrownField` (Digital Crown input), `StackedReadout`, `TapTempo`. See guidelines §8 |
+| `OTLAnalysis.example.swift` | **Audio Analysis** — `CatalogEntry` (the `.source`/`.tool` split), `MeasurementStore`, `MeasuredValue` (provenance), `BandTrack` (time-series). See guidelines §10 |
 
 Two one-line hooks make the accent flow everywhere automatically:
 

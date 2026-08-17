@@ -186,8 +186,12 @@ struct WatchToolView: View {
 private struct TempoWatch: View {
     let accent: Color
     @EnvironmentObject private var crownFocus: CrownFocus
+    @ObservedObject private var transport = SessionTransport.shared
     @StateObject private var tap = TapTempo()
     @State private var bpm: Double = 120
+    /// Non-nil while this screen is still showing the phone's measurement. Cleared by the first crown
+    /// detent and by tap tempo — both are the user saying the number is theirs now.
+    @State private var measuredFrom: String?
 
     private var ms: Double { Tempo.noteMs(bpm: bpm, division: 4) }
 
@@ -197,10 +201,12 @@ private struct TempoWatch: View {
                            accent: accent, hero: true, id: "result.tempo")
             StackedReadout(label: "One bar", value: Fmt.f(Tempo.barMs(bpm: bpm, beats: 4, beatUnit: 4), 0), unit: "ms")
             CrownField(label: "Tempo", value: $bpm, unit: "BPM",
-                       step: 1, range: 30...300, targeted: true, accent: accent)
+                       step: 1, range: 30...300, targeted: true, accent: accent,
+                       measuredSource: measuredFrom)
             Button {
                 tap.tap()
                 bpm = tap.bpm
+                measuredFrom = nil          // a tapped tempo is not a measured one
                 // This button is the whole point of the screen, and tapping it takes the crown's
                 // focus. Without this the tempo field goes dead the moment you tap a tempo.
                 crownFocus.reclaim()
@@ -218,6 +224,22 @@ private struct TempoWatch: View {
             .focusable(false)
             .accessibilityIdentifier("input.tapTempo")
         }
+        // Receive, never capture: the wrist shows what the phone measured, marked the same way.
+        .onAppear { adoptMeasurement() }
+        .onChange(of: transport.received) { _, _ in adoptMeasurement() }
+        // THE FIRST CROWN DETENT OVERRIDES. Turning the crown is the user taking the value over, so
+        // the marking goes at once — no "measured but modified" on the wrist either.
+        .onChange(of: bpm) { _, new in
+            guard measuredFrom != nil else { return }
+            if let measured = transport.received?.bpm, abs(measured - new) < 0.001 { return }
+            measuredFrom = nil
+        }
+    }
+
+    private func adoptMeasurement() {
+        guard let session = transport.received, let measured = session.bpm else { return }
+        bpm = measured
+        measuredFrom = session.sourceName
     }
 }
 

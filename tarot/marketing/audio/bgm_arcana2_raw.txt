@@ -1,0 +1,7 @@
+prompt: dark solemn ambient music, deep sustained drone, low cello and pipe organ sustains, slow ceremonial ritual atmosphere, grave, mysterious, minimal, spacious, no drums
+negative: drums, percussion, beat, vocals, harsh, distorted, noisy, bright, cheerful, sparkle, chimes, bells
+dit: medium
+decoder: same-l
+seconds: 72
+steps: 100
+seed: 77021

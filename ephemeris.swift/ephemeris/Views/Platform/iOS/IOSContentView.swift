@@ -4,62 +4,281 @@ import EphemerisKit
 
 struct IOSContentView: View {
     @StateObject private var vm = ChartViewModel()
-    // Tab selection lives in ReelDriver rather than @State so the preview-reel tour can advance
+    // Section selection lives in ReelDriver rather than @State so the preview-reel tour can advance
     // it in-process. Driving it from a UI test meant finding the tab bar, which is translated on
     // every locale and not even exposed as a tabBar on iPad — see ReelDriver for the three ways
     // that failed silently. Normal launches are unaffected: it just holds EPHEMERIS_TAB.
     @StateObject private var reel = ReelDriver()
+    /// The real store — iCloud when available, on-device otherwise. The library reports which.
+    @StateObject private var natal = NatalViewModel.live()
+    /// Owned here, above the TabView, so a held answer survives a tab change and a push. A
+    /// `@State` inside a screen would die with the screen — which is what the modal sheet did.
+    @StateObject private var assistant = AssistantPresenter()
 
-    // Native TabView → the real iOS 26 Liquid Glass tab bar (floats in the glass layer).
-    // The sky is each tab's `.background(AppBackground())`: gradient + glows are static,
-    // only the stars parallax (in-canvas, so no exposed edge), tilt zeroed at launch so
-    // holding the phone upright doesn't shove the sky into a black bar.
-    var body: some View {
-        TabView(selection: $reel.tab) {
-            tab("Chart", "circle.hexagongrid", 0) {
-                MomentControls(vm: vm)
-                ChartWheel(positions: vm.positions, aspects: vm.aspects, houses: vm.houses)
-                    .onAppear { vm.startChartDemo() }
-                    .onDisappear { vm.stopChartDemo() }
-                HousesCard(vm: vm)
-            }
-            tab("Positions", "list.star", 1) {
-                MomentControls(vm: vm)
-                PositionsTable(positions: vm.positions)
-            }
-            tab("Aspects", "point.3.connected.trianglepath.dotted", 2) {
-                AspectsList(aspects: vm.aspects)
-            }
-            tab("Cycle", "arrow.triangle.2.circlepath", 3) {
-                CycleView(vm: vm)
-            }
-            tab("Events", "calendar", 4) {
-                EventsView(events: vm.timelineEvents, now: vm.instant)
-            }
-        }
-        // Selecting Chart restarts the demo from the top (onAppear alone is unreliable in
-        // TabView, which keeps tab content mounted).
-        .onChange(of: reel.tab) { _, newValue in
-            if newValue == 0 { vm.startChartDemo() }
-        }
-        .onAppear { reel.start() }
+
+    /// iPhone gets the tab bar; iPad gets a sidebar. Both read the same selection.
+    @Environment(\.horizontalSizeClass) private var hSize
+
+    /// EPHEMERIS_LENS pins which reading of the moment is showing, so a screenshot or a test can
+    /// open Houses directly. Without it Houses is unreachable from a launch argument, because it is
+    /// a lens now rather than a tab of its own.
+    @State private var lens: MomentLens =
+        LaunchOverride.value("EPHEMERIS_LENS").flatMap(MomentLens.init(rawValue:))
+        ?? LegacyTab.destination(for: LaunchOverride.int("EPHEMERIS_TAB") ?? 0).moment ?? .wheel
+
+    /// The pushed Sky surface, or nil when none is open.
+    ///
+    /// `EPHEMERIS_LENS=moon|hours` used to select a segment and now pushes a screen. Both values
+    /// must keep working: the capture pipeline sets them, and a deep link that silently lands on
+    /// the default screen produces a confidently captioned picture of the wrong thing.
+    @State private var skyDestination: SkyDestination?
+
+    /// How many charts the user has saved, which sets the gate the assistant is told about — the
+    /// model must not offer a chart reading to someone who has entered none.
+    private var natalChartCount: Int { natal.charts.count }
+    @State private var cyclesLens: CyclesLens =
+        LaunchOverride.value("EPHEMERIS_LENS").flatMap(CyclesLens.init(rawValue:))
+        ?? LegacyTab.destination(for: LaunchOverride.int("EPHEMERIS_TAB") ?? 0).cycles ?? .timeline
+
+    /// **One selection source, shared by both chromes.**
+    ///
+    /// A sidebar with private state is the documented trap: the deep link keeps working on iPhone
+    /// and silently lands on the default screen at regular width, so the capture pipeline produces
+    /// a picture of the wrong screen and captions it confidently.
+    private var selection: Binding<ChartSection?> {
+        Binding(
+            get: { LegacyTab.destination(for: reel.tab).section },
+            set: { if let new = $0 { reel.tab = firstLegacyIndex(of: new) } }
+        )
     }
 
-    // `title` is a LocalizedStringKey so `navigationTitle`/`Label` hit their localizing overloads;
-    // a `String` here would silently select the verbatim ones and leave the tab bar English.
-    private func tab<Content: View>(_ title: LocalizedStringKey, _ icon: String, _ tag: Int,
-                                    @ViewBuilder _ content: () -> Content) -> some View {
-        NavigationStack {
+    /// Maps a category back to a legacy index so `reel.tab` stays the single source of truth and the
+    /// reel tour keeps working unchanged.
+    private func firstLegacyIndex(of section: ChartSection) -> Int {
+        switch section {
+        case .sky:    0
+        case .cycles: 4
+        case .charts: 5
+        }
+    }
+
+    private var section: ChartSection { LegacyTab.destination(for: reel.tab).section }
+
+    /// Opens or closes the reel's subject chart. Named rather than inlined so `onAppear` and
+    /// `onChange` cannot drift apart.
+    private func applyReelStep() {
+        guard reel.isReelRun else { return }
+        // Load first if needed. `charts` is filled by the library's `.task`, which runs AFTER
+        // `onAppear` — so looking for the subject here found an empty array and opened nothing,
+        // producing a clean 30-second video that was the library for all five beats.
+        if natal.charts.isEmpty { natal.reload() }
+        natal.openChart = reel.natalStep >= 1
+            ? natal.charts.first { $0.name == "Olena" } ?? natal.charts.first
+            : nil
+    }
+
+    var body: some View {
+        Group {
+            if hSize == .regular { splitLayout } else { tabLayout }
+        }
+        .environment(\.assistantPresenter, assistant)
+        // Selecting Sky restarts the demo from the top (onAppear alone is unreliable in TabView,
+        // which keeps content mounted).
+        .onChange(of: reel.tab) { _, newValue in
+            let d = LegacyTab.destination(for: newValue)
+            if let m = d.moment { lens = m }
+            if let c = d.cycles { cyclesLens = c }
+            if d.section == .sky { vm.startChartDemo() }
+        }
+        .onAppear {
+            // Apply the launch deep link once, so EPHEMERIS_TAB=1 opens Sky on the Table lens
+            // rather than Sky's default.
+            if LaunchOverride.value("EPHEMERIS_LENS") == nil {
+                let d = LegacyTab.destination(for: reel.tab)
+                if let m = d.moment { lens = m }
+                if let c = d.cycles { cyclesLens = c }
+            }
+            reel.start()
+        }
+    }
+
+    // MARK: - Chromes
+
+    // Native TabView → the real iOS 26 Liquid Glass tab bar (floats in the glass layer).
+    private var tabLayout: some View {
+        TabView(selection: Binding(
+            get: { section },
+            set: { reel.tab = firstLegacyIndex(of: $0) })) {
+            ForEach(ChartSection.allCases) { s in
+                NavigationStack { page(s) }
+                    // INSIDE the tab, not outside the TabView. An inset applied to the TabView
+                    // itself never reaches the page's ScrollView, so the content kept its full
+                    // height and the last row stayed stranded beneath the panel — caught by
+                    // `testThePanelDoesNotCoverTheContent`, which could not scroll it clear.
+                    .assistantPlacement(assistant)
+                    .tabItem { Label(s.title, systemImage: s.icon) }
+                    .tag(s)
+            }
+        }
+    }
+
+    private var splitLayout: some View {
+        NavigationSplitView {
+            sidebar
+        } detail: {
+            NavigationStack { page(section) }
+                .assistantPlacement(assistant)
+        }
+        .navigationSplitViewStyle(.balanced)
+    }
+
+    private var sidebar: some View {
+        List(ChartSection.allCases, selection: selection) { s in
+            Label(s.title, systemImage: s.icon)
+                .tag(s)
+                .accessibilityIdentifier("nav.section.\(s.rawValue)")
+        }
+        .navigationTitle("Ephemeris Sky")
+        .toolbar(removing: .sidebarToggle)
+        .scrollContentBackground(.hidden)
+        .background(AppBackground())
+        .safeAreaInset(edge: .top, spacing: 0) { wordmark }
+    }
+
+    /// The gradient wordmark from Nebula v2 — pink to cyan, the same accents the wheel uses for its
+    /// aspect chords, so the sidebar reads as part of the same system.
+    private var wordmark: some View {
+        Text(verbatim: "Ephemeris Sky")
+            .font(.system(size: 15, weight: .bold))
+            .kerning(0.3)
+            .foregroundStyle(
+                LinearGradient(colors: [Color(rgbHex: 0xFF4D9D), Color(rgbHex: 0x35E7FF)],
+                               startPoint: .leading, endPoint: .trailing))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 12)
+    }
+
+    // MARK: - Pages
+
+    @ViewBuilder
+    private func page(_ s: ChartSection) -> some View {
+        switch s {
+        case .charts:
+            ChartLibraryView(vm: natal)
+                .navigationDestination(item: $natal.openChart) { chart in
+                    NatalChartView(vm: natal, chart: chart,
+                                   reelLens: reel.isReelRun ? reel.natalLens : nil,
+                                   reelTransits: reel.isReelRun ? reel.natalTransits : nil,
+                                   reelScrollNudge: reel.isReelRun ? reel.natalScrollNudge : nil,
+                                   reelFacet: reel.isReelRun ? reel.natalFacet : nil,
+                                   reelPartner: reel.isReelRun ? reel.natalPartner : nil)
+                }
+                .settingsToolbar(vm: vm)
+            .assistantToolbar()
+                // The natal reel opens a chart from in-process rather than by tapping a row — a
+                // row lookup is exactly the kind of miss that produced a finished, silently wrong
+                // video before. No effect outside a reel run.
+                //
+                // Applied on APPEAR as well as on change, and that is not belt-and-braces. The tour
+                // sets tab=5 and natalStep=1 in the same turn, so by the time this page mounts the
+                // value has already changed and `onChange` alone never fires — which produced a
+                // clean 30-second video that was the library for every one of its five beats.
+                .onAppear { applyReelStep() }
+                .onChange(of: reel.natalStep) { _, _ in applyReelStep() }
+                // And once more when the library actually has charts, in case the load
+                // lands after both of the above.
+                .onChange(of: natal.charts.count) { _, _ in applyReelStep() }
+        case .sky, .cycles:
             ScrollView {
-                VStack(spacing: 16) { content() }
+                VStack(spacing: 16) { content(s) }
                     .padding()
             }
             .background(AppBackground())
-            .navigationTitle(title)
-            .settingsToolbar()
+            .navigationTitle(s.title)
+            .settingsToolbar(vm: vm)
+            .assistantToolbar()
+            // Assigned in a Task, not inline. Setting navigation state during a NavigationStack's
+            // first update is swallowed — the macOS natal deep link lost a whole capture run to
+            // exactly this, and a nine-second settle still caught the wrong screen.
+            .task {
+                await Task.yield()
+                if let d = SkyRouting.resolve(LaunchOverride.value("EPHEMERIS_LENS")).destination {
+                    skyDestination = d
+                }
+            }
+            .navigationDestination(item: $skyDestination) { d in
+                switch d {
+                case .moon:
+                    MoonCalendarView(location: vm.location, timeZone: vm.timeZone, now: vm.instant)
+                        .skyDestinationChrome(d)
+                        .moonExportToolbar(now: vm.instant)
+                        .skyDestinationAssistant(d, presenter: assistant, date: vm.instant, location: vm.location,
+                                                 timeZone: vm.timeZone, charts: natalChartCount)
+                case .hours:
+                    PlanetaryHoursView(location: vm.location, timeZone: vm.timeZone, now: vm.instant)
+                        .skyDestinationChrome(d)
+                        .skyDestinationAssistant(d, presenter: assistant, date: vm.instant, location: vm.location,
+                                                 timeZone: vm.timeZone, charts: natalChartCount)
+                }
+            }
+
         }
-        .tabItem { Label(title, systemImage: icon) }
-        .tag(tag)
+    }
+
+    @ViewBuilder
+    private func content(_ s: ChartSection) -> some View {
+        switch s {
+        case .sky:
+            // Gate 0: with no place set, the wheel means nothing to a new user. Lead with the one
+            // thing this app can say on a fresh launch that is both true and legible.
+            if vm.location == nil { SkyFirstRunHero(date: vm.instant) }
+            // The Moment control lives ONLY here — it is the thing every lens below is reading.
+            MomentControls(vm: vm)
+            MomentReadout(moment: vm.skyMoment, lens: $lens, houseSystem: $vm.houseSystem)
+                .onAppear { vm.startChartDemo() }
+                .onDisappear { vm.stopChartDemo() }
+            SkyDestinationRows(date: vm.instant, location: vm.location, timeZone: vm.timeZone) {
+                skyDestination = $0
+            }
+            .assistantContext(assistant,
+                              screen: .init(id: "sky.\(lens.rawValue)", title: "Sky")) {
+                ScreenContexts.sky(lens: lens, moment: vm.skyMoment, date: vm.instant,
+                                   timeZone: vm.timeZone, location: vm.location,
+                                   zodiac: vm.zodiac, houseSystem: vm.houseSystem,
+                                   charts: natalChartCount, rowLimit: 4)
+            }
+        case .cycles:
+            Picker("Cycles", selection: $cyclesLens) {
+                ForEach(CyclesLens.allCases) { Label($0.title, systemImage: $0.icon).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .accessibilityIdentifier("input.cyclesLens")
+
+            switch cyclesLens {
+            case .timeline:
+                EventsView(events: vm.timelineEvents, now: vm.instant)
+                    .assistantContext(assistant,
+                                      screen: .init(id: "cycles.timeline",
+                                                    title: "Cycles · event timeline")) {
+                        ScreenContexts.timeline(events: vm.timelineEvents, window: vm.timelineWindow,
+                                                now: vm.instant, timeZone: vm.timeZone,
+                                                location: vm.location, charts: natalChartCount,
+                                                rowLimit: 4)
+                    }
+                    .exportToolbar {
+                        ExportPayload(subject: .events("ephemeris-timeline"),
+                                      content: .events(vm.timelineEvents),
+                                      range: vm.timelineWindow)
+                    }
+            case .synodic:
+                CycleView(phase: vm.cyclePhase, upcoming: vm.upcomingEvents,
+                          selectedBody: $vm.cycleBody)
+            }
+        case .charts:
+            EmptyView()
+        }
     }
 }
 #endif

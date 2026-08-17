@@ -1,0 +1,37 @@
+platform: ipad
+size: [2064, 2752]        # iPad 13" — APP_IPAD_PRO_3GEN_129 (Apple requires the 3GEN slot)
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/kerfcalc.swift/marketing/raw/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/kerfcalc.swift/marketing/aso/ipad
+
+# Same KERF palette as iOS — see aso/ios/params.yaml for why signal (#E8FB4A) is absent.
+style:
+  bg_gradient: true
+  bg_color_top: '#EDE9E0'
+  bg_color_bottom: '#DCD7CB'
+  title_color: '#16171B'
+  subtitle_color: '#6E6F75'
+  border_color: '#CFC9BC'
+  border_width: 8
+  border_radius: 34
+  screenshot_zoom: 1.0
+  text_row_percent: 20
+  screenshot_row_percent: 80
+  text_padding: 60
+  screenshot_padding: 60
+
+# iPad has no formulas-grid capture, so the materials lead is Concrete. Order matches raw/ipad.
+texts:
+  - title: Concrete takeoffs
+    subtitle: Cubic yards, bags and ready-mix trucks, with a waste allowance
+  - title: Stairs to code
+    subtitle: Live IRC and IBC riser, tread and headroom checks as you type
+  - title: Roofing squares
+    subtitle: Pitch-adjusted area, squares and waste — from the footprint
+  - title: Pipe offsets solved
+    subtitle: Travel, run and the fitting multiplier at any angle
+  - title: Precision you set
+    subtitle: 1/8, 1/16 or 1/32 — every result rounded to your tolerance
+  - title: Cut length, not guesswork
+    subtitle: Plumb and seat cuts, hip, valley and jack — every one cited

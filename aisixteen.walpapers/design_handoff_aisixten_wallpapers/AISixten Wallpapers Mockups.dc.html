@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<script src="./image-slot.js"></script>
+<style>
+body{margin:0;background:#eceae5;font-family:system-ui,sans-serif}
+a{color:#0a63c9;text-decoration:none}a:hover{color:#084d9e;text-decoration:underline}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:44px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:600 12px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.75)}
+.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+.dv-next{margin:26px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}
+.an{font:11.5px/1.55 system-ui,sans-serif;color:rgba(0,0,0,.55);max-width:400px}
+.an b{color:rgba(0,0,0,.78)}
+body[data-notes="off"] .an{display:none}
+.hrow{display:flex;flex-wrap:nowrap;gap:36px;align-items:flex-start;width:max-content}
+.dv-opts{width:max-content}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t0" style="background:#fff">
+  <div style="max-width:1060px;display:flex;flex-direction:column;gap:14px">
+    <div style="font:700 22px/1.2 system-ui">AISixten Wallpapers — mock board, round 1</div>
+    <div style="display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start;font:12.5px/1.6 system-ui;color:rgba(0,0,0,.7)">
+      <div style="flex:1;min-width:300px">
+        <b>Assumptions.</b> The attached predecessor folder didn't sync to my workspace, so the create-flow rhythm is inferred from the brief (one calm popup, image-first presentation) rather than read from <span style="font-family:ui-monospace,Menlo,monospace">CreateItemPopup.swift</span>. Name used as given ("AISixten"); I spelled "Wallpapers" conventionally in-UI. All controls follow one Liquid Glass recipe (see <a class="dv-oid" href="#1f">1f</a>) — glass floats over content, the image is never covered by an opaque panel. Every gray "Drop an image" tile is a slot you can drag a real generated wallpaper onto.
+      </div>
+      <div style="flex:1;min-width:300px">
+        <b>Surprise me — decision: it fills the field visibly.</b> Generating directly would be one tap faster, but filling the field teaches what a good prompt looks like, keeps Create as the app's single generative act (one morph, one mental model), and makes re-rolling free before spending 20 s of compute. A second tap on the pill re-rolls the text.<br>
+        <b>Aspect ratio: the platform implies it</b> — phone portrait, iPad 4:3, Mac per-display resolution. No picker on iPhone; iPad and Mac get a quiet override because their outputs genuinely vary. A picker on the phone would be a control 95% of users never need.
+      </div>
+      <div style="flex:1;min-width:300px">
+        <b>Honesty constraints kept.</b> Progress is the real diffusion step count, never a fake bar. On iOS/iPadOS the app cannot set the wallpaper — the action is <i>Save for Wallpaper</i> and a short handoff (<a class="dv-oid" href="#1c">1c</a>). On Mac, <i>Set as Desktop</i> actually finishes the job (<a class="dv-oid" href="#1e">1e</a>). Nothing here requires a server; nothing the physics won't support — the emerging-image preview decodes intermediate latents every few steps, which is cheap.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t6">
+<div class="dv-thd"><a class="dv-tid" href="#t6">6</a><span class="dv-tname">The five live problems — first-launch silence, the long wake, a home for Enhance, About, the resume card</span></div>
+<div class="dv-opts">
+
+<!-- ── 6a FIRST LAUNCH ── -->
+<div class="dv-opt" id="6a" style="width:100%">
+  <div class="dv-olabel"><a class="dv-oid" href="#6a">6a</a>Problem 1 — first launch: the Gate gets a real state again (compiling, counted in components)</div>
+  <div class="hrow">
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#fdfcfa 0%,#efece5 55%,#e2ded4 100%)">
+          <div style="position:absolute;left:32px;right:32px;top:150px;display:flex;flex-direction:column;gap:8px">
+            <div style="color:#1a1a1e;font-size:30px;font-weight:700;line-height:1.2">Tuning for<br>this iPhone</div>
+            <div style="color:rgba(26,26,30,0.6);font-size:16px;line-height:1.5;margin-top:4px">The model is being compiled for this phone's Neural Engine. It happens once, takes a few minutes, and every launch after this is instant.</div>
+          </div>
+          <div style="position:absolute;left:24px;right:24px;top:370px;border-radius:28px;overflow:hidden;padding:20px 22px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 20px rgba(0,0,0,0.08);display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="color:#1a1a1e;font-size:16px;font-weight:620">Preparing the model</span><span style="color:rgba(26,26,30,0.55);font-size:14px;font-variant-numeric:tabular-nums">2 of 6 parts</span></div>
+            <div style="display:flex;flex-direction:column;gap:9px;margin-top:2px">
+              <div style="display:flex;align-items:center;gap:10px"><svg width="16" height="16" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#1f9d47" stroke-width="1.8"></circle><path d="M6.5 11.5l3 3 6-6.5" stroke="#1f9d47" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="color:rgba(26,26,30,0.75);font-size:14.5px">Text encoder</span></div>
+              <div style="display:flex;align-items:center;gap:10px"><svg width="16" height="16" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#1f9d47" stroke-width="1.8"></circle><path d="M6.5 11.5l3 3 6-6.5" stroke="#1f9d47" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="color:rgba(26,26,30,0.75);font-size:14.5px">Image decoder</span></div>
+              <div style="display:flex;align-items:center;gap:10px"><div style="width:16px;height:16px;position:relative"><div style="position:absolute;inset:0;border-radius:999px;background:conic-gradient(from 0deg,rgba(10,132,255,0) 0%,rgba(10,132,255,0.6) 100%);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 2.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 2.5px))"></div></div><span style="color:#1a1a1e;font-size:14.5px;font-weight:590">Image model</span></div>
+              <div style="display:flex;align-items:center;gap:10px"><div style="width:16px;height:16px;border-radius:999px;border:1.5px solid rgba(26,26,30,0.2)"></div><span style="color:rgba(26,26,30,0.45);font-size:14.5px">Detail model</span></div>
+              <div style="display:flex;align-items:center;gap:10px"><div style="width:16px;height:16px;border-radius:999px;border:1.5px solid rgba(26,26,30,0.2)"></div><span style="color:rgba(26,26,30,0.45);font-size:14.5px">Enlarger</span></div>
+              <div style="display:flex;align-items:center;gap:10px"><div style="width:16px;height:16px;border-radius:999px;border:1.5px solid rgba(26,26,30,0.2)"></div><span style="color:rgba(26,26,30,0.45);font-size:14.5px">Image encoder</span></div>
+            </div>
+          </div>
+          <div style="position:absolute;left:24px;right:24px;bottom:130px">
+            <div style="height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95)">
+              <span style="color:#1a1a1e;font-size:17px;font-weight:620">Look around meanwhile</span>
+            </div>
+            <div style="text-align:center;color:rgba(26,26,30,0.45);font-size:13px;margin-top:14px">It keeps working while you browse. Create unlocks when it's done.</div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>The Gate gets its state back.</b> `checking → ready` becomes <b>checking → tuning → ready</b>, entered only when the compile cache is cold (new install or new weights). The checklist counts <b>real completed units</b> — the six `.mlmodelc` compiles, checked as each lands; within a component there is nothing measurable, so the row carries the small arc, not a bar. "2 of 6 parts" is honest and moves. Crucially it is <b>not a blocking gate</b>: "Look around meanwhile" opens the app — Gallery works fully, and the tuning card survives as the chip in <a class="dv-oid" href="#6e">6e</a>. The ControlNet ("Detail model") compiles here too, so the first Enhance never pays it in the foreground.</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#fdfcfa 0%,#efece5 55%,#e2ded4 100%)">
+          <div style="position:absolute;left:0;right:0;top:96px;text-align:center;color:#1a1a1e;font-size:28px;font-weight:700">Create</div>
+          <div style="position:absolute;left:24px;right:24px;top:230px;display:flex;flex-direction:column;gap:14px">
+            <div style="position:relative;overflow:hidden;border-radius:28px;min-height:148px;padding:20px 22px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 20px rgba(0,0,0,0.08)">
+              <div style="color:#1a1a1e;font-size:19px;line-height:1.45">molten glass poppies at dusk, macro</div>
+            </div>
+          </div>
+          <div style="position:absolute;left:24px;right:24px;bottom:150px">
+            <div style="height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:10px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.45);border:0.5px solid rgba(255,255,255,0.65);box-shadow:inset 0 1px 0 rgba(255,255,255,0.8)">
+              <div style="width:16px;height:16px;position:relative"><div style="position:absolute;inset:0;border-radius:999px;background:conic-gradient(from 0deg,rgba(26,26,30,0) 0%,rgba(26,26,30,0.4) 100%);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 2.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 2.5px))"></div></div>
+              <span style="color:rgba(26,26,30,0.55);font-size:16px;font-weight:600">Tuning… 4 of 6 parts</span>
+            </div>
+            <div style="text-align:center;color:rgba(26,26,30,0.45);font-size:13px;margin-top:12px">You can write your prompt now — it starts the moment tuning finishes.</div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:52px;display:flex;justify-content:center">
+            <div style="display:flex;gap:4px;padding:4px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 6px 20px rgba(0,0,0,0.1)">
+              <div style="padding:10px 24px;border-radius:999px;background:rgba(26,26,30,0.08);color:#1a1a1e;font-size:15px;font-weight:590">Create</div>
+              <div style="padding:10px 24px;border-radius:999px;color:rgba(26,26,30,0.5);font-size:15px;font-weight:590">Gallery</div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Create during tuning.</b> If the user walks in mid-compile, the Create button becomes the tuning readout — same glass object, "Tuning… 4 of 6 parts" with the small arc, disabled material (45% fill, 55% ink). Typing is never blocked, and a prompt written now <b>queues</b>: it starts the moment tuning ends, which turns the dead minutes into the time the user was going to spend typing anyway. When tuning completes, the label crossfades to the tinted <b>Create</b> — the same no-jump rule as <a class="dv-oid" href="#5a">5a</a>.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 6b WAKE UPGRADE ── -->
+<div class="dv-opt" id="6b" style="width:100%">
+  <div class="dv-olabel"><a class="dv-oid" href="#6b">6b</a>Problem 2 — the long wake: name the parts as they land, keep the arc for the seconds between</div>
+  <div style="width:900px;background:#101218;border-radius:20px;padding:26px 28px;display:flex;flex-direction:column;gap:18px;font-family:-apple-system,system-ui,sans-serif">
+    <div style="color:rgba(255,255,255,0.5);font:600 10.5px system-ui;letter-spacing:0.4px">THE CAPSULE DURING A 30–120 s WAKE — FOUR REAL EVENTS, NOT ONE ARC</div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="width:190px;height:46px;border-radius:999px;background:rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center"><span style="color:rgba(26,26,30,0.75);font:590 12.5px -apple-system,system-ui">Waking the model…</span></div>
+      <svg width="20" height="12" viewBox="0 0 20 12"><path d="M1 6h14M12 2l5 4-5 4" stroke="rgba(255,255,255,0.4)" stroke-width="1.4" fill="none" stroke-linecap="round"></path></svg>
+      <div style="width:190px;height:46px;border-radius:999px;background:rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center"><span style="color:rgba(26,26,30,0.75);font:590 12.5px -apple-system,system-ui">Text encoder ready · 9%</span></div>
+      <svg width="20" height="12" viewBox="0 0 20 12"><path d="M1 6h14M12 2l5 4-5 4" stroke="rgba(255,255,255,0.4)" stroke-width="1.4" fill="none" stroke-linecap="round"></path></svg>
+      <div style="width:190px;height:46px;border-radius:999px;background:rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center"><span style="color:rgba(26,26,30,0.75);font:590 12.5px -apple-system,system-ui">Image model ready · 78%</span></div>
+      <svg width="20" height="12" viewBox="0 0 20 12"><path d="M1 6h14M12 2l5 4-5 4" stroke="rgba(255,255,255,0.4)" stroke-width="1.4" fill="none" stroke-linecap="round"></path></svg>
+      <div style="position:relative;width:190px;height:46px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center"><div style="position:absolute;left:0;top:0;bottom:0;width:4%;background:rgba(10,132,255,0.3)"></div><span style="position:relative;color:rgba(26,26,30,0.8);font:590 12.5px -apple-system,system-ui">Step 1 of 28</span></div>
+    </div>
+    <div style="color:rgba(255,255,255,0.55);font:11.5px/1.55 system-ui;max-width:840px">The code already has the honest number — <span style="font-family:ui-monospace,Menlo,monospace">wakingFraction</span> is bytes loaded, weighted by size on disk, moving in four jumps. The design stops hiding the jumps: each landing component <b>names itself</b> in the capsule (label crossfade, 0.2 s) with the cumulative percentage beside it, and the breathing arc carries the seconds in between. Four sentences over two minutes beats one shape that never changes: the user sees a <i>sequence</i>, which is what makes a long wait read as progress rather than a hang. The percentage never appears before the first component lands ("0%" is a stopped counter). Past ~3 s the explanatory line from <a class="dv-oid" href="#5a">5a</a> fades in below unchanged. <b>Constraint check:</b> components and bytes are real completed units — no elapsed-time percentage, no estimate anywhere.</div>
+  </div>
+</div>
+
+<!-- ── 6c ENHANCE ── -->
+<div class="dv-opt" id="6c" style="width:100%">
+  <div class="dv-olabel"><a class="dv-oid" href="#6c">6c</a>Problem 3 — Enhance's home is the picture itself: the tile grid is the progress indicator</div>
+  <div class="hrow">
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:#e9e6df">
+          <div style="position:absolute;inset:0"><image-slot id="en-done" shape="rect" placeholder="Finished wallpaper"></image-slot></div>
+          <div style="position:absolute;left:20px;right:20px;bottom:214px;pointer-events:none">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 18px rgba(0,0,0,0.12)">
+              <div style="flex:1;color:rgba(26,26,30,0.75);font-size:14px;line-height:1.4">molten glass poppies at dusk…</div>
+              <div style="flex:none;padding:9px 15px;border-radius:999px;background:rgba(26,26,30,0.08);color:#1a1a1e;font-size:13.5px;font-weight:600">Tweak</div>
+            </div>
+          </div>
+          <div style="position:absolute;left:20px;right:20px;bottom:146px;display:flex;gap:10px;pointer-events:none">
+            <div style="flex:1;height:52px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5)"><span style="color:#fff;font-size:16px;font-weight:640">Save for Wallpaper</span></div>
+            <div style="height:52px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:8px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95)">
+              <svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="rgba(26,26,30,0.75)"></path><path d="M13 10.5l0.9 2.3 2.3 0.9-2.3 0.9-0.9 2.3-0.9-2.3-2.3-0.9 2.3-0.9 0.9-2.3z" fill="rgba(26,26,30,0.55)"></path></svg>
+              <span style="color:#1a1a1e;font-size:14.5px;font-weight:600">Enhance</span>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:96px;text-align:center;color:rgba(26,26,30,0.5);font-size:12px;pointer-events:none">Enhance redraws fine detail · about a minute</div>
+        </div>
+      </x-import>
+      <div class="an"><b>Offered, with its cost.</b> Enhance is a named pill beside Save — visible only when the installed model declares a ControlNet — and its one-line cost sits under the row, so nobody starts a minute-long rewrite unknowingly. The identical pill appears in the Gallery detail sheet: <b>one treatment, both doors</b>. (Share and regenerate move behind the sheet's ⋯ when Enhance is present — three capsules max in the row.)</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:#e9e6df">
+          <div style="position:absolute;inset:0"><image-slot id="en-run" shape="rect" placeholder="Wallpaper being enhanced"></image-slot></div>
+          <div style="position:absolute;left:50%;top:150px;transform:translateX(-50%);width:300px;height:540px;border-radius:32px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.18),inset 0 0 0 0.5px rgba(255,255,255,0.6)">
+            <div style="position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr 1fr">
+              <div></div><div></div><div></div>
+              <div></div><div style="backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);background:rgba(255,255,255,0.18);border:0.5px solid rgba(255,255,255,0.5)"></div><div style="backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);background:rgba(255,255,255,0.18)"></div>
+              <div style="backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);background:rgba(255,255,255,0.18)"></div><div style="backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);background:rgba(255,255,255,0.18)"></div><div style="backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);background:rgba(255,255,255,0.18)"></div>
+            </div>
+          </div>
+          <div style="position:absolute;left:50%;bottom:120px;transform:translateX(-50%);width:300px;height:56px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 20px rgba(0,0,0,0.1);display:flex;align-items:center">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:44%;background:rgba(10,132,255,0.3)"></div>
+            <span style="position:relative;flex:1;text-align:center;color:#1a1a1e;font-size:15px;font-weight:590">Adding detail… tile 4 of 9</span>
+            <div style="position:relative;width:44px;height:44px;margin-right:6px;border-radius:999px;background:rgba(26,26,30,0.08);display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="rgba(26,26,30,0.7)" stroke-width="2" stroke-linecap="round"></path></svg></div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Running: the picture reports on itself.</b> A 3×3 veil sits over the framed picture; each finished tile's veil <b>clears in place</b> (0.3 s fade), pending tiles stay lightly frosted, the working tile carries a brighter hairline. Tiles are regions of the image, so the indicator is spatially true — you literally watch detail arrive where it lands. The capsule below is the same "job" glass object with tile-count fill. <b>Create is disabled throughout</b> (one job owns the model): the segment label drops to 35% ink, and tapping it answers with a toast — "One thing at a time — this finishes in a few tiles." Same presentation whether entered from Create or Gallery.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 6d ABOUT ── -->
+<div class="dv-opt" id="6d">
+  <div class="dv-olabel"><a class="dv-oid" href="#6d">6d</a>Problem 4 — About: a sheet, not a screen (the licence credit gets a real home)</div>
+  <div style="display:flex;flex-direction:column;gap:8px">
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+    <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:linear-gradient(180deg,#f4f2ee 0%,#e9e6df 100%)">
+      <div style="position:absolute;left:24px;top:84px">
+        <div style="color:#1a1a1e;font-size:28px;font-weight:700">Gallery</div>
+        <div style="color:rgba(26,26,30,0.45);font-size:13px;margin-top:2px">12 wallpapers · in your iCloud folder</div>
+      </div>
+      <div style="position:absolute;right:20px;top:88px;width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.9)">
+        <svg width="6" height="18" viewBox="0 0 6 18"><circle cx="3" cy="3" r="1.8" fill="rgba(26,26,30,0.7)"></circle><circle cx="3" cy="9" r="1.8" fill="rgba(26,26,30,0.7)"></circle><circle cx="3" cy="15" r="1.8" fill="rgba(26,26,30,0.7)"></circle></svg>
+      </div>
+      <div style="position:absolute;inset:0;background:rgba(255,255,255,0.12)"></div>
+      <div style="position:absolute;left:10px;right:10px;bottom:14px;border-radius:38px;overflow:hidden;padding:26px 24px 30px;backdrop-filter:blur(30px) saturate(160%);-webkit-backdrop-filter:blur(30px) saturate(160%);background:rgba(255,255,255,0.62);border:0.5px solid rgba(255,255,255,0.9);box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 -12px 40px rgba(0,0,0,0.15)">
+        <div style="width:36px;height:5px;border-radius:3px;background:rgba(26,26,30,0.2);margin:0 auto 20px"></div>
+        <div style="color:#1a1a1e;font-size:20px;font-weight:650;margin-bottom:2px">AISixteen Wallpapers</div>
+        <div style="color:rgba(26,26,30,0.45);font-size:13px;margin-bottom:18px">Version 1.1 · everything on-device</div>
+        <div style="display:flex;flex-direction:column">
+          <div style="display:flex;justify-content:space-between;padding:13px 2px;border-bottom:0.5px solid rgba(26,26,30,0.08)"><span style="color:#1a1a1e;font-size:15px">Model</span><span style="color:rgba(26,26,30,0.55);font-size:15px">Stable Diffusion 1.5 · 1.1 GB</span></div>
+          <div style="display:flex;justify-content:space-between;padding:13px 2px;border-bottom:0.5px solid rgba(26,26,30,0.08)"><span style="color:#1a1a1e;font-size:15px">Acknowledgements</span><svg width="8" height="14" viewBox="0 0 8 14" style="margin-top:3px"><path d="M1 1l6 6-6 6" stroke="rgba(26,26,30,0.35)" stroke-width="1.8" fill="none" stroke-linecap="round"></path></svg></div>
+          <div style="display:flex;justify-content:space-between;padding:13px 2px;border-bottom:0.5px solid rgba(26,26,30,0.08)"><span style="color:#1a1a1e;font-size:15px">Advanced generation settings</span><svg width="8" height="14" viewBox="0 0 8 14" style="margin-top:3px"><path d="M1 1l6 6-6 6" stroke="rgba(26,26,30,0.35)" stroke-width="1.8" fill="none" stroke-linecap="round"></path></svg></div>
+          <div style="display:flex;justify-content:space-between;padding:13px 2px"><span style="color:#1a1a1e;font-size:15px">Your wallpaper folder</span><span style="color:rgba(26,26,30,0.55);font-size:15px">Open in Files</span></div>
+        </div>
+        <div style="color:rgba(26,26,30,0.45);font-size:12.5px;line-height:1.5;margin-top:16px">Images are made with Stable Diffusion 1.5 under the CreativeML Open RAIL‑M licence.</div>
+      </div>
+    </div>
+  </x-import>
+  <div class="an" style="max-width:402px"><b>A ⋯ circle in the Gallery header</b> (Gallery is the calm screen; Create's chrome stays untouchable) opens an About sheet — not a third screen, so the two-screen rule holds. It gives the licence credit a visible line <i>on the sheet itself</i> plus a full Acknowledgements row, rehomes Advanced (a doorway here; the sheet itself is unchanged), and adds the one support answer users actually need: where the files live. Mac gets the same rows in the standard About window.</div>
+  </div>
+</div>
+
+<!-- ── 6e RESUME ── -->
+<div class="dv-opt" id="6e">
+  <div class="dv-olabel"><a class="dv-oid" href="#6e">6e</a>Problem 5 — the resume card becomes a chip, docked at the bottom edge</div>
+  <div style="display:flex;flex-direction:column;gap:8px">
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+    <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#fdfcfa 0%,#efece5 55%,#e2ded4 100%)">
+      <div style="position:absolute;left:0;right:0;top:96px;text-align:center;color:#1a1a1e;font-size:28px;font-weight:700">Create</div>
+      <div style="position:absolute;left:24px;right:24px;top:230px">
+        <div style="position:relative;overflow:hidden;border-radius:28px;min-height:148px;padding:20px 22px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 20px rgba(0,0,0,0.08)">
+          <div style="color:rgba(26,26,30,0.45);font-size:19px;line-height:1.45">Describe a wallpaper…</div>
+        </div>
+      </div>
+      <div style="position:absolute;left:24px;right:24px;bottom:184px">
+        <div style="height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.45);border:0.5px solid rgba(255,255,255,0.65)">
+          <span style="color:rgba(26,26,30,0.35);font-size:18px;font-weight:600">Create</span>
+        </div>
+      </div>
+      <div style="position:absolute;left:20px;right:20px;bottom:112px;display:flex;justify-content:center">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 8px 24px rgba(0,0,0,0.12)">
+          <svg width="15" height="15" viewBox="0 0 20 20"><path d="M17 10a7 7 0 11-2-4.9" stroke="rgba(26,26,30,0.7)" stroke-width="1.8" fill="none" stroke-linecap="round"></path><path d="M15 1v4.5h-4.5" stroke="rgba(26,26,30,0.7)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span style="color:rgba(26,26,30,0.75);font-size:13.5px;white-space:nowrap">Unfinished — enhancing · 2 of 9</span>
+          <div style="padding:8px 14px;border-radius:999px;background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);color:#fff;font-size:13px;font-weight:620">Resume</div>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:52px;display:flex;justify-content:center">
+        <div style="display:flex;gap:4px;padding:4px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 6px 20px rgba(0,0,0,0.1)">
+          <div style="padding:10px 24px;border-radius:999px;background:rgba(26,26,30,0.08);color:#1a1a1e;font-size:15px;font-weight:590">Create</div>
+          <div style="padding:10px 24px;border-radius:999px;color:rgba(26,26,30,0.5);font-size:15px;font-weight:590">Gallery</div>
+        </div>
+      </div>
+    </div>
+  </x-import>
+  <div class="an" style="max-width:402px"><b>Off the top, onto the shelf.</b> The card becomes a one-line chip docked just above the segment control — the shelf where transient objects (toast, tuning readout) already live — so the top of Create belongs to Create again. It keeps the real units ("2 of 9 tiles") and the never-auto-resume rule; <b>Resume</b> is in the chip, <b>Discard</b> moves behind a long-press/swipe (a destructive act shouldn't sit one accidental tap from a habit-height button). Tap anywhere else on the chip to expand the full card with the prompt text. If a resume and the tuning readout coexist on first launch after an update, tuning wins the shelf and the chip waits — one transient at a time.</div>
+  </div>
+</div>
+
+<!-- ── state table ── -->
+<div class="dv-opt" id="6f">
+  <div class="dv-olabel"><a class="dv-oid" href="#6f">6f</a>What changes in the state machine</div>
+  <div style="width:760px;background:#fff;border-radius:16px;border:1px solid rgba(0,0,0,0.08);padding:24px 26px;font-family:-apple-system,system-ui,sans-serif;display:flex;flex-direction:column;gap:12px">
+    <div style="font:12.5px/1.65 system-ui;color:rgba(26,26,30,0.75)">
+      <b>Gate.</b> `checking → ready` gains <b>`tuning(part, of)`</b>, entered only on a cold compile cache; non-blocking (app usable behind it); ControlNet compiles inside it. Consent/download states stay dead code.<br>
+      <b>CreateModel.</b> No new phases. `preparing` gains component-name labels from the existing `wakingFraction` events (<a class="dv-oid" href="#6b">6b</a>). While the Gate is tuning, `canStart` is false and the Create button renders the tuning readout; a usable prompt + tuning-complete auto-starts <b>only if the user tapped Create during tuning</b> (explicit intent, queued — never on mere typing).<br>
+      <b>Enhance.</b> Still owned by JobRunner, still orthogonal. New presentation state on whichever screen launched it: framed picture + 3×3 tile veil + "job" capsule (<a class="dv-oid" href="#6c">6c</a>). `enhanceError` renders the same failure card as generation, with "Your wallpaper is untouched."<br>
+      <b>About.</b> New sheet off Gallery header ⋯: model line, Acknowledgements, Advanced doorway, folder. Discharges the licence obligation on its face.<br>
+      <b>Resume.</b> Same model, new clothes: chip on the bottom shelf, Discard demoted to long-press. Shelf priority: tuning &gt; resume &gt; toast.<br>
+      <b>Constraint flags.</b> None violated. One tension worth naming: the queued-start in <a class="dv-oid" href="#6a">6a</a> begins Neural Engine work the user asked for <i>earlier</i> — it must be cancellable from the same capsule the moment it starts, and the tap that queued it must say so ("Starts when tuning finishes").
+    </div>
+  </div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "Mac/iPad versions of the tuning state" · "the enhance tile-veil as an animation" · "About sheet for Mac"</p>
+</section>
+
+<section class="dv-turn" id="t5">
+<div class="dv-thd"><a class="dv-tid" href="#t5">5</a><span class="dv-tname">The two seams Claude Code named — waking the model, and editing over a finished picture</span></div>
+<div class="dv-opts">
+
+<!-- ── 5a WAKING ── -->
+<div class="dv-opt" id="5a" style="width:100%">
+  <div class="dv-olabel"><a class="dv-oid" href="#5a">5a</a>Waking the model — an unmeasurable wait, honest without a fake bar (same glass object at 400 ms and 8 s)</div>
+  <div class="hrow">
+
+    <!-- waking short -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#fdfcfa 0%,#efece5 55%,#e2ded4 100%)">
+          <div style="position:absolute;left:0;right:0;top:74px;text-align:center;color:rgba(26,26,30,0.5);font-size:14px;padding:0 44px;line-height:1.4">molten glass poppies at dusk, macro, shallow depth of field</div>
+          <div style="position:absolute;left:50%;top:150px;transform:translateX(-50%);width:300px;height:540px;border-radius:32px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.5);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 20px 50px rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center">
+            <div style="width:66px;height:66px;position:relative">
+              <div style="position:absolute;inset:0;border-radius:999px;background:conic-gradient(from 0deg,rgba(10,132,255,0) 0%,rgba(10,132,255,0.55) 100%);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 5px));mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 5px))"></div>
+            </div>
+          </div>
+          <div style="position:absolute;left:50%;bottom:120px;transform:translateX(-50%);width:300px;height:56px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 20px rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center">
+            <span style="color:rgba(26,26,30,0.75);font-size:15px;font-weight:590">Waking the model…</span>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Waking — the first ~400 ms – 2 s.</b> Core ML reports nothing between "loading" and "loaded", so there is no honest fraction — and the design refuses to fake one. The frame is empty white glass; a slow indeterminate arc breathes inside it (no jittery spinner). The capsule says plainly what's happening. This is the <b>same glass object</b> that becomes the progress capsule — it does not appear or disappear, so there's no jump when the step counter arrives.</div>
+    </div>
+
+    <!-- waking long -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#fdfcfa 0%,#efece5 55%,#e2ded4 100%)">
+          <div style="position:absolute;left:0;right:0;top:74px;text-align:center;color:rgba(26,26,30,0.5);font-size:14px;padding:0 44px;line-height:1.4">molten glass poppies at dusk, macro, shallow depth of field</div>
+          <div style="position:absolute;left:50%;top:150px;transform:translateX(-50%);width:300px;height:540px;border-radius:32px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.5);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 20px 50px rgba(0,0,0,0.12);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px">
+            <div style="width:66px;height:66px;position:relative">
+              <div style="position:absolute;inset:0;border-radius:999px;background:conic-gradient(from 0deg,rgba(10,132,255,0) 0%,rgba(10,132,255,0.55) 100%);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 5px));mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 5px))"></div>
+            </div>
+            <div style="color:rgba(26,26,30,0.5);font-size:13.5px;line-height:1.5;text-align:center;max-width:220px">First wallpaper of the session takes a moment — the model is loading into memory. The next ones are instant.</div>
+          </div>
+          <div style="position:absolute;left:50%;bottom:120px;transform:translateX(-50%);width:300px;height:56px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 20px rgba(0,0,0,0.1);display:flex;align-items:center">
+            <span style="flex:1;text-align:center;color:rgba(26,26,30,0.75);font-size:15px;font-weight:590">Waking the model…</span>
+            <div style="width:44px;height:44px;margin-right:6px;border-radius:999px;background:rgba(26,26,30,0.08);display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="rgba(26,26,30,0.7)" stroke-width="2" stroke-linecap="round"></path></svg></div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Same state, past ~3 s.</b> If waking runs long (cold start, older device — measured up to 8 s), a single quiet line fades in <i>below</i> the arc explaining why and promising it's a one-time-per-session cost. Nothing else changes — no escalating spinner, no countdown to break the promise of calm. Cancel fades into the capsule so a long wait is never a trap. When the model reports loaded, the arc dissolves and "Step 1 of 28" replaces the label in the same capsule — continuous.</div>
+    </div>
+
+    <!-- transition into steps -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="width:320px;background:#101218;border-radius:20px;padding:26px 22px;display:flex;flex-direction:column;gap:18px">
+        <div style="color:rgba(255,255,255,0.5);font:600 10.5px system-ui;letter-spacing:0.4px">THE CAPSULE NEVER LEAVES</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="position:relative;width:150px;height:44px;border-radius:999px;background:rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center"><span style="color:rgba(26,26,30,0.75);font:590 12.5px -apple-system,system-ui">Waking…</span></div>
+          <svg width="26" height="14" viewBox="0 0 26 14" style="flex:none"><path d="M1 7h20M17 2l5 5-5 5" stroke="rgba(255,255,255,0.4)" stroke-width="1.4" fill="none" stroke-linecap="round"></path></svg>
+          <div style="position:relative;width:150px;height:44px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center"><div style="position:absolute;left:0;top:0;bottom:0;width:8%;background:rgba(10,132,255,0.3)"></div><span style="position:relative;color:rgba(26,26,30,0.8);font:590 12.5px -apple-system,system-ui">Step 1 of 28</span></div>
+        </div>
+        <div style="color:rgba(255,255,255,0.55);font:11.5px/1.55 system-ui">One glass object, one <span style="font-family:ui-monospace,Menlo,monospace">glassEffectID</span>. Label crossfades (0.2 s), the fill track appears from 0 — no resize, no reposition. The unmeasurable wait and the measurable one are visibly the same thing, so the honesty reads as design, not apology.</div>
+      </div>
+      <div class="an"><b>Why it holds at any duration:</b> the interface commits to "I'm working, I can't say how long" and never pretends otherwise. Calm at 400 ms (arc barely completes a turn) and calm at 8 s (the explanatory line has faded in) because neither relies on a number that would be a lie.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 5b EDIT OVER IMAGE ── -->
+<div class="dv-opt" id="5b" style="width:100%">
+  <div class="dv-olabel"><a class="dv-oid" href="#5b">5b</a>Leaving a finished picture — the fix for the dead end, and my answer to the open question</div>
+  <div class="hrow">
+
+    <!-- finished, three exits -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:#e9e6df">
+          <div style="position:absolute;inset:0"><image-slot id="e-done" shape="rect" placeholder="Finished wallpaper (full-bleed)"></image-slot></div>
+          <div style="position:absolute;top:70px;left:16px;width:44px;height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 4px 12px rgba(0,0,0,0.12)">
+            <svg width="11" height="18" viewBox="0 0 12 20"><path d="M10 2L2 10l8 8" stroke="rgba(26,26,30,0.8)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </div>
+          <div style="position:absolute;left:20px;right:20px;bottom:214px;pointer-events:none">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 18px rgba(0,0,0,0.12)">
+              <svg width="15" height="15" viewBox="0 0 18 18" style="flex:none"><path d="M12 2l4 4-9 9-4 1 1-4 8-8z" stroke="rgba(26,26,30,0.6)" stroke-width="1.5" fill="none" stroke-linejoin="round"></path></svg>
+              <div style="flex:1;color:rgba(26,26,30,0.75);font-size:14px;line-height:1.4">molten glass poppies at dusk…</div>
+              <div style="flex:none;padding:9px 15px;border-radius:999px;background:rgba(26,26,30,0.08);color:#1a1a1e;font-size:13.5px;font-weight:600">Tweak</div>
+            </div>
+          </div>
+          <div style="position:absolute;left:20px;right:20px;bottom:146px;display:flex;gap:10px;pointer-events:none">
+            <div style="flex:1;height:52px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5)"><span style="color:#fff;font-size:16px;font-weight:640">Save for Wallpaper</span></div>
+            <div style="width:52px;height:52px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95)"><svg width="18" height="18" viewBox="0 0 20 20"><path d="M17 10a7 7 0 11-2-4.9" stroke="rgba(26,26,30,0.8)" stroke-width="1.8" fill="none" stroke-linecap="round"></path><path d="M15 1v4.5h-4.5" stroke="rgba(26,26,30,0.8)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+            <div style="width:52px;height:52px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95)"><svg width="18" height="20" viewBox="0 0 20 22"><path d="M10 1v12M6 5l4-4 4 4" stroke="rgba(26,26,30,0.8)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3 10v8a2 2 0 002 2h10a2 2 0 002-2v-8" stroke="rgba(26,26,30,0.8)" stroke-width="1.8" fill="none" stroke-linecap="round"></path></svg></div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:52px;display:flex;justify-content:center">
+            <div style="display:flex;gap:4px;padding:4px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 6px 20px rgba(0,0,0,0.12)">
+              <div style="padding:10px 24px;border-radius:999px;background:rgba(26,26,30,0.08);color:#1a1a1e;font-size:15px;font-weight:590">Create</div>
+              <div style="padding:10px 24px;border-radius:999px;color:rgba(26,26,30,0.5);font-size:15px;font-weight:590">Gallery</div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Three ways out — the dead end, fixed.</b> ① back circle (top-left) → Create empty · ② Create in the segment control (never inert now) · ③ the prompt itself. The old "Use again" chip is renamed <b>Tweak</b> and promoted next to the quoted prompt, because re-rolling one word is the real loop. <b>Save no longer traps you</b> — it's an action, not the only door.</div>
+    </div>
+
+    <!-- edit in place -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" keyboard="{{ true }}" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:#e9e6df;display:flex;flex-direction:column">
+          <div style="flex:1;position:relative">
+            <div style="position:absolute;inset:0"><image-slot id="e-edit" shape="rect" placeholder="The finished picture, still behind glass"></image-slot></div>
+            <div style="position:absolute;inset:0;background:rgba(255,255,255,0.28);backdrop-filter:blur(8px) saturate(150%);-webkit-backdrop-filter:blur(8px) saturate(150%)"></div>
+            <div style="position:absolute;top:70px;left:16px;width:44px;height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95)">
+              <svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="rgba(26,26,30,0.7)" stroke-width="2" stroke-linecap="round"></path></svg>
+            </div>
+            <div style="position:absolute;left:24px;right:24px;top:150px;display:flex;flex-direction:column;gap:14px">
+              <div style="position:relative;overflow:hidden;border-radius:28px;min-height:130px;padding:20px 22px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 8px 24px rgba(0,0,0,0.12)">
+                <div style="color:#1a1a1e;font-size:19px;line-height:1.45">molten glass poppies at <span style="background:rgba(10,132,255,0.18);border-radius:4px;padding:0 2px">dawn</span>, macro, shallow depth of field<span style="display:inline-block;width:2px;height:22px;background:#0a84ff;vertical-align:-4px;margin-left:1px"></span></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="display:flex;align-items:center;gap:7px;height:38px;padding:0 16px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85)">
+                  <svg width="14" height="14" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="rgba(26,26,30,0.75)"></path></svg>
+                  <span style="color:#1a1a1e;font-size:14px;font-weight:590">Surprise me</span>
+                </div>
+                <div style="height:44px;padding:0 26px;border-radius:999px;display:flex;align-items:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 6px 20px rgba(10,132,255,0.25)">
+                  <span style="color:#fff;font-size:16px;font-weight:650">Regenerate</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>My answer to the open question: yes — the field returns over the picture.</b> Tapping Tweak (or the prompt) brings the field back with the picture held behind a light glass scrim (28% white + 8 pt blur), so you keep your reference while you change one word (here <i>dusk → dawn</i>, the edit highlighted). The primary reads <b>Regenerate</b>, not Create, because you're iterating on this image, not starting over. This makes "change a word and try again" the path of least resistance — exactly how people use these tools.</div>
+    </div>
+
+    <!-- why -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="width:340px;background:#fff;border-radius:16px;border:1px solid rgba(0,0,0,0.08);padding:24px;display:flex;flex-direction:column;gap:16px;font-family:-apple-system,system-ui,sans-serif">
+        <div style="font-size:13px;font-weight:700;color:#1a1a1e">THE LOOP, MADE OBVIOUS</div>
+        <div style="display:flex;flex-direction:column;gap:10px;font:12.5px/1.5 system-ui;color:rgba(26,26,30,0.72)">
+          <div style="display:flex;gap:10px;align-items:baseline"><span style="color:#0a84ff;font-weight:700">1</span><span>Finished picture — <b>Tweak</b> sits right on the prompt plate</span></div>
+          <div style="display:flex;gap:10px;align-items:baseline"><span style="color:#0a84ff;font-weight:700">2</span><span>Field returns over the image; change a word</span></div>
+          <div style="display:flex;gap:10px;align-items:baseline"><span style="color:#0a84ff;font-weight:700">3</span><span><b>Regenerate</b> → waking (if cold) → steps → new picture behind the same glass</span></div>
+          <div style="display:flex;gap:10px;align-items:baseline"><span style="color:#0a84ff;font-weight:700">4</span><span>Back / Create / Gallery all remain live throughout</span></div>
+        </div>
+        <div style="height:0.5px;background:rgba(0,0,0,0.1)"></div>
+        <div class="an" style="margin:0">On <b>iPad / Mac</b> the field never left (it's the toolbar) — so Tweak just refocuses it and swaps Create→Regenerate; the picture stays put in the featured tile. The seam only exists on iPhone, where the field and image share the screen.</div>
+      </div>
+      <div class="an"><b>Test-gap note taken:</b> the 49 tests assert <span style="font-family:ui-monospace,Menlo,monospace">.done</span> is reached but never that you can leave it. Worth an assertion that every terminal state has a live exit — a dead end is a state you can enter and not leave, which a reachability test won't catch.</div>
+    </div>
+  </div>
+</div>
+</div>
+<p class="dv-next">Still open: <b>full-generation time on your device</b> decides whether 28 steps holds or drops to ~20 (at 1.6 steps/s, 28 ≈ 17.5 s). Try: "show the Regenerate morph frame-by-frame" · "waking state for iPad/Mac"</p>
+</section>
+
+<section class="dv-turn" id="t4">
+<div class="dv-thd"><a class="dv-tid" href="#t4">4</a><span class="dv-tname">First run — the mandatory model download, as a gate (not a third screen)</span></div>
+<div class="dv-opts">
+<div class="dv-opt" id="4a" style="width:100%">
+  <div class="dv-olabel"><a class="dv-oid" href="#4a">4a</a>Consent → downloading → interrupted → ready, white glass</div>
+  <div class="hrow">
+
+    <!-- consent -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#fdfcfa 0%,#efece5 55%,#e2ded4 100%)">
+          <div style="position:absolute;left:32px;right:32px;top:150px;display:flex;flex-direction:column;gap:8px">
+            <div style="color:#1a1a1e;font-size:30px;font-weight:700;line-height:1.2">Everything happens<br>on your iPhone</div>
+            <div style="color:rgba(26,26,30,0.6);font-size:16px;line-height:1.5;margin-top:4px">AISixten makes wallpapers with a model that runs entirely on this device. One download, then it works forever — offline, private, no account.</div>
+          </div>
+          <div style="position:absolute;left:24px;right:24px;top:380px;border-radius:28px;overflow:hidden;padding:20px 22px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 20px rgba(0,0,0,0.08);display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="color:#1a1a1e;font-size:16px;font-weight:620">Image model</span><span style="color:rgba(26,26,30,0.55);font-size:14px">2.6 GB</span></div>
+            <div style="height:0.5px;background:rgba(26,26,30,0.1)"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:rgba(26,26,30,0.75);font-size:14.5px">Download over Wi‑Fi only</span>
+              <div style="width:46px;height:28px;border-radius:999px;background:#34c759;position:relative"><div style="position:absolute;top:2px;right:2px;width:24px;height:24px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.2)"></div></div>
+            </div>
+            <div style="color:rgba(26,26,30,0.5);font-size:12.5px;line-height:1.45">Hosted by Apple, downloaded once. It never phones home — the app has no network access after this.</div>
+          </div>
+          <div style="position:absolute;left:24px;right:24px;bottom:130px">
+            <div style="height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 6px 20px rgba(10,132,255,0.2)">
+              <span style="color:#fff;font-size:17px;font-weight:650">Download · 2.6 GB</span>
+            </div>
+            <div style="text-align:center;color:rgba(26,26,30,0.45);font-size:13px;margin-top:14px">You can keep using your phone — it continues in the background.</div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Consent — the only gate in the app.</b> Shown once, before Create. It says exactly what's downloaded, how big, from where, and makes the privacy promise concrete ("no network access after this"). Wi‑Fi-only defaults on. There is no skip: the app honestly cannot work without the model, so the button is the only exit — but it never nags, never re-asks.</div>
+    </div>
+
+    <!-- downloading -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#fdfcfa 0%,#efece5 55%,#e2ded4 100%)">
+          <div style="position:absolute;left:32px;right:32px;top:150px">
+            <div style="color:#1a1a1e;font-size:30px;font-weight:700;line-height:1.2">Getting the model</div>
+            <div style="color:rgba(26,26,30,0.6);font-size:16px;line-height:1.5;margin-top:12px">About four minutes on this connection. Feel free to leave — we'll be ready when you're back.</div>
+          </div>
+          <div style="position:absolute;left:24px;right:24px;top:390px;border-radius:28px;overflow:hidden;padding:20px 22px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 20px rgba(0,0,0,0.08);display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="color:#1a1a1e;font-size:16px;font-weight:620">Image model</span><span style="color:rgba(26,26,30,0.6);font-size:14px;font-variant-numeric:tabular-nums">1.1 of 2.6 GB</span></div>
+            <div style="position:relative;height:10px;border-radius:5px;background:rgba(26,26,30,0.08);overflow:hidden">
+              <div style="position:absolute;left:0;top:0;bottom:0;width:42%;border-radius:5px;background:#0a84ff"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="color:rgba(26,26,30,0.5);font-size:13px">Wi‑Fi · 4.6 MB/s</span>
+              <div style="padding:8px 16px;border-radius:999px;background:rgba(26,26,30,0.08);color:#1a1a1e;font-size:13.5px;font-weight:590">Pause</div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Downloading.</b> Real bytes, real rate, tabular numerals — the same no-fake-progress rule as generation (<a class="dv-oid" href="#1b">1b</a>). The system continues it in the background (Background Assets does this for free), so the copy releases the user instead of holding them hostage. Pause is a first-class control.</div>
+    </div>
+
+    <!-- interrupted -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#fdfcfa 0%,#efece5 55%,#e2ded4 100%)">
+          <div style="position:absolute;left:32px;right:32px;top:150px">
+            <div style="color:#1a1a1e;font-size:30px;font-weight:700;line-height:1.2">Paused — waiting<br>for Wi‑Fi</div>
+            <div style="color:rgba(26,26,30,0.6);font-size:16px;line-height:1.5;margin-top:12px">Your progress is kept. It resumes on its own the next time you're on Wi‑Fi.</div>
+          </div>
+          <div style="position:absolute;left:24px;right:24px;top:390px;border-radius:28px;overflow:hidden;padding:20px 22px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 20px rgba(0,0,0,0.08);display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="color:#1a1a1e;font-size:16px;font-weight:620">Image model</span><span style="color:rgba(26,26,30,0.6);font-size:14px;font-variant-numeric:tabular-nums">1.8 of 2.6 GB</span></div>
+            <div style="position:relative;height:10px;border-radius:5px;background:rgba(26,26,30,0.08);overflow:hidden">
+              <div style="position:absolute;left:0;top:0;bottom:0;width:69%;border-radius:5px;background:rgba(26,26,30,0.25)"></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:2px">
+              <div style="flex:1;height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5)"><span style="color:#fff;font-size:14.5px;font-weight:620">Use cellular this once</span></div>
+              <div style="flex:1;height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(26,26,30,0.08)"><span style="color:#1a1a1e;font-size:14.5px;font-weight:590">Keep waiting</span></div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Interrupted.</b> The honest middle state most apps hide. Progress bar desaturates (state shown by words + tone, never color alone), the byte count proves nothing was lost, and the cellular override is scoped — "this once" — so the Wi‑Fi preference survives.</div>
+    </div>
+
+    <!-- ready -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#fdfcfa 0%,#efece5 55%,#e2ded4 100%)">
+          <div style="position:absolute;left:32px;right:32px;top:150px;display:flex;flex-direction:column;gap:12px">
+            <svg width="44" height="44" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#1f9d47" stroke-width="1.4"></circle><path d="M6.5 11.5l3 3 6-6.5" stroke="#1f9d47" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <div style="color:#1a1a1e;font-size:30px;font-weight:700;line-height:1.2">Ready</div>
+            <div style="color:rgba(26,26,30,0.6);font-size:16px;line-height:1.5">The model lives on your iPhone now. You won't see this screen again.</div>
+          </div>
+          <div style="position:absolute;left:24px;right:24px;bottom:130px;display:flex;flex-direction:column;gap:14px">
+            <div style="height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 6px 20px rgba(10,132,255,0.2)">
+              <span style="color:#fff;font-size:17px;font-weight:650">Make your first wallpaper</span>
+            </div>
+            <div style="display:flex;justify-content:center">
+              <div style="display:flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95)">
+                <svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="rgba(26,26,30,0.75)"></path></svg>
+                <span style="color:#1a1a1e;font-size:15px;font-weight:590">Surprise me</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Ready.</b> The download card morphs into the primary button (same glassEffectID discipline as <a class="dv-oid" href="#1b">1b</a>) and hands straight into Create — with Surprise me right there so the first generation is one tap away. Model updates arrive silently via the same asset-pack mechanism later; this stage never returns.</div>
+    </div>
+  </div>
+</div>
+</div>
+<p class="dv-next">Try next: "add the download progress to the app icon / Live Activity" · "what if the model comes in two packs — base + refiner" · "Mac + iPad first-run variants"</p>
+</section>
+
+<section class="dv-turn" id="t3">
+<div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">White glass everywhere — Mac and the legibility proof redone to match <a class="dv-oid" href="#2a">2a</a> (iPad <a class="dv-oid" href="#1d">1d</a> already conforms; turn 1's dark set is now archive)</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="3a">
+  <div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>Mac — white glass, Set as Desktop unchanged</div>
+  <x-import component-from-global-scope="MacWindow" from="./macos-window.jsx" width="{{ 1140 }}" height="{{ 700 }}" title="AISixten Wallpapers" hint-size="1140px,700px">
+    <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:linear-gradient(180deg,#f7f5f0 0%,#e9e6df 100%)">
+      <div style="position:absolute;left:24px;right:24px;top:18px;display:flex;align-items:center;gap:12px">
+        <div style="flex:1;display:flex;align-items:center;height:44px;padding:0 18px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 4px 12px rgba(0,0,0,0.06)">
+          <span style="color:#1a1a1e;font-size:14.5px">aurora over a fjord, ultrawide, quiet greens</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;height:44px;padding:0 16px;border-radius:999px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95)">
+          <svg width="14" height="14" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="rgba(26,26,30,0.75)"></path></svg>
+          <span style="color:#1a1a1e;font-size:13.5px;font-weight:590">Surprise me</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;height:44px;padding:0 14px;border-radius:999px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95)">
+          <span style="color:rgba(26,26,30,0.5);font-size:13px">Size</span>
+          <span style="color:#1a1a1e;font-size:13px;font-weight:590">This display · 5120×2880</span>
+          <svg width="9" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="rgba(26,26,30,0.55)" stroke-width="1.6" fill="none" stroke-linecap="round"></path></svg>
+        </div>
+        <div style="height:44px;padding:0 22px;border-radius:999px;display:flex;align-items:center;background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 4px 14px rgba(10,132,255,0.2)">
+          <span style="color:#fff;font-size:14.5px;font-weight:640">Create</span>
+        </div>
+      </div>
+      <div style="position:absolute;left:24px;right:24px;top:84px;bottom:24px;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:180px;gap:16px;overflow:hidden">
+        <div style="position:relative;border-radius:16px;overflow:visible;grid-column:span 2;grid-row:span 2">
+          <div style="position:absolute;inset:0;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.15),0 0 0 2px rgba(10,132,255,0.8)"><image-slot id="wmac1" shape="rect" placeholder="Desktop wallpaper (16:10, selected)"></image-slot></div>
+          <div style="position:absolute;right:18px;bottom:18px;width:280px;border-radius:20px;overflow:hidden;padding:8px;backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);background:rgba(255,255,255,0.68);border:0.5px solid rgba(255,255,255,0.95);box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 16px 40px rgba(0,0,0,0.18)">
+            <div style="padding:10px 14px;border-radius:12px;background:rgba(10,132,255,0.8);color:#fff;font-size:13.5px;font-weight:620">Set as Desktop</div>
+            <div style="padding:10px 14px;color:#1a1a1e;font-size:13.5px;display:flex;justify-content:space-between"><span>This display</span><svg width="14" height="12" viewBox="0 0 14 12" style="margin-top:2px"><path d="M2 6l3.5 4L12 1.5" stroke="#1f9d47" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+            <div style="padding:10px 14px;color:#1a1a1e;font-size:13.5px">All displays</div>
+            <div style="padding:10px 14px;color:#1a1a1e;font-size:13.5px">Every Space on this display</div>
+            <div style="height:0.5px;background:rgba(26,26,30,0.12);margin:4px 10px"></div>
+            <div style="padding:10px 14px;color:rgba(26,26,30,0.65);font-size:13.5px">Share…</div>
+            <div style="padding:10px 14px;color:#c83636;font-size:13.5px">Delete</div>
+          </div>
+        </div>
+        <div style="border-radius:16px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.1)"><image-slot id="wmac2" shape="rect" placeholder="Desktop wallpaper"></image-slot></div>
+        <div style="border-radius:16px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.1)"><image-slot id="wmac3" shape="rect" placeholder="Desktop wallpaper"></image-slot></div>
+        <div style="border-radius:16px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.1)"><image-slot id="wmac4" shape="rect" placeholder="Desktop wallpaper"></image-slot></div>
+      </div>
+    </div>
+  </x-import>
+  <div class="an" style="max-width:1100px"><b>Same anatomy as <a class="dv-oid" href="#1e">1e</a>, white-glass material:</b> milky toolbar plates over a warm paper window, brighter context menu (<span style="font-family:ui-monospace,Menlo,monospace">rgba(255,255,255,.68)</span>) with dark ink; success green and destructive red use the darkened bright-plate variants. Set-as-Desktop behavior unchanged — click, done.</div>
+</div>
+
+<div class="dv-opt" id="3b">
+  <div class="dv-olabel"><a class="dv-oid" href="#3b">3b</a>Legibility proof — white glass over the same two extremes</div>
+  <div style="display:flex;gap:20px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="position:relative;width:393px;height:480px;border-radius:24px;overflow:hidden;background:radial-gradient(100% 80% at 50% 20%,#16161a 0%,#0a0a0c 70%);font-family:-apple-system,system-ui,sans-serif">
+        <div style="position:absolute;left:14px;top:12px;color:rgba(255,255,255,0.4);font-size:10.5px;font-weight:600;letter-spacing:0.4px">NEAR-BLACK WALLPAPER · WHITE GLASS</div>
+        <div style="position:absolute;left:24px;right:24px;top:60px;border-radius:22px;overflow:hidden;min-height:96px;padding:16px 18px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95)">
+          <div style="color:rgba(26,26,30,0.5);font-size:17px">Describe a wallpaper…</div>
+        </div>
+        <div style="position:absolute;left:24px;top:200px;display:flex;align-items:center;gap:8px;height:44px;padding:0 18px;border-radius:999px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95)">
+          <svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="rgba(26,26,30,0.75)"></path></svg>
+          <span style="color:#1a1a1e;font-size:15px;font-weight:590">Surprise me</span>
+        </div>
+        <div style="position:absolute;left:24px;right:24px;bottom:70px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5)">
+          <span style="color:#fff;font-size:17px;font-weight:650">Create</span>
+        </div>
+      </div>
+      <div class="an" style="max-width:393px">The milky fill is a <b>luminance ceiling</b>: over pure black the plate still renders ≈ 55% white, so dark ink holds ≈ 9:1 — the blur brings nothing up from the backdrop, the fill does all the work. This is why white glass can be the only material in the app.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="position:relative;width:393px;height:480px;border-radius:24px;overflow:hidden;background:radial-gradient(100% 80% at 50% 20%,#ffffff 0%,#efece6 70%);font-family:-apple-system,system-ui,sans-serif">
+        <div style="position:absolute;left:14px;top:12px;color:rgba(26,26,30,0.4);font-size:10.5px;font-weight:600;letter-spacing:0.4px">NEAR-WHITE WALLPAPER · WHITE GLASS</div>
+        <div style="position:absolute;left:24px;right:24px;top:60px;border-radius:22px;overflow:hidden;min-height:96px;padding:16px 18px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.9);box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 5px 16px rgba(0,0,0,0.1)">
+          <div style="color:rgba(26,26,30,0.5);font-size:17px">Describe a wallpaper…</div>
+        </div>
+        <div style="position:absolute;left:24px;top:200px;display:flex;align-items:center;gap:8px;height:44px;padding:0 18px;border-radius:999px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.9);box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 5px 16px rgba(0,0,0,0.1)">
+          <svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="rgba(26,26,30,0.75)"></path></svg>
+          <span style="color:#1a1a1e;font-size:15px;font-weight:590">Surprise me</span>
+        </div>
+        <div style="position:absolute;left:24px;right:24px;bottom:70px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.55);box-shadow:inset 0 1px 0 rgba(255,255,255,0.55),0 4px 14px rgba(10,132,255,0.2)">
+          <span style="color:#fff;font-size:17px;font-weight:650">Create</span>
+        </div>
+      </div>
+      <div class="an" style="max-width:393px">Over white the plate risks vanishing — here the <b>drop shadow carries the edge</b> (it appears only when backdrop luminance is high) plus the 0.5 pt hairline. Ink at 100% ≈ 15:1; the tinted Create at 75% keeps white text ≥ 4.5:1. One material, two automatic compensations.</div>
+    </div>
+  </div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "drop the dark theme from the spec entirely" · "white-glass Reduce Transparency variant" · "interactive prototype of the white-glass flow"</p>
+</section>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">White glass — the light material as the app's default (dark from turn 1 becomes the alt)</span></div>
+<div class="dv-opts">
+<div class="dv-opt" id="2a" style="width:100%">
+  <div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Create + Gallery in white glass — milky plates, dark ink, over any wallpaper</div>
+  <div class="hrow">
+
+    <!-- empty light -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#fdfcfa 0%,#efece5 55%,#e2ded4 100%)">
+          <div style="position:absolute;left:0;right:0;top:96px;text-align:center;color:#1a1a1e;font-size:28px;font-weight:700;letter-spacing:0.2px">Create</div>
+          <div style="position:absolute;left:24px;right:24px;top:230px;display:flex;flex-direction:column;gap:14px">
+            <div style="position:relative;overflow:hidden;border-radius:28px;min-height:148px;padding:20px 22px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 20px rgba(0,0,0,0.08)">
+              <div style="color:rgba(26,26,30,0.45);font-size:19px;line-height:1.45">Describe a wallpaper…</div>
+              <div style="position:absolute;left:22px;bottom:16px;width:2px;height:24px;background:#0a84ff;border-radius:1px"></div>
+            </div>
+            <div style="display:flex;justify-content:center">
+              <div style="display:flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 5px 16px rgba(0,0,0,0.08)">
+                <svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="rgba(26,26,30,0.75)"></path><circle cx="13" cy="12.5" r="1.4" fill="rgba(26,26,30,0.5)"></circle></svg>
+                <span style="color:#1a1a1e;font-size:16px;font-weight:590">Surprise me</span>
+              </div>
+            </div>
+          </div>
+          <div style="position:absolute;left:24px;right:24px;bottom:150px">
+            <div style="height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.45);border:0.5px solid rgba(255,255,255,0.65);box-shadow:inset 0 1px 0 rgba(255,255,255,0.8)">
+              <span style="color:rgba(26,26,30,0.35);font-size:18px;font-weight:600">Create</span>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:52px;display:flex;justify-content:center">
+            <div style="display:flex;gap:4px;padding:4px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 20px rgba(0,0,0,0.08)">
+              <div style="padding:10px 24px;border-radius:999px;background:rgba(26,26,30,0.08);color:#1a1a1e;font-size:15px;font-weight:590">Create</div>
+              <div style="padding:10px 24px;border-radius:999px;color:rgba(26,26,30,0.5);font-size:15px;font-weight:590">Gallery</div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Empty — white glass.</b> Same layout as <a class="dv-oid" href="#1a">1a</a>, milky material: fill <span style="font-family:ui-monospace,Menlo,monospace">rgba(255,255,255,.55)</span>, dark ink, bright hairline + soft shadow. Ambient bg is a pale dawn gradient.</div>
+    </div>
+
+    <!-- typed light -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" keyboard="{{ true }}" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#fdfcfa 0%,#efece5 55%,#e2ded4 100%);display:flex;flex-direction:column">
+          <div style="flex:1;position:relative">
+            <div style="position:absolute;left:24px;right:24px;top:120px;display:flex;flex-direction:column;gap:14px">
+              <div style="position:relative;overflow:hidden;border-radius:28px;min-height:148px;padding:20px 22px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 20px rgba(0,0,0,0.08)">
+                <div style="color:#1a1a1e;font-size:19px;line-height:1.45">molten glass poppies at dusk, macro, shallow depth of field<span style="display:inline-block;width:2px;height:22px;background:#0a84ff;vertical-align:-4px;margin-left:1px"></span></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="display:flex;align-items:center;gap:7px;height:38px;padding:0 16px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95)">
+                  <svg width="14" height="14" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="rgba(26,26,30,0.75)"></path></svg>
+                  <span style="color:#1a1a1e;font-size:14px;font-weight:590">Surprise me</span>
+                </div>
+                <div style="height:44px;padding:0 30px;border-radius:999px;display:flex;align-items:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 6px 20px rgba(10,132,255,0.25)">
+                  <span style="color:#fff;font-size:17px;font-weight:650">Create</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Typed.</b> The tinted Create deepens to 75% so white text keeps 4.5:1 over the pale scene. Light keyboard, dark status icons — the whole screen is one bright material family.</div>
+    </div>
+
+    <!-- generating light -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#fdfcfa 0%,#efece5 55%,#e2ded4 100%)">
+          <div style="position:absolute;left:0;right:0;top:74px;text-align:center;color:rgba(26,26,30,0.5);font-size:14px;padding:0 44px;line-height:1.4">molten glass poppies at dusk, macro, shallow depth of field</div>
+          <div style="position:absolute;left:50%;top:150px;transform:translateX(-50%);width:300px;height:540px;border-radius:32px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.18),inset 0 0 0 0.5px rgba(255,255,255,0.6)">
+            <div style="position:absolute;inset:0"><image-slot id="w-gen" shape="rect" placeholder="Drop a wallpaper — shown mid-formation"></image-slot></div>
+            <div style="position:absolute;inset:0;backdrop-filter:blur(26px) saturate(140%);-webkit-backdrop-filter:blur(26px) saturate(140%);background:rgba(255,255,255,0.22);pointer-events:none"></div>
+          </div>
+          <div style="position:absolute;left:50%;bottom:120px;transform:translateX(-50%);width:300px;height:56px;border-radius:999px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 20px rgba(0,0,0,0.1);display:flex;align-items:center">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:32%;background:rgba(10,132,255,0.3)"></div>
+            <span style="position:relative;flex:1;text-align:center;color:#1a1a1e;font-size:15px;font-weight:590">Step 9 of 28</span>
+            <div style="position:relative;width:44px;height:44px;margin-right:6px;border-radius:999px;background:rgba(26,26,30,0.08);display:flex;align-items:center;justify-content:center">
+              <svg width="13" height="13" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="rgba(26,26,30,0.7)" stroke-width="2" stroke-linecap="round"></path></svg>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Generating.</b> The forming image gets a milk veil (<span style="font-family:ui-monospace,Menlo,monospace">rgba(255,255,255,.22)</span> + blur) instead of a dark one — it reads as the picture surfacing through frost. Progress capsule is the same morphed Create object, white glass.</div>
+    </div>
+
+    <!-- complete light -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:#e9e6df">
+          <div style="position:absolute;inset:0"><image-slot id="w-done" shape="rect" placeholder="Drop the finished wallpaper (full-bleed)"></image-slot></div>
+          <div style="position:absolute;left:24px;right:24px;bottom:150px;display:flex;gap:10px;align-items:center;pointer-events:none">
+            <div style="flex:1;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 8px 24px rgba(0,0,0,0.18)">
+              <span style="color:#fff;font-size:17px;font-weight:650">Save for Wallpaper</span>
+            </div>
+            <div style="width:56px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 5px 16px rgba(0,0,0,0.12)">
+              <svg width="20" height="22" viewBox="0 0 20 22"><path d="M10 1v12M6 5l4-4 4 4" stroke="rgba(26,26,30,0.8)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3 10v8a2 2 0 002 2h10a2 2 0 002-2v-8" stroke="rgba(26,26,30,0.8)" stroke-width="1.8" fill="none" stroke-linecap="round"></path></svg>
+            </div>
+            <div style="width:56px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 5px 16px rgba(0,0,0,0.12)">
+              <svg width="20" height="20" viewBox="0 0 20 20"><path d="M17 10a7 7 0 11-2-4.9" stroke="rgba(26,26,30,0.8)" stroke-width="1.8" fill="none" stroke-linecap="round"></path><path d="M15 1v4.5h-4.5" stroke="rgba(26,26,30,0.8)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:104px;display:flex;justify-content:center;pointer-events:none">
+            <div style="padding:6px 14px;border-radius:999px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.8);color:rgba(26,26,30,0.65);font-size:12.5px">Saved to your iCloud folder</div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Complete.</b> White glass over the image itself — the milky fill guarantees the dark ink reads on any wallpaper, black ones included (the fill is a luminance ceiling, not a tint of the backdrop). The caption gets its own tiny plate instead of a text-shadow.</div>
+    </div>
+
+    <!-- detail light -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:#e9e6df">
+          <div style="position:absolute;inset:0"><image-slot id="w-det" shape="rect" placeholder="Drop a wallpaper (single-image view)"></image-slot></div>
+          <div style="position:absolute;top:70px;left:16px;width:44px;height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 4px 12px rgba(0,0,0,0.12)">
+            <svg width="11" height="18" viewBox="0 0 12 20"><path d="M10 2L2 10l8 8" stroke="rgba(26,26,30,0.8)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </div>
+          <div style="position:absolute;left:20px;right:20px;bottom:214px;pointer-events:none">
+            <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:22px;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 6px 18px rgba(0,0,0,0.12)">
+              <div style="flex:1;color:rgba(26,26,30,0.85);font-size:14px;line-height:1.4">"molten glass poppies at dusk, macro, shallow depth of field"</div>
+              <div style="flex:none;padding:8px 14px;border-radius:999px;background:rgba(26,26,30,0.08);border:0.5px solid rgba(26,26,30,0.06);color:#1a1a1e;font-size:13px;font-weight:590">Use again</div>
+            </div>
+          </div>
+          <div style="position:absolute;left:20px;right:20px;bottom:146px;display:flex;gap:10px;pointer-events:none">
+            <div style="flex:1;height:52px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 6px 18px rgba(0,0,0,0.15)">
+              <span style="color:#fff;font-size:16px;font-weight:640">Save for Wallpaper</span>
+            </div>
+            <div style="width:52px;height:52px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95)">
+              <svg width="18" height="20" viewBox="0 0 20 22"><path d="M10 1v12M6 5l4-4 4 4" stroke="rgba(26,26,30,0.8)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3 10v8a2 2 0 002 2h10a2 2 0 002-2v-8" stroke="rgba(26,26,30,0.8)" stroke-width="1.8" fill="none" stroke-linecap="round"></path></svg>
+            </div>
+            <div style="width:52px;height:52px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.85);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95)">
+              <svg width="17" height="19" viewBox="0 0 18 20"><path d="M2 5h14M7 5V3h4v2M4 5l1 13h8l1-13M7.5 8.5v6M10.5 8.5v6" stroke="rgba(200,54,54,0.9)" stroke-width="1.7" fill="none" stroke-linecap="round"></path></svg>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Single image.</b> Same anatomy as <a class="dv-oid" href="#1c">1c</a>; destructive red darkens to <span style="font-family:ui-monospace,Menlo,monospace">#C83636</span> on the bright plate for contrast.</div>
+    </div>
+
+    <!-- handoff light -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:#e9e6df">
+          <div style="position:absolute;inset:0"><image-slot id="w-hand" shape="rect" placeholder="Drop a wallpaper (behind the sheet)"></image-slot></div>
+          <div style="position:absolute;inset:0;background:rgba(255,255,255,0.12);pointer-events:none"></div>
+          <div style="position:absolute;left:10px;right:10px;bottom:14px;border-radius:38px;overflow:hidden;padding:26px 24px 30px;backdrop-filter:blur(30px) saturate(160%);-webkit-backdrop-filter:blur(30px) saturate(160%);background:rgba(255,255,255,0.62);border:0.5px solid rgba(255,255,255,0.9);box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 -12px 40px rgba(0,0,0,0.15);pointer-events:none">
+            <div style="width:36px;height:5px;border-radius:3px;background:rgba(26,26,30,0.2);margin:0 auto 20px"></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+              <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#1f9d47" stroke-width="1.8"></circle><path d="M6.5 11.5l3 3 6-6.5" stroke="#1f9d47" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <div style="color:#1a1a1e;font-size:20px;font-weight:650">Saved to Photos</div>
+            </div>
+            <div style="color:rgba(26,26,30,0.6);font-size:15px;line-height:1.5;margin-bottom:18px">iPhone doesn't let apps change the wallpaper — that last step is yours, and it takes about ten seconds:</div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:22px">
+              <div style="display:flex;gap:12px;align-items:baseline"><span style="flex:none;width:22px;height:22px;border-radius:999px;background:rgba(26,26,30,0.08);color:#1a1a1e;font-size:12.5px;font-weight:650;display:flex;align-items:center;justify-content:center">1</span><span style="color:rgba(26,26,30,0.85);font-size:15px">Open <b>Settings → Wallpaper</b></span></div>
+              <div style="display:flex;gap:12px;align-items:baseline"><span style="flex:none;width:22px;height:22px;border-radius:999px;background:rgba(26,26,30,0.08);color:#1a1a1e;font-size:12.5px;font-weight:650;display:flex;align-items:center;justify-content:center">2</span><span style="color:rgba(26,26,30,0.85);font-size:15px">Tap <b>Add New Wallpaper → Photos</b></span></div>
+              <div style="display:flex;gap:12px;align-items:baseline"><span style="flex:none;width:22px;height:22px;border-radius:999px;background:rgba(26,26,30,0.08);color:#1a1a1e;font-size:12.5px;font-weight:650;display:flex;align-items:center;justify-content:center">3</span><span style="color:rgba(26,26,30,0.85);font-size:15px">It's the most recent picture — tap it</span></div>
+            </div>
+            <div style="height:52px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5)">
+              <span style="color:#fff;font-size:16px;font-weight:640">Open Settings</span>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Handoff sheet.</b> The bright sheet lifts the scene with a white scrim (12%) rather than dimming it. Success green darkens to <span style="font-family:ui-monospace,Menlo,monospace">#1F9D47</span> for contrast on the milky plate.</div>
+    </div>
+  </div>
+</div>
+</div>
+<p class="dv-next">Try next: "white glass everywhere — redo iPad + Mac to match <a class="dv-oid" href="#2a">2a</a>" · "keep both: white in light mode, <a class="dv-oid" href="#1a">1a</a> dark in dark mode" · "white-glass legibility proof like <a class="dv-oid" href="#1g">1g</a>"</p>
+</section>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">All deliverables — iPhone flow, morph, gallery, iPad, Mac, tokens, proofs</span></div>
+<div class="dv-opts">
+
+<!-- ═══════════ 1a CREATE STATES ═══════════ -->
+<div class="dv-opt" id="1a" style="width:100%">
+  <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Create — every state (iPhone)</div>
+  <div class="hrow">
+
+    <!-- empty -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#2b3044 0%,#171a26 55%,#0d0f16 100%)">
+          <div style="position:absolute;left:0;right:0;top:96px;text-align:center;color:rgba(255,255,255,0.92);font-size:28px;font-weight:700;letter-spacing:0.2px">Create</div>
+          <div style="position:absolute;left:24px;right:24px;top:230px;display:flex;flex-direction:column;gap:14px">
+            <div style="position:relative;overflow:hidden;border-radius:28px;min-height:148px;padding:20px 22px;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.38);border:0.5px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 8px 24px rgba(0,0,0,0.3)">
+              <div style="color:rgba(255,255,255,0.45);font-size:19px;line-height:1.45">Describe a wallpaper…</div>
+              <div style="position:absolute;left:22px;bottom:16px;width:2px;height:24px;background:#0a84ff;border-radius:1px"></div>
+            </div>
+            <div style="display:flex;justify-content:center">
+              <div style="display:flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:999px;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.38);border:0.5px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 6px 18px rgba(0,0,0,0.28)">
+                <svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="rgba(255,255,255,0.85)"></path><circle cx="13" cy="12.5" r="1.4" fill="rgba(255,255,255,0.6)"></circle></svg>
+                <span style="color:rgba(255,255,255,0.9);font-size:16px;font-weight:590">Surprise me</span>
+              </div>
+            </div>
+          </div>
+          <div style="position:absolute;left:24px;right:24px;bottom:150px">
+            <div style="height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.32);border:0.5px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.14)">
+              <span style="color:rgba(255,255,255,0.35);font-size:18px;font-weight:600">Create</span>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:52px;display:flex;justify-content:center">
+            <div style="display:flex;gap:4px;padding:4px;border-radius:999px;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.38);border:0.5px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 8px 24px rgba(0,0,0,0.3)">
+              <div style="padding:10px 24px;border-radius:999px;background:rgba(255,255,255,0.16);color:#fff;font-size:15px;font-weight:590">Create</div>
+              <div style="padding:10px 24px;border-radius:999px;color:rgba(255,255,255,0.6);font-size:15px;font-weight:590">Gallery</div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Empty.</b> Ambient background dims + blurs the most recent wallpaper; first launch uses this built-in dusk gradient. Create is disabled glass (35% label) until there's a prompt. The two-screen nav is one glass capsule — a <b>GlassEffectContainer</b> so the segments morph as one object.</div>
+    </div>
+
+    <!-- typed -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" keyboard="{{ true }}" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#2b3044 0%,#171a26 55%,#0d0f16 100%);display:flex;flex-direction:column">
+          <div style="flex:1;position:relative">
+            <div style="position:absolute;left:24px;right:24px;top:120px;display:flex;flex-direction:column;gap:14px">
+              <div style="position:relative;overflow:hidden;border-radius:28px;min-height:148px;padding:20px 22px;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.38);border:0.5px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 8px 24px rgba(0,0,0,0.3)">
+                <div style="color:rgba(255,255,255,0.94);font-size:19px;line-height:1.45">molten glass poppies at dusk, macro, shallow depth of field<span style="display:inline-block;width:2px;height:22px;background:#0a84ff;vertical-align:-4px;margin-left:1px"></span></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="display:flex;align-items:center;gap:7px;height:38px;padding:0 16px;border-radius:999px;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.38);border:0.5px solid rgba(255,255,255,0.18)">
+                  <svg width="14" height="14" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="rgba(255,255,255,0.85)"></path></svg>
+                  <span style="color:rgba(255,255,255,0.85);font-size:14px;font-weight:590">Surprise me</span>
+                </div>
+                <div style="height:44px;padding:0 30px;border-radius:999px;display:flex;align-items:center;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(10,132,255,0.66);border:0.5px solid rgba(255,255,255,0.32);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4),0 6px 20px rgba(10,132,255,0.35)">
+                  <span style="color:#fff;font-size:17px;font-weight:650">Create</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Prompt typed</b> (here: what a Surprise-me fill looks like — concrete subject, light, lens). Create tints blue and rises next to the field while the keyboard is up, so the primary act never hides behind it. Tapping Surprise me again re-rolls the text in place.</div>
+    </div>
+
+    <!-- generating -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:#0d0f16">
+          <div style="position:absolute;left:0;right:0;top:74px;text-align:center;color:rgba(255,255,255,0.55);font-size:14px;padding:0 44px;line-height:1.4">molten glass poppies at dusk, macro, shallow depth of field</div>
+          <div style="position:absolute;left:50%;top:150px;transform:translateX(-50%);width:300px;height:540px;border-radius:32px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55),inset 0 0 0 0.5px rgba(255,255,255,0.2)">
+            <div style="position:absolute;inset:0"><image-slot id="cr-gen" shape="rect" placeholder="Drop a wallpaper — shown mid-formation"></image-slot></div>
+            <div style="position:absolute;inset:0;backdrop-filter:blur(26px) saturate(140%);-webkit-backdrop-filter:blur(26px) saturate(140%);background:rgba(13,15,22,0.18);pointer-events:none"></div>
+          </div>
+          <div style="position:absolute;left:50%;bottom:120px;transform:translateX(-50%);width:300px;height:56px;border-radius:999px;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.38);border:0.5px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 8px 24px rgba(0,0,0,0.3);display:flex;align-items:center">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:32%;background:rgba(10,132,255,0.45)"></div>
+            <span style="position:relative;flex:1;text-align:center;color:rgba(255,255,255,0.92);font-size:15px;font-weight:590">Step 9 of 28</span>
+            <div style="position:relative;width:44px;height:44px;margin-right:6px;border-radius:999px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center">
+              <svg width="13" height="13" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round"></path></svg>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Generating.</b> The picture forms in the open — intermediate latents decoded every 2–3 steps, sharpening as the blur veil (26 → 0 pt) lifts. The capsule is the <b>Create button morphed</b> (same glassEffectID): its fill is the real step fraction, never simulated, with cancel living inside the same object. No spinner exists in this app.</div>
+    </div>
+
+    <!-- complete -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:#0d0f16">
+          <div style="position:absolute;inset:0"><image-slot id="cr-done" shape="rect" placeholder="Drop the finished wallpaper (full-bleed)"></image-slot></div>
+          <div style="position:absolute;left:24px;right:24px;bottom:150px;display:flex;gap:10px;align-items:center;pointer-events:none">
+            <div style="flex:1;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(10,132,255,0.66);border:0.5px solid rgba(255,255,255,0.32);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4),0 8px 24px rgba(0,0,0,0.35)">
+              <span style="color:#fff;font-size:17px;font-weight:650">Save for Wallpaper</span>
+            </div>
+            <div style="width:56px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.38);border:0.5px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22)">
+              <svg width="20" height="22" viewBox="0 0 20 22"><path d="M10 1v12M6 5l4-4 4 4" stroke="rgba(255,255,255,0.9)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3 10v8a2 2 0 002 2h10a2 2 0 002-2v-8" stroke="rgba(255,255,255,0.9)" stroke-width="1.8" fill="none" stroke-linecap="round"></path></svg>
+            </div>
+            <div style="width:56px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.38);border:0.5px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22)">
+              <svg width="20" height="20" viewBox="0 0 20 20"><path d="M17 10a7 7 0 11-2-4.9" stroke="rgba(255,255,255,0.9)" stroke-width="1.8" fill="none" stroke-linecap="round"></path><path d="M15 1v4.5h-4.5" stroke="rgba(255,255,255,0.9)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:96px;text-align:center;color:rgba(255,255,255,0.7);font-size:12.5px;text-shadow:0 1px 8px rgba(0,0,0,0.6);pointer-events:none">Saved to your iCloud folder</div>
+        </div>
+      </x-import>
+      <div class="an"><b>Complete.</b> The image is the screen; three floating controls, nothing opaque. It's already saved (quiet caption, no dialog) — the primary act is <i>Save for Wallpaper</i>, honestly named because iOS won't let apps set it (<a class="dv-oid" href="#1c">1c</a> shows the handoff). Regenerate re-runs the same prompt with a new seed.</div>
+    </div>
+
+    <!-- failed -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#2b3044 0%,#171a26 55%,#0d0f16 100%)">
+          <div style="position:absolute;left:36px;right:36px;top:290px;border-radius:32px;overflow:hidden;padding:28px 26px;backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);background:rgba(44,46,58,0.44);border:0.5px solid rgba(255,255,255,0.2);box-shadow:inset 0 1px 0 rgba(255,255,255,0.24),0 16px 40px rgba(0,0,0,0.4);display:flex;flex-direction:column;gap:10px">
+            <div style="color:#fff;font-size:21px;font-weight:650">That one didn't come together</div>
+            <div style="color:rgba(255,255,255,0.65);font-size:15px;line-height:1.45">The model ran out of memory near the end. Nothing was lost — your prompt is still here.</div>
+            <div style="display:flex;gap:10px;margin-top:10px">
+              <div style="flex:1;height:48px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(10,132,255,0.66);border:0.5px solid rgba(255,255,255,0.32);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4)">
+                <span style="color:#fff;font-size:16px;font-weight:620">Try again</span>
+              </div>
+              <div style="flex:1;height:48px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.12);border:0.5px solid rgba(255,255,255,0.18)">
+                <span style="color:rgba(255,255,255,0.9);font-size:16px;font-weight:590">Edit prompt</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Failed.</b> The progress capsule morphs into this card (same glass object — no alert box). Plain reason, no error code, and the promise that matters: the prompt survives. Two exits, both forward.</div>
+    </div>
+
+    <!-- cancelled -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:radial-gradient(120% 90% at 50% 0%,#2b3044 0%,#171a26 55%,#0d0f16 100%)">
+          <div style="position:absolute;left:24px;right:24px;top:230px;display:flex;flex-direction:column;gap:14px">
+            <div style="position:relative;overflow:hidden;border-radius:28px;min-height:148px;padding:20px 22px;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.38);border:0.5px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 8px 24px rgba(0,0,0,0.3)">
+              <div style="color:rgba(255,255,255,0.94);font-size:19px;line-height:1.45">molten glass poppies at dusk, macro, shallow depth of field</div>
+            </div>
+          </div>
+          <div style="position:absolute;left:24px;right:24px;bottom:150px">
+            <div style="height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(10,132,255,0.66);border:0.5px solid rgba(255,255,255,0.32);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4)">
+              <span style="color:#fff;font-size:18px;font-weight:650">Create</span>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:226px;display:flex;justify-content:center">
+            <div style="padding:11px 20px;border-radius:999px;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.5);border:0.5px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 8px 24px rgba(0,0,0,0.35);color:rgba(255,255,255,0.85);font-size:14px;font-weight:520">Stopped — your prompt is kept</div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Cancelled.</b> The progress capsule shrinks back into the Create button (the morph in reverse) and the half-formed image dissolves. A toast confirms and fades after 2 s. Cancel is instant and free — no confirmation dialog for an act that costs nothing.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 1b MORPH SPEC ═══════════ -->
+<div class="dv-opt" id="1b" style="width:100%">
+  <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>The morph — Create button → progress → result, one glass object</div>
+  <div style="background:#101218;border-radius:16px;padding:36px 40px;display:flex;gap:0;align-items:center;overflow-x:auto">
+    <div style="display:flex;flex-direction:column;gap:14px;align-items:center;flex:none">
+      <div style="height:400px;display:flex;align-items:center">
+        <div style="width:200px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(10,132,255,0.66);border:0.5px solid rgba(255,255,255,0.32);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4)">
+          <span style="color:#fff;font:650 17px -apple-system,system-ui">Create</span>
+        </div>
+      </div>
+      <div style="font:11px/1.5 system-ui;color:rgba(255,255,255,0.55);width:200px;text-align:center"><b style="color:#fff">t = 0</b> · Create button<br>capsule, tinted glass<br>glassEffectID: "job"</div>
+    </div>
+    <svg width="56" height="20" viewBox="0 0 56 20" style="flex:none;margin:0 8px 90px"><path d="M2 10h46M42 4l7 6-7 6" stroke="rgba(255,255,255,0.4)" stroke-width="1.6" fill="none" stroke-linecap="round"></path></svg>
+    <div style="display:flex;flex-direction:column;gap:14px;align-items:center;flex:none">
+      <div style="height:400px;display:flex;align-items:center">
+        <div style="position:relative;width:260px;height:56px;border-radius:999px;overflow:hidden;background:rgba(44,46,58,0.55);border:0.5px solid rgba(255,255,255,0.2);box-shadow:inset 0 1px 0 rgba(255,255,255,0.24);display:flex;align-items:center">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:14%;background:rgba(10,132,255,0.45)"></div>
+          <span style="position:relative;flex:1;text-align:center;color:rgba(255,255,255,0.92);font:590 14px -apple-system,system-ui">Step 4 of 28</span>
+          <div style="position:relative;width:40px;height:40px;margin-right:8px;border-radius:999px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round"></path></svg></div>
+        </div>
+      </div>
+      <div style="font:11px/1.5 system-ui;color:rgba(255,255,255,0.55);width:220px;text-align:center"><b style="color:#fff">0 → 0.45 s</b> · spring(0.8, 0.85)<br>capsule widens, tint drains to neutral,<br>fill = real step fraction · cancel appears inside</div>
+    </div>
+    <svg width="56" height="20" viewBox="0 0 56 20" style="flex:none;margin:0 8px 90px"><path d="M2 10h46M42 4l7 6-7 6" stroke="rgba(255,255,255,0.4)" stroke-width="1.6" fill="none" stroke-linecap="round"></path></svg>
+    <div style="display:flex;flex-direction:column;gap:14px;align-items:center;flex:none">
+      <div style="height:400px;display:flex;align-items:center">
+        <div style="position:relative;width:180px;height:320px;border-radius:28px;overflow:hidden;border:0.5px solid rgba(255,255,255,0.25);box-shadow:0 16px 40px rgba(0,0,0,0.5)">
+          <div style="position:absolute;inset:0;background:linear-gradient(160deg,#5a3b52 0%,#8a4a3a 40%,#2c2440 100%)"></div>
+          <div style="position:absolute;inset:0;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);background:rgba(13,15,22,0.15)"></div>
+          <div style="position:absolute;left:12px;right:12px;bottom:12px;height:34px;border-radius:999px;background:rgba(20,22,30,0.55);border:0.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center"><span style="color:rgba(255,255,255,0.9);font:590 12px -apple-system,system-ui">Step 17 of 28</span></div>
+        </div>
+      </div>
+      <div style="font:11px/1.5 system-ui;color:rgba(255,255,255,0.55);width:210px;text-align:center"><b style="color:#fff">~ step 5+</b> · the capsule <b style="color:#fff">grows into the picture frame</b> (same glassEffectID) as the first latent decodes; blur veil eases 26 → 0 pt with each preview</div>
+    </div>
+    <svg width="56" height="20" viewBox="0 0 56 20" style="flex:none;margin:0 8px 90px"><path d="M2 10h46M42 4l7 6-7 6" stroke="rgba(255,255,255,0.4)" stroke-width="1.6" fill="none" stroke-linecap="round"></path></svg>
+    <div style="display:flex;flex-direction:column;gap:14px;align-items:center;flex:none">
+      <div style="height:400px;display:flex;align-items:center">
+        <div style="position:relative;width:200px;height:400px;border-radius:20px;overflow:hidden;border:0.5px solid rgba(255,255,255,0.25);box-shadow:0 20px 50px rgba(0,0,0,0.55)">
+          <div style="position:absolute;inset:0;background:linear-gradient(160deg,#7a4b6a 0%,#c46a4a 45%,#33284e 100%)"></div>
+          <div style="position:absolute;left:10px;right:10px;bottom:10px;height:34px;border-radius:999px;background:rgba(10,132,255,0.66);border:0.5px solid rgba(255,255,255,0.32);display:flex;align-items:center;justify-content:center"><span style="color:#fff;font:620 12px -apple-system,system-ui">Save for Wallpaper</span></div>
+        </div>
+      </div>
+      <div style="font:11px/1.5 system-ui;color:rgba(255,255,255,0.55);width:210px;text-align:center"><b style="color:#fff">final step</b> · frame expands to full-bleed (0.5 s spring); the progress capsule <b style="color:#fff">morphs once more</b> into <i>Save for Wallpaper</i>. One object, four states, zero screens.</div>
+    </div>
+  </div>
+  <div class="an" style="max-width:900px"><b>Spec.</b> One glassEffectID ("job") in one GlassEffectContainer carries button → progress → frame → primary action; nothing fades in from nowhere. Springs: response 0.8, damping 0.85. Cancel reverses the path. <b>Reduce Motion:</b> geometry morphs are replaced by 0.2 s opacity crossfades at the same positions; the blur-veil lift (a content change, not motion) is kept. Failure: the capsule stops widening, drains its tint, and morphs into the card in <a class="dv-oid" href="#1a">1a</a>.</div>
+</div>
+
+<!-- ═══════════ 1c GALLERY ═══════════ -->
+<div class="dv-opt" id="1c" style="width:100%">
+  <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Gallery — empty, grid, single image, the honest handoff</div>
+  <div class="hrow">
+
+    <!-- empty -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:linear-gradient(180deg,#f4f2ee 0%,#e9e6df 100%)">
+          <div style="position:absolute;left:0;right:0;top:96px;text-align:center;color:#1a1a1e;font-size:28px;font-weight:700">Gallery</div>
+          <div style="position:absolute;left:44px;right:44px;top:300px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
+            <div style="width:88px;height:156px;border-radius:20px;background:rgba(255,255,255,0.5);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 8px 24px rgba(0,0,0,0.08);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%)"></div>
+            <div style="color:#1a1a1e;font-size:20px;font-weight:650;margin-top:8px">Nothing here yet</div>
+            <div style="color:rgba(26,26,30,0.55);font-size:15px;line-height:1.5">Wallpapers you make will gather here —<br>created on this phone, kept in your iCloud.</div>
+            <div style="display:flex;align-items:center;gap:8px;height:48px;padding:0 22px;margin-top:6px;border-radius:999px;background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 8px 20px rgba(10,132,255,0.25)">
+              <svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="#fff"></path></svg>
+              <span style="color:#fff;font-size:16px;font-weight:620">Surprise me</span>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:52px;display:flex;justify-content:center">
+            <div style="display:flex;gap:4px;padding:4px;border-radius:999px;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(255,255,255,0.5);border:0.5px solid rgba(255,255,255,0.7);box-shadow:inset 0 1px 0 rgba(255,255,255,0.85),0 8px 24px rgba(0,0,0,0.1)">
+              <div style="padding:10px 24px;border-radius:999px;color:rgba(26,26,30,0.55);font-size:15px;font-weight:590">Create</div>
+              <div style="padding:10px 24px;border-radius:999px;background:rgba(0,0,0,0.08);color:#1a1a1e;font-size:15px;font-weight:590">Gallery</div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Empty state — it teaches.</b> Light mode shown. The Surprise-me invitation lives here too: it jumps to Create with a prompt already filled, so the first-run path is two taps to a first wallpaper. The ghost tile hints at what will grow here. No "0 items", no cloud-sync jargon.</div>
+    </div>
+
+    <!-- grid -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:linear-gradient(180deg,#f4f2ee 0%,#e9e6df 100%)">
+          <div style="position:absolute;left:24px;top:84px">
+            <div style="color:#1a1a1e;font-size:28px;font-weight:700">Gallery</div>
+            <div style="color:rgba(26,26,30,0.45);font-size:13px;margin-top:2px">12 wallpapers · in your iCloud folder</div>
+          </div>
+          <div style="position:absolute;left:16px;right:16px;top:170px;bottom:0;overflow:hidden">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div style="aspect-ratio:9/19.5;border-radius:22px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.12)"><image-slot id="g1" shape="rect" placeholder="Wallpaper 1"></image-slot></div>
+              <div style="aspect-ratio:9/19.5;border-radius:22px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.12)"><image-slot id="g2" shape="rect" placeholder="Wallpaper 2"></image-slot></div>
+              <div style="aspect-ratio:9/19.5;border-radius:22px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.12)"><image-slot id="g3" shape="rect" placeholder="Wallpaper 3"></image-slot></div>
+              <div style="aspect-ratio:9/19.5;border-radius:22px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.12)"><image-slot id="g4" shape="rect" placeholder="Wallpaper 4"></image-slot></div>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:52px;display:flex;justify-content:center">
+            <div style="display:flex;gap:4px;padding:4px;border-radius:999px;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(255,255,255,0.5);border:0.5px solid rgba(255,255,255,0.7);box-shadow:inset 0 1px 0 rgba(255,255,255,0.85),0 8px 24px rgba(0,0,0,0.1)">
+              <div style="padding:10px 24px;border-radius:999px;color:rgba(26,26,30,0.55);font-size:15px;font-weight:590">Create</div>
+              <div style="padding:10px 24px;border-radius:999px;background:rgba(0,0,0,0.08);color:#1a1a1e;font-size:15px;font-weight:590">Gallery</div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Grid.</b> Two columns of phone-aspect tiles, r22 — the tile is a truthful miniature of the lock screen. One quiet count line is the only metadata; prompts appear on the single-image view, not as grid clutter. Newest first. The glass tab capsule floats over the scroll.</div>
+    </div>
+
+    <!-- detail -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:#0d0f16">
+          <div style="position:absolute;inset:0"><image-slot id="det" shape="rect" placeholder="Drop a wallpaper (single-image view)"></image-slot></div>
+          <div style="position:absolute;top:70px;left:16px;width:44px;height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.38);border:0.5px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22)">
+            <svg width="11" height="18" viewBox="0 0 12 20"><path d="M10 2L2 10l8 8" stroke="rgba(255,255,255,0.9)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </div>
+          <div style="position:absolute;left:20px;right:20px;bottom:214px;pointer-events:none">
+            <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:22px;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(20,22,30,0.42);border:0.5px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.2)">
+              <div style="flex:1;color:rgba(255,255,255,0.88);font-size:14px;line-height:1.4">"molten glass poppies at dusk, macro, shallow depth of field"</div>
+              <div style="flex:none;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,0.14);border:0.5px solid rgba(255,255,255,0.2);color:#fff;font-size:13px;font-weight:590">Use again</div>
+            </div>
+          </div>
+          <div style="position:absolute;left:20px;right:20px;bottom:146px;display:flex;gap:10px;pointer-events:none">
+            <div style="flex:1;height:52px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(10,132,255,0.66);border:0.5px solid rgba(255,255,255,0.32);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4)">
+              <span style="color:#fff;font-size:16px;font-weight:640">Save for Wallpaper</span>
+            </div>
+            <div style="width:52px;height:52px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.38);border:0.5px solid rgba(255,255,255,0.18)">
+              <svg width="18" height="20" viewBox="0 0 20 22"><path d="M10 1v12M6 5l4-4 4 4" stroke="rgba(255,255,255,0.9)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3 10v8a2 2 0 002 2h10a2 2 0 002-2v-8" stroke="rgba(255,255,255,0.9)" stroke-width="1.8" fill="none" stroke-linecap="round"></path></svg>
+            </div>
+            <div style="width:52px;height:52px;border-radius:999px;display:flex;align-items:center;justify-content:center;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.38);border:0.5px solid rgba(255,255,255,0.18)">
+              <svg width="17" height="19" viewBox="0 0 18 20"><path d="M2 5h14M7 5V3h4v2M4 5l1 13h8l1-13M7.5 8.5v6M10.5 8.5v6" stroke="rgba(255,120,120,0.95)" stroke-width="1.7" fill="none" stroke-linecap="round"></path></svg>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>Single image.</b> The stored prompt is a first-class object — visible, quoted, reusable. <i>Use again</i> opens Create pre-filled; the regenerate loop is how people actually explore. Delete is just an icon-distance away but red and never primary. Actions float; the picture stays whole.</div>
+    </div>
+
+    <!-- handoff -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:#0d0f16">
+          <div style="position:absolute;inset:0"><image-slot id="hand" shape="rect" placeholder="Drop a wallpaper (behind the sheet)"></image-slot></div>
+          <div style="position:absolute;inset:0;background:rgba(0,0,0,0.25);pointer-events:none"></div>
+          <div style="position:absolute;left:10px;right:10px;bottom:14px;border-radius:38px;overflow:hidden;padding:26px 24px 30px;backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);background:rgba(30,32,42,0.55);border:0.5px solid rgba(255,255,255,0.22);box-shadow:inset 0 1px 0 rgba(255,255,255,0.26),0 -12px 40px rgba(0,0,0,0.4);pointer-events:none">
+            <div style="width:36px;height:5px;border-radius:3px;background:rgba(255,255,255,0.3);margin:0 auto 20px"></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+              <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#4cd964" stroke-width="1.8"></circle><path d="M6.5 11.5l3 3 6-6.5" stroke="#4cd964" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <div style="color:#fff;font-size:20px;font-weight:650">Saved to Photos</div>
+            </div>
+            <div style="color:rgba(255,255,255,0.65);font-size:15px;line-height:1.5;margin-bottom:18px">iPhone doesn't let apps change the wallpaper — that last step is yours, and it takes about ten seconds:</div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:22px">
+              <div style="display:flex;gap:12px;align-items:baseline"><span style="flex:none;width:22px;height:22px;border-radius:999px;background:rgba(255,255,255,0.14);color:#fff;font-size:12.5px;font-weight:650;display:flex;align-items:center;justify-content:center">1</span><span style="color:rgba(255,255,255,0.88);font-size:15px">Open <b>Settings → Wallpaper</b></span></div>
+              <div style="display:flex;gap:12px;align-items:baseline"><span style="flex:none;width:22px;height:22px;border-radius:999px;background:rgba(255,255,255,0.14);color:#fff;font-size:12.5px;font-weight:650;display:flex;align-items:center;justify-content:center">2</span><span style="color:rgba(255,255,255,0.88);font-size:15px">Tap <b>Add New Wallpaper → Photos</b></span></div>
+              <div style="display:flex;gap:12px;align-items:baseline"><span style="flex:none;width:22px;height:22px;border-radius:999px;background:rgba(255,255,255,0.14);color:#fff;font-size:12.5px;font-weight:650;display:flex;align-items:center;justify-content:center">3</span><span style="color:rgba(255,255,255,0.88);font-size:15px">It's the most recent picture — tap it</span></div>
+            </div>
+            <div style="height:52px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(10,132,255,0.66);border:0.5px solid rgba(255,255,255,0.32);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4)">
+              <span style="color:#fff;font-size:16px;font-weight:640">Open Settings</span>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <div class="an"><b>The honest handoff.</b> The one place the platforms diverge, designed without pretending. The sheet says plainly why the app stops here, gives three concrete steps, and deep-links as close as iOS allows. No "wallpaper set! 🎉" lie — the brief's first 1-star review, avoided.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 1d iPAD ═══════════ -->
+<div class="dv-opt" id="1d">
+  <div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>iPad — landscape gallery + inline create</div>
+  <div style="width:1194px;background:#111;border-radius:44px;padding:20px;box-shadow:0 40px 80px rgba(0,0,0,0.2),0 0 0 1px rgba(0,0,0,0.3)">
+    <div style="position:relative;width:100%;height:794px;border-radius:26px;overflow:hidden;background:linear-gradient(180deg,#f4f2ee 0%,#e9e6df 100%);font-family:-apple-system,system-ui,sans-serif">
+      <div style="position:absolute;left:36px;top:34px">
+        <div style="color:#1a1a1e;font-size:32px;font-weight:700">Gallery</div>
+        <div style="color:rgba(26,26,30,0.45);font-size:14px;margin-top:2px">12 wallpapers · in your iCloud folder</div>
+      </div>
+      <div style="position:absolute;right:32px;top:36px;display:flex;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px;width:420px;height:50px;padding:0 20px;border-radius:999px;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.75);box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 6px 18px rgba(0,0,0,0.08)">
+          <span style="color:rgba(26,26,30,0.4);font-size:16px">Describe a wallpaper…</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;height:50px;padding:0 18px;border-radius:999px;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(255,255,255,0.55);border:0.5px solid rgba(255,255,255,0.75);box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 6px 18px rgba(0,0,0,0.08)">
+          <svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="rgba(26,26,30,0.7)"></path></svg>
+          <span style="color:rgba(26,26,30,0.8);font-size:15px;font-weight:590">Surprise me</span>
+        </div>
+        <div style="height:50px;padding:0 26px;border-radius:999px;display:flex;align-items:center;background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 6px 18px rgba(10,132,255,0.25)">
+          <span style="color:#fff;font-size:16px;font-weight:640">Create</span>
+        </div>
+      </div>
+      <div style="position:absolute;left:32px;right:32px;top:120px;bottom:24px;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:214px;gap:16px;overflow:hidden">
+        <div style="border-radius:20px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.1);grid-column:span 2;grid-row:span 2"><image-slot id="pad1" shape="rect" placeholder="iPad wallpaper (4:3)"></image-slot></div>
+        <div style="border-radius:20px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.1)"><image-slot id="pad2" shape="rect" placeholder="Wallpaper"></image-slot></div>
+        <div style="border-radius:20px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.1)"><image-slot id="pad3" shape="rect" placeholder="Wallpaper"></image-slot></div>
+        <div style="border-radius:20px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.1)"><image-slot id="pad4" shape="rect" placeholder="Wallpaper"></image-slot></div>
+        <div style="border-radius:20px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.1)"><image-slot id="pad5" shape="rect" placeholder="Wallpaper"></image-slot></div>
+      </div>
+      <div style="position:absolute;right:44px;bottom:40px;display:flex;align-items:center;gap:9px;padding:10px 16px;border-radius:999px;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(255,255,255,0.6);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 8px 24px rgba(0,0,0,0.12)">
+        <span style="color:rgba(26,26,30,0.55);font-size:13.5px;font-weight:520">Aspect</span>
+        <span style="padding:5px 12px;border-radius:999px;background:rgba(0,0,0,0.08);color:#1a1a1e;font-size:13.5px;font-weight:600">iPad 4:3</span>
+        <span style="padding:5px 12px;border-radius:999px;color:rgba(26,26,30,0.5);font-size:13.5px;font-weight:520">Phone</span>
+        <span style="padding:5px 12px;border-radius:999px;color:rgba(26,26,30,0.5);font-size:13.5px;font-weight:520">Wide</span>
+      </div>
+    </div>
+  </div>
+  <div class="an" style="max-width:1100px"><b>iPad is where the two screens merge:</b> with room to spare, Create collapses into a toolbar over the gallery — type, tap Create, and the newest tile forms in place in the grid (same emerging-image treatment as <a class="dv-oid" href="#1a">1a</a>). The featured 2×2 tile is the most recent. The quiet aspect override appears here because iPad genuinely rotates; default follows the device.</div>
+</div>
+
+<!-- ═══════════ 1e MAC ═══════════ -->
+<div class="dv-opt" id="1e">
+  <div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Mac — Set as Desktop actually finishes the job</div>
+  <x-import component-from-global-scope="MacWindow" from="./macos-window.jsx" width="{{ 1140 }}" height="{{ 700 }}" title="AISixten Wallpapers" hint-size="1140px,700px">
+    <div style="position:relative;width:100%;height:100%;font-family:-apple-system,system-ui,sans-serif;background:linear-gradient(180deg,#1b1d26 0%,#131521 100%)">
+      <div style="position:absolute;left:24px;right:24px;top:18px;display:flex;align-items:center;gap:12px">
+        <div style="flex:1;display:flex;align-items:center;height:44px;padding:0 18px;border-radius:999px;overflow:hidden;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.4);border:0.5px solid rgba(255,255,255,0.16);box-shadow:inset 0 1px 0 rgba(255,255,255,0.2)">
+          <span style="color:rgba(255,255,255,0.88);font-size:14.5px">aurora over a fjord, ultrawide, quiet greens</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;height:44px;padding:0 16px;border-radius:999px;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.4);border:0.5px solid rgba(255,255,255,0.16)">
+          <svg width="14" height="14" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="rgba(255,255,255,0.85)"></path></svg>
+          <span style="color:rgba(255,255,255,0.88);font-size:13.5px;font-weight:590">Surprise me</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;height:44px;padding:0 14px;border-radius:999px;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.4);border:0.5px solid rgba(255,255,255,0.16)">
+          <span style="color:rgba(255,255,255,0.5);font-size:13px">Size</span>
+          <span style="color:rgba(255,255,255,0.9);font-size:13px;font-weight:590">This display · 5120×2880</span>
+          <svg width="9" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="rgba(255,255,255,0.6)" stroke-width="1.6" fill="none" stroke-linecap="round"></path></svg>
+        </div>
+        <div style="height:44px;padding:0 22px;border-radius:999px;display:flex;align-items:center;background:rgba(10,132,255,0.66);border:0.5px solid rgba(255,255,255,0.32);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4)">
+          <span style="color:#fff;font-size:14.5px;font-weight:640">Create</span>
+        </div>
+      </div>
+      <div style="position:absolute;left:24px;right:24px;top:84px;bottom:24px;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:180px;gap:16px;overflow:hidden">
+        <div style="position:relative;border-radius:16px;overflow:visible;grid-column:span 2;grid-row:span 2">
+          <div style="position:absolute;inset:0;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.4),0 0 0 2px rgba(10,132,255,0.8)"><image-slot id="mac1" shape="rect" placeholder="Desktop wallpaper (16:10, selected)"></image-slot></div>
+          <div style="position:absolute;right:18px;bottom:18px;width:280px;border-radius:20px;overflow:hidden;padding:8px;backdrop-filter:blur(26px) saturate(180%);-webkit-backdrop-filter:blur(26px) saturate(180%);background:rgba(30,32,42,0.6);border:0.5px solid rgba(255,255,255,0.22);box-shadow:inset 0 1px 0 rgba(255,255,255,0.24),0 16px 40px rgba(0,0,0,0.5)">
+            <div style="padding:10px 14px;border-radius:12px;background:rgba(10,132,255,0.7);color:#fff;font-size:13.5px;font-weight:620">Set as Desktop</div>
+            <div style="padding:10px 14px;color:rgba(255,255,255,0.9);font-size:13.5px;display:flex;justify-content:space-between"><span>This display</span><svg width="14" height="12" viewBox="0 0 14 12" style="margin-top:2px"><path d="M2 6l3.5 4L12 1.5" stroke="#4cd964" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+            <div style="padding:10px 14px;color:rgba(255,255,255,0.9);font-size:13.5px">All displays</div>
+            <div style="padding:10px 14px;color:rgba(255,255,255,0.9);font-size:13.5px">Every Space on this display</div>
+            <div style="height:0.5px;background:rgba(255,255,255,0.15);margin:4px 10px"></div>
+            <div style="padding:10px 14px;color:rgba(255,255,255,0.7);font-size:13.5px">Share…</div>
+            <div style="padding:10px 14px;color:rgba(255,120,120,0.9);font-size:13.5px">Delete</div>
+          </div>
+        </div>
+        <div style="border-radius:16px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.35)"><image-slot id="mac2" shape="rect" placeholder="Desktop wallpaper"></image-slot></div>
+        <div style="border-radius:16px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.35)"><image-slot id="mac3" shape="rect" placeholder="Desktop wallpaper"></image-slot></div>
+        <div style="border-radius:16px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.35)"><image-slot id="mac4" shape="rect" placeholder="Desktop wallpaper"></image-slot></div>
+      </div>
+    </div>
+  </x-import>
+  <div class="an" style="max-width:1100px"><b>Mac finishes the job.</b> <i>Set as Desktop</i> calls NSWorkspace directly — click, done, no sheet, no steps. The context menu handles the real complexity honestly: this display, all displays, or every Space on this display (per-Space is where macOS gets fussy; scoping to "this display's Spaces" is what the API reliably supports). Size follows the frontmost display's resolution by default; the toolbar picker covers other displays and larger renders — Apple-silicon Macs generate fastest, so 5K is realistic. One window: create in the toolbar, gallery below, wide 16:10 tiles because the output is desktop-shaped.</div>
+</div>
+
+<!-- ═══════════ 1f TOKENS ═══════════ -->
+<div class="dv-opt" id="1f">
+  <div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Design system — glass recipes, type, spacing, tokens</div>
+  <div style="width:900px;background:#fff;border-radius:16px;border:1px solid rgba(0,0,0,0.08);padding:28px 30px;display:flex;flex-direction:column;gap:26px;font-family:-apple-system,system-ui,sans-serif">
+    <div>
+      <div style="font-size:13px;font-weight:700;color:#1a1a1e;margin-bottom:12px">GLASS — one recipe, three variants, both themes</div>
+      <div style="display:flex;gap:14px">
+        <div style="flex:1;position:relative;height:150px;border-radius:14px;overflow:hidden;background:linear-gradient(140deg,#3d2f52 0%,#1b2438 60%,#0d1018 100%)">
+          <div style="position:absolute;left:14px;top:12px;color:rgba(255,255,255,0.5);font-size:10.5px;font-weight:600;letter-spacing:0.4px">OVER DARK CONTENT</div>
+          <div style="position:absolute;left:14px;bottom:14px;display:flex;gap:8px">
+            <div style="height:38px;padding:0 16px;border-radius:999px;display:flex;align-items:center;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.38);border:0.5px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22);color:rgba(255,255,255,0.9);font-size:13px;font-weight:590">.regular</div>
+            <div style="height:38px;padding:0 16px;border-radius:999px;display:flex;align-items:center;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(10,132,255,0.66);border:0.5px solid rgba(255,255,255,0.32);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4);color:#fff;font-size:13px;font-weight:620">.tint(accent)</div>
+            <div style="height:38px;padding:0 16px;border-radius:999px;display:flex;align-items:center;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(70,72,86,0.55);border:0.5px solid rgba(255,255,255,0.26);box-shadow:inset 0 1px 0 rgba(255,255,255,0.3);transform:scale(0.97);color:#fff;font-size:13px;font-weight:590">.interactive (pressed)</div>
+          </div>
+        </div>
+        <div style="flex:1;position:relative;height:150px;border-radius:14px;overflow:hidden;background:linear-gradient(140deg,#f6f2ea 0%,#e8e2d6 60%,#dcd6c8 100%)">
+          <div style="position:absolute;left:14px;top:12px;color:rgba(26,26,30,0.45);font-size:10.5px;font-weight:600;letter-spacing:0.4px">OVER LIGHT CONTENT</div>
+          <div style="position:absolute;left:14px;bottom:14px;display:flex;gap:8px">
+            <div style="height:38px;padding:0 16px;border-radius:999px;display:flex;align-items:center;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(255,255,255,0.5);border:0.5px solid rgba(255,255,255,0.75);box-shadow:inset 0 1px 0 rgba(255,255,255,0.9);color:#1a1a1e;font-size:13px;font-weight:590">.regular</div>
+            <div style="height:38px;padding:0 16px;border-radius:999px;display:flex;align-items:center;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);color:#fff;font-size:13px;font-weight:620">.tint(accent)</div>
+            <div style="height:38px;padding:0 16px;border-radius:999px;display:flex;align-items:center;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(255,255,255,0.72);border:0.5px solid rgba(255,255,255,0.9);box-shadow:inset 0 1px 0 rgba(255,255,255,1);transform:scale(0.97);color:#1a1a1e;font-size:13px;font-weight:590">.interactive (pressed)</div>
+          </div>
+        </div>
+      </div>
+      <div class="an" style="margin-top:8px;max-width:860px">Blur 22 pt · saturation 180% · hairline 0.5 pt · inner top highlight. Dark-content fill <span style="font-family:ui-monospace,Menlo,monospace">rgba(44,46,58,.38)</span>, light-content fill <span style="font-family:ui-monospace,Menlo,monospace">rgba(255,255,255,.50)</span> — the system picks by sampling backdrop luminance (SwiftUI does this for you). Accent is the single tint: <span style="font-family:ui-monospace,Menlo,monospace">#0A84FF at 66% / 75%</span>. Shapes are capsules or concentric radii only: screen 48 → sheet 38 → card 28 → field 22 → tile 22.</div>
+    </div>
+    <div style="display:flex;gap:30px">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:#1a1a1e;margin-bottom:12px">TYPE — SF Pro, Dynamic Type throughout</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:baseline;gap:14px"><span style="font-size:28px;font-weight:700;color:#1a1a1e">Screen title</span><span class="an">Title 1 · 28/700 (Large Title 34 on iPad/Mac)</span></div>
+          <div style="display:flex;align-items:baseline;gap:14px"><span style="font-size:21px;font-weight:650;color:#1a1a1e">Card heading</span><span class="an">Title 3 · 21/650</span></div>
+          <div style="display:flex;align-items:baseline;gap:14px"><span style="font-size:19px;color:#1a1a1e">Prompt text</span><span class="an">Body XL · 19/400 — the one deliberately oversized style</span></div>
+          <div style="display:flex;align-items:baseline;gap:14px"><span style="font-size:17px;font-weight:620;color:#1a1a1e">Button label</span><span class="an">Body · 17/620</span></div>
+          <div style="display:flex;align-items:baseline;gap:14px"><span style="font-size:15px;color:rgba(26,26,30,0.65)">Secondary copy</span><span class="an">Subheadline · 15/400 at 65%</span></div>
+          <div style="display:flex;align-items:baseline;gap:14px"><span style="font-size:13px;color:rgba(26,26,30,0.45)">Caption · counts, sync line</span><span class="an">13/400 at 45%</span></div>
+        </div>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:#1a1a1e;margin-bottom:12px">SPACING &amp; TOKENS</div>
+        <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:14px">
+          <div style="width:4px;height:16px;background:#0a84ff;border-radius:2px"></div><span class="an">4</span>
+          <div style="width:8px;height:24px;background:#0a84ff;border-radius:2px"></div><span class="an">8</span>
+          <div style="width:12px;height:34px;background:#0a84ff;border-radius:2px"></div><span class="an">12 gaps</span>
+          <div style="width:16px;height:44px;background:#0a84ff;border-radius:2px"></div><span class="an">16 grid</span>
+          <div style="width:24px;height:56px;background:#0a84ff;border-radius:3px"></div><span class="an">24 margins</span>
+          <div style="width:32px;height:68px;background:#0a84ff;border-radius:3px"></div><span class="an">32 sections</span>
+        </div>
+        <div class="an" style="max-width:400px">
+          <b>Light tokens</b> — bg <span style="font-family:ui-monospace,Menlo,monospace">#F4F2EE→#E9E6DF</span>, ink <span style="font-family:ui-monospace,Menlo,monospace">#1A1A1E</span>, ink-2 55%, ink-3 45%.<br>
+          <b>Dark tokens</b> — bg <span style="font-family:ui-monospace,Menlo,monospace">#171A26→#0D0F16</span>, ink <span style="font-family:ui-monospace,Menlo,monospace">#FFFFFF</span>, ink-2 65%, ink-3 45%.<br>
+          <b>Semantic</b> — accent <span style="font-family:ui-monospace,Menlo,monospace">#0A84FF</span> · success <span style="font-family:ui-monospace,Menlo,monospace">#4CD964</span> · destructive <span style="font-family:ui-monospace,Menlo,monospace">#FF7878</span> (never the only signal — always paired with a word or icon).<br>
+          Hit targets ≥ 44 pt everywhere. VoiceOver: generated images read their stored prompt as the accessibility label.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 1g LEGIBILITY ═══════════ -->
+<div class="dv-opt" id="1g">
+  <div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Legibility proof — the same controls over near-black and near-white</div>
+  <div style="display:flex;gap:20px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:8px">
+    <div style="position:relative;width:393px;height:480px;border-radius:24px;overflow:hidden;background:radial-gradient(100% 80% at 50% 20%,#16161a 0%,#0a0a0c 70%);font-family:-apple-system,system-ui,sans-serif">
+      <div style="position:absolute;left:14px;top:12px;color:rgba(255,255,255,0.4);font-size:10.5px;font-weight:600;letter-spacing:0.4px">NEAR-BLACK WALLPAPER</div>
+      <div style="position:absolute;left:24px;right:24px;top:60px;border-radius:22px;overflow:hidden;min-height:96px;padding:16px 18px;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.38);border:0.5px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22)">
+        <div style="color:rgba(255,255,255,0.45);font-size:17px">Describe a wallpaper…</div>
+      </div>
+      <div style="position:absolute;left:24px;top:200px;display:flex;align-items:center;gap:8px;height:44px;padding:0 18px;border-radius:999px;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(44,46,58,0.38);border:0.5px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22)">
+        <svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="rgba(255,255,255,0.85)"></path></svg>
+        <span style="color:rgba(255,255,255,0.9);font-size:15px;font-weight:590">Surprise me</span>
+      </div>
+      <div style="position:absolute;left:24px;right:24px;bottom:70px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(10,132,255,0.66);border:0.5px solid rgba(255,255,255,0.32);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4)">
+        <span style="color:#fff;font-size:17px;font-weight:650">Create</span>
+      </div>
+    </div>
+      <div class="an" style="max-width:393px">On darkness glass would vanish — the fill floor <span style="font-family:ui-monospace,Menlo,monospace">rgba(44,46,58)</span> keeps a visible plate, the 0.5 pt hairline + top highlight draw the edge. White label on plate ≈ 12:1.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+    <div style="position:relative;width:393px;height:480px;border-radius:24px;overflow:hidden;background:radial-gradient(100% 80% at 50% 20%,#ffffff 0%,#efece6 70%);font-family:-apple-system,system-ui,sans-serif">
+      <div style="position:absolute;left:14px;top:12px;color:rgba(26,26,30,0.4);font-size:10.5px;font-weight:600;letter-spacing:0.4px">NEAR-WHITE WALLPAPER</div>
+      <div style="position:absolute;left:24px;right:24px;top:60px;border-radius:22px;overflow:hidden;min-height:96px;padding:16px 18px;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(255,255,255,0.5);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 4px 14px rgba(0,0,0,0.08)">
+        <div style="color:rgba(26,26,30,0.5);font-size:17px">Describe a wallpaper…</div>
+      </div>
+      <div style="position:absolute;left:24px;top:200px;display:flex;align-items:center;gap:8px;height:44px;padding:0 18px;border-radius:999px;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(255,255,255,0.5);border:0.5px solid rgba(255,255,255,0.8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.95),0 4px 14px rgba(0,0,0,0.08)">
+        <svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="rgba(26,26,30,0.75)"></path></svg>
+        <span style="color:#1a1a1e;font-size:15px;font-weight:590">Surprise me</span>
+      </div>
+      <div style="position:absolute;left:24px;right:24px;bottom:70px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);background:rgba(10,132,255,0.75);border:0.5px solid rgba(255,255,255,0.55);box-shadow:inset 0 1px 0 rgba(255,255,255,0.55),0 4px 14px rgba(10,132,255,0.2)">
+        <span style="color:#fff;font-size:17px;font-weight:650">Create</span>
+      </div>
+    </div>
+      <div class="an" style="max-width:393px">On white the risk flips: glass disappears into the page. The soft drop shadow (absent on dark) separates the plate; ink at 100%/#1A1A1E ≈ 15:1, placeholder at 50% ≥ 4.6:1. The tinted button deepens to 75% so white text holds 4.5:1.</div>
+    </div>
+  </div>
+  <div class="an" style="max-width:820px">The rule that makes both work: <b>text never sits on raw glass alone</b> — it sits on glass whose fill has a luminance floor (dark) or ceiling + shadow (light), chosen by backdrop sampling. Nothing is conveyed by color alone; the disabled Create in <a class="dv-oid" href="#1a">1a</a> reads by weight and label opacity too.</div>
+</div>
+
+<!-- ═══════════ 1h REDUCED ═══════════ -->
+<div class="dv-opt" id="1h">
+  <div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>Reduce Transparency · Reduce Motion</div>
+  <div style="display:flex;gap:20px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="position:relative;width:393px;height:480px;border-radius:24px;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#2b3044 0%,#171a26 55%,#0d0f16 100%);font-family:-apple-system,system-ui,sans-serif">
+        <div style="position:absolute;left:14px;top:12px;color:rgba(255,255,255,0.4);font-size:10.5px;font-weight:600;letter-spacing:0.4px">REDUCE TRANSPARENCY ON</div>
+        <div style="position:absolute;left:24px;right:24px;top:60px;border-radius:22px;min-height:96px;padding:16px 18px;background:#2c2e38;border:0.5px solid rgba(255,255,255,0.14)">
+          <div style="color:rgba(255,255,255,0.45);font-size:17px">Describe a wallpaper…</div>
+        </div>
+        <div style="position:absolute;left:24px;top:200px;display:flex;align-items:center;gap:8px;height:44px;padding:0 18px;border-radius:999px;background:#2c2e38;border:0.5px solid rgba(255,255,255,0.14)">
+          <svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1l1.6 4.2L14 6.8l-4.4 1.6L8 12.8 6.4 8.4 2 6.8l4.4-1.6L8 1z" fill="rgba(255,255,255,0.85)"></path></svg>
+          <span style="color:rgba(255,255,255,0.9);font-size:15px;font-weight:590">Surprise me</span>
+        </div>
+        <div style="position:absolute;left:24px;right:24px;bottom:70px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:#0a6fd6;border:0.5px solid rgba(255,255,255,0.22)">
+          <span style="color:#fff;font-size:17px;font-weight:650">Create</span>
+        </div>
+      </div>
+      <div class="an" style="max-width:393px">Every glass fill swaps to its opaque token (<span style="font-family:ui-monospace,Menlo,monospace">#2C2E38</span> dark / <span style="font-family:ui-monospace,Menlo,monospace">#F2F0EB</span> light); blur, saturation and inner highlight are removed; hairlines stay. Layout, sizes and hierarchy are identical — the setting changes material, never meaning.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="position:relative;width:500px;height:480px;border-radius:24px;overflow:hidden;background:#101218;font-family:-apple-system,system-ui,sans-serif;padding:24px">
+        <div style="color:rgba(255,255,255,0.4);font-size:10.5px;font-weight:600;letter-spacing:0.4px">REDUCE MOTION ON — THE MORPH BECOMES A CROSSFADE</div>
+        <div style="display:flex;align-items:center;gap:18px;margin-top:40px">
+          <div style="width:150px;height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(10,132,255,0.66);border:0.5px solid rgba(255,255,255,0.32)"><span style="color:#fff;font:640 14px -apple-system,system-ui">Create</span></div>
+          <div style="color:rgba(255,255,255,0.45);font:12px system-ui;text-align:center">0.2 s<br>opacity only</div>
+          <div style="position:relative;width:200px;height:46px;border-radius:999px;overflow:hidden;background:rgba(44,46,58,0.55);border:0.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:32%;background:rgba(10,132,255,0.45)"></div>
+            <span style="position:relative;color:rgba(255,255,255,0.92);font:590 13px -apple-system,system-ui">Step 9 of 28</span>
+          </div>
+        </div>
+        <div style="color:rgba(255,255,255,0.55);font-size:11.5px;line-height:1.55;margin-top:36px;max-width:430px">
+          <b style="color:#fff">Kept:</b> the emerging-image preview — it's content changing, not the interface moving — and the progress fill, which animates width only, no bounce.<br><br>
+          <b style="color:#fff">Replaced:</b> all glassEffectID geometry morphs → 0.2 s crossfades at final positions · the gallery tile "forms in place" zoom → simple appear · toast slide-up → fade.<br><br>
+          <b style="color:#fff">Removed:</b> the spring overshoot everywhere; the blur veil still lifts but in 3 discrete steps rather than continuously.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "make <a class="dv-oid" href="#1a">1a</a>'s create screen light-mode" · "riff on the gallery grid — masonry vs uniform" · "turn the morph <a class="dv-oid" href="#1b">1b</a> into an animation" · "interactive prototype of the whole flow"</p>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showNotes&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Board&quot;}, &quot;deskTone&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;light&quot;, &quot;dark&quot;], &quot;default&quot;: &quot;light&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Board&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() { this.applyTweaks(); }
+  componentDidUpdate() { this.applyTweaks(); }
+  applyTweaks() {
+    document.body.dataset.notes = (this.props.showNotes ?? true) ? 'on' : 'off';
+    document.body.style.background = (this.props.deskTone ?? 'light') === 'dark' ? '#23252b' : '#eceae5';
+  }
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

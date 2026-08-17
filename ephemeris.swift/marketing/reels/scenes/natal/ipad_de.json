@@ -1,0 +1,62 @@
+{
+  "canvas": [
+    1200,
+    1600
+  ],
+  "content_len": 29.5,
+  "preview_maxlen": 30,
+  "outro_dur": 2.6,
+  "style": {
+    "bg_color_top": "#0B1020",
+    "bg_color_bottom": "#1A1330",
+    "title_color": "#ffffff",
+    "subtitle_color": "#9FB4FF",
+    "caption_band_percent": 20,
+    "side_padding": 70,
+    "border_width": 8,
+    "border_color": "#2A2E52",
+    "border_radius": 34
+  },
+  "app": {
+    "name": "Ephemeris",
+    "tagline": "Deine Himmelsalmanach für unterwegs",
+    "icon": "liquid_icon.icon/Assets/1024.png"
+  },
+  "scenes": [
+    {
+      "key": "Library",
+      "title": "Ihre gespeicherten Horoskope",
+      "subtitle": "Dateien in Ihrer eigenen iCloud Drive"
+    },
+    {
+      "key": "NatalWheel",
+      "title": "Eines öffnen — das Geburtshoroskop",
+      "subtitle": "Der genaue Moment und Ort"
+    },
+    {
+      "key": "NatalHouses",
+      "title": "Häuser in sechs Systemen",
+      "subtitle": "Placidus, Koch, Ganzes Zeichen u. a."
+    },
+    {
+      "key": "Transits",
+      "title": "Der heutige Himmel darüber",
+      "subtitle": "Transite im selben Rad"
+    },
+    {
+      "key": "Analysis",
+      "title": "Würden, Form, Verteilung",
+      "subtitle": "Nach den klassischen Tabellen bewertet"
+    },
+    {
+      "key": "Returns",
+      "title": "Solar- und Lunarwiederkehr",
+      "subtitle": "Die nächste, auf die Minute"
+    },
+    {
+      "key": "Synastry",
+      "title": "Und gegen ein zweites Horoskop",
+      "subtitle": "Synastrie, jeder Kontakt sortiert"
+    }
+  ]
+}

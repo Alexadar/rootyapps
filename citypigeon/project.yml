@@ -1,0 +1,112 @@
+name: citypigeon
+
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    # The App Store record (Apple ID 6800063278) already carries iOS 1.0 and macOS 1.0, both
+    # PREPARE_FOR_SUBMISSION. A build can only be attached to a version whose string EQUALS its
+    # CFBundleShortVersionString, so this must track whatever those versions actually say —
+    # NOT the "1.0.0" in PROMPT.md §8. Verified against the record before archiving.
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+
+packages:
+  # Pinned exact, matching froggo2/Kits/Sim/FroggoSim — the version MonstroSim resolved and proved.
+  # MLX is the game logic, not an accessory: see CityPigeon/Engine/. The consequence is that this
+  # app can never run in the iOS Simulator (MLX needs a Metal MTLGPUFamily the simulator lacks and
+  # abort()s in Device::Device() rather than returning an error). iOS is verified on device or via
+  # the "Mac (Designed for iPad)" destination.
+  MLXSwift:
+    url: https://github.com/ml-explore/mlx-swift
+    exactVersion: 0.31.4
+
+targets:
+  citypigeon:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: MLXSwift
+        product: MLX
+    sources:
+      - path: CityPigeon
+      - path: citypigeon.icon
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.citypigeon
+
+        # Guideline 5.2.5, the trap this repo has fallen into three times. With
+        # GENERATE_INFOPLIST_FILE the generator always sets CFBundleName (the macOS menu-bar title)
+        # from PRODUCT_NAME, and silently ignores INFOPLIST_KEY_CFBundleName. Without this line the
+        # product ships under the target name. It is also why this folder is `citypigeon` and not
+        # `citypigeon.swift`.
+        PRODUCT_NAME: City Pigeon
+        # Pinned so renaming the product cannot break @testable import.
+        PRODUCT_MODULE_NAME: CityPigeon
+
+        # No app group, deliberately. A capability on macOS forces a Mac Development provisioning
+        # profile, and then every `-destination platform=macOS` build fails without
+        # -allowProvisioningUpdates. This game needs no shared container.
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": citypigeon-macOS.entitlements
+
+        ASSETCATALOG_COMPILER_APPICON_NAME: citypigeon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+
+        INFOPLIST_KEY_CFBundleDisplayName: City Pigeon
+        # Required by the Mac App Store — its absence fails upload with error 90242.
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.games
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        # Landscape everywhere: the camera is a locked side view and the game is about how far
+        # ahead of the pigeon you can see. Width is the playfield.
+        #
+        # A landscape-only iPad app MUST opt out of multitasking, or upload fails with 90474:
+        # Split View would hand the app a portrait-ish slice it has no sensible framing for.
+        INFOPLIST_KEY_UIRequiresFullScreen: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+
+  citypigeonTests:
+    type: bundle.unit-test
+    # macOS only, and this is not a preference. MLX's Metal kernels are compiled by Xcode's build
+    # system, so `swift test` has no metallib and aborts on first evaluation; and the iOS Simulator
+    # cannot host MLX at all. `xcodebuild test -destination platform=macOS` is the only gate.
+    supportedDestinations: [macOS]
+    sources:
+      - path: CityPigeonTests
+    dependencies:
+      - target: citypigeon
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.citypigeon.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: citypigeon
+        # Spelled out because PRODUCT_NAME ("City Pigeon") differs from the target name
+        # ("citypigeon"), and the default TEST_HOST is built from the target name — so it points at
+        # an app that does not exist. This is the cost of the 5.2.5 fix, and it is worth paying.
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/City Pigeon.app/Contents/MacOS/City Pigeon"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+schemes:
+  citypigeon:
+    build:
+      targets:
+        citypigeon: all
+        citypigeonTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets: [citypigeonTests]

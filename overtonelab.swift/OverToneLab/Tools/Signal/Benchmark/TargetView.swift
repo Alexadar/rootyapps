@@ -1,12 +1,15 @@
 import SwiftUI
 
 struct TargetView: View {
+    @EnvironmentObject private var handoff: MeasurementHandoff
+    @EnvironmentObject private var provenance: FieldProvenance
     @ObservedObject var vm: LoudnessViewModel
     var body: some View {
         VStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 12) {
                 CardHeader(title: "Match a target")
-                NumberField(title: "Your measured loudness", value: $vm.measuredInput, unit: "LUFS", range: -60...0)
+                NumberField(title: "Your measured loudness", value: $vm.measuredInput, unit: "LUFS", range: -60...0,
+                            field: FieldKey(tool: "benchmark", field: "measuredInput"))
                 Picker("Target", selection: $vm.platform) {
                     ForEach(LoudnessViewModel.Platform.allCases) { Text($0.rawValue).tag($0) }
                 }.pickerStyle(.segmented)
@@ -17,6 +20,10 @@ struct TargetView: View {
                      : "You could raise up to \(Fmt.f(vm.gain, 1)) dB, watching true-peak headroom.")
                     .font(.caption).foregroundStyle(.secondary)
             }.glassCard()
+        }
+        .onAppear {
+            // A value sent from Analysis lands here, marked measured, remembering what it displaced.
+            handoff.apply(FieldKey(tool: "benchmark", field: "measuredInput"), into: $vm.measuredInput, provenance: provenance)
         }
     }
 }
