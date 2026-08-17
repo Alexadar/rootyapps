@@ -1,0 +1,28 @@
+# Weights and converted artefacts are build outputs — gigabytes of them, regenerable from the
+# scripts in this folder, and shipped to devices as Apple-hosted asset packs rather than through
+# the repository. They never get committed.
+#
+# `models/*`, not `models/` — git does not descend into an excluded directory, so a negation under
+# an ignored folder can never match and the `.gitkeep` below would be unreachable. Excluding the
+# contents instead keeps the empty directory in the repo, so a fresh clone has somewhere for the
+# scripts to write without every one of them having to mkdir first.
+models/*
+!models/.gitkeep
+
+# Apple's ml-stable-diffusion checkout, cloned on demand by test_raw_model.sh. A third-party
+# repository at a moving HEAD, not our source.
+.vendor/
+
+# The packed asset packs and anything else the conversion writes.
+build/
+*.aar
+*.mlpackage
+*.mlmodelc
+*.safetensors
+*.ckpt
+*.bin
+
+.DS_Store
+
+# scripts/ is deliberately NOT ignored: the conversion and packaging code is the actual source
+# here, and it is what makes models/ reproducible.
