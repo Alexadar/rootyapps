@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- iCloud Drive documents only. NOT CloudKit: there is no database, no record zone and no
+	     server. The container is the user's own folder, visible in Files, and the app never reads
+	     or writes anything in it that the user did not make. -->
+	<key>com.apple.developer.icloud-services</key>
+	<array>
+		<string>CloudDocuments</string>
+	</array>
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.oleksandr.aisixteen.studio</string>
+	</array>
+	<key>com.apple.developer.ubiquity-container-identifiers</key>
+	<array>
+		<string>iCloud.oleksandr.aisixteen.studio</string>
+	</array>
+
+	<!-- Held for the real pipeline. An image-to-image diffusion pass on a phone keeps the unet's
+	     weights, the compiled model and the intermediate latents resident at once, and a jetsam kill
+	     mid-pass looks to the user like the app crashing after a twenty-second wait. Apple's own
+	     ml-stable-diffusion guidance names this entitlement as the fix. iOS only — macOS has no
+	     equivalent limit, so its entitlements file does not carry it. -->
+	<key>com.apple.developer.kernel.increased-memory-limit</key>
+	<true/>
+</dict>
+</plist>

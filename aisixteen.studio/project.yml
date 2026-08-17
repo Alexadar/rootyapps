@@ -1,0 +1,180 @@
+name: studio
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  # Liquid Glass — `glassEffect`, `GlassEffectContainer`, `glassEffectID` — lands in 26 and has no
+  # fallback worth writing. The design handoff is built entirely on it, so 26 is the floor.
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+
+# `Mock` is a Debug-flavoured configuration for Simulator UI work and preview-video takes.
+#
+# ⚠️ The app runs the REAL pipeline when the model pack is reachable (bundled, or via
+# `STUDIO_MODEL_PATH` in a debug build) and falls back to a procedural mock when it is not — see
+# `EnhancerFactory`. The mock's output is an unsharp mask and a saturation lift, NOT model output,
+# so a screenshot taken on a machine without the pack would be a lie about what the app does. Check
+# `EnhancerFactory.isRunningMock` before capturing anything for the store.
+configs:
+  Debug: debug
+  Release: release
+  Mock: debug
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    # The App Store record carries iOS, macOS and visionOS versions at "1.0", all still
+    # PREPARE_FOR_SUBMISSION, and **zero builds** — nothing has ever shipped from it (checked against
+    # App Store Connect, 2026-08-12). A build can only attach to a version whose string it matches,
+    # so the marketing version stays 1.0 and the build number starts the sequence.
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+
+# Three packages. None of them imports SwiftUI, UIKit or AppKit — that is what lets `swift test` run
+# the whole state space in milliseconds, and what will let the real diffusion pipeline link
+# EnhanceKit without dragging in a UI.
+packages:
+  RecipeKit:
+    path: Kits/Recipe/RecipeKit
+  EnhanceKit:
+    path: Kits/Enhance/EnhanceKit
+  EditsKit:
+    path: Kits/Edits/EditsKit
+  # The shared on-device generation base — conversion scripts and runtime live together in
+  # aisixteen.models so an id written by the converter and an id compared by a resumed job are the
+  # same string. NEVER fork it: a copy silently stops receiving fixes, same rule as marketing/.
+  AISixteenModels:
+    path: ../aisixteen.models/swift/AISixteenModels
+
+targets:
+  studio:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: RecipeKit
+        product: RecipeKit
+      - package: EnhanceKit
+        product: EnhanceKit
+      - package: EditsKit
+        product: EditsKit
+      - package: AISixteenModels
+        product: DiffusionRuntime
+    sources:
+      - path: Studio
+      - path: studio.icon
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.studio
+        # Guideline 5.2.5 (Apple trademarks). With GENERATE_INFOPLIST_FILE the generator always
+        # takes CFBundleName — the macOS menu-bar title — from PRODUCT_NAME and silently ignores
+        # INFOPLIST_KEY_CFBundleName. This repository has had a real rejection from getting it
+        # wrong, which is exactly why the legacy folder is named `*.swift` and this target is not.
+        PRODUCT_NAME: AISixteen Studio
+        # Pinned, because the module name otherwise derives from PRODUCT_NAME
+        # ("AISixteen Studio" → AISixteen_Studio) and every @testable import moves with it.
+        PRODUCT_MODULE_NAME: Studio
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": studio.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": studio.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": studio-macOS.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: studio
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_CFBundleDisplayName: AISixteen Studio
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.photography
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        # Add-only, and nothing else. Import goes through PHPicker, which runs out of process and
+        # needs no permission at all, so the app never asks to *read* the library — and there is
+        # deliberately no NSPhotoLibraryUsageDescription to make sure it cannot start.
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: "Saving an enhanced photo puts a new copy in your library. Your original is never overwritten."
+        # A photo editor is used in whatever orientation the photo is. The phone follows the device;
+        # iPad allows all four.
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+      configs:
+        Mock:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG STUDIO_MOCK"
+    # INFOPLIST_KEY_* can only express flat scalars, and the one key this app genuinely depends on —
+    # the ubiquity-container description that makes its folder visible in Files — is a dictionary.
+    # Same shape as aisixteen.walpapers/ and gridscan/.
+    info:
+      path: Studio/Info.plist
+      properties:
+        # Without this the container exists but the user can never see the edits they made, which is
+        # half of "your files, in your folder".
+        NSUbiquitousContainers:
+          iCloud.oleksandr.aisixteen.studio:
+            NSUbiquitousContainerIsDocumentScopePublic: true
+            NSUbiquitousContainerName: AISixteen Studio
+            NSUbiquitousContainerSupportedFolderLevels: Any
+
+  # The state space lives here: the job machine, the composite, the storage locator, the
+  # accessibility treatments. The Kits prove their own maths in their own packages.
+  studioUnitTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: studioUnitTests
+    dependencies:
+      - target: studio
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.studioUnitTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: studio
+        # Spelled out because PRODUCT_NAME ("AISixteen Studio") differs from the target name
+        # ("studio"). XcodeGen derives TEST_HOST from the TARGET name, so the default points at a
+        # binary that was never built and the build fails with "Could not find test host".
+        # BUNDLE_EXECUTABLE_FOLDER_PATH keeps it right on both platforms: empty on iOS,
+        # "Contents/MacOS" on macOS.
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/AISixteen Studio.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AISixteen Studio
+        BUNDLE_LOADER: $(TEST_HOST)
+
+  # ⚠️ Written, not run. PROMPT §10: the owner runs these. See ../uitests.md.
+  studioUITests:
+    type: bundle.ui-testing
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: studioUITests
+    dependencies:
+      - target: studio
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.studioUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: studio
+
+schemes:
+  # `xcodebuild test -scheme studio` must actually run tests: a scheme with no test action reports
+  # success having built no test bundle.
+  studio:
+    build:
+      targets:
+        studio: all
+        studioUnitTests: [test]
+        studioUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - studioUnitTests
+        - studioUITests
+
+  # Same app, for Simulator UI work and preview takes. `STUDIO_ENHANCER=fast` in the run environment
+  # makes a pass about a second instead of half a minute.
+  studio-mock:
+    build:
+      targets:
+        studio: all
+    run:
+      config: Mock
+    test:
+      config: Debug
+      targets:
+        - studioUnitTests
