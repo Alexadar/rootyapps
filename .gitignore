@@ -30,6 +30,8 @@ par/Par.xcodeproj
 producertycoon.swift/producertycoon.swift.xcodeproj
 # XcodeGen output — regenerate with `xcodegen generate` from aircore/project.yml
 aircore/aircore.xcodeproj
+aisixteen.architecture/architecture.xcodeproj
+aisixteen.architecture/build/
 
 # Friend's pdf-to-midi sidecar — cloned as local reference, not part of rootyapps
 pdf-to-midi
@@ -103,3 +105,5 @@ repos/
 # Negation LAST: a later re-ignoring pattern (**/.env.*) would otherwise win and the committed
 # template would silently vanish from the repo.
 !.env.example
+
+bigpinkcat.swift/bigpinkcat.swift.xcodeproj
