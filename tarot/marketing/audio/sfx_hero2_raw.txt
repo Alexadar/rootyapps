@@ -1,0 +1,7 @@
+prompt: single deep resonant temple bell strike, low solemn gong, long dark resonance, ceremonial
+negative: music, melody, drums, vocals, harsh, bright sparkle, jingle, high pitched
+dit: medium
+decoder: same-l
+seconds: 6
+steps: 100
+seed: 77024

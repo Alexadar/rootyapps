@@ -1,0 +1,7 @@
+prompt: magical shimmering bell bloom, bright sparkle glissando, single fantasy reveal chime
+negative: music, melody, drums, vocals, harsh, distorted, noisy, reverb tail
+dit: medium
+decoder: same-l
+seconds: 6
+steps: 100
+seed: 77014

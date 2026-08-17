@@ -1,0 +1,7 @@
+prompt: ethereal ambient music, glassy crystalline shimmer, soft celesta sparkles over weightless pads, luminous, floating, slow, spacious, no drums
+negative: drums, percussion, beat, vocals, harsh, distorted, noisy, low drone, bass heavy, dark
+dit: medium
+decoder: same-l
+seconds: 72
+steps: 50
+seed: 77041

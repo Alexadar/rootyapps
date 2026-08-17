@@ -1,0 +1,7 @@
+prompt: cinematic deep space ambient, dark warm pads, slow swells, distant shimmering overtones, nebula atmosphere, vast, immersive, evolving textures, no beats
+negative: drums, percussion, beat, vocals, harsh, distorted, noisy, cheerful, jingle, music box
+dit: medium
+decoder: same-l
+seconds: 72
+steps: 50
+seed: 77053

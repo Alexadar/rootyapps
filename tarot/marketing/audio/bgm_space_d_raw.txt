@@ -1,0 +1,7 @@
+prompt: melodic space ambient, warm analog synthesizer chords breathing slowly, soft filtered motion, cosmic, dreamy, deep, wide, evolving, ambient electronica, no beats
+negative: drums, percussion, beat, vocals, harsh, distorted, noisy, cheerful, jingle, music box
+dit: medium
+decoder: same-l
+seconds: 72
+steps: 50
+seed: 77054

@@ -1,0 +1,92 @@
+# Filming scenario #1 — "Will I be rich?", three cards, Classic 1909.
+#
+# Every variable of a take, pinned, so a second take matches the first and a re-shoot after a
+# code change is still the same video. Debug only: a Release build excludes *.scenario.yaml.
+#
+# Run it:
+#   xcrun simctl launch <UDID> oleksandr.aisixteen.tarot \
+#     -TAROT_SCENARIO will-i-be-rich -AppleLanguages "(en)"
+#
+# Capture-side, per take: ringer ON (the app's audio session is .ambient and respects the
+# silent switch), Reduce Motion OFF (it removes roll, juice and the flight arc — the app logs
+# SCENARIO_WARN if it is on), and for the simulator `simctl status_bar --time 9:41`.
+#
+# The timing block is the whole cut. The reading panel opens at
+#   typing + pauseAfter + settle + cards×perCard + 1.1
+# and writing.firstDelay is measured from the draw, so text is still arriving when the panel
+# opens. Get that backwards and the reading is finished before the panel appears — nothing to
+# watch. Measured on a real take: question 1.65, draw 3.07, cards 5.10/7.90/10.72, panel 13.46.
+# First words land at draw+9.0 = 12.1 s, ~1.4 s before the panel opens.
+#
+# `hold` must outlast the WRITING, not just the panel. The captured reading is 1342 characters
+# (count the spaces — counting words first gave 1125 and cost a whole take) and charsPerSecond is
+# pinned to the reveal's own pace, so the text takes 1342/55 = 24.4 s and the last word lands at
+# 3.05+9.0+24.4 = 36.5 s. A hold of 14 ended the take at 27.5 s and 21.0 at 34.5 s; both cut away
+# while the synthesis — the payoff of the whole draw — was still arriving, and both looked
+# perfectly healthy in the capture log. 25.0 ends at 38.5 s, ~2 s after the last word.
+#
+# That is deliberately LONGER than the store's 30 s preview cap. The raw take should contain the
+# whole reading; the store cut then selects its window out of it (store_preview.py scene `src`
+# ranges), which is recoverable. A capture that never filmed the ending is not.
+
+id: will-i-be-rich
+skin: midnight
+deck: classic-1909
+method: three-card
+seed: 20260817
+date: 2026-08-17T21:00:00Z
+question: "Will I be rich?"
+interpretations: true
+sounds: true
+
+# Chosen for the camera: a heavy pentacle, a major with foil, and a cup that lands warm.
+cards:
+  - Ten of Pentacles
+  - Wheel of Fortune
+  - Nine of Cups
+
+# The reading, captured verbatim 2026-08-18 from a live `-TAROT_SCENARIO_LIVE` run of exactly
+# this draw on the iPhone 17 Pro Max simulator — the same machine and the same model that films
+# it. Not written by hand and not edited: what the film shows is what the app produces.
+#
+# It was chosen from several runs (`interpretationSeed` is random even under a scenario, so each
+# live run writes different words). Selection criteria, in order: no card is named, nothing is
+# promised about the future, and each passage is recognisably about ITS card. Note passage one
+# still says "You are prosperous" — present tense and about the card's traditional meaning, but
+# it is the closest this take comes to answering the question, and it is the line to re-shoot
+# first if the take ever needs softening.
+passages:
+  - |
+    This card speaks of stability, wealth, and family. It is a testament to hard work,
+    dedication, and a sense of belonging that brings you peace. It says that you have
+    achieved what you deserve, and that you are surrounded by love and support. You are
+    prosperous, and you feel secure in your accomplishments.
+  - |
+    This card speaks of change, opportunity, and the unknown. It is a reminder that life is
+    full of surprises, and that there are always new possibilities waiting to be discovered.
+    It encourages you to embrace the unknown, to be open to change, and to be willing to
+    take risks. You are on the brink of a new adventure, and you are excited for the
+    possibilities that lie ahead.
+  - |
+    This card speaks of contentment, happiness, and fulfillment. It is a reminder that life
+    is not about money, but about love, friendship, and happiness. It encourages you to
+    focus on what truly matters, and to cherish the things that bring you joy. You are
+    satisfied with your life, and you are happy with where you are.
+synthesis: |
+  This three-card draw speaks of a journey of growth and transformation. You are
+  experiencing a period of stability and prosperity, as well as a period of change and
+  opportunity. You are feeling content and happy in your life, and you are excited for the
+  future. Remember to focus on what truly matters, and to cherish the things that bring
+  you joy.
+
+timing:
+  typeInterval: 0.11
+  pauseAfter: 1.4
+  settle: 0.9
+  perCard: 2.8
+  hold: 28.0
+
+writing:
+  firstDelay: 9.0
+  charsPerSecond: 55
+  chunkInterval: 0.08

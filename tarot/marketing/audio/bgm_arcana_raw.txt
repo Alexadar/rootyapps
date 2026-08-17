@@ -1,0 +1,7 @@
+prompt: mystical magical ambient music, warm ethereal pads, soft glassy shimmer, gentle harp and celesta accents, candlelit seance atmosphere, slow, spacious, hypnotic, no drums
+negative: drums, percussion, beat, vocals, harsh, distorted, noisy
+dit: medium
+decoder: same-l
+seconds: 72
+steps: 100
+seed: 77001

@@ -1,0 +1,7 @@
+prompt: deep space ambient, warm analog synth pads slowly evolving, lush atmospheric textures, cosmic drift, immersive, wide stereo, hypnotic, melodic undertones, downtempo ambient electronica without beats
+negative: drums, percussion, beat, vocals, harsh, distorted, noisy, cheerful, jingle, music box
+dit: medium
+decoder: same-l
+seconds: 72
+steps: 50
+seed: 77051

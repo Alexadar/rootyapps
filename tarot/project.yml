@@ -1,0 +1,139 @@
+name: tarot
+
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  deploymentTarget:
+    # iOS/macOS 26 is the floor set by Foundation Models and Liquid Glass (verified against
+    # SDK 26.5). RealityKit alone would run on iOS 18 / macOS 15, but both of the app's other
+    # pillars need 26, so nothing is gated behind #available.
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    # No App Store record exists for this app and none may be created in this run.
+    # 1.0.0 debuts whenever the owner mints the record.
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+
+packages:
+  TarotKit:
+    path: Kits/Tarot/TarotKit
+  CardMotionKit:
+    path: Kits/Motion/CardMotionKit
+
+targets:
+  tarot:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: TarotKit
+        product: TarotKit
+      - package: CardMotionKit
+        product: CardMotionKit
+    sources:
+      - path: Tarot
+      - path: tarot.icon
+        buildPhase: resources
+    settings:
+      base:
+        # Registered 2026-08-16 via ASC API with owner approval (portal record 486GDXR7WL,
+        # platform UNIVERSAL, no capabilities). Bundle IDs are permanent — never change this.
+        # Still no App Store record; creating one stays an owner decision.
+        # Sign with Automatic + the Development cert; never pass -allowProvisioningUpdates
+        # (nothing here needs a portal write — device installs ride the wildcard profile).
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.tarot
+
+        # Guideline 5.2.5, the trap this repo has fallen into three times. With
+        # GENERATE_INFOPLIST_FILE the generator always sets CFBundleName (the macOS menu-bar
+        # title) from PRODUCT_NAME and silently ignores INFOPLIST_KEY_CFBundleName. The target
+        # is deliberately not named `*.swift`, and the product name is spelled out anyway.
+        # ⚠️ "Tarot" is a PLACEHOLDER name — the App Store name is the owner's decision.
+        PRODUCT_NAME: Tarot
+        # Pinned so renaming the product cannot break @testable import.
+        PRODUCT_MODULE_NAME: Tarot
+
+        # No app group, deliberately (storypole lesson): a capability on macOS forces a Mac
+        # Development provisioning profile, and then every `-destination platform=macOS` build
+        # fails without -allowProvisioningUpdates. Nothing here needs a shared container.
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": tarot-macOS.entitlements
+
+        ASSETCATALOG_COMPILER_APPICON_NAME: tarot
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+
+        INFOPLIST_KEY_CFBundleDisplayName: Tarot
+        # Required by the Mac App Store — its absence fails upload with error 90242.
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.games
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        # Portrait-first: a three-card spread stacks naturally under the deck on a phone.
+        # iPad allows everything.
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        # CMMotionManager device-motion (gravity only, no calibrated attitude) does not strictly
+        # require this, but ephemeris ships it alongside the same MotionParallax pattern and the
+        # cost of the string is zero next to the cost of a rejection.
+        INFOPLIST_KEY_NSMotionUsageDescription: Device motion moves the light across the cards.
+        # AR placement (iPhone/iPad): the passthrough camera behind the anchored card table.
+        INFOPLIST_KEY_NSCameraUsageDescription: The camera shows your real table so the cards can be placed on it.
+      configs:
+        Release:
+          # Filming scenarios carry pre-captured model text. A Release build that shipped one
+          # would be an app able to display "AI" prose it did not generate.
+          EXCLUDED_SOURCE_FILE_NAMES: "*.scenario.yaml"
+
+  tarotTests:
+    type: bundle.unit-test
+    # macOS only, matching froggo2: these are logic tests (availability branches, stream
+    # interruption, source-discipline scans); a simulator destination buys nothing but a boot.
+    supportedDestinations: [macOS]
+    sources:
+      - path: tarotTests
+    dependencies:
+      - target: tarot
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.tarot.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: tarot
+        # Spelled out because PRODUCT_NAME ("Tarot") differs from the target name ("tarot"),
+        # and the default TEST_HOST is built from the target name — so it points at an app that
+        # does not exist. This is the cost of the 5.2.5 fix, and it is worth paying.
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Tarot.app/Contents/MacOS/Tarot"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+  tarotUITests:
+    type: bundle.ui-testing
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: tarotUITests
+    dependencies:
+      - target: tarot
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.tarot.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: tarot
+
+schemes:
+  tarot:
+    build:
+      targets:
+        tarot: all
+        tarotTests: [test]
+        tarotUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      # UI tests are wired into the scheme so the owner can run them, but the routine gate for
+      # this app is `swift test` per Kit + the unit bundle. UI tests are written, not executed,
+      # by the build agent (owner's instruction).
+      targets: [tarotTests, tarotUITests]
