@@ -42,6 +42,9 @@ struct ChartLibraryView: View {
         .navigationTitle(Text(verbatim: L.string("Natal charts", locale: locale)))
         // Also refreshes after another device wrote a chart while this one was backgrounded.
         .task {
+            // Resolves the iCloud container off the main thread before loading. Doing it in
+            // `live()` blocked app launch on device.
+            await vm.resolveStore()
             vm.reload()
             await openLaunchChart()
         }
@@ -100,13 +103,27 @@ struct ChartLibraryView: View {
     /// can open them" is a real answer. And when iCloud is *unavailable* the user must be told the
     /// charts are on this device only — a second device showing an empty library is otherwise
     /// indistinguishable from data loss.
+    ///
+    /// A static function, not a computed property: an untagged `var` next to `@ViewBuilder` members
+    /// gets the builder applied to it and a `String` is not a `View`.
+    private static func icon(for storage: NatalViewModel.StorageKind) -> String {
+        switch storage {
+        case .iCloud:    "icloud"
+        case .local:     "internaldrive"
+        case .resolving: "icloud.and.arrow.down"
+        }
+    }
     @ViewBuilder
     private var storageFooter: some View {
         HStack(spacing: 6) {
-            Image(systemName: vm.storage == .iCloud ? "icloud" : "internaldrive")
+            Image(systemName: Self.icon(for: vm.storage))
             switch vm.storage {
-            case .iCloud: Text("Charts are stored in your iCloud Drive.")
-            case .local:  Text("Charts are stored on this device only.")
+            case .iCloud:    Text("Charts are stored in your iCloud Drive.")
+            case .local:     Text("Charts are stored on this device only.")
+            // ⚠️ Never claims "device only" while the answer is still unknown. iCloud setup can
+            // take seconds on a cold container, and saying the wrong thing here is worse than
+            // saying nothing: a user who reads "this device only" may go and re-enter charts.
+            case .resolving: Text("Finding your iCloud library…")
             }
         }
         .font(.caption)

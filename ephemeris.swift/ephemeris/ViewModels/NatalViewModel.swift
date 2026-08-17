@@ -19,22 +19,30 @@ final class NatalViewModel: ObservableObject {
     /// Where the charts actually are. Shown to the user, because "where is my data" is the question
     /// the competing apps answer badly.
     ///
-    /// A plain `let`, not `@Published`: it is decided once when the store is chosen and never
-    /// changes, and being non-isolated lets the nonisolated init below set it.
-    let storage: StorageKind
+    /// A plain `var`, deliberately NOT `@Published`: the class is `@MainActor`, so a published
+    /// property cannot be assigned from the `nonisolated init` a `@StateObject` initialiser needs.
+    /// It now changes once — from `.resolving` to whatever the container turned out to be — and
+    /// `resolveStore()` sends `objectWillChange` around that assignment so the library redraws.
+    private(set) var storage: StorageKind
 
     enum StorageKind {
+        /// Before the container has been located. Shown as a loading state, never as "local" —
+        /// telling a user their charts are device-only while iCloud is still resolving is a lie
+        /// they would act on.
+        case resolving
         case iCloud
         /// iCloud Drive is off or the container is unavailable. Charts still save, on this device
         /// only — which the user must be told, not left to discover when a second device is empty.
         case local
     }
 
-    private let store: ChartStore
+    /// Nil until resolved. Every mutation guards on it rather than force-unwrapping: the library
+    /// is reachable for the fraction of a second before the container answers.
+    private var store: ChartStore?
 
     /// `nonisolated` so a `@StateObject` property initialiser can build it — those run outside the
     /// actor, and a MainActor-only init is an error there under Swift 6.
-    nonisolated init(store: ChartStore, storage: StorageKind = .local) {
+    nonisolated init(store: ChartStore?, storage: StorageKind = .local) {
         self.store = store
         self.storage = storage
         // `charts` is MainActor-isolated and cannot be filled here. The library calls `reload()`
@@ -59,13 +67,34 @@ final class NatalViewModel: ObservableObject {
         if ReelDriver.isReelRun || LaunchOverride.flag("EPHEMERIS_SEED_CHARTS") {
             return NatalViewModel(store: InMemoryChartStore(seed: reelFixtures), storage: .iCloud)
         }
-        if let cloud = try? ICloudChartStore() {
-            return NatalViewModel(store: cloud, storage: .iCloud)
-        }
-        if let local = try? FileChartStore() {
-            return NatalViewModel(store: local, storage: .local)
-        }
-        return NatalViewModel(store: InMemoryChartStore(), storage: .local)
+        // ⚠️ NO iCloud lookup here. `FileManager.url(forUbiquityContainerIdentifier:)` is documented
+        // as "do not call from your app's main thread" — it sets iCloud up and can take seconds —
+        // and this runs inside a `@StateObject` initialiser, which is exactly the main thread.
+        // Opening Charts on a device with a cold container hung the app.
+        //
+        // The store is resolved by `resolveStore()` on a background task instead; until it answers,
+        // `storage` reads `.resolving` and the library shows a loading state rather than claiming
+        // the charts are device-only.
+        return NatalViewModel(store: nil, storage: .resolving)
+    }
+
+    /// Locates the real store off the main thread, then swaps it in and loads.
+    ///
+    /// Idempotent: the library calls it on every appearance and it returns immediately once a store
+    /// exists.
+    func resolveStore() async {
+        guard store == nil else { return }
+        let resolved: (ChartStore, StorageKind) = await Task.detached(priority: .userInitiated) {
+            // Both of these touch the filesystem and the first talks to iCloud, so neither may run
+            // on the main actor.
+            if let cloud = try? ICloudChartStore() { return (cloud, .iCloud) }
+            if let local = try? FileChartStore() { return (local, .local) }
+            return (InMemoryChartStore(), .local)
+        }.value
+        objectWillChange.send()
+        store = resolved.0
+        storage = resolved.1
+        reload()
     }
 
     /// The charts a reel shows. Invented people, fixed instants — nothing real, nothing private.
@@ -105,6 +134,9 @@ final class NatalViewModel: ObservableObject {
     }
 
     func reload() {
+        // No store yet means the container is still being located, which is not an error and must
+        // not be reported as one — an empty library with a red banner reads as data loss.
+        guard let store else { charts = []; loadError = nil; return }
         do {
             charts = try store.all()
             loadError = nil
@@ -115,11 +147,13 @@ final class NatalViewModel: ObservableObject {
     }
 
     func save(_ chart: SavedChart) {
+        guard let store else { return }
         do { try store.save(chart); reload() }
         catch { loadError = error.localizedDescription }
     }
 
     func delete(_ chart: SavedChart) {
+        guard let store else { return }
         do {
             try store.delete(id: chart.id)
             // A deleted chart cannot stay the watch's default, or the wrist keeps showing a return

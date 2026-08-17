@@ -64,14 +64,46 @@ struct NatalViewModelTests {
         #expect(NatalViewModel(store: InMemoryChartStore(), storage: .iCloud).storage == .iCloud)
     }
 
-    /// `live()` must always return a usable library. iCloud off is a setting the user chose, not a
-    /// failure, so it falls back rather than refusing to save.
+    /// `live()` must always end up with a usable library. iCloud off is a setting the user chose,
+    /// not a failure, so it falls back rather than refusing to save.
+    ///
+    /// The store is now resolved **asynchronously**, because locating the iCloud container calls
+    /// `FileManager.url(forUbiquityContainerIdentifier:)`, which Apple documents as unsafe to call
+    /// on the main thread — doing it in `live()` hung the app on opening Charts with a cold
+    /// container. So the invariant is unchanged but its timing is: after `resolveStore()`, saving
+    /// always works.
     @MainActor
-    @Test func liveAlwaysProducesAStore() {
+    @Test func liveProducesAStoreOnceResolved() async {
         let vm = NatalViewModel.live()
+        await vm.resolveStore()
         vm.save(chart("Smoke"))
         #expect(vm.charts.contains { $0.name == "Smoke" })
         vm.charts.filter { $0.name == "Smoke" }.forEach { vm.delete($0) }
+    }
+
+    /// Before resolution the library must be *quiet*, not broken: no store yet is a loading state,
+    /// so a save is a no-op and nothing is reported as an error. An empty library under a red
+    /// "failed to load" banner reads as data loss.
+    @MainActor
+    @Test func beforeResolutionTheLibraryIsQuietRatherThanBroken() {
+        let vm = NatalViewModel.live()
+        #expect(vm.storage == .resolving, "storage must not claim a location it has not found")
+        vm.reload()
+        #expect(vm.charts.isEmpty)
+        #expect(vm.loadError == nil, "a pending lookup is not a load failure")
+        vm.save(chart("Ignored"))
+        #expect(vm.charts.isEmpty, "a save before the store exists must not appear to succeed")
+    }
+
+    /// Resolution is idempotent — the library calls it on every appearance.
+    @MainActor
+    @Test func resolvingTwiceKeepsTheSameStore() async {
+        let vm = NatalViewModel.live()
+        await vm.resolveStore()
+        let first = vm.storage
+        await vm.resolveStore()
+        #expect(vm.storage == first, "a second resolve must not swap the store out from under the UI")
+        #expect(vm.storage != .resolving)
     }
 
     // MARK: - Derived

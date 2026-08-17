@@ -13,6 +13,12 @@ struct EventsView: View {
             if events.isEmpty {
                 Text("No events in this window.").font(.callout).foregroundStyle(NebulaPalette.textSecondary)
             } else {
+                // LAZY: the shipped 150-day window holds ~104 events, and a plain VStack lays out
+                // and composites every one of them on each update — behind a glass material, which
+                // is what made scrolling Cycles stutter on device. A LazyVStack builds only what is
+                // near the viewport. It works here because this card is already inside the page's
+                // ScrollView, which is what gives a lazy stack its geometry.
+                LazyVStack(alignment: .leading, spacing: 10) {
                 ForEach(events, id: \.self) { e in
                     HStack(spacing: 12) {
                         Text(e.glyph)   // moon phases stay color emoji; sign/planet glyphs monochrome
@@ -39,6 +45,7 @@ struct EventsView: View {
                             // the window shifts or the label is translated.
                             .accessibilityIdentifier("event.\(e.code).date")
                     }
+                }
                 }
             }
         }
