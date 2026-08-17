@@ -13,6 +13,7 @@ import EphemerisKit
 struct NatalChartView: View {
     @ObservedObject var vm: NatalViewModel
     let chart: SavedChart
+    @Environment(\.assistantPresenter) private var presenter
 
     /// Reel-driven lens and transit ring, passed as **values** rather than as the driver object.
     ///
@@ -52,6 +53,70 @@ struct NatalChartView: View {
 
     private var facets: ChartFacets { ChartFacets(chart: chart) }
 
+    /// The chart's own `SavedChart` document — the same bytes iCloud stores and `ChartStoreTests`
+    /// round-trips — rather than a re-derived summary that could disagree with the file.
+    private var exportPayload: ExportPayload {
+        ExportPayload(subject: .chart(chart.name),
+                      content: .chart(chart),
+                      range: DateInterval(start: chart.birthInstant, duration: 1))
+    }
+
+    /// A row beneath the wheel, pushing the app's only non-wheel view.
+    ///
+    /// Per-chart (gate 2), so it belongs here rather than in Sky. ⚠️ With an unknown birth time the
+    /// angles are undefined — MC and AC lines simply do not exist — so the row is shown and
+    /// **honestly disabled** rather than hidden: hiding it would read as "this app has no
+    /// astrocartography", which is a different and wrong statement.
+    @ViewBuilder private var astrocartographyRow: some View {
+        if chart.isTimeKnown {
+            NavigationLink {
+                // The observer's own place, for the "near you" distances — read from the shared
+                // store rather than threaded through, because it is the same value the widgets use
+                // and there is exactly one of it. Nil is fine: the map still draws, without
+                // distances.
+                ScrollView { AstroMapView(chart: chart, observer: SharedStore().location).padding() }
+                    .background(AppBackground())
+                    .navigationTitle("Astrocartography")
+                    .assistantToolbar()
+                    .assistantContext(presenter,
+                                      screen: .init(id: "charts.astrocartography",
+                                                    title: "Astrocartography")) {
+                        ScreenContexts.astrocartography(
+                            chart,
+                            lines: AstroCartography.lines(at: chart.birthInstant),
+                            observer: SharedStore().location, rowLimit: 4)
+                    }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "globe")
+                        .font(.headline).foregroundStyle(NebulaPalette.accent)
+                        .frame(width: 30, height: 30)
+                        .background(NebulaPalette.accent.opacity(0.15), in: .circle)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Astrocartography").font(.callout)
+                        Text("Where these planets are angular").font(.caption)
+                            .foregroundStyle(NebulaPalette.textSecondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.caption2)
+                        .foregroundStyle(NebulaPalette.textFaint)
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .glassCard()
+            .accessibilityIdentifier("chart.astrocartography")
+        } else {
+            VStack(alignment: .leading, spacing: 4) {
+                CardHeader(title: "Astrocartography")
+                Text("Needs a birth time — the lines are drawn from the angles, which are undefined without one.")
+                    .font(.caption).foregroundStyle(NebulaPalette.textSecondary)
+            }
+            .glassCard()
+            .accessibilityIdentifier("chart.astrocartography.unavailable")
+        }
+    }
+
     var body: some View {
       ScrollViewReader { proxy in
         ScrollView {
@@ -70,6 +135,8 @@ struct NatalChartView: View {
                 case .returns:  returnsFacet
                 }
 
+                astrocartographyRow
+
                 Color.clear.frame(height: 1).id("bottom")
             }
             .padding()
@@ -84,6 +151,15 @@ struct NatalChartView: View {
         .background(AppBackground())
         .navigationTitle(Text(verbatim: chart.name))
         .toolbar { compareButton }
+        .exportToolbar { exportPayload }
+        .assistantToolbar()
+        .assistantContext(presenter, screen: .init(id: "charts.natal",
+                                                   title: "Birth chart · \(chart.name)")) {
+            // The chart's own derived values — the same ones the wheel is drawing, so the
+            // explanation and the picture cannot disagree.
+            ScreenContexts.natalChart(chart, positions: chart.positions,
+                                      aspects: chart.aspects, rowLimit: 4)
+        }
         .sheet(isPresented: $showingPartnerPicker) {
             PartnerPicker(vm: vm, subject: chart) { chosen in
                 partner = chosen

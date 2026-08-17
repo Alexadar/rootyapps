@@ -32,11 +32,26 @@ struct MacOSContentView: View {
     @State private var lens: MomentLens =
         LaunchOverride.value("EPHEMERIS_LENS").flatMap(MomentLens.init(rawValue:))
         ?? LegacyTab.destination(for: LaunchOverride.int("EPHEMERIS_TAB") ?? 0).moment ?? .wheel
+
+    /// The pushed Sky surface, or nil when none is open.
+    ///
+    /// `EPHEMERIS_LENS=moon|hours` used to select a segment and now pushes a screen. Both values
+    /// must keep working: the capture pipeline sets them, and a deep link that silently lands on
+    /// the default screen produces a confidently captioned picture of the wrong thing.
+    @State private var skyDestination: SkyDestination?
+
+    /// How many charts the user has saved, which sets the gate the assistant is told about — the
+    /// model must not offer a chart reading to someone who has entered none.
+    private var natalChartCount: Int { natal.charts.count }
     @State private var cyclesLens: CyclesLens =
         LaunchOverride.value("EPHEMERIS_LENS").flatMap(CyclesLens.init(rawValue:))
         ?? LegacyTab.destination(for: LaunchOverride.int("EPHEMERIS_TAB") ?? 0).cycles ?? .timeline
 
     @StateObject private var natal = NatalViewModel.live()
+    /// Owned here, above the TabView, so a held answer survives a tab change and a push. A
+    /// `@State` inside a screen would die with the screen — which is what the modal sheet did.
+    @StateObject private var assistant = AssistantPresenter()
+
 
     /// Sidebar visibility, bound so the user can collapse it — and so a reel run can record a
     /// **real** state of the app rather than a layout built for the camera.
@@ -58,6 +73,10 @@ struct MacOSContentView: View {
                     ideal: 220,
                     max: Self.isReelRun ? 220 : 300)
         } detail: {
+            // A NavigationStack around the detail column, so Sky's Moon and Hours rows have
+            // somewhere to push. Without it `.navigationDestination` is inert on macOS and the
+            // rows would look tappable and do nothing.
+            NavigationStack {
             ScrollView {
                 VStack(spacing: 16) { content }
                     // 720 was a phone column centred in an 820-minimum window — the Mac's width was
@@ -69,9 +88,36 @@ struct MacOSContentView: View {
                     .padding(.vertical, 24)
             }
             .background(AppBackground())
+            .task {
+                // Assigned after a yield: navigation state set during the stack's first update is
+                // swallowed, which cost a capture run on the natal deep link once already.
+                await Task.yield()
+                if let d = SkyRouting.resolve(LaunchOverride.value("EPHEMERIS_LENS")).destination {
+                    skyDestination = d
+                }
+            }
+            .navigationDestination(item: $skyDestination) { d in
+                switch d {
+                case .moon:
+                    MoonCalendarView(location: vm.location, timeZone: vm.timeZone, now: vm.instant)
+                        .skyDestinationChrome(d)
+                        .moonExportToolbar(now: vm.instant)
+                        .skyDestinationAssistant(d, presenter: assistant, date: vm.instant, location: vm.location,
+                                                 timeZone: vm.timeZone, charts: natalChartCount)
+                case .hours:
+                    PlanetaryHoursView(location: vm.location, timeZone: vm.timeZone, now: vm.instant)
+                        .skyDestinationChrome(d)
+                        .skyDestinationAssistant(d, presenter: assistant, date: vm.instant, location: vm.location,
+                                                 timeZone: vm.timeZone, charts: natalChartCount)
+                }
+            }
+            }
         }
         .navigationTitle("Ephemeris Sky")
-        .settingsToolbar()
+        .assistantPlacement(assistant)
+        .environment(\.assistantPresenter, assistant)
+        .settingsToolbar(vm: vm)
+            .assistantToolbar()
         .preferredColorScheme(.dark)   // celestial UI is always dark — keeps glass + text legible
         // A preview-reel run sizes the CONTENT to 16:9, which — because the scene uses
         // `.windowResizability(.contentSize)` — makes the window exactly 1600x900.
@@ -97,11 +143,24 @@ struct MacOSContentView: View {
     @ViewBuilder private var content: some View {
         switch ChartSection(rawValue: selection) ?? .sky {
         case .sky:
+            // Gate 0: with no place set, the wheel means nothing to a new user. Lead with the one
+            // thing this app can say on a fresh launch that is both true and legible.
+            if vm.location == nil { SkyFirstRunHero(date: vm.instant) }
             // The Moment control lives ONLY here — every lens below reads it.
             MomentControls(vm: vm)
             MomentReadout(moment: vm.skyMoment, lens: $lens, houseSystem: $vm.houseSystem)
                 .onAppear { vm.startChartDemo() }
                 .onDisappear { vm.stopChartDemo() }
+            SkyDestinationRows(date: vm.instant, location: vm.location, timeZone: vm.timeZone) {
+                skyDestination = $0
+            }
+            .assistantContext(assistant,
+                              screen: .init(id: "sky.\(lens.rawValue)", title: "Sky")) {
+                ScreenContexts.sky(lens: lens, moment: vm.skyMoment, date: vm.instant,
+                                   timeZone: vm.timeZone, location: vm.location,
+                                   zodiac: vm.zodiac, houseSystem: vm.houseSystem,
+                                   charts: natalChartCount, rowLimit: 4)
+            }
         case .cycles:
             Picker("Cycles", selection: $cyclesLens) {
                 ForEach(CyclesLens.allCases) { Label($0.title, systemImage: $0.icon).tag($0) }
@@ -109,7 +168,21 @@ struct MacOSContentView: View {
             .pickerStyle(.segmented).labelsHidden()
             .accessibilityIdentifier("input.cyclesLens")
             switch cyclesLens {
-            case .timeline: EventsView(events: vm.timelineEvents, now: vm.instant)
+            case .timeline:
+                EventsView(events: vm.timelineEvents, now: vm.instant)
+                    .assistantContext(assistant,
+                                      screen: .init(id: "cycles.timeline",
+                                                    title: "Cycles · event timeline")) {
+                        ScreenContexts.timeline(events: vm.timelineEvents, window: vm.timelineWindow,
+                                                now: vm.instant, timeZone: vm.timeZone,
+                                                location: vm.location, charts: natalChartCount,
+                                                rowLimit: 4)
+                    }
+                    .exportToolbar {
+                        ExportPayload(subject: .events("ephemeris-timeline"),
+                                      content: .events(vm.timelineEvents),
+                                      range: vm.timelineWindow)
+                    }
             case .synodic:  CycleView(phase: vm.cyclePhase, upcoming: vm.upcomingEvents,
                                       selectedBody: $vm.cycleBody)
             }
