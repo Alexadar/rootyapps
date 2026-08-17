@@ -1,0 +1,252 @@
+name: architecture
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  # Liquid Glass — `glassEffect`, `GlassEffectContainer`, `glassEffectID` — lands in 26, and the
+  # whole design handoff is built on it. There is no fallback worth writing, so 26 is the floor.
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+
+# ⚠️ visionOS: a 1.0 version exists on the App Store record (Apple ID 6475354624) and is OUT OF
+# SCOPE for this build. It is deliberately absent from every `supportedDestinations` below. Adding
+# it is the owner's decision, not this project's (PROMPT §13).
+
+# `Mock` is a Debug-flavoured configuration that runs the whole app against MockRedesignGenerator.
+# In this build that is the ONLY generator — no model exists yet — so Mock and Debug differ only by
+# the ARCH_MOCK flag. It is declared now so that when the Core ML pipeline lands, the flag already
+# exists, the asset pack is already excludable, and no scheme has to be rewritten.
+#
+# It must never be archived. The pictures it produces are procedural fields, not model output, and
+# shipping them — or screenshotting them for the store — would be a lie about what the app does.
+configs:
+  Debug: debug
+  Release: release
+  Mock: debug
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    # 1.0, NOT 1.0.0. App Store Connect already carries iOS, macOS and visionOS drafts at "1.0",
+    # and a build can only attach to a version whose string it matches exactly. PROMPT §12 asked
+    # for 1.0.0; the record is the constraint that wins, because the alternative is an upload that
+    # processes and then cannot be attached to anything.
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+
+# Four Foundation-only packages. None of them imports SwiftUI, UIKit, AppKit, CoreGraphics,
+# AVFoundation or ActivityKit — that is what lets `swift test` run the whole job state space in
+# milliseconds, and what will let the real depth-conditioned pipeline link RedesignKit without
+# dragging in a UI.
+packages:
+  RedesignKit:
+    path: Kits/Redesign/RedesignKit
+  ProjectKit:
+    path: Kits/Project/ProjectKit
+  DirectionKit:
+    path: Kits/Direction/DirectionKit
+  FormatKit:
+    path: Kits/Format/FormatKit
+  # ── SLOT: DiffusionKit ──────────────────────────────────────────────────────────────────────
+  # The depth-conditioned Core ML pipeline, converted in ../aisixteen.models. It will implement
+  # RedesignKit's `RedesignGenerator` and nothing else in this project changes when it lands.
+  # Commented out because XcodeGen fails outright on a `packages:` path that does not exist.
+  # DiffusionKit:
+  #   path: Kits/Diffusion/DiffusionKit
+
+targets:
+  architecture:
+    type: application
+    # ⚠️ Never add `visionOS` here — see the note at the top of this file.
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: RedesignKit
+        product: RedesignKit
+      - package: ProjectKit
+        product: ProjectKit
+      - package: DirectionKit
+        product: DirectionKit
+      - package: FormatKit
+        product: FormatKit
+      # `platformFilter: iOS` because macOS has no Live Activity, and embedding an iOS-only appex
+      # in a Mac app fails validation.
+      - target: ArchitectureWidgets
+        embed: true
+        platformFilter: iOS
+    sources:
+      - path: Architecture
+      # Icon Composer source. Same shape as the wallpaper app's wallpapers.icon/.
+      - path: architecture.icon
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.architecture
+        # Guideline 5.2.5 (Apple trademarks). With GENERATE_INFOPLIST_FILE the generator always
+        # takes CFBundleName — the macOS menu-bar title — from PRODUCT_NAME and silently ignores
+        # INFOPLIST_KEY_CFBundleName. This repository has had a real rejection from getting it
+        # wrong, so the product is named here and the TARGET is never named "*.swift".
+        PRODUCT_NAME: AISixteen Architecture
+        # Pinned, because the module name otherwise derives from PRODUCT_NAME
+        # ("AISixteen Architecture" → AISixteen_Architecture) and every @testable import moves
+        # with it.
+        PRODUCT_MODULE_NAME: Architecture
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": architecture.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": architecture.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": architecture-macOS.entitlements
+        # The app group exists for ONE reason: ActivityKit's content state is capped at a few KB and
+        # cannot carry a picture, so the forming thumbnail is written to the shared container and
+        # the Live Activity reads the file. iOS only — see architecture-macOS.entitlements for why
+        # the Mac deliberately does not carry it.
+        ARCH_APP_GROUP: group.oleksandr.aisixteen.architecture
+        ASSETCATALOG_COMPILER_APPICON_NAME: architecture
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_CFBundleDisplayName: AISixteen Architecture
+        # ⚠️ This is the BUILD's category. The App Store Connect category is unset and is the
+        # owner's decision (PROMPT §13).
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.graphics-design
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        # The camera is the front door. The string states the whole promise, because the app has no
+        # network and the photo genuinely never leaves the device.
+        INFOPLIST_KEY_NSCameraUsageDescription: "Photograph the room or facade you want redesigned. The photo is used only on this device — the app has no network access at all."
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Choose a photo of a room or facade to redesign. It is read on this device and never sent anywhere."
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: "Saving a redesign puts it in your photo library alongside the original."
+        # Exteriors are shot in landscape as often as portrait, and the before/after wipe wants the
+        # long edge. The phone gets landscape too; iPad gets all four.
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+      configs:
+        Mock:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG ARCH_MOCK"
+    # INFOPLIST_KEY_* can only express flat scalars. The ubiquity-container declaration is a
+    # dictionary, so it has to come from an info: block. Same shape as the wallpaper app.
+    info:
+      path: Architecture/Info.plist
+      properties:
+        # Makes the app's iCloud Drive folder visible in the Files app. Without this the container
+        # exists but the user can never see the spaces they redesigned — which is half the promise,
+        # and the reason the copy is allowed to say "yours, in Files, on all your devices".
+        NSUbiquitousContainers:
+          iCloud.oleksandr.aisixteen.architecture:
+            NSUbiquitousContainerIsDocumentScopePublic: true
+            NSUbiquitousContainerName: AISixteen Architecture
+            NSUbiquitousContainerSupportedFolderLevels: Any
+        # Live Activities are declared by the APP, not by the widget extension.
+        NSSupportsLiveActivities: true
+        # DELIBERATELY NO UIBackgroundModes. Minutes of Neural Engine work in the background is not
+        # something iOS grants, and claiming a mode to pretend otherwise is exactly the dishonesty
+        # the design handoff rules out. The app takes a short `beginBackgroundTask` window on
+        # suspension for one purpose — writing the checkpoint cleanly — and then says
+        # "Waiting for you". Owner's decision, recorded 2026-08-12.
+
+  # The Live Activity. iOS only: the handoff is explicit that the Mac gets a standard notification
+  # instead, so there is nothing for this to do there.
+  ArchitectureWidgets:
+    type: app-extension
+    supportedDestinations: [iOS]
+    sources:
+      - path: ArchitectureWidgets
+        excludes: [Info.plist, Generated-Info.plist]
+      # The activity's attributes type is shared with the app and compiled into both processes
+      # rather than duplicated — a drifted ContentState is a silently dead Live Activity.
+      - path: Architecture/Platform/RedesignActivityAttributes.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.architecture.widgets
+        PRODUCT_NAME: ArchitectureWidgets
+        CODE_SIGN_ENTITLEMENTS: ArchitectureWidgets.entitlements
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SKIP_INSTALL: YES
+    # NSExtension is a dictionary, so INFOPLIST_KEY_* cannot express it and the plist has to come
+    # from an info: block. A hand-written file with GENERATE_INFOPLIST_FILE off works too, but then
+    # every CFBundle key has to be maintained by hand — and omitting CFBundleIdentifier fails as
+    # "Embedded binary's bundle identifier is not prefixed with the parent app's", which names the
+    # wrong problem entirely.
+    info:
+      path: ArchitectureWidgets/Generated-Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        # App Store validation rejects an appex without it: "A value for the key
+        # 'CFBundleDisplayName' … is required." The generated plist does not supply one.
+        CFBundleDisplayName: AISixteen Architecture
+
+  # The state space lives here: the engine, the router, the capture and direction models, the
+  # storage locator and the accessibility treatments. The Kits prove their own logic in their own
+  # packages; this target proves the app's state machine, in milliseconds, with no simulator.
+  architectureUnitTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: architectureUnitTests
+    dependencies:
+      - target: architecture
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.architectureUnitTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: architecture
+        # Spelled out because PRODUCT_NAME ("AISixteen Architecture") differs from the target name
+        # ("architecture"). XcodeGen derives TEST_HOST from the TARGET name, so the default points
+        # at a binary that was never built and the build fails with "Could not find test host".
+        # BUNDLE_EXECUTABLE_FOLDER_PATH keeps it right on both platforms: empty on iOS,
+        # "Contents/MacOS" on macOS.
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/AISixteen Architecture.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AISixteen Architecture
+        BUNDLE_LOADER: $(TEST_HOST)
+
+  architectureUITests:
+    type: bundle.ui-testing
+    # macOS too: the app ships on the Mac, and with [iOS] alone `xcodebuild` refuses the macOS
+    # destination outright — which leaves every macOS-only accessibility trap untested on the one
+    # platform where it bites.
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: architectureUITests
+    dependencies:
+      - target: architecture
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.architectureUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: architecture
+        # A UI-test target takes no TEST_HOST — it drives the app from outside.
+
+schemes:
+  # `xcodebuild build-for-testing` on a scheme with no test action silently builds nothing and
+  # still prints TEST BUILD SUCCEEDED. Both test targets sit in the test action so both COMPILE on
+  # every run; run_tests.sh uses -only-testing to choose what actually EXECUTES.
+  #
+  # ⚠️ On macOS the two must be separate xcodebuild invocations: a unit-test target launches the app
+  # as its TEST_HOST while the UI runner tries to automate the same single-instance app, and the
+  # fight surfaces as "Timed out while enabling automation mode" (uitests.md §9).
+  architecture:
+    build:
+      targets:
+        architecture: all
+        architectureUnitTests: [test]
+        architectureUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - architectureUnitTests
+        - architectureUITests
+
+  # Same app, mock generator, for Simulator UI work and preview-video takes. Today it is the only
+  # thing there is; it stays a separate scheme so it keeps working when the model arrives.
+  architecture-mock:
+    build:
+      targets:
+        architecture: all
+    run:
+      config: Mock
+    test:
+      config: Debug
+      targets:
+        - architectureUnitTests

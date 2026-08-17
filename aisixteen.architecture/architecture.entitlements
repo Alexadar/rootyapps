@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- ⚠️ com.apple.developer.kernel.increased-memory-limit IS DELIBERATELY ABSENT FOR NOW.
+	     Depth-conditioned diffusion on a phone runs right up against the default per-app memory
+	     limit — the ControlNet, the unet weights, the compiled Core ML models, a 12 MP source photo
+	     and the intermediate latents are all resident at once — and Apple's own ml-stable-diffusion
+	     guidance names this entitlement as the fix. The sibling wallpaper app carries it.
+	     It is not here yet because this build ships NO MODEL and therefore cannot hit that limit,
+	     and because "Increased Memory Limit" cannot be enabled through the App Store Connect API
+	     (`INCREASED_MEMORY_LIMIT` is rejected as an invalid capabilityType). It has to be ticked
+	     once in the Developer portal for oleksandr.aisixteen.architecture, at which point this key
+	     goes back in. Add it with the model, not before. -->
+
+	<!-- ONE reason only: ActivityKit's content state is capped at a few KB and cannot carry a
+	     picture, so the forming thumbnail is written to this shared container as a file and the
+	     Live Activity reads it back. On iOS the identifier carries no team prefix. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.oleksandr.aisixteen.architecture</string>
+	</array>
+
+	<!-- iCloud Drive documents only. NOT CloudKit: there is no database, no record zone, no
+	     server and no account. The container is the user's own folder, visible in Files, and the
+	     app never writes anything into it that the user did not make. -->
+	<key>com.apple.developer.icloud-services</key>
+	<array>
+		<string>CloudDocuments</string>
+	</array>
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.oleksandr.aisixteen.architecture</string>
+	</array>
+	<key>com.apple.developer.ubiquity-container-identifiers</key>
+	<array>
+		<string>iCloud.oleksandr.aisixteen.architecture</string>
+	</array>
+</dict>
+</plist>
