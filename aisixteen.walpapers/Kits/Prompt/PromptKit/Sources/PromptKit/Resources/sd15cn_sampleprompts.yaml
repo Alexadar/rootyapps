@@ -1,0 +1,230 @@
+# The Surprise me corpus.
+#
+# Content, not code. Prompts get rewritten far more often than the thing that draws them, and
+# editing a wallpaper's wording should not mean opening a Swift file, recompiling, and reading a
+# diff full of escaped quotes. `SurpriseMe` loads this at startup and validates it; a malformed file
+# fails loudly at load rather than quietly yielding a smaller corpus.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+# HOW TO EDIT THIS WITHOUT MAKING IT WORSE
+#
+# * **Compose within a palette, never across.** Every subject in a palette has to read correctly
+#   with every light and every treatment beside it. That is the whole reason for the grouping: a
+#   flat corpus multiplies out to "a gas giant's cloud bands in warm lamplight, cyanotype".
+#
+# * **Write for the crop.** The master is square and roughly the middle 46% of its width survives
+#   the portrait crop, with a clock and a grid of icons over the top. Subjects want a quiet
+#   centre-top and their interest in the texture; nothing may depend on the left or right edge.
+#
+# * **No people.** A face is where these models fail most visibly, and a wallpaper with a face on
+#   it is a photograph.
+#
+# * **Keep it under ~250 characters composed.** CLIP truncates at 77 tokens without saying so, and
+#   the tail is where the light and the treatment are.
+#
+# The categories below are the ones the large wallpaper apps organise their catalogues around —
+# dark, space, city at night, abstract — plus the 2026 trends: tonal single-hue abstracts, Art Deco
+# geometrics in warm jewel tones, oversized florals on moody grounds, painterly brushwork. Near
+# black is the largest palette twice over: most-requested, and nearly free to display on OLED.
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+
+# Complete, hand-written prompts, drawn alongside the composed ones. A composed line is still a
+# formula; these are what a person would actually have typed, and they are what the control is
+# really teaching.
+curated:
+  - "a deep space nebula in near-black, faint violet and teal gas, scattered stars"
+  - "black volcanic sand with one thread of glowing lava, near-black, macro"
+  - "a matte black geometric relief under raking sidelight, high contrast monochrome"
+  - "bioluminescent plankton along a black shore at new moon, long exposure"
+  - "the cloud bands of a gas giant, storm-swirled, large-format film"
+  - "Earth's terminator line seen from orbit, city lights along the dark side"
+  - "a rain-slick street reflecting neon signage, shallow depth of field, at blue hour"
+  - "a narrow alley in fog under warm sodium lamps, long exposure"
+  - "layered indigo gradient with soft film grain, no subject, tonal"
+  - "dunes abstracted into bands of sand and bone, flat noon light"
+  - "an art deco fan motif in emerald and brass, gold leaf, symmetrical"
+  - "concentric arcs in oxblood and antique gold, screen-printed, flat"
+  - "a single oversized peony against near-black, oil on linen, backlit"
+  - "wisteria cascading through deep shade, soft focus, muted palette"
+  - "an abstract watercolour bleed of ultramarine and rust on cold-press paper"
+  - "one thick impasto brushstroke across raw canvas, raking light"
+  - "fern fronds unfurling, macro, shallow depth of field, in low winter sun"
+  - "mist moving through an old-growth canopy, backlit, large-format film"
+  - "liquid chrome forms, iridescent, studio light on seamless black"
+  - "an impossible staircase of cloud, soft focus, at dusk"
+
+palettes:
+  - name: Near black
+    subjects:
+      - "black volcanic sand with a single thread of glowing lava"
+      - "obsidian shards"
+      - "a matte black geometric relief"
+      - "ink dissolving in black water"
+      - "charred oak grain"
+      - "a single ember in deep shadow"
+      - "black silk folded into deep shadow"
+      - "wet slate"
+    lights:
+      - "in near-darkness"
+      - "under one hard sidelight"
+      - "backlit"
+      - "at new moon"
+    treatments:
+      - "macro, shallow depth of field"
+      - "high contrast monochrome"
+      - "raking light across the surface"
+      - "large-format film, fine grain"
+  - name: Space
+    subjects:
+      - "a deep space nebula in violet and teal"
+      - "the cloud bands of a gas giant"
+      - "a moon's cratered terminator"
+      - "a dense starfield behind drifting dust"
+      - "the rings of a distant planet, edge on"
+      - "a comet's tail against the void"
+    lights:
+      - "lit from one side by a distant sun"
+      - "in its own faint glow"
+      - "against absolute black"
+      - "in cold reflected light"
+    treatments:
+      - "large-format film, fine grain"
+      - "long exposure"
+      - "high dynamic range, deep blacks"
+      - "soft focus, muted palette"
+  - name: City at night
+    subjects:
+      - "a rain-slick street reflecting neon signage"
+      - "a narrow alley in fog"
+      - "a wet crossing seen from above"
+      - "steam rising between tower blocks"
+      - "a shuttered arcade"
+      - "tail lights smeared along a wet road"
+    lights:
+      - "under warm sodium lamps"
+      - "in neon spill"
+      - "at blue hour"
+      - "in the glow of a single sign"
+    treatments:
+      - "long exposure"
+      - "shallow depth of field"
+      - "anamorphic, soft flare"
+      - "high contrast, crushed blacks"
+  - name: Tonal abstract
+    subjects:
+      - "a layered gradient in one colour family"
+      - "bands of sand and bone"
+      - "a soft field of grain and haze"
+      - "overlapping translucent planes"
+      - "a slow diagonal wash"
+      - "concentric rings dissolving outward"
+    lights:
+      - "evenly lit"
+      - "with light falling off to one edge"
+      - "in flat noon light"
+      - "lit from below"
+    treatments:
+      - "risograph, two inks"
+      - "soft focus, muted palette"
+      - "fine film grain, no subject"
+      - "screen-printed, flat"
+  - name: Deco geometry
+    subjects:
+      - "an art deco fan motif in emerald and brass"
+      - "concentric arcs in oxblood and antique gold"
+      - "a stepped ziggurat pattern in jade"
+      - "interlocking chevrons in ink and gold leaf"
+      - "a sunburst in amber and black lacquer"
+      - "a lattice of thin brass lines"
+    lights:
+      - "evenly lit"
+      - "backlit"
+      - "under one hard sidelight"
+    treatments:
+      - "gold leaf on lacquer"
+      - "screen-printed, flat"
+      - "letterpress, deep impression"
+      - "high contrast, symmetrical"
+  - name: Florals in shadow
+    subjects:
+      - "a single oversized peony"
+      - "wisteria cascading"
+      - "one magnolia bloom past its best"
+      - "a protea head"
+      - "dried hydrangea"
+      - "a single ginkgo branch"
+      - "molten glass poppies"
+    lights:
+      - "against near-black"
+      - "in deep shade"
+      - "backlit"
+      - "in low winter sun"
+    treatments:
+      - "oil on linen, visible brushwork"
+      - "macro, shallow depth of field"
+      - "soft focus, muted palette"
+      - "watercolour bleed on cold-press paper"
+  - name: Painterly
+    subjects:
+      - "an abstract bleed of ultramarine and rust"
+      - "one thick brushstroke across raw canvas"
+      - "layered palette-knife texture"
+      - "a wash pooling at the edge of the paper"
+      - "torn paper collage in three tones"
+      - "smoke curling through a shaft of light"
+    lights:
+      - "evenly lit"
+      - "raking across the surface"
+      - "backlit"
+    treatments:
+      - "oil on linen, visible brushwork"
+      - "thick impasto"
+      - "watercolour bleed on cold-press paper"
+      - "cyanotype"
+      - "gouache, matte and opaque"
+  - name: Natural texture
+    subjects:
+      - "fern fronds unfurling"
+      - "moss on volcanic rock"
+      - "cracked desert clay"
+      - "birch trunks in deep snow"
+      - "copper oxidising in seawater"
+      - "a chalk cliff face"
+      - "salt flats after rain"
+      - "an alpine lake at first light"
+      - "a slate coastline under fog"
+      - "a wheat field before a storm"
+      - "a slow river through basalt"
+      - "paper cranes suspended in still air"
+    lights:
+      - "at dusk"
+      - "in low winter sun"
+      - "under overcast sky"
+      - "backlit"
+      - "at blue hour"
+      - "in flat noon light"
+    treatments:
+      - "macro, shallow depth of field"
+      - "long exposure"
+      - "large-format film, fine grain"
+      - "tilt-shift"
+      - "cyanotype"
+      - "oil on linen, visible brushwork"
+  - name: Made things
+    subjects:
+      - "liquid chrome forms"
+      - "an impossible staircase of cloud"
+      - "a glass monolith half-buried in sand"
+      - "brass orrery gears"
+      - "an abandoned greenhouse swallowed by growth"
+      - "iridescent soap film stretched flat"
+    lights:
+      - "under studio light on seamless black"
+      - "backlit"
+      - "at dusk"
+      - "in warm lamplight"
+    treatments:
+      - "octane render, physically based"
+      - "macro, shallow depth of field"
+      - "large-format film, fine grain"
+      - "high contrast monochrome"

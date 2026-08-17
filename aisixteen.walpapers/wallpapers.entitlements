@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- iCloud Drive documents only. NOT CloudKit: there is no database, no record zone and no
+	     server. The container is the user's own folder, visible in Files, and the app never reads
+	     or writes anything in it that the user did not make. -->
+	<!-- Diffusion on a phone runs right up against the default per-app memory limit: the unet's
+	     weights, the compiled Core ML model and the intermediate latents are all resident at once,
+	     and a jetsam kill mid-generation looks to the user like the app crashing after a
+	     twenty-second wait. Apple's own ml-stable-diffusion guidance names this entitlement as the
+	     fix. iOS only — macOS has no equivalent limit, so its entitlements file does not carry it. -->
+	<key>com.apple.developer.kernel.increased-memory-limit</key>
+	<true/>
+
+	<!-- Background Assets requires an app group: the framework stores downloaded asset packs in a
+	     container shared between the app and its downloader, and validates the declaration at
+	     launch. On iOS the identifier carries no team prefix. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.oleksandr.aisixteen.wallpapers</string>
+	</array>
+	<key>com.apple.developer.icloud-services</key>
+	<array>
+		<string>CloudDocuments</string>
+	</array>
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.oleksandr.aisixteen.wallpapers</string>
+	</array>
+	<key>com.apple.developer.ubiquity-container-identifiers</key>
+	<array>
+		<string>iCloud.oleksandr.aisixteen.wallpapers</string>
+	</array>
+</dict>
+</plist>

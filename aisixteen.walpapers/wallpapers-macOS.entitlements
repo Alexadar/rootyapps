@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Set as Desktop reads a file the app itself wrote, inside its own container, so no
+	     user-selected file access is needed. NSWorkspace.setDesktopImageURL works from inside the
+	     sandbox for URLs the app can already read. -->
+	<!-- Same requirement as iOS, different spelling: a sandboxed Mac app's group identifier must be
+	     prefixed with the team ID, or the sandbox refuses the container and Background Assets traps
+	     on launch. `$(TeamIdentifierPrefix)` already ends in a period. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>$(TeamIdentifierPrefix)group.oleksandr.aisixteen.wallpapers</string>
+	</array>
+	<key>com.apple.developer.icloud-services</key>
+	<array>
+		<string>CloudDocuments</string>
+	</array>
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.oleksandr.aisixteen.wallpapers</string>
+	</array>
+	<key>com.apple.developer.ubiquity-container-identifiers</key>
+	<array>
+		<string>iCloud.oleksandr.aisixteen.wallpapers</string>
+	</array>
+</dict>
+</plist>

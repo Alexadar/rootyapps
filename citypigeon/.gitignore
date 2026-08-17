@@ -1,0 +1,12 @@
+build/
+.build/
+*.xcodeproj
+DerivedData/
+.DS_Store
+
+# The demo clip is a dev artifact, not source.
+demo/
+
+# App-icon and asset-catalog PNGs are deliberately NOT ignored — they are tracked source.
+marketing/**/*.png
+marketing/**/*.mp4

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Team-prefixed, matching the host app's macOS group. A sandboxed Mac extension whose group
+	     identifier lacks the prefix is refused the container. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>$(TeamIdentifierPrefix)group.oleksandr.aisixteen.wallpapers</string>
+	</array>
+</dict>
+</plist>

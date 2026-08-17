@@ -1,0 +1,251 @@
+name: wallpapers
+options:
+  bundleIdPrefix: oleksandr.aisixteen
+  # Liquid Glass — `glassEffect`, `GlassEffectContainer`, `glassEffectID` — and the managed
+  # `AssetPackManager` half of Background Assets both land in 26. Neither has a fallback worth
+  # writing, and the design bundle is built entirely on the first, so 26 is the floor.
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+
+# `Mock` is a Debug-flavoured configuration that runs the whole app against the procedural mock
+# generator and leaves the 850 MB model out of the bundle entirely. It exists for two jobs the real
+# build is bad at: iterating on UI in the Simulator (a build is seconds, not minutes) and recording
+# App Store preview video, where waiting 30 s per wallpaper makes a usable take impossible.
+#
+# It must never be archived. The pictures it produces are procedural fields, not model output, and
+# shipping them — or screenshotting them for the store — would be a lie about what the app does.
+configs:
+  Debug: debug
+  Release: release
+  Mock: debug
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: LSKNNBG94G
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    # The App Store record already carries iOS, macOS and visionOS drafts at "1.0", never submitted,
+    # and builds 1–3 from 2023. A build can only attach to a version whose string it matches, so the
+    # marketing version stays 1.0 and the build number continues the existing sequence.
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "5"
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+
+# Four Foundation-only packages. None of them imports SwiftUI, UIKit, AppKit, CoreGraphics or
+# BackgroundAssets — that is what lets `swift test` run the whole state space in milliseconds,
+# and what will let the real diffusion pipeline link GenerationKit without dragging in a UI.
+packages:
+  GenerationKit:
+    path: Kits/Generation/GenerationKit
+  LibraryKit:
+    path: Kits/Library/LibraryKit
+  PromptKit:
+    path: Kits/Prompt/PromptKit
+  FormatKit:
+    path: Kits/Format/FormatKit
+  # The shared on-device generation base, in `aisixteen.models` beside the converter that produces
+  # the models it identifies. ModelKit answers "which model is this"; TaskKit answers "what was this
+  # job doing when it stopped". Neither knows anything about wallpapers.
+  #
+  # It also carries the vendored Core ML diffusion runtime and the tiled ControlNet pass, so the
+  # three apps built on this model share one copy rather than three that drift. Forking these was
+  # how the same font-coverage bug shipped three times in the marketing scripts.
+  AISixteenModels:
+    path: ../aisixteen.models/swift/AISixteenModels
+
+targets:
+  wallpapers:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: GenerationKit
+        product: GenerationKit
+      - package: LibraryKit
+        product: LibraryKit
+      - package: PromptKit
+        product: PromptKit
+      - package: FormatKit
+        product: FormatKit
+      - package: AISixteenModels
+        product: ModelKit
+      - package: AISixteenModels
+        product: TaskKit
+      - package: AISixteenModels
+        product: DiffusionKit
+      - target: WallpapersDownloader
+        embed: true
+    sources:
+      - path: Wallpapers
+      - path: wallpapers.icon
+        buildPhase: resources
+      # The diffusion pack, 1.1 GB, IN THE BUNDLE — this is the shipping arrangement, not a
+      # placeholder. An earlier note here said it had to come out before submission; that is no
+      # longer true and following it would ship an app that cannot generate anything.
+      #
+      # Measured: the bundle is 1.2 GB, of which the app itself is 14 MB. Well under the App
+      # Store's 4 GB ceiling, and it buys the thing an asset pack cannot — the app works the
+      # instant it finishes installing, with no consent screen, no second download that can fail
+      # or stall on a bad connection, and no first-run state that has to be designed, built and
+      # tested. The Background Assets path is still wired and dormant behind
+      # `CoreMLImageGenerator.bundledResourcesURL()`; if the model ever outgrows the bundle it is
+      # the route back.
+      - path: BundledModel/StableDiffusion
+        buildPhase: resources
+        type: folder
+      # Stage 2. A sibling of the diffusion bundle, so it needs its own entry — including only
+      # `BundledModel/StableDiffusion` left the upscaler out of the app entirely, and
+      # `Upscaler.bundledModelURL()` silently returned nil, which the generator treats as "no
+      # upscaler" and skips. Stage 2 was wired in code and absent at runtime.
+      - path: BundledModel/RealESRGAN4x.mlmodelc
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.wallpapers
+        # Guideline 5.2.5 (Apple trademarks). With GENERATE_INFOPLIST_FILE the generator always
+        # takes CFBundleName — the macOS menu-bar title — from PRODUCT_NAME and silently ignores
+        # INFOPLIST_KEY_CFBundleName. This repository has had a real rejection from getting it
+        # wrong, so the product is named here and the target is never named "*.swift".
+        PRODUCT_NAME: AISixteen Wallpapers
+        # Pinned, because the module name otherwise derives from PRODUCT_NAME
+        # ("AISixteen Wallpapers" → AISixteen_Wallpapers) and every @testable import moves with it.
+        PRODUCT_MODULE_NAME: Wallpapers
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": wallpapers.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": wallpapers.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": wallpapers-macOS.entitlements
+        # Background Assets validates the app at first touch of `AssetPackManager.shared` and traps
+        # if `BAAppGroupID` is missing — on macOS it is mandatory, and without it the app dies on
+        # launch rather than degrading. The value is not the same on both platforms: a sandboxed Mac
+        # app group must carry the team prefix, an iOS one must not. One Info.plist, two values, via
+        # a per-SDK build setting.
+        WP_BA_APP_GROUP: group.oleksandr.aisixteen.wallpapers
+        "WP_BA_APP_GROUP[sdk=macosx*]": $(TeamIdentifierPrefix)group.oleksandr.aisixteen.wallpapers
+        ASSETCATALOG_COMPILER_APPICON_NAME: wallpapers
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_CFBundleDisplayName: AISixteen Wallpapers
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.graphics-design
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        # iOS cannot set the wallpaper. The honest path is Photos + a handoff, so the app needs
+        # add-only photo access and nothing else. There is no read usage description because the
+        # app never reads the library.
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: "Saving a wallpaper puts it in your photo library, so you can pick it in Settings → Wallpaper."
+        # The wallpaper is portrait on the phone and any orientation on iPad, matching the two
+        # aspect defaults the generator ships with.
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+      configs:
+        Mock:
+          # The flag the app reads to choose the mock, and the exclusion that keeps the model out of
+          # the bundle — which is what makes a Mock build seconds rather than minutes.
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG WALLPAPERS_MOCK"
+          EXCLUDED_SOURCE_FILE_NAMES: "StableDiffusion RealESRGAN4x.mlmodelc"
+    # INFOPLIST_KEY_* can only express flat scalars. Both of the keys this app actually depends on
+    # — the Background Assets declaration and the ubiquity-container description — are
+    # dictionaries, so they have to come from an info: block. Same shape as gridscan/ and par/.
+    info:
+      path: Wallpapers/Info.plist
+      properties:
+        # Apple-hosted, Xcode-managed asset packs. The model is ONE on-demand pack, not an
+        # essential one: `ba-package template` documents that an essential pack downloads during
+        # installation and blocks the app from opening until it finishes — which would delete the
+        # entire designed first-run gate (consent, byte progress, interrupted, ready) before it
+        # ever ran. The design bundle is the authority and it specifies that gate, so on-demand
+        # it is, driven from the app by AssetPackManager.ensureLocalAvailability(of:).
+        BAHasManagedAssetPacks: true
+        BAUsesAppleHosting: true
+        BAAppGroupID: $(WP_BA_APP_GROUP)
+        # No BAMaxInstallSize / BAOptionalMaxInstallSize / BAEssentialMaxInstallSize here. Those
+        # declare sizes for *self-hosted* packs; with BAUsesAppleHosting the sizes come from the
+        # packs uploaded to App Store Connect, and App Store validation rejects the build outright
+        # if they are present ("Disallowed Info.plist key … isn't allowed", 91151). PROMPT §3a names
+        # BAEssentialDownloadAllowance and BAEssentialMaxInstallSize; neither belongs in an
+        # Apple-hosted, on-demand app.
+        # Makes the app's iCloud Drive folder visible in the Files app. Without this the container
+        # exists but the user can never see the wallpapers they made, which is half the promise.
+        NSUbiquitousContainers:
+          iCloud.oleksandr.aisixteen.wallpapers:
+            NSUbiquitousContainerIsDocumentScopePublic: true
+            NSUbiquitousContainerName: AISixteen Wallpapers
+            NSUbiquitousContainerSupportedFolderLevels: Any
+
+  # Background Assets is not usable without this. `AssetPackManager.shared` validates the app on
+  # first touch and calls fatalError if the app has no downloader extension — so its absence is not
+  # a missing feature, it is a launch crash on both platforms. With Apple hosting the system does
+  # all the scheduling; the extension only says yes.
+  WallpapersDownloader:
+    # `extensionkit-extension`, NOT `app-extension`. The two differ in where the .appex is embedded
+    # and which Info.plist key declares it, and App Store validation rejects the mismatch outright:
+    # "built like an NSExtension, but based on its supported extension point, it must be built as an
+    # ExtensionKit extension. NSExtensions must be in the PlugIns directory … EXAppExtensions must be
+    # in the Extensions directory." Background Assets downloaders are ExtensionKit.
+    type: extensionkit-extension
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: WallpapersDownloader
+        excludes: [Info.plist]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.wallpapers.downloader
+        PRODUCT_NAME: WallpapersDownloader
+        # xcodegen's `info:` key generates a plist and overwrites a hand-written one. This extension
+        # needs an exact EXAppExtensionAttributes dictionary, so the file is authored and used
+        # directly with generation turned off.
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: WallpapersDownloader/Info.plist
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": WallpapersDownloader.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": WallpapersDownloader.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": WallpapersDownloader-macOS.entitlements
+        SKIP_INSTALL: YES
+
+  # The state space lives here: the job machine, the gate machine, the storage locator and the
+  # accessibility treatments. The Kits prove their own maths in their own packages.
+  wallpapersUnitTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: wallpapersUnitTests
+    dependencies:
+      - target: wallpapers
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: oleksandr.aisixteen.wallpapersUnitTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: wallpapers
+        # Spelled out because PRODUCT_NAME ("AISixteen Wallpapers") differs from the target name
+        # ("wallpapers"). XcodeGen derives TEST_HOST from the TARGET name, so the default points at
+        # a binary that was never built and the build fails with "Could not find test host".
+        # BUNDLE_EXECUTABLE_FOLDER_PATH keeps it right on both platforms: empty on iOS,
+        # "Contents/MacOS" on macOS.
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/AISixteen Wallpapers.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AISixteen Wallpapers
+        BUNDLE_LOADER: $(TEST_HOST)
+
+schemes:
+  # `xcodebuild test -scheme wallpapers` must actually run tests: a scheme with no test action
+  # reports success having built no test bundle.
+  wallpapers:
+    build:
+      targets:
+        wallpapers: all
+        wallpapersUnitTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - wallpapersUnitTests
+
+  # Same app, mock generator, no model in the bundle. For Simulator UI work and preview-video takes.
+  wallpapers-mock:
+    build:
+      targets:
+        wallpapers: all
+    run:
+      config: Mock
+    test:
+      config: Debug
+      targets:
+        - wallpapersUnitTests
