@@ -30,6 +30,12 @@ enum Pilot {
         case wait
         /// Drop on this frame if the engine will allow it.
         case drop
+        /// Run from the dog and keep running, however far ahead it gets.
+        ///
+        /// `.play` is not the same thing: it stops for food the moment the gap opens past
+        /// `pilotFleeRadius`, and a pig that stops to eat the carrots it just grew fattens straight
+        /// back into catchable range — which is what `ScenarioTests` caught the escape beat doing.
+        case flee
     }
 
     static func intent(_ w: World, goal: Goal = .play) -> Intent {
@@ -62,20 +68,35 @@ enum Pilot {
         // take something away.
         let awayX = w.x - w.dogX, awayZ = w.z - w.dogZ
         let dogGap = (awayX * awayX + awayZ * awayZ).squareRoot.maximum(1e-6)
-        let chased = (w.dogActive .> 0.5) .&& (dogGap .< c.pilotFleeRadius)
 
         // ── The goal decides the destination ────────────────────────────────────────────────
         //
         // Every branch is a mask, not an `if`: at `N = 512` the worlds are in different situations and
         // must still run the same instructions.
         let plan = destination(goal, n: n)
+        let chased = (w.dogActive .> 0.5)
+            .&& ((dogGap .< c.pilotFleeRadius) .|| plan.alwaysFlee)
+
+        // **Fleeing straight away from the dog gets you cornered.** The paddock is a disc: run radially
+        // and you reach the fence in six seconds, slide along it, and the dog cuts the chord and has
+        // you. Measured — the escape beat was losing a pig that was half a metre per second faster.
+        //
+        // So the further out the pig is, the more the flee direction turns to run ALONG the fence
+        // instead of into it, picking whichever way round agrees with getting away. Blended by
+        // distance rather than switched, or the pig would jink at one radius.
+        let out = (w.x * w.x + w.z * w.z).squareRoot.maximum(1e-6)
+        let tangentX = -w.z / out, tangentZ = w.x / out
+        let sameWay = Tensor.which((awayX * tangentX + awayZ * tangentZ) .>= 0, 1.0, -1.0)
+        let corner = out.smoothstep(c.paddockRadius * 0.55, c.paddockRadius * 0.92)
+        let fleeX = awayX / dogGap * (1 - corner) + tangentX * sameWay * corner
+        let fleeZ = awayZ / dogGap * (1 - corner) + tangentZ * sameWay * corner
 
         // Toward the food, or away from the dog, or wherever the scenario says — in that order of
         // precedence, resolved by two nested `which`es rather than by control flow.
-        let wantX = Tensor.which(chased, w.x + awayX / dogGap * 10,
+        let wantX = Tensor.which(chased, w.x + fleeX * 10,
                                  Tensor.which(plan.active, plan.x,
                                               Tensor.which(haveFood, foodX, w.x)))
-        let wantZ = Tensor.which(chased, w.z + awayZ / dogGap * 10,
+        let wantZ = Tensor.which(chased, w.z + fleeZ * 10,
                                  Tensor.which(plan.active, plan.z,
                                               Tensor.which(haveFood, foodZ, w.z)))
 
@@ -116,26 +137,32 @@ enum Pilot {
     /// different instructions, and only one of them has a destination.
     private struct Plan {
         var x: Tensor, z: Tensor, active: Tensor, stop: Tensor, drop: Tensor, noDrop: Tensor
+        var alwaysFlee: Tensor
     }
 
     private static func destination(_ goal: Goal, n: Int) -> Plan {
         switch goal {
         case .play:
             return Plan(x: .zeros([n]), z: .zeros([n]), active: .zeros([n]),
-                        stop: .zeros([n]), drop: .zeros([n]), noDrop: .zeros([n]))
+                        stop: .zeros([n]), drop: .zeros([n]), noDrop: .zeros([n]), alwaysFlee: .zeros([n]))
         case .forage:
             return Plan(x: .zeros([n]), z: .zeros([n]), active: .zeros([n]),
-                        stop: .zeros([n]), drop: .zeros([n]), noDrop: .ones([n]))
+                        stop: .zeros([n]), drop: .zeros([n]), noDrop: .ones([n]), alwaysFlee: .zeros([n]))
         case .walk(let x, let z):
             return Plan(x: Tensor(repeating: x, shape: [n]), z: Tensor(repeating: z, shape: [n]),
                         active: .ones([n]), stop: .zeros([n]), drop: .zeros([n]),
-                        noDrop: .ones([n]))
+                        noDrop: .ones([n]), alwaysFlee: .zeros([n]))
         case .wait:
             return Plan(x: .zeros([n]), z: .zeros([n]), active: .ones([n]),
-                        stop: .ones([n]), drop: .zeros([n]), noDrop: .ones([n]))
+                        stop: .ones([n]), drop: .zeros([n]), noDrop: .ones([n]), alwaysFlee: .zeros([n]))
         case .drop:
             return Plan(x: .zeros([n]), z: .zeros([n]), active: .zeros([n]),
-                        stop: .ones([n]), drop: .ones([n]), noDrop: .zeros([n]))
+                        stop: .ones([n]), drop: .ones([n]), noDrop: .zeros([n]),
+                        alwaysFlee: .zeros([n]))
+        case .flee:
+            return Plan(x: .zeros([n]), z: .zeros([n]), active: .zeros([n]),
+                        stop: .zeros([n]), drop: .zeros([n]), noDrop: .zeros([n]),
+                        alwaysFlee: .ones([n]))
         }
     }
 }

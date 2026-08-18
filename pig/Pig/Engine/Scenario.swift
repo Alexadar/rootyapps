@@ -55,7 +55,14 @@ struct Scenario {
              yaw: 0.1, pitch: 0.30, goal: .forage),
         Step(key: "fatten", seconds: 8.0, caption: "Fatter is slower, and wider through the turns",
              yaw: -0.6, pitch: 0.28, goal: .forage),
-        Step(key: "drop", seconds: 4.0, caption: "Drop to get light again — it costs a few meals",
+        // The catch has to land HERE, at peak fat, and the reason is arithmetic rather than staging:
+        // what closes a chase is the difference in speed, not who is faster. After the drop the pig
+        // sits around 0.48 fat and runs at 2.47 against the dog's 2.55 — eight centimetres a second,
+        // which needs a minute to close five metres. At 0.81 it runs at 1.86 and the gap shuts in
+        // four. `ScenarioTests` proved the earlier ordering filmed a threat that never landed.
+        Step(key: "dog", seconds: 7.0, caption: "Too heavy to outrun it",
+             yaw: 0.2, pitch: 0.32, goal: .forage),
+        Step(key: "drop", seconds: 4.5, caption: "Drop to get light again — it costs a few meals",
              yaw: -0.2, pitch: 0.40, goal: .drop),
         // Stand over the patch, not away from it: the first take walked the pig three metres off and
         // filmed nine seconds of grass while the payoff happened behind the camera. The drop lands
@@ -63,8 +70,8 @@ struct Scenario {
         // what makes the shoots visible from above.
         Step(key: "grow", seconds: 9.5, caption: "What you drop grows into three carrots",
              yaw: 0.9, pitch: 0.55, goal: .wait),
-        Step(key: "dog", seconds: 8.0, caption: "The dog only catches a fat pig",
-             yaw: 0.2, pitch: 0.32, goal: .play),
+        Step(key: "escape", seconds: 6.5, caption: "Lighter now — it can't keep up",
+             yaw: 0.2, pitch: 0.32, goal: .flee),
     ]
 
     static var duration: Double { script.reduce(0) { $0 + $1.seconds } }
@@ -100,6 +107,40 @@ struct Scenario {
         }
         return out
     }
+}
+
+extension Scenario {
+
+    /// **Demo staging for the dog**, in the engine rather than in `Game`, so a test can play exactly
+    /// the take that gets filmed and assert what it shows.
+    ///
+    /// It writes simulation STATE — the same thing `PIG_DOG=1` does — and never touches how the dog
+    /// behaves once it is up: what is scripted is when it sets off and where from, not the chase.
+    ///
+    /// Three things happen here, each because a take filmed the wrong thing without it:
+    ///
+    ///  * **outside the dog beats the dog is held off**, or it wanders into the middle of "fatter is
+    ///    slower" on its own random timer and steals its own reveal;
+    ///  * **inside them it is summoned** rather than waited for;
+    ///  * **and pulled to `dogGap`**, because one closing at 2.55 m/s never reaches a pig running at
+    ///    2.7 inside a seven-second beat, so the beat filmed a pig fleeing something invisible.
+    static func stageDog(_ w: inout World, beat: Beat, stagedFor: inout String) {
+        guard beat.key == "dog" || beat.key == "escape" else {
+            w.dogActive = .zeros([w.batch])
+            w.dogTimer = Tensor(repeating: 1e9, shape: [w.batch])
+            return
+        }
+        if w.dogActive[0] < 0.5 && w.dogTimer[0] > 0 { w.dogTimer = .zeros([w.batch]) }
+        guard w.dogActive[0] > 0.5, stagedFor != beat.key else { return }
+        stagedFor = beat.key
+        let bearing = atan2(w.dogX[0] - w.x[0], w.dogZ[0] - w.z[0])
+        w.dogX = Tensor(shape: [1], data: [w.x[0] + sin(bearing) * dogGap])
+        w.dogZ = Tensor(shape: [1], data: [w.z[0] + cos(bearing) * dogGap])
+    }
+
+    /// How close the dog is placed when the demo summons it, metres. Close enough that a chase
+    /// resolves inside its beat — see the note on the ordering in the script above.
+    static let dogGap: Double = 3.6
 }
 
 /// Drives one demo run: holds the clock, hands out beats, and logs each marker exactly once.

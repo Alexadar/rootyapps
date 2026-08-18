@@ -68,8 +68,9 @@ final class Game: ObservableObject {
 
     static let demoMode = ProcessInfo.processInfo.environment["PIG_DEMO"] == "1"
     private let runner = ScenarioRunner()
-    /// The dog is pulled into shot once per take, not once per frame.
-    private var dogStaged = false
+    /// Which beat the dog was last pulled into shot for — once per beat, not once per frame, and the
+    /// escape beat gets its own staging because it summons the dog a second time.
+    private var dogStagedFor = ""
 
     /// What the pilot is "pressing", plus the beat's caption — everything the recording overlays.
     ///
@@ -203,28 +204,10 @@ final class Game: ObservableObject {
     private func tickDemo(dt: Float) {
         let beat = runner.advance(dt: config.dt)
 
-        // The director's one direct intervention: staging the dog. It is on a random timer, so left
-        // alone it wanders into the middle of the "fatter is slower" beat and steals its own reveal —
-        // which is exactly what the first take filmed. Held off until its beat, then summoned.
-        //
-        // This sets simulation STATE, the same thing `PIG_DOG=1` does. The dog that arrives is the
-        // real dog, running the real chase; only *when* it sets off is scripted.
-        if beat.key == "dog" {
-            if world.dogActive[0] < 0.5 && world.dogTimer[0] > 0 { world.dogTimer = .zeros([1]) }
-            // Summoned at the config's twelve metres, a dog chasing a pig that runs at 2.7 m/s never
-            // closes inside an eight-second beat: the first take filmed a pig fleeing something the
-            // viewer never sees. Pulling it to `demoDogGap` on the frame it appears makes the chase
-            // legible without changing how the dog behaves — it is the same dog, started closer.
-            if world.dogActive[0] > 0.5 && !dogStaged {
-                dogStaged = true
-                let bearing = atan2(world.dogX[0] - world.x[0], world.dogZ[0] - world.z[0])
-                world.dogX = Tensor(shape: [1], data: [world.x[0] + sin(bearing) * Game.demoDogGap])
-                world.dogZ = Tensor(shape: [1], data: [world.z[0] + cos(bearing) * Game.demoDogGap])
-            }
-        } else {
-            world.dogActive = .zeros([1])
-            world.dogTimer = Tensor(shape: [1], data: [1e9])
-        }
+        // The director's one direct intervention — held off, summoned, and pulled into shot. The
+        // reasoning, and the tests that play the same take, live with it in `Scenario.stageDog`.
+        let dogBeat = beat.key == "dog" || beat.key == "escape"
+        Scenario.stageDog(&world, beat: beat, stagedFor: &dogStagedFor)
 
         let intent = Pilot.intent(world, goal: beat.goal)
 
@@ -246,7 +229,7 @@ final class Game: ObservableObject {
         // the camera sits behind a fleeing pig and the dog is permanently out of frame — which is
         // what the first take filmed.
         let chaseYaw = atan2(snapshot.dogX - snapshot.x, snapshot.dogZ - snapshot.z)
-        let wantYaw = (beat.key == "dog" && snapshot.dogActive)
+        let wantYaw = (dogBeat && snapshot.dogActive)
             ? chaseYaw
             : snapshot.heading + beat.cameraYaw
         let yawStep = CameraFrame.shortestTurn(from: cameraYaw, to: wantYaw)
@@ -269,8 +252,6 @@ final class Game: ObservableObject {
     /// How fast the demo camera may swing, rad/s. Slower than the player's, because a shot that whips
     /// around is unreadable on a forty-second recording.
     private static let demoCameraRate: Float = 1.1
-    /// How close the dog is placed when the demo summons it, metres.
-    private static let demoDogGap: Double = 5.5
 
     /// Round to twentieths, so a drifting stick republishes a few times a second instead of 120.
     private static func quantise(_ v: SIMD2<Float>) -> SIMD2<Float> {

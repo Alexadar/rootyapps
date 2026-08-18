@@ -19,7 +19,7 @@ final class ScenarioTests: XCTestCase {
             if seen.last != key { seen.append(key) }
             t += 0.05
         }
-        XCTAssertEqual(seen, ["walk", "eat", "fatten", "drop", "grow", "dog"],
+        XCTAssertEqual(seen, ["walk", "eat", "fatten", "dog", "drop", "grow", "escape"],
                        "the beats did not play in order, or one was skipped entirely")
     }
 
@@ -35,8 +35,8 @@ final class ScenarioTests: XCTestCase {
 
     /// The take has to fit the shot list it was written for, and it has to be long enough that the
     /// nine-second growth beat is actually witnessed rather than cut around.
-    func testTheTakeIsAboutFortySecondsAndTheGrowthBeatOutlastsGrowing() {
-        XCTAssertEqual(Scenario.duration, 42.5, accuracy: 0.01)
+    func testTheTakeIsAboutFortyEightSecondsAndTheGrowthBeatOutlastsGrowing() {
+        XCTAssertEqual(Scenario.duration, 48.5, accuracy: 0.01)
         let grow = Scenario.boundaries.first { $0.key == "grow" }
         XCTAssertNotNil(grow)
         XCTAssertGreaterThan((grow?.end ?? 0) - (grow?.start ?? 0), c.growTime,
@@ -78,7 +78,8 @@ final class ScenarioTests: XCTestCase {
         XCTAssertEqual(keyAfter(600), keyAfter(600))
         XCTAssertEqual(keyAfter(Int(1 / c.dt)), "walk")
         XCTAssertEqual(keyAfter(Int(20 / c.dt)), "fatten")
-        XCTAssertEqual(keyAfter(Int(41 / c.dt)), "dog")
+        XCTAssertEqual(keyAfter(Int(25 / c.dt)), "dog")
+        XCTAssertEqual(keyAfter(Int(46 / c.dt)), "escape")
     }
 
     /// **No beat may hang a recording.** The whole take is played by the real pilot against the real
@@ -98,12 +99,46 @@ final class ScenarioTests: XCTestCase {
                 Step.advance(&w, intent: Pilot.intent(w, goal: beat.goal))
                 XCTAssertTrue(w.fat[0].isFinite, "seed \(seed) went non-finite during \(beat.key)")
             }
-            XCTAssertEqual(reached.count, 6, "seed \(seed) only reached \(reached.sorted())")
+            XCTAssertEqual(reached.count, 7, "seed \(seed) only reached \(reached.sorted())")
             // The take is supposed to end with a fed pig and a story: it ate, it dropped, it survived.
             XCTAssertGreaterThan(w.eaten[0], 0, "seed \(seed) filmed a pig that never ate")
             XCTAssertGreaterThan(w.dropAlive.data.reduce(0, +), 0,
                                  "seed \(seed) filmed a field with nothing growing in it")
         }
+    }
+
+    /// **The caption is a claim, so it is a test.**
+    ///
+    /// "Too heavy to outrun it" then "lighter now — it can't keep up" is an assertion about the
+    /// engine's arithmetic, and a demo that shows only the half that flatters it is asking to be
+    /// taken on trust. This plays the filmed take through the real pilot and the real staging and
+    /// checks that the fat pig is caught and the light one is not.
+    func testTheFatPigIsCaughtAndTheLightOneGetsAway() {
+        var w = World(batch: 1, config: c, seed: 0x5EED_9160)
+        let runner = ScenarioRunner()
+        var stagedFor = ""
+        var caughtIn: [String: Int] = [:]
+        var fatWhenCaught = 0.0
+
+        while !runner.beat.isOver {
+            let beat = runner.advance(dt: c.dt)
+            Scenario.stageDog(&w, beat: beat, stagedFor: &stagedFor)
+            let before = w.fat[0]
+            Step.advance(&w, intent: Pilot.intent(w, goal: beat.goal))
+            if w.dogCaught[0] > 0.5 {
+                caughtIn[beat.key, default: 0] += 1
+                if beat.key == "dog" { fatWhenCaught = before }
+            }
+        }
+
+        XCTAssertGreaterThan(caughtIn["dog"] ?? 0, 0,
+                             "the heavy pig was never caught, so the take shows a threat that never "
+                             + "lands and a caption nobody has to believe")
+        XCTAssertGreaterThan(fatWhenCaught, 0.4,
+                             "it was caught, but at \(fatWhenCaught) fat — that is not the fat pig "
+                             + "the caption is about")
+        XCTAssertEqual(caughtIn["escape"] ?? 0, 0,
+                       "the lighter pig was caught too, so the second half of the claim is false")
     }
 
     /// The dog has to actually turn up during the beat named after it, or the last eight seconds of
