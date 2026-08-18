@@ -1,0 +1,465 @@
+"""render_drone_torch — a GPU (torch) rasterizer for the droneswarm "moviegen".
+
+Why this exists: the PIL renderer (render_drone.py) draws every terrain quad and every sprite with a
+single-core C polygon fill. With a MOVING / auto-fit camera the whole ground reprojects every frame, so
+cost ~ (terrain_quads + sprites) * panels * frames on ONE cpu core -> minutes. Here we push the whole
+thing onto the 3090: the scene is turned into a flat list of SCREEN-SPACE TRIANGLES (terrain mesh split
+into 2 tris/quad, entity squares, altitude lines, crash spots) and rasterized with a batched z-buffer.
+
+What is vectorized vs. what stays a loop (answering "can the for-loops be torch too?"):
+  * Per-PRIMITIVE loops (882 terrain quads, per-drone / per-enemy draws)  -> GONE: pure tensor ops.
+  * Per-PIXEL work (coverage + depth test for ALL pixels of ALL panels)  -> one batched tensor op.
+  * The FRAME loop (~hundreds of frames) and the TRIANGLE-CHUNK loop      -> kept as Python loops on
+    purpose. Collapsing frames into a tensor dim would need frames*panels*pixels*tris elements (petabytes);
+    the chunk loop is a deliberate VRAM-bounding device. Both are OFFLINE (not the sim hot path) -> OK.
+
+Visual parity vs. PIL: same sky gradient, height-shaded terrain, cyan drones + altitude lines, red/orange
+enemy boxes, black crash spots, per-panel HUD text (the ONLY thing still drawn on cpu with PIL, because
+it is a handful of tiny text blits per frame and GPU text is not worth it). Terrain grid outlines are
+dropped (shading alone reads fine) — a minor, deliberate difference for speed.
+"""
+import numpy as np
+import torch
+from PIL import Image, ImageDraw
+
+# reuse the proven pieces from the PIL renderer: colors, the terrain-height bilinear sampler, the capture
+# (mean-action rollout -> per-frame CPU snapshots), and the numpy heightfield sampler for entity ground z.
+from render_drone import (SKY_TOP, SKY_BOT, DRONE_C, CRASH_C, TANK_C, SOLDIER_C, ENEMY_DEAD, TREE_C, FPS,
+                          _bilerp_np, capture)
+# the scenario-agnostic rasterizer primitives + palettes + MP4 writer now live in common.render_core
+# (shared with the cherrypick demo). Only combat-specific scene assembly stays in THIS file.
+from common.render_core import (_c, _cam_tensors, _project, _quads_to_tris, _sprite_quads, _line_quads,
+                                _rasterize, _terrain_quads, _obstacle_tris, VideoWriter,
+                                NAV_OK, NAV_NO, NAV_PATH, TRAIL_C)
+
+HOMING_C = (240, 70, 60)           # bright red drone->target "lock" line (pulses; a targeting readout) — combat-only
+
+
+# ----------------------------------------------------------------------------------------------------
+# Camera: a per-panel auto-fit "cinematic" camera. Each frame it frames the bbox of that env's ALIVE
+# drones+enemies head-on -> auto-tracks AND auto-zooms (wide when swarm & enemies are ~60 m apart at
+# launch, tight at the strike when they converge). EMA-smoothed per env to kill jitter. Pure numpy
+# (negligible cost) -> returns plain camera dicts that we later stack into GPU tensors.
+# ----------------------------------------------------------------------------------------------------
+def autofit_cameras(snaps, hfs, cfg, W, H, pitch_deg=20.0, fov_deg=46.0, margin=1.30,
+                    ema=0.16, dmin=15.0, dmax=82.0):
+    """Return cams[nfr][P] = dict(eye,right,up,fwd,f) built by fitting each panel's live entities."""
+    P = hfs.shape[0]
+    ext = cfg.arena_half
+    tan_h = np.tan(np.radians(fov_deg) / 2.0)          # horizontal half-FOV tangent (focal = 0.5*W/tan_h)
+    tan_v = tan_h * (H / W)                             # vertical half-FOV tangent (aspect-corrected)
+    cth, sth = np.cos(np.radians(pitch_deg)), np.sin(np.radians(pitch_deg))  # head-on view down-tilt
+    st = {}                                            # per-env EMA state: e -> (center[3], dist)
+    out = []
+    for snap in snaps:                                 # RENDER-LOOP-OK (offline; per-frame camera solve)
+        cams = []
+        for e in range(P):                             # RENDER-LOOP-OK (P=9 tiny; per-panel bbox solve)
+            dp = snap["d_pos"][0, e]; da = snap["d_alive"][0, e] > 0.5; dact = snap["d_act"][0, e] > 0.5
+            ep = snap["e_pos"][0, e]; ea = snap["e_alive"][0, e] > 0.5
+            pts = []
+            m = da & dact                              # drones that are up and flying
+            if m.any():
+                pts.append(dp[m])
+            elif da.any():
+                pts.append(dp[da])                     # pre-launch: frame the spawn cluster
+            if ea.any():                               # live enemies sit on the ground
+                epa = ep[ea]; ez = _bilerp_np(hfs[e], epa[:, 0], epa[:, 1], ext)
+                pts.append(np.concatenate([epa, ez[:, None]], -1))
+            if pts:
+                Pw = np.concatenate(pts, 0); lo = Pw.min(0); hi = Pw.max(0)
+                c = 0.5 * (lo + hi)                    # bbox center = look-at
+                xspan = hi[0] - lo[0]; zspan = hi[2] - lo[2]
+                dist = margin * max(0.5 * xspan / tan_h, 0.5 * zspan / tan_v, 6.0)  # distance that fits BOTH axes
+                dist = float(np.clip(dist, dmin, dmax))
+            elif e in st:
+                c, dist = st[e]                        # nobody left -> hold last pose
+            else:
+                c, dist = np.array([0., 0., 4.]), dmax
+            if e in st:                                # temporal EMA smoothing
+                c0, d0 = st[e]; c = c0 + ema * (c - c0); dist = d0 + ema * (dist - d0)
+            st[e] = (c, dist)
+            center = np.array([c[0], c[1], c[2]])
+            eye = center + dist * np.array([0.0, -cth, sth])          # behind (-y) and above the subject
+            up = np.array([0., 0., 1.]); fwd = center - eye; fwd /= np.linalg.norm(fwd)
+            right = np.cross(fwd, up); right /= np.linalg.norm(right); up2 = np.cross(right, fwd)
+            cams.append(dict(eye=eye, right=right, up=up2, fwd=fwd, f=0.5 * W / tan_h))
+        out.append(cams)
+    return out
+
+
+def chase_cameras(snaps, hfs, cfg, W, H, fov_deg=55.0, ema=0.14, look_ahead=0.45,
+                  back_base=13.0, back_k=0.50, back_lo=16.0, back_hi=50.0,
+                  height_base=13.0, height_k=0.34, height_lo=16.0, height_hi=44.0):
+    """Third-person CHASE camera per panel: sit BEHIND the swarm (opposite its travel direction) and ABOVE
+    it, looking forward down the swarm->enemy axis toward the target. Two properties fix the "camera hides
+    behind hills" problem of the head-on cam: (1) the eye is placed at terrain_height(eye_xy)+height, so it
+    is ALWAYS above the local ground (never buried in a hill); (2) it looks DOWN-forward at a steep-ish
+    angle, so any ridge between camera and swarm sits below the sightline. Pull-back distance scales with
+    the swarm<->enemy separation -> wide chase early (60 m gap), tight chase at the strike. EMA-smoothed."""
+    P = hfs.shape[0]
+    ext = cfg.arena_half
+    f = 0.5 * W / np.tan(np.radians(fov_deg) / 2.0)
+    st = {}                                              # per-env EMA state: e -> dict(sc, ec, fxy)
+
+    def terr(e, x, y):                                   # terrain height at a single world (x,y)
+        return float(_bilerp_np(hfs[e], np.array([x]), np.array([y]), ext)[0])
+
+    out = []
+    for snap in snaps:                                   # RENDER-LOOP-OK (offline; per-frame camera solve)
+        cams = []
+        for e in range(P):                               # RENDER-LOOP-OK (P tiny; per-panel chase solve)
+            dp = snap["d_pos"][0, e]; da = snap["d_alive"][0, e] > 0.5; dact = snap["d_act"][0, e] > 0.5
+            ep = snap["e_pos"][0, e]; ea = snap["e_alive"][0, e] > 0.5
+            prev = st.get(e)
+            m = da & dact                                # swarm centroid: prefer flying drones
+            if m.any():
+                sc = dp[m].mean(0)
+            elif da.any():
+                sc = dp[da].mean(0)
+            elif prev is not None:
+                sc = prev["sc"]
+            else:
+                sc = np.array([-30., 0., 5.])            # cold fallback (left cell)
+            if ea.any():                                 # enemy centroid on the ground
+                epa = ep[ea]; ez = _bilerp_np(hfs[e], epa[:, 0], epa[:, 1], ext)
+                ec = np.array([epa[:, 0].mean(), epa[:, 1].mean(), ez.mean()])
+            elif prev is not None:
+                ec = prev["ec"]
+            else:
+                ec = sc + np.array([20., 0., 0.])
+            if prev is not None:                         # EMA-smooth the two centroids (kills jitter)
+                sc = prev["sc"] + ema * (sc - prev["sc"]); ec = prev["ec"] + ema * (ec - prev["ec"])
+            d_xy = ec[:2] - sc[:2]; sep = float(np.hypot(*d_xy))            # forward = swarm -> enemy (xy)
+            fxy = d_xy / sep if sep > 1e-3 else (prev["fxy"] if prev is not None else np.array([1., 0.]))
+            if prev is not None:                         # EMA-smooth the heading, then renormalize
+                fxy = prev["fxy"] + ema * (fxy - prev["fxy"]); fxy = fxy / (np.linalg.norm(fxy) + 1e-9)
+            st[e] = dict(sc=sc, ec=ec, fxy=fxy)
+
+            back = float(np.clip(back_base + back_k * sep, back_lo, back_hi))     # pull back more when far apart
+            height = float(np.clip(height_base + height_k * sep, height_lo, height_hi))
+            eye_xy = sc[:2] - fxy * back                                          # behind the swarm
+            eye_z = max(terr(e, eye_xy[0], eye_xy[1]), sc[2]) + height            # ABOVE local terrain AND swarm
+            eye = np.array([eye_xy[0], eye_xy[1], eye_z])
+            look_xy = sc[:2] + fxy * (sep * look_ahead)                           # aim ahead, between swarm & enemies
+            look_at = np.array([look_xy[0], look_xy[1], terr(e, look_xy[0], look_xy[1]) + 2.0])
+            up = np.array([0., 0., 1.]); fwd = look_at - eye; fwd /= np.linalg.norm(fwd)
+            right = np.cross(fwd, up); right /= np.linalg.norm(right); up2 = np.cross(right, fwd)
+            cams.append(dict(eye=eye, right=right, up=up2, fwd=fwd, f=f))
+        out.append(cams)
+    return out
+
+
+# ----------------------------------------------------------------------------------------------------
+# Scene assembly: turn a captured snapshot (+ static terrain) into the [P,T,...] triangle soup, per frame.
+# ----------------------------------------------------------------------------------------------------
+
+
+def _entity_tris(snap, hfs_t, ext, eye, right, up, fwd, f, W, H, device, pulse=None, show_nav=True, trail=None):
+    """Build entity triangles for one frame: enemy boxes, drone dots, altitude lines, crash spots, and
+    (when `pulse` is not None) the pulsing RED homing line from each live drone to its assigned target."""
+    P = hfs_t.shape[0]
+    dp = torch.tensor(snap["d_pos"][0], dtype=torch.float32, device=device)     # [P,D,3] drone world pos
+    da = torch.tensor(snap["d_alive"][0], dtype=torch.float32, device=device) > 0.5
+    dact = torch.tensor(snap["d_act"][0], dtype=torch.float32, device=device) > 0.5
+    dcr = torch.tensor(snap["d_crash"][0], dtype=torch.float32, device=device) > 0.5
+    ep2 = torch.tensor(snap["e_pos"][0], dtype=torch.float32, device=device)    # [P,E,2] enemy ground pos
+    ea = torch.tensor(snap["e_alive"][0], dtype=torch.float32, device=device) > 0.5
+    et = torch.tensor(snap["e_type"], dtype=torch.float32, device=device) > 0.5  # [P,E] tank flag
+
+    # --- drones: project the drone body AND its foot (same x,y, on the terrain) for the altitude line ---
+    dscr, ddep = _project(eye, right, up, fwd, f, W, H, dp)                     # body [P,D,2],[P,D]
+    fz = _bilerp_t(hfs_t, dp[..., 0], dp[..., 1], ext)                          # foot height under each drone
+    foot = torch.stack([dp[..., 0], dp[..., 1], fz], -1)
+    fscr, fdep = _project(eye, right, up, fwd, f, W, H, foot)                   # foot [P,D,2],[P,D]
+    live = da & dact                                                            # drawn only if up & alive
+
+    # --- enemies: project on the ground; alive -> type color, dead -> gray (always drawn, like PIL) ---
+    ez = _bilerp_t(hfs_t, ep2[..., 0], ep2[..., 1], ext)
+    e3 = torch.stack([ep2[..., 0], ep2[..., 1], ez], -1)
+    escr, edep = _project(eye, right, up, fwd, f, W, H, e3)                     # [P,E,2],[P,E]
+
+    tris_list, dep_list, col_list, val_list, alpha_list = [], [], [], [], []
+
+    def add_quads(quad, qdep, qcol, qval, a=1.0):
+        t, d, c, v = _quads_to_tris(quad, qdep, qcol, qval)
+        tris_list.append(t); dep_list.append(d); col_list.append(c); val_list.append(v)
+        alpha_list.append(torch.full_like(d, float(a)))                            # per-triangle alpha (1=opaque)
+
+    # DEPTH BIAS: entities sit ON (enemies, crash decals) or above (drones) the terrain, so their flat
+    # sprite depth ties with the terrain quad they cover -> the z-test can let the ground WIN and hide them
+    # (classic decal z-fight). Pull entity depth a bit toward the camera so they reliably beat their own
+    # ground cell, while a genuinely-nearer hill (> the bias) still occludes them correctly. Crash marks are
+    # pure ground decals -> a stronger bias so an "earth-hit" is never swallowed by the terrain.
+    BIAS = 0.8; BIAS_CRASH = 2.5
+
+    # enemy boxes (size 7 tanks / 5 soldiers)
+    esz = torch.where(et, torch.full_like(edep, 7.0), torch.full_like(edep, 5.0))
+    ecol = torch.where(ea[..., None], torch.where(et[..., None], _c(TANK_C, device), _c(SOLDIER_C, device)),
+                       _c(ENEMY_DEAD, device))                                   # [P,E,3]
+    q, qd, qv = _sprite_quads(escr, edep - BIAS, esz, torch.ones_like(ea))
+    add_quads(q, qd, ecol, qv)
+
+    # --- RED HOMING LINE: from each LIVE drone to its nearest LIVE enemy = the exact target the live
+    #     PN-lead seek homes on (post-decouple the homing is a STRAIGHT line to the assigned enemy; the
+    #     geodesic nav-field now only routes AROUND obstacles, so tracing -grad(dist) would misrepresent it).
+    #     This is the targeting readout the user asked for: you can see which enemy each drone commits to, and
+    #     a lone-drone centroid-dither shows as a line that won't settle on one enemy. Pulses (brightness +
+    #     width via sin(frame)) so it reads as an active lock. Drawn before the drone/enemy sprites so those
+    #     win depth ties at the endpoints. Skipped entirely when pulse is None (homing_lines=False). ----
+    if pulse is not None:
+        d_xy = dp[..., :2]                                                     # [P,D,2] drone ground pos
+        de = torch.linalg.norm(ep2[:, None, :, :] - d_xy[:, :, None, :], dim=-1)   # [P,D,E] drone->enemy range
+        de = torch.where(ea[:, None, :], de, torch.full_like(de, 1e18))       # mask DEAD enemies out of the argmin
+        nearest = de.argmin(-1)                                               # [P,D] nearest LIVE enemy index
+        has_tgt = ea.any(-1)                                                  # [P] is there any live enemy at all
+        bp = torch.arange(P, device=device)[:, None]                         # [P,1] panel index for gather
+        tscr = escr[bp, nearest]                                             # [P,D,2] target enemy screen pos
+        tdep = edep[bp, nearest]                                             # [P,D] target enemy depth
+        hval = live & has_tgt[:, None]                                       # only live drones with a live target
+        hcol = _c(HOMING_C, device) * (0.55 + 0.45 * float(pulse))           # [1,1,3] pulsing brightness
+        hw = torch.full_like(ddep, 1.0 + 1.2 * float(pulse))                 # pulsing half-width
+        hdep = 0.5 * (ddep + tdep) - BIAS                                    # midpoint depth, biased toward camera
+        q, qd, qv = _line_quads(dscr, tscr, hdep, hw, hval)
+        add_quads(q, qd, hcol.expand(P, dp.shape[1], 3), qv)
+
+    # crash spots (black ground marks under crashed drones) — bigger + strong decal bias so they're visible
+    q, qd, qv = _sprite_quads(fscr, fdep - BIAS_CRASH, torch.full_like(fdep, 8.0), dcr)
+    add_quads(q, qd, _c(CRASH_C, device).expand(P, dp.shape[1], 3), qv)
+
+    # altitude lines (foot -> drone, cyan, thin)
+    q, qd, qv = _line_quads(fscr, dscr, ddep - BIAS, torch.full_like(ddep, 1.2), live)
+    add_quads(q, qd, _c(DRONE_C, device).expand(P, dp.shape[1], 3), qv)
+
+    # drone dots (cyan squares)
+    q, qd, qv = _sprite_quads(dscr, ddep - BIAS, torch.full_like(ddep, 4.0), live)
+    add_quads(q, qd, _c(DRONE_C, device).expand(P, dp.shape[1], 3), qv)
+
+    # --- SUPERVISOR OVERLAY: the quantized ALLOWED-state field as dots -- exactly what the supervisor publishes.
+    #     RED = forbidden (into the earth / inside an obstacle), GREEN = allowed airspace, and a bright SOLID-GREEN
+    #     trail = the flow PATH the swarm is committed to at this instant (walk -grad(dist) from each live drone). ----
+    if show_nav and "nav_allowed" in snap:
+        alwg = torch.tensor(snap["nav_allowed"][0], dtype=torch.float32, device=device)   # [P,Gz,G,G] 1=allowed
+        Gz, Gg = alwg.shape[1], alwg.shape[2]
+        cells = torch.tensor(snap["nav_xyz"], dtype=torch.float32, device=device).reshape(1, -1, 3).expand(P, -1, 3)   # [P,M,3]
+        alw = alwg.reshape(P, -1)                                              # [P,M]
+        cscr, cdep = _project(eye, right, up, fwd, f, W, H, cells)             # [P,M,2],[P,M]
+        ncol = torch.where(alw[..., None] > 0.5, _c(NAV_OK, device), _c(NAV_NO, device))   # [P,M,3] green allowed / red forbidden
+        q, qd, qv = _sprite_quads(cscr, cdep - BIAS, torch.full_like(cdep, 1.5), cdep > 0.05)   # small dots, in front of the eye only
+        add_quads(q, qd, ncol, qv)
+        # PATH: walk the flow K steps from each LIVE drone -> the geodesic route it is committed to right now
+        flow = torch.tensor(snap["nav_flow"][0], dtype=torch.float32, device=device)       # [P,Gz,G,G,3]
+        zlo = float(cells[..., 2].min()); zhi = float(cells[..., 2].max()); cellp = float(snap["nav_cell"])
+        prange = torch.arange(P, device=device)[:, None]                      # [P,1] panel gather index
+        K = 8; pos = dp.clone(); pth = [pos]
+        for _ in range(K):                                                    # RENDER-LOOP-OK (offline flow trace)
+            ix = (((pos[..., 0] + ext) / (2.0 * ext) * (Gg - 1)).round().long()).clamp(0, Gg - 1)   # [P,D]
+            iy = (((pos[..., 1] + ext) / (2.0 * ext) * (Gg - 1)).round().long()).clamp(0, Gg - 1)
+            iz = (((pos[..., 2] - zlo) / max(zhi - zlo, 1e-6) * (Gz - 1)).round().long()).clamp(0, Gz - 1)
+            pos = pos + flow[prange, iz, iy, ix] * cellp                      # step along the smooth EIKONAL flow (no more zigzag)
+            pth.append(pos)
+        Dn = dp.shape[1]
+        pp = torch.stack(pth, 2)                                              # [P,D,K+1,3] route polyline per drone
+        psc, pde = _project(eye, right, up, fwd, f, W, H, pp.reshape(P, Dn * (K + 1), 3))
+        psc = psc.reshape(P, Dn, K + 1, 2); pde = pde.reshape(P, Dn, K + 1)
+        a = psc[:, :, :-1].reshape(P, Dn * K, 2); b = psc[:, :, 1:].reshape(P, Dn * K, 2)   # consecutive waypoints
+        sdep = (0.5 * (pde[:, :, :-1] + pde[:, :, 1:])).reshape(P, Dn * K) - BIAS - 0.6
+        sval = (live[:, :, None].expand(P, Dn, K).reshape(P, Dn * K)) & (pde[:, :, :-1].reshape(P, Dn * K) > 0.05)
+        q, qd, qv = _line_quads(a, b, sdep, torch.full_like(sdep, 1.4), sval)  # the smooth EIKONAL flow ROUTE line
+        add_quads(q, qd, _c(NAV_PATH, device).expand(P, a.shape[1], 3), qv)
+
+    # --- ACTUAL TRAJECTORY: the ORANGE trail of where each drone HAS FLOWN (recent position history) -> compare the
+    #     drone's real path against the SOLID-GREEN flow it was told to follow (intent vs reality). ----
+    if trail is not None and trail.shape[0] >= 2:
+        tr = torch.tensor(trail, dtype=torch.float32, device=device)          # [T,P,D,3] recent world positions
+        T, _, Dn, _ = tr.shape
+        flat = tr.permute(1, 0, 2, 3).reshape(P, T * Dn, 3)                    # [P,T*D,3]
+        tsc, tde = _project(eye, right, up, fwd, f, W, H, flat)               # [P,T*D,2],[P,T*D]
+        tsc = tsc.reshape(P, T, Dn, 2); tde = tde.reshape(P, T, Dn)
+        a = tsc[:, :-1].reshape(P, (T - 1) * Dn, 2)                           # segment starts (older)
+        b = tsc[:, 1:].reshape(P, (T - 1) * Dn, 2)                            # segment ends (newer)
+        sdep = (0.5 * (tde[:, :-1] + tde[:, 1:])).reshape(P, (T - 1) * Dn) - BIAS
+        sval = ((tde[:, :-1] > 0.05) & (tde[:, 1:] > 0.05)).reshape(P, (T - 1) * Dn)   # both ends in front of the eye
+        q, qd, qv = _line_quads(a, b, sdep, torch.full_like(sdep, 0.9), sval)  # thin orange trajectory segments
+        add_quads(q, qd, _c(TRAIL_C, device).expand(P, a.shape[1], 3), qv)
+
+    tris = torch.cat(tris_list, dim=1); dep = torch.cat(dep_list, dim=1)
+    col = torch.cat(col_list, dim=1); val = torch.cat(val_list, dim=1); alpha = torch.cat(alpha_list, dim=1)
+    return tris, dep, col, val, alpha
+
+
+def _bilerp_t(hf, x, y, ext):
+    """Torch bilinear terrain sampler (batched over panels). hf [P,G,G], x/y [P,M] -> [P,M] heights."""
+    P, G, _ = hf.shape
+    gx = ((x / ext + 1) * 0.5 * (G - 1)).clamp(0, G - 1)
+    gy = ((y / ext + 1) * 0.5 * (G - 1)).clamp(0, G - 1)
+    ix = gx.floor().long().clamp(0, G - 2); tx = gx - ix
+    iy = gy.floor().long().clamp(0, G - 2); ty = gy - iy
+    bidx = torch.arange(P, device=hf.device)[:, None]                          # [P,1] per-panel index
+    h00 = hf[bidx, iy, ix]; h10 = hf[bidx, iy, ix + 1]
+    h01 = hf[bidx, iy + 1, ix]; h11 = hf[bidx, iy + 1, ix + 1]
+    return h00 * (1 - tx) * (1 - ty) + h10 * tx * (1 - ty) + h01 * (1 - tx) * ty + h11 * tx * ty
+
+
+# ----------------------------------------------------------------------------------------------------
+# Explosions: a brief expanding bright burst at each IMPACT — an enemy dying (kamikaze kill, orange/yellow)
+# or a drone hitting the terrain (earth-hit, grey puff). Events are detected by scanning consecutive
+# snapshots for alive/crash TRANSITIONS (offline), then each spawns a sprite that lives `life` frames,
+# growing and fading with age. Drawn strongly biased toward the camera so the flash sits on top.
+# ----------------------------------------------------------------------------------------------------
+def _explosion_events(snaps, hfs, ext):
+    """Scan snapshots for impact transitions -> (frame_idx, panel, world_pos[3], kind) arrays. kind 0=kill, 1=crash."""
+    fr, pn, ps, kd = [], [], [], []
+    P = hfs.shape[0]
+    for i in range(1, len(snaps)):                       # RENDER-LOOP-OK (offline; transition scan)
+        a, b = snaps[i - 1], snaps[i]
+        died = (a["e_alive"][0][:P] > 0.5) & (b["e_alive"][0][:P] <= 0.5)         # enemy alive -> dead this frame
+        ep = b["e_pos"][0][:P]
+        for p, e in zip(*np.nonzero(died)):                                       # RENDER-LOOP-OK (few events)
+            x, y = float(ep[p, e, 0]), float(ep[p, e, 1])
+            fr.append(i); pn.append(p); ps.append([x, y, float(_bilerp_np(hfs[p], np.array([x]), np.array([y]), ext)[0])]); kd.append(0)
+        crashed = (a["d_crash"][0][:P] <= 0.5) & (b["d_crash"][0][:P] > 0.5)       # drone crash ONSET this frame
+        dp = b["d_pos"][0][:P]
+        for p, d in zip(*np.nonzero(crashed)):                                     # RENDER-LOOP-OK (few events)
+            x, y = float(dp[p, d, 0]), float(dp[p, d, 1])
+            fr.append(i); pn.append(p); ps.append([x, y, float(_bilerp_np(hfs[p], np.array([x]), np.array([y]), ext)[0])]); kd.append(1)
+    return (np.array(fr, np.int64), np.array(pn, np.int64),
+            np.array(ps, np.float32).reshape(-1, 3), np.array(kd, np.int64))
+
+
+def _explosion_tris(events, i, life, eye, right, up, fwd, f, W, H, P, device):
+    """Build explosion sprites active at frame i (age in [0,life)). Returns (tris,dep,col,val) or None."""
+    fr, pn, ps, kd = events
+    if fr.size == 0:
+        return None
+    active = np.nonzero((fr <= i) & (fr > i - life))[0]                            # events currently burning
+    if active.size == 0:
+        return None
+    counts = np.bincount(pn[active], minlength=P); Kmax = int(counts.max())        # pad to max bursts on any panel
+    if Kmax == 0:
+        return None
+    pos = np.zeros((P, Kmax, 3), np.float32); age = np.zeros((P, Kmax), np.float32)
+    kind = np.zeros((P, Kmax), np.float32); val = np.zeros((P, Kmax), bool)
+    slot = np.zeros(P, np.int64)
+    for j in active:                                     # RENDER-LOOP-OK (few active bursts; slot per panel)
+        p = int(pn[j]); s = int(slot[p]); slot[p] = s + 1
+        pos[p, s] = ps[j]; age[p, s] = i - fr[j]; kind[p, s] = kd[j]; val[p, s] = True
+    pos_t = torch.tensor(pos, device=device); age_t = torch.tensor(age, device=device)
+    kind_t = torch.tensor(kind, device=device); val_t = torch.tensor(val, device=device)
+    scr, dep = _project(eye, right, up, fwd, f, W, H, pos_t)                       # [P,Kmax,2],[P,Kmax]
+    a = age_t / max(1, life - 1)                                                   # normalized age 0..1
+    size = torch.where(kind_t < 0.5, 6.0 + age_t * 5.0, 4.0 + age_t * 2.0)         # kills bloom big, crashes small
+    kill = torch.stack([255 - 25 * a, 235 - 130 * a, 150 - 120 * a], -1)           # yellow-white -> orange fade
+    puff = torch.stack([80 - 24 * a, 80 - 24 * a, 92 - 24 * a], -1)                # grey earth-hit puff
+    col = torch.where(kind_t[..., None] < 0.5, kill, puff)
+    q, qd, qv = _sprite_quads(scr, dep - 3.0, size, val_t)                         # strong bias -> flash on top
+    return _quads_to_tris(q, qd, col, qv)
+
+
+# ----------------------------------------------------------------------------------------------------
+# Top-level: capture -> per-frame GPU rasterize -> HUD text (cpu) -> mp4.
+# ----------------------------------------------------------------------------------------------------
+def render_torch(env, dparams, dls, eparams, els, K_dec, H, out_path, W=1280, Hp=280, n_panel=9, cols=1,
+                 device="cuda", chunk=48, mm_dtype=None, Gr=22, cam_kw=None, cam_mode="autofit",
+                 max_seconds=60.0, end_hold=0.8, explo_life=6, ribbon_y=None, homing_lines=True, show_nav=True):
+    cfg = env.cfg
+    dev = device if torch.cuda.is_available() else "cpu"
+    snaps = capture(env, dparams, dls, eparams, els, K_dec, H, mm_dtype=mm_dtype)   # CPU snapshots (mean-action roll)
+    hfs = env.hf.detach().cpu().numpy()[:n_panel]                                   # [P,G,G] heightfields
+    P = hfs.shape[0]
+
+    # --- END CONDITION: stop when EVERY env is terminal (one side wiped -> no enemies OR no drones left) plus
+    #     a short hold so the finish isn't abrupt; hard-capped at max_seconds. A drone-side wipe (all drones
+    #     kamikaze'd/crashed) counts as terminal too, so stalemates still end. ---
+    max_frames = int(max_seconds * FPS)
+    Dn = snaps[0]["d_act"].shape[2]                                                  # drones per env
+    term = None
+    for i, s in enumerate(snaps):                                                   # RENDER-LOOP-OK (offline scan)
+        ae = (s["e_alive"][0][:P] > 0.5).sum(1)                                      # [P] alive enemies per env
+        ad = (s["d_alive"][0][:P] > 0.5).sum(1)                                      # [P] alive (launched, live) drones
+        launched = (s["d_act"][0][:P] > 0.5).sum(1)                                  # [P] drones DEPLOYED so far (monotonic)
+        # decided = enemies wiped, OR every drone has deployed AND none are left (a drone-side wipe). The
+        # `launched==D` guard is essential: drones launch STAGGERED, so `ad==0` early just means "not launched
+        # yet", not "all dead" — without it the clip ends at frame 0.
+        decided = (ae == 0) | ((launched == Dn) & (ad == 0))
+        if bool(decided.all()):
+            term = i; break
+    end = min(term + int(end_hold * FPS), max_frames, len(snaps)) if term is not None else min(len(snaps), max_frames)
+    snaps = snaps[:max(end, 1)]                                                      # trim the clip
+    print(f"[render_torch] clip ends at frame {len(snaps)}/{max_frames}cap "
+          f"({'all envs decided' if term is not None else 'time cap / roll end'}); "
+          f"{'%.1fs' % (len(snaps) / FPS)}")
+
+    ncrash = int((snaps[-1]["d_crash"][0][:P] > 0.5).sum())                          # sticky earth-hit flags at end
+    print(f"[render_torch] earth-hits (drones that hit terrain): {ncrash} across {P} envs, "
+          f"{P * snaps[-1]['d_pos'].shape[2]} drones")
+    events = _explosion_events(snaps, hfs, cfg.arena_half)                           # impact bursts (kills + crashes)
+    print(f"[render_torch] explosions: {events[0].size} impacts "
+          f"({int((events[3] == 0).sum())} kills, {int((events[3] == 1).sum())} earth-hits)")
+    cam_solver = chase_cameras if cam_mode == "chase" else autofit_cameras          # pick the camera style
+    cams = cam_solver(snaps, hfs, cfg, W, Hp, **(cam_kw or {}))                      # per-frame per-panel cameras
+    ext = cfg.arena_half
+
+    # --- static per-panel terrain grid (world coords + precomputed height shading) built ONCE ---
+    # RIBBON MAP: when ribbon_y is set, the terrain is a LONG NARROW STRIP (x spans the full arena, y only
+    # +/- ribbon_y) with roughly square cells -> the rendered ground itself is a ribbon, not a square field.
+    if ribbon_y is not None:
+        Grx = Gr; Gry = max(3, 1 + round((Gr - 1) * ribbon_y / ext))               # narrow in y, long in x
+        axx = np.linspace(-ext, ext, Grx); ayy = np.linspace(-ribbon_y, ribbon_y, Gry)
+    else:
+        Grx = Gry = Gr; axx = ayy = np.linspace(-ext, ext, Gr)                      # square (default)
+    gxn, gyn = np.meshgrid(axx, ayy)                                               # [Gry,Grx] (same grid all panels)
+    gx = torch.tensor(np.broadcast_to(gxn, (P, Gry, Grx)).copy(), dtype=torch.float32, device=dev)
+    gy = torch.tensor(np.broadcast_to(gyn, (P, Gry, Grx)).copy(), dtype=torch.float32, device=dev)
+    gzt_np = np.stack([_bilerp_np(hfs[i], gxn, gyn, ext) for i in range(P)])        # [P,Gry,Grx] terrain height (per panel)
+    gzt = torch.tensor(gzt_np, dtype=torch.float32, device=dev)
+    z_q = 0.25 * (gzt[:, :-1, :-1] + gzt[:, :-1, 1:] + gzt[:, 1:, 1:] + gzt[:, 1:, :-1])  # per-quad mean height
+    shade = (0.45 + 0.55 * (z_q / (cfg.terrain_amp + 1e-6)))                        # height shading [P,Gr-1,Gr-1]
+    shade_col = torch.stack([60 * shade + 30, 110 * shade + 40, 70 * shade + 30], -1)     # [P,Gr-1,Gr-1,3]
+    hfs_t = torch.tensor(hfs, dtype=torch.float32, device=dev)
+    oh_t = env.obst_half[:P].to(dev); ocyl_t = env.obst_cyl[:P].to(dev)      # STATIC obstacle geometry (size/shape)
+    omask_t = env.obst_mask[:P].to(dev)                                       # (positions are DYNAMIC -> per-frame below)
+
+    # --- sky gradient (constant) ---
+    t = torch.linspace(0, 1, Hp, device=dev)[:, None]
+    top = torch.tensor(SKY_TOP, dtype=torch.float32, device=dev); bot = torch.tensor(SKY_BOT, dtype=torch.float32, device=dev)
+    sky = (top * (1 - t) + bot * t)[:, None, :].expand(Hp, W, 3).contiguous()       # [Hp,W,3]
+
+    rows = (P + cols - 1) // cols
+    w = VideoWriter(out_path, FPS)                          # robust PyAV/libx264 writer (common.render_core)
+    for fi, snap in enumerate(snaps):                       # RENDER-LOOP-OK (offline frame loop; per-frame GPU raster)
+        eye, right, up, fwd, f = _cam_tensors(cams[fi], dev)
+        # homing-line pulse: a 0..1 sinusoid in the frame index (period ~9 frames ~0.3s) -> the red lock lines
+        # brighten/thicken and fade rhythmically. None when disabled so _entity_tris skips them entirely.
+        pulse = float(0.5 + 0.5 * np.sin(fi * 0.7)) if homing_lines else None
+        tt, td, tc, tv = _terrain_quads(gx, gy, gzt, shade_col, eye, right, up, fwd, f, W, Hp)   # terrain tris
+        trail = np.stack([snaps[j]["d_pos"][0, :P] for j in range(max(0, fi - 24), fi + 1)]) if show_nav else None  # [T,P,D,3] recent path
+        et, ed, ec, ev, ea = _entity_tris(snap, hfs_t, ext, eye, right, up, fwd, f, W, Hp, dev, pulse, show_nav, trail)  # +per-tri alpha
+        oc_f = torch.tensor(snap["obst_xyz"][:P], dtype=torch.float32, device=dev)               # LIVE obstacle centres
+        ob = _obstacle_tris(oc_f, oh_t, ocyl_t, omask_t, eye, right, up, fwd, f, W, Hp, dev)      # buildings + trees
+        layers = [(tt, td, tc, tv), ob, (et, ed, ec, ev)]
+        alphas = [torch.ones_like(tt[..., 0, 0]), torch.ones_like(ob[1]), ea]                    # opaque layers -> alpha 1; entity carries its own
+        ex = _explosion_tris(events, fi, explo_life, eye, right, up, fwd, f, W, Hp, P, dev)      # impact bursts (if any)
+        if ex is not None:
+            layers.append(ex); alphas.append(torch.ones_like(ex[1]))
+        tris = torch.cat([L[0] for L in layers], 1); dep = torch.cat([L[1] for L in layers], 1)
+        col = torch.cat([L[2] for L in layers], 1); val = torch.cat([L[3] for L in layers], 1)
+        alpha = torch.cat(alphas, 1)                                                # [P,T] per-triangle alpha
+        frame = _rasterize(tris, dep, col, val, W, Hp, sky, chunk=chunk, alpha=alpha)   # [P,Hp,W,3] uint8 on GPU
+        grid_np = _compose(frame.cpu().numpy(), snap, P, rows, cols, W, Hp)         # tile panels + HUD text (cpu)
+        w.append_data(grid_np)
+    w.close()
+    return out_path
+
+
+def _compose(frames, snap, P, rows, cols, W, Hp):
+    """Tile the P panels into one image and blit per-panel HUD text (kills/drones/enemies) with PIL (cheap)."""
+    grid = Image.new("RGB", (cols * W, rows * Hp), (0, 0, 0))
+    dr = ImageDraw.Draw(grid)
+    for e in range(P):                                      # RENDER-LOOP-OK (P tiny; paste + 1 text blit each)
+        ox, oy = (e % cols) * W, (e // cols) * Hp
+        grid.paste(Image.fromarray(frames[e], "RGB"), (ox, oy))
+        E = snap["e_pos"].shape[2]
+        kills = int(snap["kills"][0, e])
+        ad = int((snap["d_alive"][0, e] > 0.5).sum()); ae = int((snap["e_alive"][0, e] > 0.5).sum())
+        dr.text((ox + 6, oy + 4), f"kills {kills}/{E}   drones {ad}   enemies {ae}", fill=(220, 226, 240))
+    return np.asarray(grid)
