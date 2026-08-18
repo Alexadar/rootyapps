@@ -171,10 +171,49 @@ final class StepTests: XCTestCase {
             }
             return total / w.z[0]
         }
-        XCTAssertEqual(phasePerMetre(stick: 0.4), c.cadence, accuracy: 0.01,
+        XCTAssertEqual(phasePerMetre(stick: 0.4), c.cadence(atFat: 0), accuracy: 0.02,
                        "the walk cycle is not proportional to distance travelled")
-        XCTAssertEqual(phasePerMetre(stick: 1.0), c.cadence, accuracy: 0.01,
+        XCTAssertEqual(phasePerMetre(stick: 1.0), c.cadence(atFat: 0), accuracy: 0.02,
                        "the walk cycle changed rate with speed")
+    }
+
+    /// **The renderer plants the feet against `cadence(atFat:)`; the engine advances the phase with
+    /// its own batched expression.** If those two ever differ, every foot slides by the difference —
+    /// and neither expression looks wrong on its own, which is exactly how the first version shipped
+    /// a pig taking 1.37 m strides on 0.32 m legs.
+    func testTheBatchedCadenceMatchesTheScalarOne() {
+        for fat in stride(from: 0.0, through: 1.0, by: 0.05) {
+            var w = emptyWorld(fat: fat)
+            let before = w.gait[0]
+            Step.advance(&w, intent: intent(0, 1))
+            let travelled = (w.x[0] * w.x[0] + w.z[0] * w.z[0]).squareRoot()
+            guard travelled > 1e-9 else { continue }
+            let measured = (w.gait[0] - before) / travelled
+            XCTAssertEqual(measured, c.cadence(atFat: fat), accuracy: 0.05,
+                           "at fat \(fat) the engine walks on \(measured) rad/m while the renderer "
+                           + "plants feet against \(c.cadence(atFat: fat))")
+        }
+    }
+
+    /// The stride has to be leg-sized, or the feet cannot be planted whatever the animation does: a
+    /// foot can only stay put for as far as the leg can reach behind the hip.
+    func testTheStrideIsLegSized() {
+        for fat in stride(from: 0.0, through: 1.0, by: 0.05) {
+            let leg = PigShape.scalar(fat: fat).legLength
+            let ratio = c.stride(atFat: fat) / leg
+            XCTAssertGreaterThan(ratio, 1.2, "at fat \(fat) the stride is a shuffle")
+            XCTAssertLessThan(ratio, 2.2,
+                              "at fat \(fat) the stride is \(c.stride(atFat: fat)) m on a "
+                              + "\(leg) m leg — the foot cannot reach that far, so it must slide")
+        }
+    }
+
+    /// A fat pig takes shorter, faster steps. The first version had it backwards.
+    func testFatShortensTheStrideAndRaisesTheCadence() {
+        XCTAssertLessThan(c.stride(atFat: 1), c.stride(atFat: 0) * 0.7,
+                          "a fat pig's stride must be markedly shorter")
+        XCTAssertGreaterThan(c.cadence(atFat: 1), c.cadence(atFat: 0),
+                             "a fat pig must take MORE steps per metre, not fewer")
     }
 
     // MARK: - Dropping

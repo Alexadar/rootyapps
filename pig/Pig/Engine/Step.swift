@@ -75,7 +75,11 @@ enum Step {
         //
         // Advanced by DISTANCE, not by time, so the feet stay planted at every speed. Wrapped every
         // cycle so the phase cannot grow until Float32 loses its resolution in the shader.
-        let cadence = (w.fat * (-c.cadenceFatPenalty) + 1) * c.cadence
+        // The batched form of `WorldConfig.cadence(atFat:)`: 2π over the stride, and the stride is the
+        // leg. `StepTests.testTheBatchedCadenceMatchesTheScalarOne` holds the two together — a pig
+        // whose feet are planted against a different number than the one it walks on is a pig that
+        // skates, and neither half looks wrong on its own.
+        let cadence = (2 * Double.pi / c.strideOverLeg) / body.legLength
         let rawGait = w.gait + w.speed * dt * cadence
         w.gait = rawGait - (rawGait / twoPi).floored * twoPi
 

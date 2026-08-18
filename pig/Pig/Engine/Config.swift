@@ -41,10 +41,24 @@ struct WorldConfig: Sendable {
     var accelTau: Double = 0.16
     var accelFatPenalty: Double = 0.9    // added fraction of accelTau at fat = 1
 
-    /// Radians of gait phase per metre travelled. Keyed to DISTANCE, not to time, so the feet stay
-    /// planted at any speed — the single cheapest thing that stops a walk cycle looking like skating.
-    var cadence: Double = 4.6
-    var cadenceFatPenalty: Double = 0.35
+    // MARK: - The walk cycle
+    //
+    // Radians of gait phase per metre travelled. Keyed to DISTANCE, not to time — but that alone does
+    // not stop a walk looking like skating, which is what the first version got wrong.
+    //
+    // A cycle is `2π / cadence` metres of travel, and that IS the stride: the distance a foot covers
+    // between one planting and the next. At 4.6 rad/m the pig took 1.37 m strides on 0.32 m legs
+    // while its feet swung 0.22 m, so every foot slid a metre per step. The number now comes from the
+    // leg instead: `strideOverLeg` × leg length, which is what `ShapeOracleTests` pins.
+    //
+    // And it **rises** with fat rather than falling. A pig whose legs have shortened from 0.32 m to
+    // 0.15 m does not take longer strides more slowly; it takes shorter ones faster, which is most of
+    // what makes a fat pig read as a fat pig when it walks.
+    var strideOverLeg: Double = 1.75
+    /// Fraction of each cycle a given foot spends on the ground. Above 0.5 by definition for a walk —
+    /// at 0.5 it is a trot, and at 0.68 there are always two or three feet down, which is what makes
+    /// the waddle look stable rather than bouncy.
+    var dutyFactor: Double = 0.68
 
     // MARK: - The paddock
 
@@ -145,6 +159,14 @@ struct WorldConfig: Sendable {
 
     func maxSpeed(atFat f: Double) -> Double { walkSpeed * (1 - speedFatPenalty * f) }
     func turnRate(atFat f: Double) -> Double { turnRate * (1 - turnFatPenalty * f) }
+
+    /// Metres of travel per full leg cycle — the stride. Derived from the leg, so it cannot drift
+    /// away from the animal the way an authored constant did.
+    func stride(atFat f: Double) -> Double { PigShape.scalar(fat: f).legLength * strideOverLeg }
+
+    /// Radians of gait phase per metre. The renderer plants the feet against this exact number, so
+    /// the two must be the same formula — `StepTests` checks the batched form in `Step` agrees.
+    func cadence(atFat f: Double) -> Double { 2 * Double.pi / stride(atFat: f) }
 
     /// Fat returned by eating one whole carrot.
     var fatPerCarrot: Double { carrotUnit * fatPerCarrotUnit }

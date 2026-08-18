@@ -335,35 +335,56 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         // ── Legs ────────────────────────────────────────────────────────────────────────────
         //
-        // A diagonal trot: the two diagonal pairs are half a cycle apart. `speedFactor` folds the
-        // whole cycle away when the pig is standing still, so a stationary pig does not march.
-        let speedFactor = min(1, s.speed / Float(config.walkSpeed) * 2.2)
-        let swing = Float(shape.length) * 0.10 * speedFactor
-        let legs: [(u: Float, v: Float, phase: Float)] = [
-            (0.345, 0.885, 0),          // front right
-            (0.345, 0.615, .pi),        // front left
-            (0.795, 0.885, .pi),        // rear right
-            (0.795, 0.615, 0),          // rear left
+        // **A lateral-sequence walk with a planted stance**, which is the gait a pig actually uses
+        // and is worth spelling out because the first version got all three parts wrong.
+        //
+        //  * **The foot is planted, not swept.** For `dutyFactor` of the cycle the foot is on the
+        //    ground, and its position in the pig's own frame slides backward at exactly the rate the
+        //    pig moves forward — so it stays put on the field. That is only possible because the
+        //    stride is the same number the engine advances the phase with: `stride × duty` of travel
+        //    against a `2 × amplitude` excursion. Get those two out of step and every foot skates,
+        //    which is what a 1.37 m stride and a 0.22 m swing were doing.
+        //  * **Lateral sequence**, not a diagonal trot: rear-left, front-left, rear-right, front-right
+        //    at quarter-cycle offsets. A trot is a running gait, and it read as a bouncing toy.
+        //  * **Duty above a half**, so two or three feet are always down. That is what makes a fat pig
+        //    look heavy rather than springy.
+        // The cycle itself is `Engine/WalkCycle.swift` — the renderer places what it is told and
+        // proves nothing. `WalkCycleTests` is where "a planted foot does not move" is asserted, and
+        // it can only be asserted there because the arithmetic is not in here.
+        let cycle = WalkCycle(fat: Double(s.fat), in: config)
+
+        // Folded away below a walking pace so a pig easing to a stop settles onto its feet instead of
+        // marching on the spot.
+        let speedFactor = min(1, s.speed / Float(config.maxSpeed(atFat: Double(s.fat))) * 3)
+
+        // Hips, paired with the phase offset each foot leaves the ground at. The order IS the gait:
+        // rear-left, front-left, rear-right, front-right — a lateral sequence, not a diagonal trot.
+        let hips: [(u: Float, v: Float)] = [
+            (0.795, 0.615),             // rear left
+            (0.345, 0.615),             // front left
+            (0.795, 0.885),             // rear right
+            (0.345, 0.885),             // front right
         ]
-        for leg in legs {
-            let p = s.gait + leg.phase
-            let lift = max(0, sin(p)) * max(0, sin(p)) * speedFactor
+        for (leg, offset) in zip(hips, WalkCycle.phaseOffsets) {
+            let step = cycle.foot(at: Double(s.gait) / (2 * .pi) + offset)
+            let reach = Float(step.reach) * speedFactor
+            let lift = Float(step.lift) * speedFactor
+
             blobs.append(Blob(
                 anchor: SIMD4(leg.u, leg.v, 0, 1),
-                // The tangent runs snout → tail, so a NEGATIVE z offset swings the foot forward.
-                offset: SIMD4(0, 0, -cos(p) * swing, 0),
-                scale: SIMD4(Float(shape.legRadius), 0, Float(shape.legRadius), 0.72),
-                rot: SIMD4(lift, 0, 0, 1),
+                offset: SIMD4(0, 0, 0, 0),
+                // Tapered toward the hoof: thicker at the hip is what reads as a haunch.
+                scale: SIMD4(Float(shape.legRadius), 0, Float(shape.legRadius), 1.35),
+                rot: SIMD4(lift, 0, reach, 1),
                 color: SIMD4(Palette.pig * 0.97, 0.05)))
-            // The hoof: a dark cap that sits at the foot's own height, so it tracks the leg without
-            // needing to know how long the leg turned out to be. A non-zero `scale.y` is what tells
-            // the shader this is a foot rather than the leg itself.
-            let hoof = Float(shape.legRadius) * 0.85
+            // The hoof: a dark cap at the foot, wherever the walk cycle put it. A non-zero `scale.y`
+            // is what tells the shader this is a foot rather than the leg itself.
+            let hoof = Float(shape.legRadius) * 0.9
             blobs.append(Blob(
                 anchor: SIMD4(leg.u, leg.v, 0, 1),
-                offset: SIMD4(0, 0, -cos(p) * swing, 0),
+                offset: SIMD4(0, 0, 0, 0),
                 scale: SIMD4(Float(shape.legRadius) * 1.16, hoof, Float(shape.legRadius) * 1.16, 1.0),
-                rot: SIMD4(lift, 0, 0, 1),
+                rot: SIMD4(lift, 0, reach, 1),
                 color: SIMD4(Palette.hoof, 0.15)))
         }
 

@@ -335,23 +335,42 @@ vertex BlobOut blob_vertex(uint vid [[vertex_id]],
 
     // A leg does not have an authored length: it hangs from wherever the belly currently is down to
     // the ground. When the pig doubles in girth its legs shorten by themselves, which is the joke and
-    // also one fewer number to keep consistent. `rot.x` lifts the foot for the walk cycle, and the
-    // leg stays world-upright rather than following the surface normal — a normal that points
-    // sideways off a swollen flank would splay the legs out from under the animal.
+    // also one fewer number to keep consistent.
+    //
+    // It **hinges from the hip** rather than sliding. The first version translated a vertical capsule
+    // fore and aft, which is a leg being carried rather than a leg walking: the foot arrived at its
+    // new position without the leg ever having swung. Here the hip is fixed to the belly, the foot is
+    // placed by the walk cycle, and the capsule is built between them — so the swing is a real pivot
+    // and the plant is a real plant.
+    //
+    // `rot.x` is how far the foot is lifted, 0…1; `rot.z` is how far forward it reaches, in metres.
     if (inst.rot.w > 0.5) {
-        float h = max(0.05, centre.y);
+        float3 hip = centre;
         float lift = clamp(inst.rot.x, 0.0, 1.0);
-        float footY = h * 0.45 * lift;              // how far off the ground the foot is
-        float legLength = max(0.04, h - footY);
+        float reach = inst.rot.z;
+
+        float3 forward = normalize((b.model * float4(0, 0, 1, 0)).xyz);
+        float footY = max(0.015, hip.y) * 0.42 * lift;
+        float3 foot = float3(hip.x, footY, hip.z) + forward * reach;
+
+        float3 span = foot - hip;
+        float len = max(0.05, length(span));
+        float3 downAxis = span / len;
+        // The leg is never horizontal — the foot is always below the belly it hangs from — so this
+        // cross product cannot degenerate; the guard is for the frame that starts before the body has
+        // any height at all.
+        float3 side = cross(downAxis, forward);
+        float sideLen = length(side);
+        side = (sideLen > 1e-4) ? side / sideLen : float3(1, 0, 0);
+        rot = float3x3(side, downAxis, cross(side, downAxis));
+
         if (inst.scale.y > 0.0) {
-            // A hoof: a small cap that sits at the foot, wherever the foot turned out to be.
-            radii.y = inst.scale.y;
-            centre.y = footY + inst.scale.y * 0.5;
+            radii.y = inst.scale.y;             // the hoof, at the foot
+            centre = foot;
         } else {
-            radii.y = legLength * 0.5;
-            centre.y = footY + legLength * 0.5;
+            radii.y = len * 0.5;                // the leg, spanning hip to foot
+            centre = (hip + foot) * 0.5;
         }
-        rot = float3x3(float3(1, 0, 0), float3(0, 1, 0), float3(0, 0, 1));
     }
 
     // Taper along the local y, so legs are thicker at the top and snouts flare at the tip.
