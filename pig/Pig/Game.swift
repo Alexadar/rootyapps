@@ -68,6 +68,8 @@ final class Game: ObservableObject {
 
     static let demoMode = ProcessInfo.processInfo.environment["PIG_DEMO"] == "1"
     private let runner = ScenarioRunner()
+    /// The dog is pulled into shot once per take, not once per frame.
+    private var dogStaged = false
 
     /// What the pilot is "pressing", plus the beat's caption — everything the recording overlays.
     ///
@@ -209,6 +211,16 @@ final class Game: ObservableObject {
         // real dog, running the real chase; only *when* it sets off is scripted.
         if beat.key == "dog" {
             if world.dogActive[0] < 0.5 && world.dogTimer[0] > 0 { world.dogTimer = .zeros([1]) }
+            // Summoned at the config's twelve metres, a dog chasing a pig that runs at 2.7 m/s never
+            // closes inside an eight-second beat: the first take filmed a pig fleeing something the
+            // viewer never sees. Pulling it to `demoDogGap` on the frame it appears makes the chase
+            // legible without changing how the dog behaves — it is the same dog, started closer.
+            if world.dogActive[0] > 0.5 && !dogStaged {
+                dogStaged = true
+                let bearing = atan2(world.dogX[0] - world.x[0], world.dogZ[0] - world.z[0])
+                world.dogX = Tensor(shape: [1], data: [world.x[0] + sin(bearing) * Game.demoDogGap])
+                world.dogZ = Tensor(shape: [1], data: [world.z[0] + cos(bearing) * Game.demoDogGap])
+            }
         } else {
             world.dogActive = .zeros([1])
             world.dogTimer = Tensor(shape: [1], data: [1e9])
@@ -229,7 +241,14 @@ final class Game: ObservableObject {
 
         // The camera sits at a scripted offset from wherever the pig is facing, eased rather than cut
         // so the shot never snaps between beats.
-        let wantYaw = snapshot.heading + beat.cameraYaw
+        // While something is chasing, the shot is the chase: look from the pig toward the dog, so the
+        // pig runs at the camera with the dog closing behind it. Framed off the pig's heading instead,
+        // the camera sits behind a fleeing pig and the dog is permanently out of frame — which is
+        // what the first take filmed.
+        let chaseYaw = atan2(snapshot.dogX - snapshot.x, snapshot.dogZ - snapshot.z)
+        let wantYaw = (beat.key == "dog" && snapshot.dogActive)
+            ? chaseYaw
+            : snapshot.heading + beat.cameraYaw
         let yawStep = CameraFrame.shortestTurn(from: cameraYaw, to: wantYaw)
         let cap = Game.demoCameraRate * dt
         let applied = max(-cap, min(cap, yawStep))
@@ -250,6 +269,8 @@ final class Game: ObservableObject {
     /// How fast the demo camera may swing, rad/s. Slower than the player's, because a shot that whips
     /// around is unreadable on a forty-second recording.
     private static let demoCameraRate: Float = 1.1
+    /// How close the dog is placed when the demo summons it, metres.
+    private static let demoDogGap: Double = 5.5
 
     /// Round to twentieths, so a drifting stick republishes a few times a second instead of 120.
     private static func quantise(_ v: SIMD2<Float>) -> SIMD2<Float> {
