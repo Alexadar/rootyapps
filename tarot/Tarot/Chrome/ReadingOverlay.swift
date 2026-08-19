@@ -109,7 +109,7 @@ struct ReadingOverlay: View {
                         Divider().overlay(Tokens.gold.opacity(0.3))
                         passagesView(glide: {
                             guard autoFollow else { return }
-                            withAnimation(.linear(duration: 0.3)) {
+                            withAnimation(Self.follow) {
                                 proxy.scrollTo("reading.bottom", anchor: .bottom)
                             }
                         })
@@ -126,7 +126,7 @@ struct ReadingOverlay: View {
             }
             .onChange(of: writtenLength) {
                 guard autoFollow, writtenLength > 0 else { return }
-                withAnimation(.linear(duration: 0.9)) {
+                withAnimation(Self.follow) {
                     proxy.scrollTo("reading.bottom", anchor: .bottom)
                 }
             }
@@ -182,6 +182,21 @@ struct ReadingOverlay: View {
             }
         }
     }
+
+    /// The auto-follow scroll, as ONE animation used by both triggers.
+    ///
+    /// It used to be two: 0.3 s on every reveal tick and 0.9 s on each length change. Both target
+    /// the same bottom anchor, so each one restarted the other part-way through and the panel
+    /// stepped instead of gliding. The target is quantised too — the bottom of the content only
+    /// moves when a line actually wraps — so the cure is to make one step last about as long as
+    /// the gap before the next one. At the reveal's own 55 characters a second a wrapped line is
+    /// roughly 0.7 s of text, so a 0.75 s linear step joins up end-to-end and reads as continuous
+    /// travel. Linear, not eased: easing would decelerate into every line break, which is exactly
+    /// the stutter being removed.
+    ///
+    /// Both call sites must keep using THIS value. Two different durations on one anchor is the
+    /// bug, not the timing of either.
+    static let follow: Animation = .linear(duration: 0.75)
 
     @ViewBuilder
     private func passagesView(glide: @escaping () -> Void) -> some View {
@@ -267,7 +282,35 @@ struct ReadingOverlay: View {
                 MagicalStreamText(text: synthesis, italic: true, onAdvance: glide)
                     .accessibilityIdentifier("reading.synthesis")
             }
+            // The register, said once, where it is actually needed: at the foot of the text the
+            // model just wrote. This is the only screen where a reader could reasonably take the
+            // prose for a forecast, so it is the only screen that says otherwise.
+            //
+            // It is NOT an "for entertainment purposes only" disclaimer, and deliberately so —
+            // App Review Guideline 1.1.6 says in as many words that claiming entertainment
+            // purposes "won't overcome this guideline", so such a line buys no cover and reads as
+            // an admission that a forecast was implied. This states what the text IS. The claim
+            // it makes is true of the app: the prompt forbids prediction, the writing is
+            // re-generated per draw, and the store description says the same thing in the same
+            // words.
+            if hasWrittenText(draft) {
+                Text(Self.registerNote)
+                    .font(Tokens.body(12))
+                    .foregroundStyle(Tokens.inkDim.opacity(0.75))
+                    .padding(.top, 4)
+                    .accessibilityIdentifier("reading.registerNote")
+            }
         }
+    }
+
+    /// One line, one place, one wording — shared with the tests so the copy cannot drift away
+    /// from the promise the App Store listing makes.
+    static let registerNote = L.loc("An interpretation of the cards you drew — not a prediction.")
+
+    /// Only once there is something to qualify. On an empty or still-empty draft the note would
+    /// appear under a blank panel, qualifying nothing.
+    private func hasWrittenText(_ draft: PassageDraft) -> Bool {
+        draft.passages.contains { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 
     private var writingLabel: String {

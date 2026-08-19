@@ -1,0 +1,124 @@
+# App Store metadata — Tarot Table: Card Readings (app 6802612778), English (U.S.), both platforms.
+#
+# WHY THERE IS NO "FOR ENTERTAINMENT PURPOSES ONLY" LINE
+#
+# That phrase is the standard move in this category and Apple has closed it explicitly.
+# Guideline 1.1.6: "False information and features … Stating that the app is 'for entertainment
+# purposes' won't overcome this guideline." So a disclaimer cannot buy cover for a claim the app
+# does not support; it only reads as an admission that a claim was made. 2.3.7 separately bans
+# "unverifiable product claims" in the subtitle, and 2.3.1 bans marketing an app for something it
+# does not do.
+#
+# The move that actually reduces liability is therefore not a disclaimer at the bottom — it is
+# never making the claim at the top. Nothing in this metadata says the app predicts, foresees,
+# reveals or tells anything about the future. It says the app shuffles a deck, deals it, and
+# writes text about the cards it dealt. Every one of those is verifiable by running it. The
+# closing paragraph then states plainly what the text is and is not, in the app's own register
+# rather than as boilerplate.
+#
+# EVIDENCE BEHIND THE WORDING (checked 2026-08-19, so it is not re-argued from memory)
+#
+# 1. Apple, Guideline 1.1.6: "Stating that the app is 'for entertainment purposes' won't overcome
+#    this guideline." The phrase buys nothing against a claim.
+# 2. UK, Consumer Protection from Unfair Trading Regulations 2008 (which replaced the Fraudulent
+#    Mediums Act 1951): the government's own response to consultation states "we do not believe
+#    tarot readers will need to give disclaimers saying that the reading is for 'entertainment
+#    purposes only'." So the phrase is not legally required either — the duty is not to mislead.
+#    What that guidance DOES recommend is a responsibility clause, which is why the description
+#    now closes on "the decisions you take — or do not take — remain your own".
+# 3. Market check, 89 tarot/astrology/oracle listings pulled from the App Store: only 9 carry any
+#    disclaimer at all, and the most common phrasing is the one Apple has closed. Copying the
+#    category norm would have been copying a dead defence.
+#
+# The other live risk is 4.3(b): "fortune telling" is named in the guideline as a category Apple
+# will not accept new submissions into "unless they offer a meaningfully different or improved
+# experience". That is a rejection this app can actually survive — on-device generation, a physics
+# deck you handle, no network, no subscription — but ONLY if those are visible in the metadata
+# rather than merely true in the code (§6.5). Hence the description leads with them.
+
+app_id: "6802612778"
+bundle_id: oleksandr.aisixteen.tarot
+locale: en-US
+
+# 30 chars. Deliberately does not repeat "tarot", "card" or "readings" — those are already in the
+# name, and repetition across fields buys nothing (§6.5 DE-DUPLICATE RUTHLESSLY).
+subtitle: "Offline deck and daily spreads"
+
+# 97/100. No word here appears in the name or subtitle. "reflect" sits where "fortune" would
+# normally go: the app's whole claim is that it does not tell fortunes, and indexing for the word
+# would contradict the description that App Review reads on the same screen.
+keywords: "divination,arcana,celtic,cross,marseille,oracle,reflect,horoscope,astrology,intuition,ritual,moon"
+
+promotional_text: >-
+  Seventy-eight cards with real weight on a candlelit table. Deal a spread, then watch Apple
+  Intelligence write the reflection on your device. Apple Intelligence required.
+
+# The per-app page went live 2026-08-19 (built by another session on this account). Verified from
+# here, not taken on trust: /tarot/ returns 200, carries info@aisixteen.com in the footer, and
+# contains none of the trademarked deck names.
+#
+# It serves as BOTH support and marketing. A Support URL has to give a user a route to help, and a
+# page with a working contact address does that; the bare homepage did not. App Review follows
+# this link and a 404 is a rejection (§6.6), which is why it is checked rather than assumed.
+support_url: https://aisixteen.com/tarot/
+marketing_url: https://aisixteen.com/tarot/
+# Still the site root: there is no per-app privacy page, and the root resolves. Flagged, not
+# invented — the app collects nothing, so there is little for such a page to say.
+privacy_policy_url: https://aisixteen.com
+
+primary_category: LIFESTYLE
+secondary_category: ENTERTAINMENT
+
+copyright: "2026 Oleksandr Korenyuk"
+
+description: |
+  Tarot Table is a deck you handle, on a table you can almost feel — and the reading is written
+  for you, on your own device, by Apple Intelligence.
+
+  APPLE INTELLIGENCE IS THE HEART OF THIS APP
+  There is no bundled book of card meanings and no server to fall back on. Every reading is
+  written fresh, on device, by Apple Intelligence — which is why no two are alike and why nothing
+  is ever sent anywhere. It needs a device that supports Apple Intelligence, with the feature
+  switched on: iPhone 15 Pro and later, iPads with M1 or newer, and Apple silicon Macs.
+
+  Without it the app still opens, still shuffles, still deals all four methods and still lets you
+  handle the cards — it simply will not write, and it says so plainly, naming which of the three
+  reasons is stopping it: the device, the setting, or the model still downloading. Please read
+  this paragraph before buying rather than after.
+
+  Seventy-eight cards sit in a weighted stack on dark velvet, lit by two candles and a crystal
+  ball. You drag each card into its place yourself. They have mass — they slide, they settle,
+  they knock against each other, and the light moves across the foil as you tilt the device.
+  Nothing here is a slideshow of pictures.
+
+  When the spread is complete, a reflection on it is written a word at a time, on your device,
+  by Apple Intelligence. Nothing is sent anywhere. The app contains no networking code of any
+  kind: put the device in airplane mode and it behaves identically.
+
+  THE METHODS
+  • Daily Card — one card, and a fuller note on it
+  • Three Cards — situation, action, outcome
+  • Crossroads — five cards laid out for a decision
+  • Celtic Cross — the full ten, in the traditional order
+
+  THE DECKS
+  Three traditions, each with its own voice: Classic 1909, Marseille 1760, and Astral. Each is
+  the complete 78 cards, majors and minors, and each can be read upright or reversed.
+
+  WHAT IT DOES NOT HAVE
+  No subscription. No account, no sign-in, no ads, no analytics, no tracking, and no network
+  connection at all.
+
+  REQUIREMENTS
+  Apple Intelligence, on supported hardware, switched on in Settings, available in your region,
+  with room for the model. The app checks all of that and reports which one is missing, before
+  you draw, rather than failing quietly.
+
+  ABOUT THE TEXT
+  Tarot Table does not predict the future and does not tell fortunes. It shuffles a deck, deals
+  it, and writes a short piece of prose about the cards it dealt — in the present tense, about
+  what their traditional imagery might invite you to think about. The text is generated fresh on
+  your device and will differ every time, even for the same three cards. It is not advice of any
+  kind, medical, legal, financial or psychological, and it is not a substitute for any of those.
+  Use it the way you would use any prompt for your own thinking. The cards cannot tell you what
+  to do, and the decisions you take — or do not take — remain your own.

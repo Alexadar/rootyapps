@@ -1,0 +1,51 @@
+platform: ipad
+# 2048x2732, NOT the 2064x2752 the iPad Pro 13" simulator captures. The APP_IPAD_PRO_129
+# slot accepts only the former: uploading the capture size is accepted by the API and then
+# FAILS asynchronously with IMAGE_INCORRECT_DIMENSIONS, which looks like success at upload
+# time and blocks submission later. The raw captures stay at native size; the framer
+# rescales into this canvas.
+size: [2048, 2732]
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/tarot/marketing/raw/en/ipad
+  output_folder: /Users/oleksandr/Projects/rootyapps/tarot/marketing/aso/en/ipad
+
+# The app's own palette (Design/Tokens.swift): near-black violet ground, one gold. A bright frame
+# around a candlelit table would read as a different product in the search results.
+style:
+  bg_gradient: true
+  bg_color_top: '#1A1526'
+  bg_color_bottom: '#0B0910'
+  title_color: '#F3EEE6'
+  subtitle_color: '#E1B859'
+  screenshot_zoom: 0.88
+  # 21, not 16. "Written on your iPad, as you watch" wraps to two lines on this canvas and the
+  # shorter row clipped the first line clean off the top — the caption backing has to be sized
+  # from the TEXT BLOCK, never as a fixed fraction of the frame (autoaso §6.6).
+  text_row_percent: 21
+  screenshot_row_percent: 79
+  border_width: 8
+  border_color: '#2A2338'
+  border_radius: 30
+  text_padding: 40
+  screenshot_padding: 40
+
+# Order follows make_sim_shots.sh, and the first three are what search results show. So they
+# answer, in order: what is it, what do I do, what do I get. Every claim here is checked against
+# the code — 78 cards, four methods, three decks, no networking of any kind, no StoreKit, no
+# accounts. Nothing promises an outcome: the app writes reflections, and saying otherwise in the
+# store would be both untrue and a 2.3.1 problem.
+texts:
+  - title: "A table, a question, a deck"
+    subtitle: "78 cards you handle yourself, and Apple Intelligence to read them"
+  - title: "Drag each card into place"
+    subtitle: "Weighted cards with real physics — not a slideshow of pictures"
+  - title: "Three cards, read plainly"
+    subtitle: "Four methods, from a single daily card to the Celtic Cross"
+  # One line, deliberately. Two lines overflow the caption row upward and clip the ascenders off
+  # "Written" — raising text_row_percent does not fix it, because the block grows past the top
+  # edge rather than being fitted into the row. "as you watch" moves into the subtitle.
+  - title: "It writes as you watch"
+    subtitle: "Apple Intelligence writes it on your iPad, and nothing ever leaves it"
+  - title: "A reflection, not a prediction"
+    subtitle: "No subscription or network. Requires Apple Intelligence."

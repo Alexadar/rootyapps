@@ -1,0 +1,37 @@
+platform: mac
+size: [2880, 1800]
+
+paths:
+  raw_folder: /Users/oleksandr/Projects/rootyapps/tarot/marketing/raw/en/mac
+  output_folder: /Users/oleksandr/Projects/rootyapps/tarot/marketing/aso/en/mac
+
+# Same palette as the phone set (Design/Tokens.swift): near-black violet ground, one gold. The Mac
+# layout is two-column — text beside the window rather than above it — so the type sizes and the
+# zoom differ, but the colours must not: the two listings are the same product.
+style:
+  bg_gradient: true
+  bg_color_top: '#1A1526'
+  bg_color_bottom: '#0B0910'
+  title_color: '#F3EEE6'
+  subtitle_color: '#E1B859'
+  text_col_percent: 38
+  screenshot_col_percent: 62
+  screenshot_zoom: 0.94
+  border_width: 8
+  border_color: '#2A2338'
+  border_radius: 22
+  text_padding: 80
+
+# Same five beats as the phone, same claims, all checked against the code. Only the device noun
+# changes — a Mac listing that says "your iPhone" is the tell that nobody looked at it.
+texts:
+  - title: "A table, a question, a deck"
+    subtitle: "78 cards you handle yourself, and Apple Intelligence to read them"
+  - title: "Drag each card into place"
+    subtitle: "Weighted cards with real physics — not a slideshow of pictures"
+  - title: "Three cards, read plainly"
+    subtitle: "Four methods, from a single daily card to the Celtic Cross"
+  - title: "It writes as you watch"
+    subtitle: "Apple Intelligence writes it on your Mac, and nothing ever leaves it"
+  - title: "A reflection, not a prediction"
+    subtitle: "No subscription or network. Requires Apple Intelligence."

@@ -17,8 +17,13 @@ settings:
     SWIFT_VERSION: "5.0"
     # No App Store record exists for this app and none may be created in this run.
     # 1.0.0 debuts whenever the owner mints the record.
-    MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "1"
+    # 1.0, not 1.0.0 — the App Store version record created for this app is "1.0", and a build
+    # only appears under a version record whose train matches its CFBundleShortVersionString.
+    MARKETING_VERSION: "1.0"
+    # 2: build 1 is already uploaded and attached to the 1.0 version. The version record stays
+    # 1.0 (it has never been submitted), so this is a new BUILD in the same train, not a new
+    # train — bumping MARKETING_VERSION here would create 1.0.1 and orphan the record.
+    CURRENT_PROJECT_VERSION: "7"
     ENABLE_PREVIEWS: YES
     GENERATE_INFOPLIST_FILE: YES
 
@@ -72,6 +77,12 @@ targets:
         # Required by the Mac App Store — its absence fails upload with error 90242.
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.games
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        # Apple silicon only, and this one is NOT an Apple Intelligence gate — that gate was
+        # removed 2026-08-19 in favour of the runtime check alone. It stays for a plainer reason:
+        # the app is a RealityKit/Metal scene with a custom Metal surface shader per prop, and it
+        # has never been built or run on an Intel Mac. Shipping an untested architecture for a
+        # GPU-heavy app risks a crash-on-launch review rather than a degraded one.
+        EXCLUDED_ARCHS[sdk=macosx*]: x86_64
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         # Portrait-first: a three-card spread stacks naturally under the deck on a phone.
         # iPad allows everything.

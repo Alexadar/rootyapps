@@ -23,11 +23,23 @@ APP_DIR="$ROOT/tarot"
 BUNDLE=oleksandr.aisixteen.tarot
 SCENARIO="${1:-will-i-be-rich}"
 LOC="${LOC:-en}"
-PLATFORM=ios
+PLATFORM="${PLATFORM:-ios}"
 
-SIM_NAME="${SIM_NAME:-tarot-film}"
-CAPTURE_WH=1320x2868          # iPhone 17 Pro Max
-CANVAS_W=886; CANVAS_H=1920   # the store's portrait preview canvas
+# Two device families, two canvases. The iPad take is the SAME scenario — the layout adapts and
+# the camera fit recomputes for the wider aspect, so the beats stay identical and the two previews
+# stay in step. Only the frame around them differs.
+if [ "$PLATFORM" = ipad ]; then
+  SIM_NAME="${SIM_NAME:-tarot-film-ipad}"
+  DEVTYPE=com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M4-16GB
+  CAPTURE_WH=2064x2752           # iPad Pro 13"
+  CANVAS_W=1200; CANVAS_H=1600   # the store's portrait iPad preview canvas
+else
+  SIM_NAME="${SIM_NAME:-tarot-film-ios}"
+  DEVTYPE=com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max
+  CAPTURE_WH=1320x2868           # iPhone 17 Pro Max
+  CANVAS_W=886; CANVAS_H=1920    # the store's portrait iPhone preview canvas
+fi
+RUNTIME=com.apple.CoreSimulator.SimRuntime.iOS-26-5
 
 YAML="$APP_DIR/Tarot/Debug/Scenarios/$SCENARIO.scenario.yaml"
 [ -f "$YAML" ] || { echo "❌ no scenario at $YAML" >&2; exit 1; }
@@ -47,11 +59,27 @@ RAW_MOV="$RAW_DIR/capture.mov"
 SYSLOG="$DERIVED/markers-$SCENARIO-$LOC.log"
 
 UDID=$(xcrun simctl list devices | grep "$SIM_NAME (" | grep -oE "[0-9A-F-]{36}" | head -1)
-[ -n "$UDID" ] || { echo "❌ simulator '$SIM_NAME' not found — create one (iPhone 17 Pro Max)"; exit 1; }
+if [ -z "$UDID" ]; then
+  echo "▶ creating $SIM_NAME"
+  UDID=$(xcrun simctl create "$SIM_NAME" "$DEVTYPE" "$RUNTIME") || exit 1
+fi
 echo "▶ $SCENARIO · $PLATFORM / $LOC on $SIM_NAME"
 xcrun simctl boot "$UDID" 2>/dev/null; xcrun simctl bootstatus "$UDID" -b >/dev/null 2>&1
 
+# Build and install unless the caller supplied a bundle. This used to install ONLY when APP_PATH
+# was set, which silently assumed the app was already on the simulator — true for a sim I had just
+# used by hand, false for a freshly created one. On a new iPad sim the launch then failed, no
+# SCENARIO markers ever appeared, and the script sat recording an empty simulator for fifteen
+# minutes before timing out. Nothing in the log said "not installed".
 APP_PATH="${APP_PATH:-}"
+if [ -z "$APP_PATH" ] && ! xcrun simctl get_app_container "$UDID" "$BUNDLE" >/dev/null 2>&1; then
+  echo "▶ $BUNDLE is not installed on $SIM_NAME — building"
+  ( cd "$APP_DIR" && xcodebuild -project tarot.xcodeproj -scheme tarot \
+      -destination "id=$UDID" -derivedDataPath "$DERIVED/dd" build >/dev/null 2>&1 ) \
+    || { echo "❌ build failed" >&2; exit 1; }
+  APP_PATH=$(find "$DERIVED/dd/Build/Products" -maxdepth 2 -path '*iphonesimulator*' -name 'Tarot.app' | head -1)
+  [ -n "$APP_PATH" ] || { echo "❌ no simulator Tarot.app built" >&2; exit 1; }
+fi
 if [ -n "$APP_PATH" ]; then
   xcrun simctl install "$UDID" "$APP_PATH" || { echo "❌ install failed"; exit 1; }
 fi
@@ -87,11 +115,25 @@ if ! kill -0 "$REC_PID" 2>/dev/null; then
   exit 1
 fi
 
+# Fatal. A failed launch is the difference between a take and fifteen minutes of empty simulator.
 xcrun simctl launch "$UDID" "$BUNDLE" \
-  -TAROT_SCENARIO "$SCENARIO" -AppleLanguages "(en)" >/dev/null
+  -TAROT_SCENARIO "$SCENARIO" -AppleLanguages "(en)" >/dev/null \
+  || { echo "❌ launch failed — is the app installed?" >&2; kill -INT "$REC_PID" 2>/dev/null; exit 1; }
 
 # The scenario is ~13s to the reading panel plus its hold; stop on SCENARIO_END, bail at 90s.
-for _ in $(seq 1 240); do grep -q "SCENARIO_END" "$SYSLOG" 2>/dev/null && break; sleep 0.5; done
+# Bail early if the app is clearly not running the scenario at all, rather than burning the full
+# timeout: T0 lands within a few seconds of launch on every device measured.
+SAW_T0=0
+for _ in $(seq 1 240); do
+  grep -q "SCENARIO_T0" "$SYSLOG" 2>/dev/null && SAW_T0=1
+  grep -q "SCENARIO_END" "$SYSLOG" 2>/dev/null && break
+  sleep 0.5
+done
+if [ "$SAW_T0" = 0 ]; then
+  echo "❌ no SCENARIO_T0 in 120s — the app never started the scenario; not writing a blank take" >&2
+  kill -INT "$REC_PID" 2>/dev/null; kill "$LOG_PID" 2>/dev/null
+  exit 1
+fi
 # Margin, not politeness. `log stream` delivers with its own latency and the recorder needs a
 # moment to flush, so stopping 1 s after the marker once cut 1.65 s off the tail — the take ran
 # to 37.03 s against a 38.71 s content length, and ffmpeg silently produced the short file.
