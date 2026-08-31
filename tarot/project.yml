@@ -23,7 +23,7 @@ settings:
     # 2: build 1 is already uploaded and attached to the 1.0 version. The version record stays
     # 1.0 (it has never been submitted), so this is a new BUILD in the same train, not a new
     # train — bumping MARKETING_VERSION here would create 1.0.1 and orphan the record.
-    CURRENT_PROJECT_VERSION: "7"
+    CURRENT_PROJECT_VERSION: "8"
     ENABLE_PREVIEWS: YES
     GENERATE_INFOPLIST_FILE: YES
 

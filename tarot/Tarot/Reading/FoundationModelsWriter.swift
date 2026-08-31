@@ -61,13 +61,27 @@ struct WrittenReadingTen: WrittenForm {
 }
 
 /// A draft that parsed but is not a reading: the right number of passages, one of them
-/// blank. Retryable, not fatal.
+/// blank, or one that has fallen into repetition. Retryable, not fatal.
 struct IncompleteDraft: Error, Equatable {}
 
 /// The only real `ReadingWriter`: Apple's on-device Foundation Models framework, and nothing
 /// else. No network, no bundled meanings, no fallback text.
 @MainActor
 final class FoundationModelsWriter: ReadingWriter {
+
+    /// The generation currently in flight, and the session running it.
+    ///
+    /// `ReadingComposer.cancel()` cancels its own Task, but cancelling a Swift Task does not abort
+    /// the request already inside the model service — it keeps working. So a second draw started
+    /// while the first was still generating queued behind it and appeared to produce nothing.
+    /// Holding both here lets a new draw actively stand down the old one instead of racing it.
+    private var inFlight: Task<Void, Never>?
+    private var inFlightSession: LanguageModelSession?
+
+    /// True while the model is still answering. `isResponding` is on the session in the SDK; the
+    /// framework also has a `GenerationError.concurrentRequests` case, which is Foundation Models
+    /// saying plainly that overlapping requests are a real failure and not merely slow.
+    var isGenerating: Bool { inFlightSession?.isResponding ?? false }
 
     var availability: WriterAvailability {
         switch SystemLanguageModel.default.availability {
@@ -123,14 +137,29 @@ final class FoundationModelsWriter: ReadingWriter {
                 sampling: reading.interpretationSeed.map {
                     GenerationOptions.SamplingMode.random(top: 40, seed: ($0 &+ seedBump) & 0x7FFF_FFFF)
                 },
-                temperature: 0.8)
+                temperature: 0.8,
+                // The ceiling that makes a runaway impossible rather than merely unlikely.
+                maximumResponseTokens: WritingLimits.maximumTokens(for: spread))
         }
+
+        // Stand the previous generation down BEFORE starting a new one. Cancelling is not
+        // instant — the service finishes or aborts on its own schedule — so wait briefly for the
+        // session to stop responding rather than firing a second request into a busy service.
+        inFlight?.cancel()
+        let previous = inFlightSession
 
         return AsyncThrowingStream { continuation in
             let task = Task { @MainActor in
+                if let previous, previous.isResponding {
+                    for _ in 0..<30 {                       // up to ~3 s, then proceed regardless
+                        if !previous.isResponding { break }
+                        try? await Task.sleep(nanoseconds: 100_000_000)
+                    }
+                }
                 var updateCount = 0
                 let language = Self.readingLanguage()
                 let expectedPassages = spread.positions.count
+                let expected = WritingLimits.expectedCharacters(for: spread)
                 @MainActor func attempt(session: LanguageModelSession, safe: Bool,
                                         seedBump: UInt64) async throws {
                     let prompt = ReadingPrompt.prompt(reading: reading, deck: deck,
@@ -141,6 +170,13 @@ final class FoundationModelsWriter: ReadingWriter {
                                                         options: options(seedBump: seedBump))
                     var final = PassageDraft()
                     for try await partial in stream {
+                        // Stop the moment a new draw begins. `ReadingComposer.cancel()` cancels
+                        // this task, but without an explicit check the loop keeps consuming the
+                        // stream and keeps the request alive; breaking out lets the stream
+                        // deinitialise and releases the model service for the next draw. This is
+                        // the difference between "the old reading stops" and "the new one never
+                        // starts", which is how the bug presented on device.
+                        if Task.isCancelled { throw CancellationError() }
                         updateCount += 1
                         final = T.draft(from: partial.content)
                         continuation.yield(final)
@@ -154,6 +190,14 @@ final class FoundationModelsWriter: ReadingWriter {
                           !final.passages.contains(where: {
                               $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                           }) else { throw IncompleteDraft() }
+                    // Repetition is a different failure from a blank, and it reaches the reader
+                    // looking like a finished reading. Judge the whole text, not each passage:
+                    // the loop often spans the boundary, repeating the same sentence across a
+                    // passage and the synthesis.
+                    let whole = (final.passages + [final.synthesis ?? ""]).joined(separator: " ")
+                    if WritingLimits.isDegenerate(whole, expectedCharacters: expected) {
+                        throw IncompleteDraft()
+                    }
                 }
 
                 /// One attempt under a first-token watchdog. Measured on this Mac: the
@@ -167,11 +211,21 @@ final class FoundationModelsWriter: ReadingWriter {
                     let inner = Task { @MainActor in
                         try await attempt(session: session, safe: safe, seedBump: seedBump)
                     }
+                    // Silence watchdog: nothing at all for 25 s means the service stalled.
                     let watchdog = Task { @MainActor in
                         try? await Task.sleep(nanoseconds: 25_000_000_000)
                         if updateCount == before { inner.cancel() }
                     }
-                    defer { watchdog.cancel() }
+                    // TOTAL-duration watchdog. The silence watchdog cannot catch a runaway,
+                    // because a repetition loop keeps producing tokens — `updateCount` climbs
+                    // steadily while the reading never ends. That is exactly the failure seen on
+                    // device, and it is why an unbounded generation could hold the model service
+                    // and starve the next draw. No legitimate reading takes ninety seconds.
+                    let deadline = Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 90_000_000_000)
+                        inner.cancel()
+                    }
+                    defer { watchdog.cancel(); deadline.cancel() }
                     try await inner.value
                 }
 
@@ -200,6 +254,7 @@ final class FoundationModelsWriter: ReadingWriter {
                 for round in 0..<3 {
                     do {
                         let session = LanguageModelSession(instructions: instructions)
+                        self.inFlightSession = session
                         if round > 0 {
                             // A beat before re-rolling: back-to-back requests to the model
                             // service fare worse than spaced ones, and on screen the pause
@@ -209,6 +264,12 @@ final class FoundationModelsWriter: ReadingWriter {
                         }
                         try await guardedAttempt(session: session, safe: false,
                                                  seedBump: UInt64(round))
+                        continuation.finish()
+                        return
+                    } catch is CancellationError {
+                        // A new draw replaced this one. Not a failure, and emphatically not
+                        // something to retry — retrying would start a fresh request for a reading
+                        // nobody is waiting for any more, and starve the draw that replaced it.
                         continuation.finish()
                         return
                     } catch {
@@ -233,6 +294,7 @@ final class FoundationModelsWriter: ReadingWriter {
                     do {
                         continuation.yield(PassageDraft())       // clear any partial
                         let fresh = LanguageModelSession(instructions: instructions)
+                        self.inFlightSession = fresh
                         try await guardedAttempt(session: fresh, safe: true,
                                                  seedBump: 7 &+ UInt64(round))
                         continuation.finish()
@@ -246,6 +308,7 @@ final class FoundationModelsWriter: ReadingWriter {
                     }
                 }
             }
+            self.inFlight = task
             continuation.onTermination = { _ in task.cancel() }
         }
     }
