@@ -1,0 +1,11 @@
+# training outputs / artifacts (models, videos, logs, eval)
+runs/
+
+# python bytecode
+__pycache__/
+*.pyc
+
+# generated media & data exports
+*.mp4
+*.npz
+*.png
